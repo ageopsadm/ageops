@@ -2183,6 +2183,11 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <div class="form-group"><label class="form-label">SEGMENTO</label><input id="pSeg" type="text" placeholder="Videoclipe, Moda..."></div>
       <div class="form-group"><label class="form-label">DATA VENDA</label><input id="pSaleDate" type="date"></div>
       <div class="form-group"><label class="form-label">DATA PAGAMENTO</label><input id="pPayDate" type="date"></div>
+      <div class="form-group"><label class="form-label">PRAZO / VENCIMENTO</label><input id="pDueDate" type="date"></div>
+      <div class="form-group"><label class="form-label">DATA ENTREGA</label><input id="pDeliveryDate" type="date"></div>
+      <div class="form-group"><label class="form-label">DATA GRAVAÇÃO</label><input id="pRecordingDate" type="date"></div>
+      <div class="form-group"><label class="form-label">INÍCIO</label><input id="pStartDate" type="date"></div>
+      <div class="form-group"><label class="form-label">FIM</label><input id="pEndDate" type="date"></div>
       <div class="form-group"><label class="form-label">FATURAMENTO (R$)</label><input id="pFat" type="number" step="0.01" min="0" oninput="calcProjMargin()"></div>
 
       <div class="form-group"><label class="form-label">MARGEM %</label><input id="pMargin" type="number" step="0.1" readonly style="opacity:.6"></div>
@@ -5414,8 +5419,19 @@ function openProjectModal(proj=null) {
   document.getElementById('pName').value     = proj?.project_name||'';
   document.getElementById('pCat').value      = proj?.category||'Vídeo';
   document.getElementById('pSeg').value      = proj?.segment||'';
-  document.getElementById('pSaleDate').value = proj?.project_date||'';
-  document.getElementById('pPayDate').value  = proj?.payment_date||'';
+  const _projDateStr = (d) => d ? String(d).slice(0, 10) : '';
+  document.getElementById('pSaleDate').value = _projDateStr(proj?.project_date);
+  document.getElementById('pPayDate').value  = _projDateStr(proj?.payment_date);
+  const pDue = document.getElementById('pDueDate');
+  if(pDue) pDue.value = _projDateStr(proj?.due_date);
+  const pDel = document.getElementById('pDeliveryDate');
+  if(pDel) pDel.value = _projDateStr(proj?.delivery_date);
+  const pRec = document.getElementById('pRecordingDate');
+  if(pRec) pRec.value = _projDateStr(proj?.recording_date);
+  const pSta = document.getElementById('pStartDate');
+  if(pSta) pSta.value = _projDateStr(proj?.start_date);
+  const pEnd = document.getElementById('pEndDate');
+  if(pEnd) pEnd.value = _projDateStr(proj?.end_date);
   document.getElementById('pFat').value      = proj?.total_value||'';
   /* custo vem da planilha 2026 — não editável pelo usuário */
   const sheetE = PROJ_2026_SHEET.find(s=>s.cliente===proj?.client_name&&s.projeto===proj?.project_name);
@@ -5474,13 +5490,21 @@ async function saveProject() {
   const cost       = sheetE ? (sheetE.cost || 0) : 0;
   const profit_pct = fat > 0 ? +((fat - cost) / fat * 100).toFixed(1) : 0;
 
+  /* Datas vazias no <input type="date"> viram "" — Supabase/Postgres espera null, não string vazia. */
+  const dateOrNull = (fieldId) => {
+    const el = document.getElementById(fieldId);
+    if(!el) return undefined;
+    const v = String(el.value ?? '').trim();
+    return v || null;
+  };
+
   const payload = {
     client_name:   clientName,
     project_name:  projName,
     category:      document.getElementById('pCat').value,
     segment:       document.getElementById('pSeg').value.trim(),
-    project_date:  document.getElementById('pSaleDate').value,
-    payment_date:  document.getElementById('pPayDate').value,
+    project_date:  dateOrNull('pSaleDate'),
+    payment_date:  dateOrNull('pPayDate'),
     total_value:   fat,
     cost,
     profit_pct,
@@ -5489,6 +5513,16 @@ async function saveProject() {
     status:        statusVal,
     created_by:    currentUser?.username || 'unknown'
   };
+  [
+    ['pDueDate', 'due_date'],
+    ['pDeliveryDate', 'delivery_date'],
+    ['pRecordingDate', 'recording_date'],
+    ['pStartDate', 'start_date'],
+    ['pEndDate', 'end_date'],
+  ].forEach(([fid, col]) => {
+    const v = dateOrNull(fid);
+    if(v !== undefined) payload[col] = v;
+  });
 
   /* Verificar se é um ID fictício (sheet_N): nesse caso cria novo registro */
   const realId = id && !id.startsWith('sheet_') ? id : '';
