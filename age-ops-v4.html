@@ -2631,6 +2631,8 @@ function _applyLoginSession(u) {
   if(rl) rl.textContent = currentUser.role;
   navigate('dashboard');
   startClock();
+  // Pós-login: validar conexão com Supabase e surfacing de RLS
+  setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
 }
 
 function doLogin() {
@@ -2916,6 +2918,11 @@ async function api(method, table, id='', body=null) {
   const r = await fetch(url, opts);
   if(method === 'GET' && wantSingleObject && (r.status === 406 || r.status === 404)) return null;
   if(!r.ok && r.status !== 204) {
+    if(r.status === 401 || r.status === 403) {
+      const msg = 'Erro de permissão no banco — contate o administrador';
+      try { if(typeof toast === 'function') toast(msg, 'err'); } catch(e) {}
+      throw new Error(msg);
+    }
     let detail = '';
     try { detail = JSON.stringify(await r.json()); } catch(e) {}
     throw new Error(`API ${method} ${table} (${r.status}) ${detail}`);
@@ -2926,6 +2933,20 @@ async function api(method, table, id='', body=null) {
   if(method === 'GET' && !wantSingleObject) return { data: Array.isArray(json) ? json : (json?.data || []) };
   if(Array.isArray(json)) return json[0] || null;
   return json;
+}
+
+async function _checkSupabaseOnLogin() {
+  try {
+    // Ping simples no PostgREST. Se a tabela estiver sob RLS sem SELECT, cairá em 401/403.
+    await apiGet('age_projects', '?select=id&limit=1');
+  } catch(e) {
+    const msg = String(e?.message || e || '');
+    // api() já mostra toast no caso 401/403; aqui cobrimos indisponibilidade/erro genérico.
+    if(!/Erro de permissão no banco/.test(msg)) {
+      try { toast('Erro ao conectar no banco (Supabase). Verifique a configuração e tente novamente.', 'err'); } catch(_e) {}
+    }
+    throw e;
+  }
 }
 async function apiGet(table, params='')    { return api('GET',    table, params); }
 async function apiPost(table, body)        { return api('POST',   table, '', body); }
@@ -6527,7 +6548,7 @@ async function _ensureKanbanRecords() {
       /* Criar entrada com stage inicial "reuniao" */
       try {
         const created = await apiPost('age_project_stages', {
-          project_id:   dbProj?.id || '',
+          project_id:   dbProj?.id || null,
           project_name: s.projeto,
           client:       s.cliente,
           category:     s.cat || '',
