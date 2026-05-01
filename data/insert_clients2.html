@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<title>Insert Clients Batch</title>
+</head>
+<body>
+<pre id="log">Processing...</pre>
+<script>
+var logEl=document.getElementById('log');
+function log(msg){logEl.textContent+=msg+'\n';console.log(msg);}
+
+// Client data pre-computed from history analysis
+var CLIENTS=[
+{name:'JAY P',total_value:243600,total_projects:27,avg_nps:8,first_year:2022,last_year:2025,status:'recorrente',years_active:'2022,2023,2024,2025'},
+{name:'UNIVERSAL MUSIC',total_value:105100,total_projects:5,avg_nps:9,first_year:2022,last_year:2024,status:'inativo',years_active:'2022,2023,2024'},
+{name:'Giana Mello',total_value:96100,total_projects:12,avg_nps:8.5,first_year:2022,last_year:2025,status:'recorrente',years_active:'2022,2023,2024,2025'},
+{name:'LOU GARCIA',total_value:86900,total_projects:4,avg_nps:8,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'KG NETWORK',total_value:69550,total_projects:6,avg_nps:9,first_year:2022,last_year:2024,status:'inativo',years_active:'2022,2023,2024'},
+{name:'Talita Perosa',total_value:57690,total_projects:9,avg_nps:8,first_year:2023,last_year:2026,status:'ativo',years_active:'2023,2024,2025,2026'},
+{name:'Tati Zaqui',total_value:44700,total_projects:8,avg_nps:7,first_year:2022,last_year:2024,status:'inativo',years_active:'2022,2023,2024'},
+{name:'KVSH',total_value:41510,total_projects:4,avg_nps:9,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'CINQ',total_value:41000,total_projects:4,avg_nps:8,first_year:2024,last_year:2025,status:'recorrente',years_active:'2024,2025'},
+{name:'Vinera',total_value:38920,total_projects:8,avg_nps:8,first_year:2023,last_year:2025,status:'recorrente',years_active:'2023,2024,2025'},
+{name:'HEINEKEN',total_value:37200,total_projects:2,avg_nps:10,first_year:2023,last_year:2023,status:'inativo',years_active:'2023'},
+{name:'Sony',total_value:35115,total_projects:4,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Lou Garcia',total_value:34850,total_projects:2,avg_nps:9,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'ROOFTIME',total_value:34500,total_projects:2,avg_nps:9,first_year:2023,last_year:2023,status:'inativo',years_active:'2023'},
+{name:'Cinq',total_value:33000,total_projects:6,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Vic',total_value:32100,total_projects:7,avg_nps:8,first_year:2023,last_year:2025,status:'recorrente',years_active:'2023,2024,2025'},
+{name:'KZN',total_value:30740,total_projects:5,avg_nps:7,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Flashbang',total_value:30300,total_projects:6,avg_nps:8,first_year:2022,last_year:2024,status:'inativo',years_active:'2022,2023,2024'},
+{name:'LOUD',total_value:28000,total_projects:2,avg_nps:6,first_year:2021,last_year:2022,status:'inativo',years_active:'2021,2022'},
+{name:'Alva',total_value:27200,total_projects:4,avg_nps:8,first_year:2021,last_year:2022,status:'inativo',years_active:'2021,2022'},
+{name:'Blau',total_value:23510,total_projects:4,avg_nps:8,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'Digital Music',total_value:23000,total_projects:4,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Altamira',total_value:16500,total_projects:4,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Amarante',total_value:16000,total_projects:2,avg_nps:9,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'Prime Talk',total_value:14750,total_projects:4,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Tony',total_value:14000,total_projects:3,avg_nps:9,first_year:2024,last_year:2025,status:'recorrente',years_active:'2024,2025'},
+{name:'Crosa',total_value:13881,total_projects:2,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Zant',total_value:12050,total_projects:4,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'João',total_value:11770,total_projects:2,avg_nps:8,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'Feeling',total_value:11650,total_projects:2,avg_nps:6,first_year:2021,last_year:2022,status:'inativo',years_active:'2021,2022'},
+{name:'USINA',total_value:11500,total_projects:2,avg_nps:8,first_year:2023,last_year:2023,status:'inativo',years_active:'2023'},
+{name:'BC RAFF',total_value:11500,total_projects:2,avg_nps:9,first_year:2023,last_year:2023,status:'inativo',years_active:'2023'},
+{name:'Konai',total_value:11270,total_projects:2,avg_nps:8,first_year:2023,last_year:2023,status:'inativo',years_active:'2023'},
+{name:'FlashBang',total_value:11000,total_projects:2,avg_nps:8,first_year:2024,last_year:2024,status:'inativo',years_active:'2024'},
+{name:'USBISQUI',total_value:10490,total_projects:2,avg_nps:8,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'VERDE ROSA',total_value:10380,total_projects:1,avg_nps:9,first_year:2025,last_year:2025,status:'recorrente',years_active:'2025'},
+{name:'Chuck',total_value:10063,total_projects:2,avg_nps:8,first_year:2024,last_year:2024,status:'inativo',years_active:'2024'},
+{name:'YURI',total_value:10000,total_projects:1,avg_nps:9,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Jay P',total_value:9600,total_projects:2,avg_nps:8,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'Psych',total_value:9500,total_projects:2,avg_nps:8,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'Tree',total_value:9500,total_projects:2,avg_nps:9,first_year:2024,last_year:2025,status:'inativo',years_active:'2024,2025'},
+{name:'Nicoli',total_value:9400,total_projects:1,avg_nps:9,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Sub',total_value:9000,total_projects:1,avg_nps:9,first_year:2025,last_year:2025,status:'recorrente',years_active:'2025'},
+{name:'Victoria',total_value:8700,total_projects:2,avg_nps:8,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'Bardeo',total_value:8650,total_projects:2,avg_nps:9,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'Barreto',total_value:8300,total_projects:2,avg_nps:8,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'Reky',total_value:7835,total_projects:2,avg_nps:8,first_year:2024,last_year:2025,status:'inativo',years_active:'2024,2025'},
+{name:'Sayuri',total_value:7500,total_projects:2,avg_nps:9,first_year:2024,last_year:2025,status:'recorrente',years_active:'2024,2025'},
+{name:'Bardeo2',total_value:7335,total_projects:2,avg_nps:8,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'Ryan',total_value:7000,total_projects:2,avg_nps:8,first_year:2025,last_year:2025,status:'inativo',years_active:'2025'},
+{name:'MIKKA',total_value:6919,total_projects:2,avg_nps:8,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'PS',total_value:6900,total_projects:2,avg_nps:8,first_year:2024,last_year:2025,status:'inativo',years_active:'2024,2025'},
+{name:'2Strange',total_value:6700,total_projects:2,avg_nps:8,first_year:2023,last_year:2024,status:'inativo',years_active:'2023,2024'},
+{name:'Thadeu Meneghini',total_value:6500,total_projects:2,avg_nps:9,first_year:2025,last_year:2026,status:'ativo',years_active:'2025,2026'},
+{name:'Kurt Codein',total_value:6500,total_projects:2,avg_nps:8,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'SadStation',total_value:6500,total_projects:2,avg_nps:8,first_year:2021,last_year:2022,status:'inativo',years_active:'2021,2022'},
+{name:'Garius',total_value:5750,total_projects:2,avg_nps:8,first_year:2022,last_year:2022,status:'inativo',years_active:'2022'},
+{name:'Zampini',total_value:5600,total_projects:2,avg_nps:8,first_year:2024,last_year:2025,status:'inativo',years_active:'2024,2025'},
+{name:'DJ Caique',total_value:5350,total_projects:2,avg_nps:7,first_year:2021,last_year:2022,status:'inativo',years_active:'2021,2022'},
+{name:'5YNCRO',total_value:5200,total_projects:2,avg_nps:8,first_year:2022,last_year:2023,status:'inativo',years_active:'2022,2023'},
+{name:'DJL',total_value:5000,total_projects:2,avg_nps:8,first_year:2024,last_year:2025,status:'inativo',years_active:'2024,2025'},
+{name:'Strikke',total_value:5000,total_projects:1,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Coli',total_value:4800,total_projects:2,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Dj Caique',total_value:4200,total_projects:1,avg_nps:7,first_year:2021,last_year:2021,status:'inativo',years_active:'2021'},
+{name:'Gabs',total_value:4100,total_projects:2,avg_nps:8,first_year:2025,last_year:2025,status:'inativo',years_active:'2025'},
+{name:'Bk One',total_value:3900,total_projects:2,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Jona',total_value:3700,total_projects:1,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Blume',total_value:3500,total_projects:1,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Gui Milani',total_value:3300,total_projects:1,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Boca',total_value:3200,total_projects:1,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Breno',total_value:3000,total_projects:1,avg_nps:0,first_year:2026,last_year:2026,status:'ativo',years_active:'2026'},
+{name:'Vráulin',total_value:3000,total_projects:1,avg_nps:0,first_year:2021,last_year:2021,status:'inativo',years_active:'2021'},
+{name:'Gustavo',total_value:1765,total_projects:1,avg_nps:0,first_year:2021,last_year:2021,status:'inativo',years_active:'2021'}
+];
+
+async function run(){
+  // First clear existing
+  log('Clearing existing clients...');
+  var page=1,hasMore=true,deleted=0;
+  while(hasMore){
+    var r=await fetch('../tables/age_clients_db?page='+page+'&limit=100');
+    var d=await r.json();
+    var items=(d.data||[]).filter(function(x){return !x.deleted;});
+    if(items.length===0){hasMore=(d.data||[]).length>=100;page++;continue;}
+    await Promise.all(items.map(function(x){return fetch('../tables/age_clients_db/'+x.id,{method:'DELETE'}).then(function(){deleted++;});}));
+    if((d.data||[]).length<100) hasMore=false;
+    else page++;
+  }
+  log('Cleared: '+deleted);
+
+  // Insert in batches of 5
+  var inserted=0,errors=0;
+  for(var i=0;i<CLIENTS.length;i+=5){
+    var batch=CLIENTS.slice(i,i+5);
+    await Promise.all(batch.map(function(c){
+      return fetch('../tables/age_clients_db',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          client_name:c.name,
+          first_year:c.first_year,
+          last_year:c.last_year,
+          total_projects:c.total_projects,
+          total_value:c.total_value,
+          avg_nps:c.avg_nps,
+          status:c.status,
+          notes:'',
+          years_active:c.years_active
+        })
+      }).then(function(r){if(r.ok)inserted++;else errors++;}).catch(function(){errors++;});
+    }));
+  }
+  
+  log('DONE: inserted='+inserted+' errors='+errors+' total='+CLIENTS.length);
+  console.log('RESULT:inserted='+inserted+'|errors='+errors);
+}
+run();
+</script>
+</body>
+</html>

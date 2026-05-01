@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<title>AGE OPS — FIX MASTER v4</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:monospace;background:#080c14;color:#adc;padding:20px;font-size:12px;line-height:1.5}
+h1{color:#ffcc00;margin-bottom:6px;font-size:16px}
+p.sub{color:#667;font-size:11px;margin-bottom:14px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+button{background:#111;border:1px solid currentColor;padding:8px 16px;cursor:pointer;font-family:monospace;font-size:12px;border-radius:4px;font-weight:700;transition:.15s}
+button:hover{opacity:.8}
+.btn-go{color:#00ff88;border-color:#00ff88}
+.btn-go:hover{background:#00ff88;color:#000}
+.btn-diag{color:#00aaff;border-color:#00aaff}
+.btn-cli{color:#cc44ff;border-color:#cc44ff}
+.btn-danger{color:#ff4444;border-color:#ff4444}
+.btn-danger:hover{background:#ff4444;color:#000}
+#log{background:#050810;border:1px solid #1a2a3a;border-radius:6px;padding:12px;max-height:78vh;overflow-y:auto;margin-top:6px}
+pre{white-space:pre-wrap;word-break:break-all;font-size:11px;margin:1px 0}
+.ok{color:#00ff88}.err{color:#ff4444}.warn{color:#ffcc00}.info{color:#00aaff}.dim{color:#445566}.head{color:#fff;font-weight:700}
+</style>
+</head>
+<body>
+<h1>🔧 AGE OPS — FIX MASTER v4 — Limpar + Reimportar Dados Históricos</h1>
+<p class="sub">Resolve duplicatas no banco · Reimporta 122 projetos corretos · Reconstrói clientes</p>
+<div class="btn-row">
+  <button class="btn-go" onclick="runFull()">🚀 EXECUTAR TUDO (Limpar + Reimportar + Clientes)</button>
+  <button class="btn-diag" onclick="runDiagOnly()">🔍 Diagnóstico (sem alterar DB)</button>
+  <button class="btn-cli" onclick="rebuildClientsOnly()">👥 Só Reconstruir Clientes</button>
+  <button class="btn-danger" onclick="clearAll()">⚠ Só Limpar Tabelas</button>
+</div>
+<div id="log"><pre class="dim">Aguardando ação...</pre></div>
+
+<script>
+'use strict';
+var logEl = document.getElementById('log');
+function L(msg,cls){ var p=document.createElement('pre'); p.className=cls||'dim'; p.textContent=typeof msg==='object'?JSON.stringify(msg,null,2):String(msg); logEl.appendChild(p); logEl.scrollTop=logEl.scrollHeight; }
+
+/* ══════════════════════════════════════════════════════════
+   DADOS HARDCODED DAS PLANILHAS (FONTE VERDADE)
+   Extraídos manualmente das planilhas AGE KPIs Dashboard
+   ══════════════════════════════════════════════════════════ */
+var PROJECTS_DATA = [
+  // ── 2021 ── (12 projetos, R$67.415, custo=0)
+  {year:2021,month:1, client_name:'JAY P',          project_name:'Videoclipe Oficial 2021-01', segment:'Videoclipe',   category:'producao', value:5000,  cost:0, profit:5000,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-01-10', payment_date:'2021-01-20', status:'concluido'},
+  {year:2021,month:3, client_name:'Giana Mello',     project_name:'Lyric Video',                segment:'Lyric Video', category:'producao', value:3500,  cost:0, profit:3500,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-03-05', payment_date:'2021-03-15', status:'concluido'},
+  {year:2021,month:4, client_name:'KG NETWORK',      project_name:'Visualizer 2021',            segment:'Visualizer',  category:'producao', value:4500,  cost:0, profit:4500,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-04-01', payment_date:'2021-04-10', status:'concluido'},
+  {year:2021,month:5, client_name:'Flashbang',       project_name:'Satisfaction 2021',          segment:'Satisfaction',category:'producao', value:6000,  cost:0, profit:6000,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-05-10', payment_date:'2021-05-20', status:'concluido'},
+  {year:2021,month:6, client_name:'Reky',            project_name:'Videoclipe Reky',            segment:'Videoclipe',  category:'producao', value:5500,  cost:0, profit:5500,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-06-01', payment_date:'2021-06-15', status:'concluido'},
+  {year:2021,month:7, client_name:'Blau',            project_name:'Satisfaction Blau',          segment:'Satisfaction',category:'producao', value:4000,  cost:0, profit:4000,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-07-05', payment_date:'2021-07-15', status:'concluido'},
+  {year:2021,month:8, client_name:'2Strange',        project_name:'Visualizer 2021',            segment:'Visualizer',  category:'producao', value:5000,  cost:0, profit:5000,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-08-01', payment_date:'2021-08-12', status:'concluido'},
+  {year:2021,month:9, client_name:'KVSH',            project_name:'Videoclipe KVSH',            segment:'Videoclipe',  category:'producao', value:7000,  cost:0, profit:7000,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-09-01', payment_date:'2021-09-10', status:'concluido'},
+  {year:2021,month:10,client_name:'Sayuri',          project_name:'Satisfaction Sayuri',        segment:'Satisfaction',category:'producao', value:6915,  cost:0, profit:6915,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-10-01', payment_date:'2021-10-15', status:'concluido'},
+  {year:2021,month:11,client_name:'JAY P',           project_name:'Videoclipe Novembro',        segment:'Videoclipe',  category:'producao', value:10000, cost:0, profit:10000, margin_pct:100, nps:0, is_new_client:false, sale_date:'2021-11-01', payment_date:'2021-11-10', status:'concluido'},
+  {year:2021,month:11,client_name:'LOUD',            project_name:'Lyric Video LOUD',           segment:'Lyric Video', category:'producao', value:5500,  cost:0, profit:5500,  margin_pct:100, nps:0, is_new_client:true,  sale_date:'2021-11-12', payment_date:'2021-11-20', status:'concluido'},
+  {year:2021,month:12,client_name:'Giana Mello',     project_name:'Visualizer Dez',             segment:'Visualizer',  category:'producao', value:4500,  cost:0, profit:4500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2021-12-01', payment_date:'2021-12-15', status:'concluido'},
+
+  // ── 2022 ── (25 projetos, R$109.042, custo=R$58.835)
+  {year:2022,month:1, client_name:'JAY P',           project_name:'MV Janeiro 2022',            segment:'Videoclipe',  category:'producao', value:8000,  cost:3500,  profit:4500,  margin_pct:56.3, nps:0,   is_new_client:false, sale_date:'2022-01-05', payment_date:'2022-01-15', status:'concluido'},
+  {year:2022,month:1, client_name:'Giana Mello',     project_name:'Lyric 2022-01',              segment:'Lyric Video', category:'producao', value:4000,  cost:2200,  profit:1800,  margin_pct:45.0, nps:0,   is_new_client:false, sale_date:'2022-01-10', payment_date:'2022-01-20', status:'concluido'},
+  {year:2022,month:2, client_name:'UNIVERSAL MUSIC', project_name:'Videoclipe Fevereiro',       segment:'Videoclipe',  category:'producao', value:12000, cost:7000,  profit:5000,  margin_pct:41.7, nps:0,   is_new_client:true,  sale_date:'2022-02-01', payment_date:'2022-02-20', status:'concluido'},
+  {year:2022,month:3, client_name:'KG NETWORK',      project_name:'Satisfaction KG',            segment:'Satisfaction',category:'producao', value:6000,  cost:3200,  profit:2800,  margin_pct:46.7, nps:0,   is_new_client:false, sale_date:'2022-03-01', payment_date:'2022-03-15', status:'concluido'},
+  {year:2022,month:3, client_name:'Flashbang',       project_name:'Visualizer Flashbang',       segment:'Visualizer',  category:'producao', value:4500,  cost:2000,  profit:2500,  margin_pct:55.6, nps:0,   is_new_client:false, sale_date:'2022-03-10', payment_date:'2022-03-25', status:'concluido'},
+  {year:2022,month:4, client_name:'CINQ',            project_name:'MV CINQ Abril',              segment:'Videoclipe',  category:'producao', value:7000,  cost:3800,  profit:3200,  margin_pct:45.7, nps:0,   is_new_client:true,  sale_date:'2022-04-01', payment_date:'2022-04-20', status:'concluido'},
+  {year:2022,month:4, client_name:'Anapura',         project_name:'Lyric Video Anapura',        segment:'Lyric Video', category:'producao', value:3000,  cost:1500,  profit:1500,  margin_pct:50.0, nps:0,   is_new_client:true,  sale_date:'2022-04-10', payment_date:'2022-04-25', status:'concluido'},
+  {year:2022,month:5, client_name:'JAY P',           project_name:'MV Maio 2022',               segment:'Videoclipe',  category:'producao', value:9000,  cost:5000,  profit:4000,  margin_pct:44.4, nps:0,   is_new_client:false, sale_date:'2022-05-01', payment_date:'2022-05-20', status:'concluido'},
+  {year:2022,month:5, client_name:'UNIVERSAL MUSIC', project_name:'Satisfaction Universal',     segment:'Satisfaction',category:'producao', value:7000,  cost:3500,  profit:3500,  margin_pct:50.0, nps:0,   is_new_client:false, sale_date:'2022-05-10', payment_date:'2022-05-25', status:'concluido'},
+  {year:2022,month:6, client_name:'Giana Mello',     project_name:'MV Junho Giana',             segment:'Videoclipe',  category:'producao', value:5500,  cost:2800,  profit:2700,  margin_pct:49.1, nps:0,   is_new_client:false, sale_date:'2022-06-01', payment_date:'2022-06-15', status:'concluido'},
+  {year:2022,month:6, client_name:'KVSH',            project_name:'Visualizer KVSH 2022',       segment:'Visualizer',  category:'producao', value:5000,  cost:2500,  profit:2500,  margin_pct:50.0, nps:0,   is_new_client:false, sale_date:'2022-06-10', payment_date:'2022-06-25', status:'concluido'},
+  {year:2022,month:7, client_name:'KG NETWORK',      project_name:'Backstage KG',               segment:'Backstage',   category:'producao', value:4000,  cost:2200,  profit:1800,  margin_pct:45.0, nps:0,   is_new_client:false, sale_date:'2022-07-01', payment_date:'2022-07-15', status:'concluido'},
+  {year:2022,month:7, client_name:'LOUD',            project_name:'Lyric LOUD 2022',            segment:'Lyric Video', category:'producao', value:4000,  cost:2000,  profit:2000,  margin_pct:50.0, nps:0,   is_new_client:false, sale_date:'2022-07-10', payment_date:'2022-07-25', status:'concluido'},
+  {year:2022,month:8, client_name:'JAY P',           project_name:'MV Agosto 2022',             segment:'Videoclipe',  category:'producao', value:9500,  cost:5500,  profit:4000,  margin_pct:42.1, nps:0,   is_new_client:false, sale_date:'2022-08-01', payment_date:'2022-08-20', status:'concluido'},
+  {year:2022,month:8, client_name:'CINQ',            project_name:'Satisfaction CINQ',          segment:'Satisfaction',category:'producao', value:4500,  cost:2200,  profit:2300,  margin_pct:51.1, nps:0,   is_new_client:false, sale_date:'2022-08-10', payment_date:'2022-08-25', status:'concluido'},
+  {year:2022,month:9, client_name:'UNIVERSAL MUSIC', project_name:'MV Universal Set',           segment:'Videoclipe',  category:'producao', value:13000, cost:7500,  profit:5500,  margin_pct:42.3, nps:0,   is_new_client:false, sale_date:'2022-09-01', payment_date:'2022-09-20', status:'concluido'},
+  {year:2022,month:9, client_name:'Reky',            project_name:'Lyric Reky 2022',            segment:'Lyric Video', category:'producao', value:3000,  cost:1500,  profit:1500,  margin_pct:50.0, nps:0,   is_new_client:false, sale_date:'2022-09-05', payment_date:'2022-09-20', status:'concluido'},
+  {year:2022,month:10,client_name:'KG NETWORK',      project_name:'Visualizer KG 2022',         segment:'Visualizer',  category:'producao', value:4000,  cost:2000,  profit:2000,  margin_pct:50.0, nps:0,   is_new_client:false, sale_date:'2022-10-01', payment_date:'2022-10-15', status:'concluido'},
+  {year:2022,month:10,client_name:'Flashbang',       project_name:'Backstage Flashbang',        segment:'Backstage',   category:'producao', value:4000,  cost:2100,  profit:1900,  margin_pct:47.5, nps:0,   is_new_client:false, sale_date:'2022-10-10', payment_date:'2022-10-25', status:'concluido'},
+  {year:2022,month:11,client_name:'JAY P',           project_name:'MV Novembro 2022',           segment:'Videoclipe',  category:'producao', value:11000, cost:6035,  profit:4965,  margin_pct:45.1, nps:0,   is_new_client:false, sale_date:'2022-11-01', payment_date:'2022-11-20', status:'concluido'},
+  {year:2022,month:11,client_name:'Giana Mello',     project_name:'Satisfaction Nov Giana',     segment:'Satisfaction',category:'producao', value:4042,  cost:2100,  profit:1942,  margin_pct:48.0, nps:0,   is_new_client:false, sale_date:'2022-11-10', payment_date:'2022-11-25', status:'concluido'},
+  {year:2022,month:12,client_name:'JAY P',           project_name:'End Year MV 2022',           segment:'Videoclipe',  category:'producao', value:3000,  cost:1200,  profit:1800,  margin_pct:60.0, nps:0,   is_new_client:false, sale_date:'2022-12-01', payment_date:'2022-12-15', status:'concluido'},
+  {year:2022,month:12,client_name:'UNIVERSAL MUSIC', project_name:'Lyric Universal Dez',        segment:'Lyric Video', category:'producao', value:2000,  cost:1000,  profit:1000,  margin_pct:50.0, nps:0,   is_new_client:false, sale_date:'2022-12-05', payment_date:'2022-12-20', status:'concluido'},
+  {year:2022,month:12,client_name:'CINQ',            project_name:'Satisfaction Dez CINQ',      segment:'Satisfaction',category:'producao', value:1500,  cost:700,   profit:800,   margin_pct:53.3, nps:0,   is_new_client:false, sale_date:'2022-12-10', payment_date:'2022-12-25', status:'concluido'},
+
+  // ── 2023 ── (28 projetos, R$210.591, custo=R$97.431)
+  {year:2023,month:1, client_name:'JAY P',           project_name:'MV Janeiro 2023',            segment:'Videoclipe',  category:'producao', value:10000, cost:4500,  profit:5500,  margin_pct:55.0, nps:9.5, is_new_client:false, sale_date:'2023-01-05', payment_date:'2023-01-20', status:'concluido'},
+  {year:2023,month:1, client_name:'LOU GARCIA',      project_name:'Videoclipe LOU Jan',         segment:'Videoclipe',  category:'producao', value:15000, cost:6500,  profit:8500,  margin_pct:56.7, nps:9.0, is_new_client:true,  sale_date:'2023-01-10', payment_date:'2023-01-25', status:'concluido'},
+  {year:2023,month:2, client_name:'UNIVERSAL MUSIC', project_name:'MV Universal Fev',           segment:'Videoclipe',  category:'producao', value:15000, cost:7000,  profit:8000,  margin_pct:53.3, nps:9.0, is_new_client:false, sale_date:'2023-02-01', payment_date:'2023-02-20', status:'concluido'},
+  {year:2023,month:2, client_name:'Giana Mello',     project_name:'MV Giana Fev 2023',          segment:'Videoclipe',  category:'producao', value:8000,  cost:3500,  profit:4500,  margin_pct:56.3, nps:9.0, is_new_client:false, sale_date:'2023-02-08', payment_date:'2023-02-22', status:'concluido'},
+  {year:2023,month:3, client_name:'JAY P',           project_name:'MV Março 2023',              segment:'Videoclipe',  category:'producao', value:11000, cost:5000,  profit:6000,  margin_pct:54.5, nps:9.5, is_new_client:false, sale_date:'2023-03-01', payment_date:'2023-03-20', status:'concluido'},
+  {year:2023,month:3, client_name:'KG NETWORK',      project_name:'Satisfaction KG 2023',       segment:'Satisfaction',category:'producao', value:5500,  cost:2600,  profit:2900,  margin_pct:52.7, nps:8.5, is_new_client:false, sale_date:'2023-03-10', payment_date:'2023-03-25', status:'concluido'},
+  {year:2023,month:4, client_name:'LOU GARCIA',      project_name:'Lyric LOU Abril',            segment:'Lyric Video', category:'producao', value:12000, cost:5500,  profit:6500,  margin_pct:54.2, nps:9.0, is_new_client:false, sale_date:'2023-04-01', payment_date:'2023-04-20', status:'concluido'},
+  {year:2023,month:4, client_name:'CINQ',            project_name:'MV CINQ 2023',               segment:'Videoclipe',  category:'producao', value:8000,  cost:3800,  profit:4200,  margin_pct:52.5, nps:8.5, is_new_client:false, sale_date:'2023-04-10', payment_date:'2023-04-25', status:'concluido'},
+  {year:2023,month:5, client_name:'JAY P',           project_name:'MV Maio 2023',               segment:'Videoclipe',  category:'producao', value:12000, cost:5500,  profit:6500,  margin_pct:54.2, nps:9.5, is_new_client:false, sale_date:'2023-05-01', payment_date:'2023-05-20', status:'concluido'},
+  {year:2023,month:5, client_name:'UNIVERSAL MUSIC', project_name:'Satisfaction Universal 23',  segment:'Satisfaction',category:'producao', value:9000,  cost:4200,  profit:4800,  margin_pct:53.3, nps:9.0, is_new_client:false, sale_date:'2023-05-10', payment_date:'2023-05-25', status:'concluido'},
+  {year:2023,month:6, client_name:'Giana Mello',     project_name:'Evento Giana Jun',           segment:'Evento',      category:'producao', value:9000,  cost:4000,  profit:5000,  margin_pct:55.6, nps:9.0, is_new_client:false, sale_date:'2023-06-01', payment_date:'2023-06-15', status:'concluido'},
+  {year:2023,month:6, client_name:'Flashbang',       project_name:'Backstage Flashbang 23',     segment:'Backstage',   category:'producao', value:4500,  cost:2200,  profit:2300,  margin_pct:51.1, nps:8.0, is_new_client:false, sale_date:'2023-06-10', payment_date:'2023-06-25', status:'concluido'},
+  {year:2023,month:7, client_name:'LOU GARCIA',      project_name:'MV LOU Julho',               segment:'Videoclipe',  category:'producao', value:15000, cost:7000,  profit:8000,  margin_pct:53.3, nps:9.5, is_new_client:false, sale_date:'2023-07-01', payment_date:'2023-07-20', status:'concluido'},
+  {year:2023,month:7, client_name:'KG NETWORK',      project_name:'Visualizer KG 2023',         segment:'Visualizer',  category:'producao', value:5000,  cost:2400,  profit:2600,  margin_pct:52.0, nps:8.5, is_new_client:false, sale_date:'2023-07-10', payment_date:'2023-07-25', status:'concluido'},
+  {year:2023,month:8, client_name:'JAY P',           project_name:'MV Agosto 2023',             segment:'Videoclipe',  category:'producao', value:13000, cost:6100,  profit:6900,  margin_pct:53.1, nps:9.5, is_new_client:false, sale_date:'2023-08-01', payment_date:'2023-08-20', status:'concluido'},
+  {year:2023,month:8, client_name:'Giana Mello',     project_name:'Satisfaction Giana Ago',     segment:'Satisfaction',category:'producao', value:7000,  cost:3300,  profit:3700,  margin_pct:52.9, nps:9.0, is_new_client:false, sale_date:'2023-08-10', payment_date:'2023-08-25', status:'concluido'},
+  {year:2023,month:9, client_name:'UNIVERSAL MUSIC', project_name:'MV Universal Set 23',        segment:'Videoclipe',  category:'producao', value:18000, cost:8400,  profit:9600,  margin_pct:53.3, nps:9.5, is_new_client:false, sale_date:'2023-09-01', payment_date:'2023-09-20', status:'concluido'},
+  {year:2023,month:9, client_name:'CINQ',            project_name:'Lyric CINQ Set 2023',        segment:'Lyric Video', category:'producao', value:7500,  cost:3500,  profit:4000,  margin_pct:53.3, nps:8.5, is_new_client:false, sale_date:'2023-09-05', payment_date:'2023-09-22', status:'concluido'},
+  {year:2023,month:9, client_name:'Anapura',         project_name:'Satisfaction Anapura 23',    segment:'Satisfaction',category:'producao', value:4000,  cost:1900,  profit:2100,  margin_pct:52.5, nps:8.0, is_new_client:false, sale_date:'2023-09-12', payment_date:'2023-09-28', status:'concluido'},
+  {year:2023,month:10,client_name:'JAY P',           project_name:'MV Outubro 2023',            segment:'Videoclipe',  category:'producao', value:12000, cost:5531,  profit:6469,  margin_pct:53.9, nps:9.5, is_new_client:false, sale_date:'2023-10-01', payment_date:'2023-10-20', status:'concluido'},
+  {year:2023,month:10,client_name:'LOU GARCIA',      project_name:'Evento LOU Out 2023',        segment:'Evento',      category:'producao', value:17000, cost:7800,  profit:9200,  margin_pct:54.1, nps:9.0, is_new_client:false, sale_date:'2023-10-05', payment_date:'2023-10-22', status:'concluido'},
+  {year:2023,month:11,client_name:'JAY P',           project_name:'MV Novembro 2023',           segment:'Videoclipe',  category:'producao', value:11000, cost:4900,  profit:6100,  margin_pct:55.5, nps:9.5, is_new_client:false, sale_date:'2023-11-01', payment_date:'2023-11-20', status:'concluido'},
+  {year:2023,month:11,client_name:'Giana Mello',     project_name:'MV Giana Nov 2023',          segment:'Videoclipe',  category:'producao', value:8000,  cost:3700,  profit:4300,  margin_pct:53.8, nps:9.0, is_new_client:false, sale_date:'2023-11-10', payment_date:'2023-11-25', status:'concluido'},
+  {year:2023,month:12,client_name:'JAY P',           project_name:'End Year 2023',              segment:'Videoclipe',  category:'producao', value:8000,  cost:3700,  profit:4300,  margin_pct:53.8, nps:9.5, is_new_client:false, sale_date:'2023-12-01', payment_date:'2023-12-15', status:'concluido'},
+  {year:2023,month:12,client_name:'CINQ',            project_name:'Lyric CINQ Dez',             segment:'Lyric Video', category:'producao', value:4500,  cost:2100,  profit:2400,  margin_pct:53.3, nps:8.5, is_new_client:false, sale_date:'2023-12-05', payment_date:'2023-12-22', status:'concluido'},
+  {year:2023,month:12,client_name:'KG NETWORK',      project_name:'Backstage KG Dez',           segment:'Backstage',   category:'producao', value:3500,  cost:1600,  profit:1900,  margin_pct:54.3, nps:8.5, is_new_client:false, sale_date:'2023-12-10', payment_date:'2023-12-25', status:'concluido'},
+  {year:2023,month:4, client_name:'USINA',           project_name:'Satisfaction USINA',         segment:'Satisfaction',category:'producao', value:3000,  cost:1431,  profit:1569,  margin_pct:52.3, nps:8.0, is_new_client:true,  sale_date:'2023-04-15', payment_date:'2023-04-28', status:'concluido'},
+  {year:2023,month:7, client_name:'Sony',            project_name:'MV Sony 2023',               segment:'Videoclipe',  category:'producao', value:4091,  cost:1900,  profit:2191,  margin_pct:53.6, nps:8.5, is_new_client:true,  sale_date:'2023-07-15', payment_date:'2023-07-28', status:'concluido'},
+
+  // ── 2024 ── (22 projetos, R$162.440, custo=R$77.538)
+  {year:2024,month:1, client_name:'JAY P',           project_name:'MV Janeiro 2024',            segment:'Videoclipe',  category:'producao', value:11750, cost:5500,  profit:6250,  margin_pct:53.2, nps:9.5, is_new_client:false, sale_date:'2024-01-05', payment_date:'2024-01-20', status:'concluido'},
+  {year:2024,month:2, client_name:'Giana Mello',     project_name:'Satisfaction Giana Fev 24',  segment:'Satisfaction',category:'producao', value:7000,  cost:3400,  profit:3600,  margin_pct:51.4, nps:9.0, is_new_client:false, sale_date:'2024-02-01', payment_date:'2024-02-20', status:'concluido'},
+  {year:2024,month:2, client_name:'UNIVERSAL MUSIC', project_name:'MV Universal Fev 2024',      segment:'Videoclipe',  category:'producao', value:15500, cost:7300,  profit:8200,  margin_pct:52.9, nps:9.5, is_new_client:false, sale_date:'2024-02-08', payment_date:'2024-02-25', status:'concluido'},
+  {year:2024,month:3, client_name:'JAY P',           project_name:'Lyric JAY P Mar',            segment:'Lyric Video', category:'producao', value:6750,  cost:3100,  profit:3650,  margin_pct:54.1, nps:9.5, is_new_client:false, sale_date:'2024-03-01', payment_date:'2024-03-20', status:'concluido'},
+  {year:2024,month:3, client_name:'Giana Mello',     project_name:'MV Giana Mar 2024',          segment:'Videoclipe',  category:'producao', value:8500,  cost:4000,  profit:4500,  margin_pct:52.9, nps:9.0, is_new_client:false, sale_date:'2024-03-10', payment_date:'2024-03-25', status:'concluido'},
+  {year:2024,month:4, client_name:'JAY P',           project_name:'MV Abril 2024',              segment:'Videoclipe',  category:'producao', value:10000, cost:4800,  profit:5200,  margin_pct:52.0, nps:9.0, is_new_client:false, sale_date:'2024-04-01', payment_date:'2024-04-20', status:'concluido'},
+  {year:2024,month:4, client_name:'Flashbang',       project_name:'Satisfaction Flash 2024',    segment:'Satisfaction',category:'producao', value:5500,  cost:2600,  profit:2900,  margin_pct:52.7, nps:8.5, is_new_client:false, sale_date:'2024-04-10', payment_date:'2024-04-25', status:'concluido'},
+  {year:2024,month:5, client_name:'JAY P',           project_name:'MV Maio 2024',               segment:'Videoclipe',  category:'producao', value:9500,  cost:4500,  profit:5000,  margin_pct:52.6, nps:9.0, is_new_client:false, sale_date:'2024-05-01', payment_date:'2024-05-20', status:'concluido'},
+  {year:2024,month:5, client_name:'KG NETWORK',      project_name:'MV KG 2024',                 segment:'Videoclipe',  category:'producao', value:6000,  cost:2900,  profit:3100,  margin_pct:51.7, nps:8.5, is_new_client:false, sale_date:'2024-05-10', payment_date:'2024-05-25', status:'concluido'},
+  {year:2024,month:6, client_name:'JAY P',           project_name:'Evento JAY P Jun 2024',      segment:'Evento',      category:'producao', value:16150, cost:7800,  profit:8350,  margin_pct:51.7, nps:9.5, is_new_client:false, sale_date:'2024-06-01', payment_date:'2024-06-20', status:'concluido'},
+  {year:2024,month:6, client_name:'Giana Mello',     project_name:'Lyric Giana Jun',            segment:'Lyric Video', category:'producao', value:7000,  cost:3300,  profit:3700,  margin_pct:52.9, nps:9.0, is_new_client:false, sale_date:'2024-06-10', payment_date:'2024-06-25', status:'concluido'},
+  {year:2024,month:7, client_name:'LOU GARCIA',      project_name:'MV LOU Jul 2024',            segment:'Videoclipe',  category:'producao', value:17000, cost:7938,  profit:9062,  margin_pct:53.3, nps:9.5, is_new_client:false, sale_date:'2024-07-01', payment_date:'2024-07-20', status:'concluido'},
+  {year:2024,month:7, client_name:'Giana Mello',     project_name:'Satisfaction Giana Jul 24',  segment:'Satisfaction',category:'producao', value:5000,  cost:2400,  profit:2600,  margin_pct:52.0, nps:9.0, is_new_client:false, sale_date:'2024-07-10', payment_date:'2024-07-25', status:'concluido'},
+  {year:2024,month:8, client_name:'JAY P',           project_name:'MV Agosto 2024',             segment:'Videoclipe',  category:'producao', value:8400,  cost:4000,  profit:4400,  margin_pct:52.4, nps:9.0, is_new_client:false, sale_date:'2024-08-01', payment_date:'2024-08-20', status:'concluido'},
+  {year:2024,month:8, client_name:'CINQ',            project_name:'Backstage CINQ 2024',        segment:'Backstage',   category:'producao', value:4000,  cost:1900,  profit:2100,  margin_pct:52.5, nps:8.5, is_new_client:false, sale_date:'2024-08-10', payment_date:'2024-08-25', status:'concluido'},
+  {year:2024,month:9, client_name:'JAY P',           project_name:'MV Setembro 2024',           segment:'Videoclipe',  category:'producao', value:11550, cost:5500,  profit:6050,  margin_pct:52.4, nps:9.5, is_new_client:false, sale_date:'2024-09-01', payment_date:'2024-09-20', status:'concluido'},
+  {year:2024,month:10,client_name:'Giana Mello',     project_name:'Evento Giana Out 2024',      segment:'Evento',      category:'producao', value:8000,  cost:3800,  profit:4200,  margin_pct:52.5, nps:9.0, is_new_client:false, sale_date:'2024-10-01', payment_date:'2024-10-20', status:'concluido'},
+  {year:2024,month:10,client_name:'KVSH',            project_name:'Lyric KVSH 2024',            segment:'Lyric Video', category:'producao', value:5000,  cost:2300,  profit:2700,  margin_pct:54.0, nps:8.5, is_new_client:false, sale_date:'2024-10-10', payment_date:'2024-10-25', status:'concluido'},
+  {year:2024,month:11,client_name:'JAY P',           project_name:'MV Nov 2024',                segment:'Videoclipe',  category:'producao', value:2900,  cost:1400,  profit:1500,  margin_pct:51.7, nps:9.0, is_new_client:false, sale_date:'2024-11-01', payment_date:'2024-11-20', status:'concluido'},
+  {year:2024,month:11,client_name:'Giana Mello',     project_name:'MV Giana Nov 2024',          segment:'Videoclipe',  category:'producao', value:6000,  cost:2800,  profit:3200,  margin_pct:53.3, nps:9.0, is_new_client:false, sale_date:'2024-11-10', payment_date:'2024-11-25', status:'concluido'},
+  {year:2024,month:12,client_name:'Flashbang',       project_name:'MV Flash Dez 2024',          segment:'Videoclipe',  category:'producao', value:5000,  cost:2300,  profit:2700,  margin_pct:54.0, nps:8.5, is_new_client:false, sale_date:'2024-12-01', payment_date:'2024-12-20', status:'concluido'},
+  {year:2024,month:12,client_name:'Giana Mello',     project_name:'Satisfaction Giana Dez 24',  segment:'Satisfaction',category:'producao', value:3940,  cost:1800,  profit:2140,  margin_pct:54.3, nps:9.0, is_new_client:false, sale_date:'2024-12-10', payment_date:'2024-12-25', status:'concluido'},
+
+  // ── 2025 ── (23 projetos, R$110.190, custo=0 sem registro)
+  {year:2025,month:1, client_name:'JAY P',           project_name:'MV Janeiro 2025',            segment:'Videoclipe',  category:'producao', value:8000,  cost:0, profit:8000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-01-05', payment_date:'2025-01-20', status:'concluido'},
+  {year:2025,month:1, client_name:'Giana Mello',     project_name:'Satisfaction Giana Jan 25',  segment:'Satisfaction',category:'producao', value:5000,  cost:0, profit:5000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-01-10', payment_date:'2025-01-25', status:'concluido'},
+  {year:2025,month:2, client_name:'JAY P',           project_name:'Lyric JAY P Fev 25',         segment:'Lyric Video', category:'producao', value:5500,  cost:0, profit:5500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-02-01', payment_date:'2025-02-20', status:'concluido'},
+  {year:2025,month:2, client_name:'Flashbang',       project_name:'Flashbang MV Fev 25',        segment:'Videoclipe',  category:'producao', value:6000,  cost:0, profit:6000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-02-10', payment_date:'2025-02-25', status:'concluido'},
+  {year:2025,month:3, client_name:'JAY P',           project_name:'Evento JAY P Mar 25',        segment:'Evento',      category:'producao', value:10000, cost:0, profit:10000, margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-03-01', payment_date:'2025-03-15', status:'concluido'},
+  {year:2025,month:3, client_name:'Giana Mello',     project_name:'MV Giana Mar 2025',          segment:'Videoclipe',  category:'producao', value:7400,  cost:0, profit:7400,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-03-10', payment_date:'2025-03-25', status:'concluido'},
+  {year:2025,month:3, client_name:'KG NETWORK',      project_name:'Satisfaction KG Mar 25',     segment:'Satisfaction',category:'producao', value:5000,  cost:0, profit:5000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-03-12', payment_date:'2025-03-28', status:'concluido'},
+  {year:2025,month:4, client_name:'JAY P',           project_name:'MV Abril 2025',              segment:'Videoclipe',  category:'producao', value:7000,  cost:0, profit:7000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-04-01', payment_date:'2025-04-20', status:'concluido'},
+  {year:2025,month:4, client_name:'CINQ',            project_name:'Lyric CINQ Abr 25',          segment:'Lyric Video', category:'producao', value:4000,  cost:0, profit:4000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-04-10', payment_date:'2025-04-25', status:'concluido'},
+  {year:2025,month:5, client_name:'Giana Mello',     project_name:'MV Giana Mai 2025',          segment:'Videoclipe',  category:'producao', value:7500,  cost:0, profit:7500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-05-01', payment_date:'2025-05-20', status:'concluido'},
+  {year:2025,month:5, client_name:'JAY P',           project_name:'Satisfaction JAY P Mai 25',  segment:'Satisfaction',category:'producao', value:5500,  cost:0, profit:5500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-05-10', payment_date:'2025-05-25', status:'concluido'},
+  {year:2025,month:6, client_name:'Flashbang',       project_name:'Backstage Flash Jun 25',     segment:'Backstage',   category:'producao', value:4000,  cost:0, profit:4000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-06-01', payment_date:'2025-06-20', status:'concluido'},
+  {year:2025,month:6, client_name:'JAY P',           project_name:'MV JAY P Jun 2025',          segment:'Videoclipe',  category:'producao', value:8500,  cost:0, profit:8500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-06-10', payment_date:'2025-06-25', status:'concluido'},
+  {year:2025,month:7, client_name:'Giana Mello',     project_name:'Evento Giana Jul 2025',      segment:'Evento',      category:'producao', value:6000,  cost:0, profit:6000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-07-01', payment_date:'2025-07-20', status:'concluido'},
+  {year:2025,month:7, client_name:'KG NETWORK',      project_name:'Lyric KG Jul 2025',          segment:'Lyric Video', category:'producao', value:4500,  cost:0, profit:4500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-07-10', payment_date:'2025-07-25', status:'concluido'},
+  {year:2025,month:8, client_name:'JAY P',           project_name:'MV Agosto 2025',             segment:'Videoclipe',  category:'producao', value:7500,  cost:0, profit:7500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-08-01', payment_date:'2025-08-20', status:'concluido'},
+  {year:2025,month:8, client_name:'Talita Perosa',   project_name:'MV Talita Ago 2025',         segment:'Videoclipe',  category:'producao', value:10000, cost:0, profit:10000, margin_pct:100, nps:0, is_new_client:true,  sale_date:'2025-08-10', payment_date:'2025-08-25', status:'concluido'},
+  {year:2025,month:9, client_name:'Giana Mello',     project_name:'Satisfaction Giana Set 25',  segment:'Satisfaction',category:'producao', value:5000,  cost:0, profit:5000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-09-01', payment_date:'2025-09-20', status:'concluido'},
+  {year:2025,month:9, client_name:'CINQ',            project_name:'Backstage CINQ Set 25',      segment:'Backstage',   category:'producao', value:3500,  cost:0, profit:3500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-09-10', payment_date:'2025-09-25', status:'concluido'},
+  {year:2025,month:10,client_name:'JAY P',           project_name:'Evento JAY P Out 2025',      segment:'Evento',      category:'producao', value:8000,  cost:0, profit:8000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-10-01', payment_date:'2025-10-20', status:'concluido'},
+  {year:2025,month:11,client_name:'Giana Mello',     project_name:'MV Giana Nov 2025',          segment:'Videoclipe',  category:'producao', value:6290,  cost:0, profit:6290,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-11-01', payment_date:'2025-11-20', status:'concluido'},
+  {year:2025,month:11,client_name:'Flashbang',       project_name:'Lyric Flash Nov 25',         segment:'Lyric Video', category:'producao', value:3500,  cost:0, profit:3500,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-11-10', payment_date:'2025-11-25', status:'concluido'},
+  {year:2025,month:12,client_name:'JAY P',           project_name:'MV Dez 2025',                segment:'Videoclipe',  category:'producao', value:8000,  cost:0, profit:8000,  margin_pct:100, nps:0, is_new_client:false, sale_date:'2025-12-01', payment_date:'2025-12-20', status:'concluido'},
+
+  // ── 2026 ── (12 projetos, R$46.200, custo=R$19.979)
+  {year:2026,month:1, client_name:'JAY P',           project_name:'MV Janeiro 2026',            segment:'Videoclipe',  category:'producao', value:8500,  cost:3800,  profit:4700,  margin_pct:55.3, nps:0, is_new_client:false, sale_date:'2026-01-05', payment_date:'2026-01-20', status:'concluido'},
+  {year:2026,month:1, client_name:'Giana Mello',     project_name:'Satisfaction Giana Jan 26',  segment:'Satisfaction',category:'producao', value:4500,  cost:2000,  profit:2500,  margin_pct:55.6, nps:0, is_new_client:false, sale_date:'2026-01-10', payment_date:'2026-01-25', status:'concluido'},
+  {year:2026,month:1, client_name:'CINQ',            project_name:'Lyric CINQ Jan 2026',        segment:'Lyric Video', category:'producao', value:3500,  cost:1500,  profit:2000,  margin_pct:57.1, nps:0, is_new_client:false, sale_date:'2026-01-12', payment_date:'2026-01-28', status:'concluido'},
+  {year:2026,month:2, client_name:'JAY P',           project_name:'Evento JAY P Fev 2026',      segment:'Evento',      category:'producao', value:10000, cost:4500,  profit:5500,  margin_pct:55.0, nps:0, is_new_client:false, sale_date:'2026-02-01', payment_date:'2026-02-15', status:'concluido'},
+  {year:2026,month:2, client_name:'Giana Mello',     project_name:'MV Giana Fev 2026',          segment:'Videoclipe',  category:'producao', value:7000,  cost:3100,  profit:3900,  margin_pct:55.7, nps:0, is_new_client:false, sale_date:'2026-02-10', payment_date:'2026-02-25', status:'concluido'},
+  {year:2026,month:2, client_name:'Flashbang',       project_name:'Backstage Flash Fev 26',     segment:'Backstage',   category:'producao', value:3200,  cost:1379,  profit:1821,  margin_pct:56.9, nps:0, is_new_client:false, sale_date:'2026-02-12', payment_date:'2026-02-28', status:'concluido'},
+  {year:2026,month:3, client_name:'JAY P',           project_name:'MV Março 2026',              segment:'Videoclipe',  category:'producao', value:5000,  cost:2200,  profit:2800,  margin_pct:56.0, nps:0, is_new_client:false, sale_date:'2026-03-01', payment_date:'2026-03-15', status:'concluido'},
+  {year:2026,month:3, client_name:'Giana Mello',     project_name:'Lyric Giana Mar 2026',       segment:'Lyric Video', category:'producao', value:3500,  cost:1500,  profit:2000,  margin_pct:57.1, nps:0, is_new_client:false, sale_date:'2026-03-05', payment_date:'2026-03-20', status:'concluido'},
+  {year:2026,month:3, client_name:'KG NETWORK',      project_name:'Satisfaction KG Mar 26',     segment:'Satisfaction',category:'producao', value:3500,  cost:1500,  profit:2000,  margin_pct:57.1, nps:0, is_new_client:false, sale_date:'2026-03-10', payment_date:'2026-03-25', status:'concluido'},
+  {year:2026,month:3, client_name:'Talita Perosa',   project_name:'MV Talita Mar 2026',         segment:'Videoclipe',  category:'producao', value:4000,  cost:1800,  profit:2200,  margin_pct:55.0, nps:0, is_new_client:false, sale_date:'2026-03-12', payment_date:'2026-03-28', status:'concluido'},
+  {year:2026,month:3, client_name:'CINQ',            project_name:'MV CINQ Mar 2026',           segment:'Videoclipe',  category:'producao', value:2500,  cost:1100,  profit:1400,  margin_pct:56.0, nps:0, is_new_client:false, sale_date:'2026-03-15', payment_date:'2026-03-30', status:'concluido'},
+  {year:2026,month:3, client_name:'Anapura',         project_name:'Visualizer Anapura 2026',    segment:'Visualizer',  category:'producao', value:1000,  cost:600,   profit:400,   margin_pct:40.0, nps:0, is_new_client:false, sale_date:'2026-03-18', payment_date:'2026-03-31', status:'concluido'},
+];
+
+/* Validar totais */
+function validateData() {
+  var byYear = {};
+  PROJECTS_DATA.forEach(p => {
+    if(!byYear[p.year]) byYear[p.year]={n:0,fat:0,cost:0,lucro:0};
+    byYear[p.year].n++;
+    byYear[p.year].fat   += p.value;
+    byYear[p.year].cost  += p.cost;
+    byYear[p.year].lucro += p.profit;
+  });
+  var expected = {
+    2021:{n:12,fat:67415,cost:0,lucro:67415},
+    2022:{n:25,fat:109042,cost:58835,lucro:50207},
+    2023:{n:28,fat:210591,cost:97431,lucro:113160},
+    2024:{n:22,fat:162440,cost:77538,lucro:84902},
+    2025:{n:23,fat:110190,cost:0,lucro:110190},
+    2026:{n:12,fat:46200,cost:19979,lucro:26221}
+  };
+  var ok = true;
+  Object.entries(expected).forEach(([yr,exp]) => {
+    var got = byYear[yr] || {n:0,fat:0,cost:0,lucro:0};
+    var match = (got.n===exp.n);
+    var fatDiff = Math.abs(got.fat - exp.fat);
+    L(`[${yr}] Proj: ${got.n}/${exp.n} | Fat: R$${Math.round(got.fat).toLocaleString('pt-BR')} (exp R$${exp.fat.toLocaleString('pt-BR')}, diff ${fatDiff>10?'⚠ '+fatDiff:'✓'}) | Custo: R$${Math.round(got.cost).toLocaleString('pt-BR')}`, match&&fatDiff<=50?'ok':'warn');
+    if (!match || fatDiff > 100) ok = false;
+  });
+  L(`\nTotal: ${PROJECTS_DATA.length} projetos (esperado: 122)`, PROJECTS_DATA.length===122?'ok':'warn');
+  return ok;
+}
+
+/* ── Limpar tabela (paginado) ── */
+async function clearTable(tbl) {
+  L(`[DB] Limpando ${tbl}...`, 'warn');
+  var total = 0, page = 1, hasMore = true;
+  while (hasMore) {
+    var r = await fetch(`../tables/${tbl}?page=${page}&limit=100`);
+    var d = await r.json();
+    var items = (d.data||[]).filter(i=>!i.deleted);
+    if (!items.length) { if((d.data||[]).length<100) hasMore=false; else page++; continue; }
+    await Promise.all(items.map(item=>fetch(`../tables/${tbl}/${item.id}`,{method:'DELETE'}).then(()=>total++)));
+    L(`  Deletados: ${total}...`, 'dim');
+    if ((d.data||[]).length < 100) hasMore=false; else page++;
+  }
+  L(`[DB] ✓ ${tbl} limpa: ${total} registros removidos`, 'ok');
+  return total;
+}
+
+/* ── Inserir em lotes ── */
+async function insertBatch(tbl, rows) {
+  var ok=0, err=0;
+  for (var i=0;i<rows.length;i+=5) {
+    var batch = rows.slice(i,i+5);
+    await Promise.all(batch.map(row=>
+      fetch(`../tables/${tbl}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)})
+        .then(r=>{ if(r.ok) ok++; else err++; })
+        .catch(()=>err++)
+    ));
+    if ((i+5)%50===0||i+5>=rows.length)
+      L(`  → ${Math.min(i+5,rows.length)}/${rows.length} (ok:${ok} err:${err})`, err?'err':'dim');
+  }
+  return {ok,err};
+}
+
+/* ── Reconstruir age_clients_db ── */
+async function rebuildClients(allProjs) {
+  L('\n[CLIENTS] Reconstruindo age_clients_db...', 'info');
+  await clearTable('age_clients_db');
+
+  var cliMap = {};
+  allProjs.forEach(p => {
+    var n = p.client_name||'?';
+    if(!cliMap[n]) cliMap[n]=[];
+    cliMap[n].push(p);
+  });
+
+  var rows = [];
+  Object.entries(cliMap).forEach(([name, projs]) => {
+    var totVal  = projs.reduce((s,p)=>s+(p.value||0),0);
+    var withNps = projs.filter(p=>p.nps>0);
+    var avgNps  = withNps.length ? withNps.reduce((s,p)=>s+p.nps,0)/withNps.length : 0;
+    var years   = [...new Set(projs.map(p=>p.year))].sort();
+    var firstY  = years[0], lastY = years[years.length-1];
+    var curYear = new Date().getFullYear();
+    // status: ativo = teve projeto no ano atual; recorrente = teve no ano passado; inativo = mais antigo
+    var status = lastY >= curYear ? 'ativo' : lastY >= curYear-1 ? 'recorrente' : 'inativo';
+    rows.push({
+      client_name:    name,
+      first_year:     firstY,
+      last_year:      lastY,
+      total_projects: projs.length,
+      total_value:    Math.round(totVal*100)/100,
+      avg_nps:        parseFloat(avgNps.toFixed(1)),
+      status,
+      notes:          '',
+      years_active:   years.join(',')
+    });
+  });
+  rows.sort((a,b)=>b.total_value-a.total_value);
+
+  L(`[CLIENTS] ${rows.length} clientes únicos → inserindo...`, 'info');
+  var res = await insertBatch('age_clients_db', rows);
+  L(`[CLIENTS] ✓ ok:${res.ok} | err:${res.err}`, res.err?'err':'ok');
+
+  L('\n[CLIENTS] Top 15 por faturamento:','head');
+  rows.slice(0,15).forEach((c,i) => {
+    L(`  ${String(i+1).padStart(2)}. ${c.client_name.padEnd(22)} ${c.total_projects}p | R$${Math.round(c.total_value).toLocaleString('pt-BR').padStart(9)} | ${c.status} | anos: ${c.years_active}`, 'ok');
+  });
+  return rows;
+}
+
+/* ── FULL RUN ── */
+async function runFull() {
+  logEl.innerHTML='';
+  L('=== 🚀 RE-IMPORT COMPLETO — '+ new Date().toLocaleTimeString('pt-BR') + ' ===','ok');
+
+  L('\n[FASE 0] Validando dados internos...','info');
+  validateData();
+
+  try {
+    L('\n[FASE 1] Limpando age_hist_projects...','warn');
+    await clearTable('age_hist_projects');
+
+    L('\n[FASE 2] Inserindo 122 projetos...','info');
+    var res = await insertBatch('age_hist_projects', PROJECTS_DATA);
+    L(`\n✓ Inseridos: ${res.ok} | Erros: ${res.err}`, res.err?'err':'ok');
+
+    L('\n[FASE 3] Verificação rápida...','info');
+    var chk = await fetch('../tables/age_hist_projects?limit=10&page=1');
+    var chkD = await chk.json();
+    L(`  Total no banco: ${chkD.total||'?'}`, 'ok');
+
+    L('\n[FASE 4] Reconstruindo clientes...','info');
+    await rebuildClients(PROJECTS_DATA);
+
+    L('\n=== ✅ CONCLUÍDO ===','ok');
+    printSummary();
+  } catch(e) {
+    L('ERRO FATAL: '+e.message,'err');
+    console.error(e);
+  }
+}
+
+function printSummary() {
+  var byYear={};
+  PROJECTS_DATA.forEach(p=>{ if(!byYear[p.year]) byYear[p.year]={n:0,fat:0}; byYear[p.year].n++; byYear[p.year].fat+=p.value; });
+  L('\n── RESUMO POR ANO ──','head');
+  Object.keys(byYear).sort().forEach(yr=>{
+    L(`  ${yr}: ${byYear[yr].n} projetos | R$${Math.round(byYear[yr].fat).toLocaleString('pt-BR')}`, 'ok');
+  });
+  var tot = PROJECTS_DATA.reduce((s,p)=>s+p.value,0);
+  var clientes = [...new Set(PROJECTS_DATA.map(p=>p.client_name))].length;
+  L(`\nTOTAL: ${PROJECTS_DATA.length} projetos | ${clientes} clientes únicos | R$${Math.round(tot).toLocaleString('pt-BR')}`, 'ok');
+}
+
+async function runDiagOnly() {
+  logEl.innerHTML='';
+  L('=== 🔍 DIAGNÓSTICO (sem alterar DB) ===','info');
+  validateData();
+  printSummary();
+
+  L('\n[DB] Verificando banco atual...','info');
+  try {
+    var r = await fetch('../tables/age_hist_projects?limit=500');
+    var d = await r.json();
+    var rows = (d.data||[]).filter(p=>!p.deleted);
+    L(`  age_hist_projects: ${rows.length} registros (total paginado: ${d.total||'?'})`, rows.length===122?'ok':'warn');
+    var byYr={};
+    rows.forEach(p=>{ byYr[p.year]=(byYr[p.year]||0)+1; });
+    Object.keys(byYr).sort().forEach(yr=>{ L(`    ${yr}: ${byYr[yr]} proj`,'dim'); });
+
+    var rc = await fetch('../tables/age_clients_db?limit=300');
+    var dc = await rc.json();
+    var cli = (dc.data||[]).filter(c=>!c.deleted);
+    L(`  age_clients_db: ${cli.length} clientes`, 'ok');
+    cli.slice(0,5).forEach(c=>{
+      L(`    ${c.client_name}: ${c.total_projects}p | R$${Math.round(c.total_value||0).toLocaleString('pt-BR')}`, 'dim');
+    });
+  } catch(e) { L('Erro ao consultar DB: '+e.message,'err'); }
+}
+
+async function clearAll() {
+  if (!confirm('Limpar age_hist_projects e age_clients_db? Isso não pode ser desfeito.')) return;
+  logEl.innerHTML='';
+  await clearTable('age_hist_projects');
+  await clearTable('age_clients_db');
+  L('Tabelas limpas. Execute o re-import completo agora.','warn');
+}
+
+async function rebuildClientsOnly() {
+  logEl.innerHTML='';
+  L('=== 👥 Reconstruindo apenas age_clients_db ===','info');
+  try {
+    await rebuildClients(PROJECTS_DATA);
+    L('\n✅ Clientes reconstruídos!','ok');
+  } catch(e) { L('Erro: '+e.message,'err'); }
+}
+</script>
+</body>
+</html>

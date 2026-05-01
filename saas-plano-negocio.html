@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setflow — Plano de Negócio 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #07090f;
+      --bg2: #0d1117;
+      --bg3: #161b27;
+      --surface: #1c2333;
+      --border: rgba(255,255,255,.07);
+      --acc: #f59e0b;
+      --acc2: #fbbf24;
+      --acc-dim: rgba(245,158,11,.1);
+      --blue: #3b82f6;
+      --blue-dim: rgba(59,130,246,.12);
+      --green: #10b981;
+      --green-dim: rgba(16,185,129,.1);
+      --purple: #8b5cf6;
+      --purple-dim: rgba(139,92,246,.1);
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --text-sub: #94a3b8;
+      --text-dim: #475569;
+      --font-h: 'Rajdhani', sans-serif;
+      --font-b: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: 13px;
+      line-height: 1.6;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── PRINT BAR ── */
+    .print-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(7,9,15,.96);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(245,158,11,.25);
+      padding: 10px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 9999;
+      gap: 16px;
+    }
+    .print-bar-left { display: flex; align-items: center; gap: 12px; }
+    .print-bar-logo {
+      font-family: var(--font-h);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--acc);
+      letter-spacing: .08em;
+    }
+    .print-bar-sub {
+      font-size: 10px;
+      color: var(--text-sub);
+      font-family: var(--font-b);
+    }
+    .btn-print {
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--acc), #d97706);
+      color: #000;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-family: var(--font-h);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .05em;
+      transition: opacity .2s;
+    }
+    .btn-print:hover { opacity: .88; }
+
+    @media print {
+      .print-bar { display: none !important; }
+      body { background: #07090f !important; }
+      .page { page-break-after: always; }
+      .page:last-child { page-break-after: avoid; }
+    }
+
+    /* ── LAYOUT ── */
+    .doc {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 80px 40px 60px;
+    }
+
+    .page {
+      margin-bottom: 80px;
+    }
+
+    /* ── COVER ── */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 80px 0 60px;
+    }
+
+    .cover-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(245,158,11,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245,158,11,.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .cover-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(245,158,11,.12) 0%, transparent 70%);
+      top: -100px; right: -100px;
+      pointer-events: none;
+    }
+
+    .cover-glow2 {
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(59,130,246,.08) 0%, transparent 70%);
+      bottom: 0; left: -80px;
+      pointer-events: none;
+    }
+
+    .cover-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--acc-dim);
+      border: 1px solid rgba(245,158,11,.25);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--acc);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .cover-title {
+      font-family: var(--font-h);
+      font-size: 86px;
+      font-weight: 700;
+      line-height: .92;
+      letter-spacing: -.01em;
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .cover-title .accent { color: var(--acc); }
+    .cover-title .dim { color: var(--text-dim); }
+
+    .cover-sub {
+      font-size: 18px;
+      color: var(--text-sub);
+      max-width: 540px;
+      margin-bottom: 48px;
+      font-weight: 400;
+      line-height: 1.55;
+      position: relative;
+    }
+
+    .cover-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      position: relative;
+      margin-bottom: 48px;
+    }
+
+    .cover-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover-stat::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .cover-stat.gold::before { background: var(--acc); }
+    .cover-stat.blue::before { background: var(--blue); }
+    .cover-stat.green::before { background: var(--green); }
+    .cover-stat.purple::before { background: var(--purple); }
+
+    .cover-stat-val {
+      font-family: var(--font-h);
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .cover-stat-val.gold { color: var(--acc); }
+    .cover-stat-val.blue { color: var(--blue); }
+    .cover-stat-val.green { color: var(--green); }
+    .cover-stat-val.purple { color: var(--purple); }
+
+    .cover-stat-label {
+      font-size: 10px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      font-weight: 600;
+    }
+
+    .cover-stat-desc {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 3px;
+    }
+
+    .cover-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 0 24px;
+      position: relative;
+    }
+
+    .cover-meta {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      position: relative;
+    }
+
+    .cover-meta-item {
+      font-size: 10px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cover-meta-item i { color: var(--acc); }
+
+    /* ── SECTION HEADERS ── */
+    .section-header {
+      margin-bottom: 36px;
+    }
+
+    .section-number {
+      font-family: var(--font-h);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--acc);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-family: var(--font-h);
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -.01em;
+    }
+
+    .section-title .accent { color: var(--acc); }
+    .section-title .blue { color: var(--blue); }
+    .section-title .green { color: var(--green); }
+    .section-title .purple { color: var(--purple); }
+
+    .section-sub {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 10px;
+      max-width: 600px;
+      line-height: 1.6;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .card-accent {
+      border-top: 2px solid var(--acc);
+    }
+    .card-blue { border-top: 2px solid var(--blue); }
+    .card-green { border-top: 2px solid var(--green); }
+    .card-purple { border-top: 2px solid var(--purple); }
+    .card-red { border-top: 2px solid var(--red); }
+
+    /* ── GRID LAYOUTS ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+
+    /* ── NOME / BRANDING ── */
+    .name-option {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border .2s;
+    }
+
+    .name-option.winner {
+      border: 1.5px solid var(--acc);
+      background: linear-gradient(135deg, rgba(245,158,11,.08), var(--bg3));
+    }
+
+    .name-badge {
+      font-family: var(--font-h);
+      font-size: 22px;
+      font-weight: 700;
+      min-width: 120px;
+    }
+
+    .name-badge.gold { color: var(--acc); }
+    .name-badge.muted { color: var(--text-sub); }
+
+    .winner-tag {
+      font-size: 9px;
+      font-weight: 700;
+      background: var(--acc);
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    /* ── TIERS ── */
+    .tier-card {
+      border-radius: 14px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tier-card::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      opacity: .06;
+    }
+
+    .tier-1 { background: linear-gradient(135deg, rgba(59,130,246,.08), var(--bg3)); }
+    .tier-1::after { background: var(--blue); }
+    .tier-2 { background: linear-gradient(135deg, rgba(245,158,11,.08), var(--bg3)); border-color: rgba(245,158,11,.2); }
+    .tier-2::after { background: var(--acc); }
+    .tier-3 { background: linear-gradient(135deg, rgba(139,92,246,.08), var(--bg3)); }
+    .tier-3::after { background: var(--purple); }
+    .tier-4 { background: linear-gradient(135deg, rgba(16,185,129,.08), var(--bg3)); }
+    .tier-4::after { background: var(--green); }
+
+    .tier-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .tier-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .tier-icon.blue { background: var(--blue-dim); }
+    .tier-icon.gold { background: var(--acc-dim); }
+    .tier-icon.purple { background: var(--purple-dim); }
+    .tier-icon.green { background: var(--green-dim); }
+
+    .tier-name {
+      font-family: var(--font-h);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .tier-label { font-size: 10px; color: var(--text-sub); }
+
+    .tier-price {
+      font-family: var(--font-h);
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .tier-price.blue { color: var(--blue); }
+    .tier-price.gold { color: var(--acc); }
+    .tier-price.purple { color: var(--purple); }
+    .tier-price.green { color: var(--green); }
+
+    .tier-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .tier-row:last-child { border-bottom: none; }
+    .tier-row-label { color: var(--text-sub); }
+    .tier-row-val { color: var(--text); font-weight: 600; }
+
+    .focus-tag {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      background: var(--acc);
+      color: #000;
+      padding: 2px 9px;
+      border-radius: 20px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-left: 8px;
+    }
+
+    /* ── CONCORRENTES ── */
+    .competitor-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .competitor-row:last-child { border-bottom: none; }
+
+    .comp-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--bg3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .comp-name {
+      font-family: var(--font-h);
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .comp-desc { font-size: 11px; color: var(--text-sub); line-height: 1.5; }
+
+    .comp-tag {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 6px;
+      letter-spacing: .08em;
+    }
+
+    .tag-threat { background: rgba(239,68,68,.15); color: var(--red); }
+    .tag-gap { background: var(--green-dim); color: var(--green); }
+    .tag-indirect { background: var(--blue-dim); color: var(--blue); }
+
+    /* ── TIMELINE / ROTA ── */
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px; top: 8px; bottom: 8px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--acc), var(--blue), var(--green));
+      opacity: .3;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 28px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -26px;
+      top: 4px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 7px;
+      font-weight: 700;
+    }
+
+    .dot-gold { background: var(--acc); color: #000; }
+    .dot-blue { background: var(--blue); color: #fff; }
+    .dot-green { background: var(--green); color: #fff; }
+    .dot-purple { background: var(--purple); color: #fff; }
+
+    .timeline-phase {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .timeline-title {
+      font-family: var(--font-h);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .timeline-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .timeline-action {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .timeline-action i {
+      font-size: 9px;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    /* ── INVESTIMENTO ── */
+    .invest-bar {
+      background: var(--bg3);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .invest-label { font-size: 11px; color: var(--text-sub); flex: 1; }
+    .invest-range { font-family: var(--font-h); font-size: 16px; font-weight: 700; white-space: nowrap; }
+    .invest-bar-fill {
+      height: 4px;
+      border-radius: 4px;
+      flex: 2;
+    }
+
+    /* ── BREAK-EVEN ── */
+    .be-card {
+      background: linear-gradient(135deg, #0d1117, #111827);
+      border: 1px solid rgba(245,158,11,.2);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .be-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(245,158,11,.08) 0%, transparent 70%);
+    }
+
+    .be-number {
+      font-family: var(--font-h);
+      font-size: 80px;
+      font-weight: 700;
+      color: var(--acc);
+      line-height: 1;
+      position: relative;
+    }
+
+    .be-label {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 8px;
+      position: relative;
+    }
+
+    /* ── PROJEÇÃO MRR ── */
+    .mrr-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      height: 160px;
+      padding: 0 4px;
+      margin-top: 16px;
+    }
+
+    .mrr-bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .mrr-bar {
+      width: 100%;
+      border-radius: 6px 6px 0 0;
+      position: relative;
+      min-height: 8px;
+      transition: all .3s;
+    }
+
+    .mrr-val {
+      font-family: var(--font-h);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--acc);
+      white-space: nowrap;
+    }
+
+    .mrr-period {
+      font-size: 9px;
+      color: var(--text-dim);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ── EQUIPE ── */
+    .team-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .team-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      margin-bottom: 14px;
+    }
+
+    .team-role {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .team-name {
+      font-family: var(--font-h);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .team-salary {
+      font-family: var(--font-h);
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .team-salary span { font-size: 12px; color: var(--text-dim); font-family: var(--font-b); font-weight: 400; }
+
+    .team-resp {
+      font-size: 10px;
+      color: var(--text-sub);
+      line-height: 1.7;
+    }
+
+    .team-resp li { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 2px; }
+    .team-resp li::before { content: '→'; color: var(--acc); flex-shrink: 0; }
+
+    /* ── DESAFIOS ── */
+    .challenge-item {
+      display: flex;
+      gap: 16px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .challenge-item:last-child { border-bottom: none; }
+
+    .challenge-level {
+      flex-shrink: 0;
+      width: 56px;
+      text-align: center;
+    }
+
+    .challenge-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      margin: 0 auto 4px;
+    }
+
+    .challenge-level-text {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .c-alto { background: var(--red); }
+    .c-medio { background: var(--acc); }
+    .c-baixo { background: var(--green); }
+
+    .t-alto { color: var(--red); }
+    .t-medio { color: var(--acc); }
+    .t-baixo { color: var(--green); }
+
+    .challenge-title {
+      font-family: var(--font-h);
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .challenge-desc { font-size: 11px; color: var(--text-sub); line-height: 1.6; }
+
+    /* ── TABLE ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 11px 12px;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .data-table tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* ── HIGHLIGHT BOX ── */
+    .highlight {
+      background: linear-gradient(135deg, rgba(245,158,11,.06), transparent);
+      border: 1px solid rgba(245,158,11,.2);
+      border-left: 3px solid var(--acc);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.65;
+      margin: 20px 0;
+    }
+
+    .highlight strong { color: var(--acc); font-weight: 600; }
+
+    .highlight-blue {
+      background: linear-gradient(135deg, rgba(59,130,246,.06), transparent);
+      border: 1px solid rgba(59,130,246,.2);
+      border-left: 3px solid var(--blue);
+    }
+    .highlight-blue strong { color: var(--blue); }
+
+    .highlight-green {
+      background: linear-gradient(135deg, rgba(16,185,129,.06), transparent);
+      border: 1px solid rgba(16,185,129,.2);
+      border-left: 3px solid var(--green);
+    }
+    .highlight-green strong { color: var(--green); }
+
+    /* ── VERDITO FINAL ── */
+    .verdict-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .verdict-item {
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .verdict-icon { font-size: 28px; margin-bottom: 10px; }
+
+    .verdict-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+    }
+
+    .verdict-val {
+      font-family: var(--font-h);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .verdict-ok { color: var(--green); }
+    .verdict-warn { color: var(--acc); }
+    .verdict-crit { color: var(--red); }
+
+    /* ── CLOSING ── */
+    .closing {
+      text-align: center;
+      padding: 80px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .closing-glow {
+      position: absolute;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(245,158,11,.1) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .closing-title {
+      font-family: var(--font-h);
+      font-size: 60px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .closing-sub {
+      font-size: 15px;
+      color: var(--text-sub);
+      max-width: 500px;
+      margin: 0 auto 40px;
+      line-height: 1.65;
+      position: relative;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: .08em;
+    }
+    .pill-gold { background: var(--acc-dim); color: var(--acc); border: 1px solid rgba(245,158,11,.2); }
+    .pill-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,.2); }
+    .pill-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,.2); }
+
+    .divider-accent {
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--acc), transparent);
+      opacity: .3;
+      margin: 32px 0;
+    }
+
+    /* ── KEY METRIC ── */
+    .key-metric {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+    }
+
+    .key-metric-val {
+      font-family: var(--font-h);
+      font-size: 36px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .key-metric-text { font-size: 11px; color: var(--text-sub); line-height: 1.6; }
+    .key-metric-title { font-family: var(--font-h); font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+
+  </style>
+</head>
+<body>
+
+<!-- BARRA DE IMPRESSÃO -->
+<div class="print-bar">
+  <div class="print-bar-left">
+    <div class="print-bar-logo">SETFLOW</div>
+    <div class="print-bar-sub">Plano de Negócio · 2026</div>
+  </div>
+  <button class="btn-print" onclick="window.print()">
+    <i class="fas fa-file-pdf"></i> Salvar como PDF
+  </button>
+</div>
+
+<div class="doc">
+
+  <!-- ════════════════════════════════════════
+       CAPA
+  ════════════════════════════════════════ -->
+  <div class="cover page">
+    <div class="cover-grid"></div>
+    <div class="cover-glow"></div>
+    <div class="cover-glow2"></div>
+
+    <div class="cover-badge">
+      <i class="fas fa-circle" style="font-size:6px"></i>
+      Confidencial · Plano de Negócio · 2026
+    </div>
+
+    <div class="cover-title">
+      SET<span class="accent">FLOW</span><br>
+      <span class="dim" style="font-size:42px">Software para Produtoras</span>
+    </div>
+
+    <p class="cover-sub">
+      O primeiro sistema de gestão, orçamento e controle operacional
+      feito exclusivamente para produtoras de vídeo e agências de
+      conteúdo no Brasil.
+    </p>
+
+    <div class="cover-stats">
+      <div class="cover-stat gold">
+        <div class="cover-stat-val gold">R$ 90k</div>
+        <div class="cover-stat-label">Investimento Ano 1</div>
+        <div class="cover-stat-desc">Cenário realista</div>
+      </div>
+      <div class="cover-stat blue">
+        <div class="cover-stat-val blue">54</div>
+        <div class="cover-stat-label">Clientes Break-even</div>
+        <div class="cover-stat-desc">Ponto de equilíbrio</div>
+      </div>
+      <div class="cover-stat green">
+        <div class="cover-stat-val green">8–10</div>
+        <div class="cover-stat-label">Meses até Break-even</div>
+        <div class="cover-stat-desc">Projeção conservadora</div>
+      </div>
+      <div class="cover-stat purple">
+        <div class="cover-stat-val purple">R$ 750k</div>
+        <div class="cover-stat-label">MRR Projetado</div>
+        <div class="cover-stat-desc">Mês 36</div>
+      </div>
+    </div>
+
+    <hr class="cover-divider">
+
+    <div class="cover-meta">
+      <div class="cover-meta-item"><i class="fas fa-map-marker-alt"></i> Brasil</div>
+      <div class="cover-meta-item"><i class="fas fa-calendar"></i> 2026</div>
+      <div class="cover-meta-item"><i class="fas fa-layer-group"></i> SaaS B2B</div>
+      <div class="cover-meta-item"><i class="fas fa-video"></i> Mercado Criativo</div>
+      <div class="cover-meta-item"><i class="fas fa-lock"></i> Uso Interno</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       01 — O PRODUTO
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">01 — O Produto</div>
+      <div class="section-title">O que é o <span class="accent">Setflow</span></div>
+      <p class="section-sub">
+        Um sistema operacional completo para produtoras de vídeo: orçamentos com estrutura de equipe,
+        gerador de PDF de propostas, calculadora de viabilidade financeira, controle de projetos e freelancers.
+      </p>
+    </div>
+
+    <div class="highlight">
+      <strong>Origem real:</strong> O produto nasceu sendo usado internamente por uma produtora brasileira para resolver seus próprios problemas de orçamento e gestão. Isso é o sinal mais forte de product-market fit que existe — o fundador era o cliente.
+    </div>
+
+    <div class="grid-3" style="margin-top: 24px;">
+      <div class="card card-accent">
+        <div style="font-size:28px;margin-bottom:12px">📄</div>
+        <div style="font-family:var(--font-h);font-size:18px;font-weight:700;margin-bottom:8px">Orçamento Inteligente</div>
+        <p style="font-size:11px;color:var(--text-sub);line-height:1.65">Pacotes de produção pré-configurados (vídeo, podcast, evento). Cálculo automático de equipe, dias e viabilidade financeira. PDF de proposta gerado em segundos.</p>
+      </div>
+      <div class="card card-blue">
+        <div style="font-size:28px;margin-bottom:12px">👥</div>
+        <div style="font-family:var(--font-h);font-size:18px;font-weight:700;margin-bottom:8px">Gestão de Equipe</div>
+        <p style="font-size:11px;color:var(--text-sub);line-height:1.65">Controle de freelancers por projeto. Diárias por profissional, câmera, dias de gravação. Calculadora de margem por contrato.</p>
+      </div>
+      <div class="card card-green">
+        <div style="font-size:28px;margin-bottom:12px">💰</div>
+        <div style="font-family:var(--font-h);font-size:18px;font-weight:700;margin-bottom:8px">Controle Financeiro</div>
+        <p style="font-size:11px;color:var(--text-sub);line-height:1.65">Viabilidade por projeto, margem estimada, desconto e impostos integrados. Dashboard com KPIs de faturamento e pipeline.</p>
+      </div>
+    </div>
+
+    <div class="divider-accent" style="margin-top:32px"></div>
+
+    <div style="display:flex;gap:20px;align-items:center;margin-top:28px">
+      <div style="flex:1">
+        <div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-bottom:12px">Quanto já está pronto?</div>
+        <p style="font-size:12px;color:var(--text-sub);line-height:1.7;margin-bottom:16px">
+          O produto foi construído para uso interno e já possui toda a lógica de negócio funcionando.
+          O esforço agora é de transformação — não de criação.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+              <span style="color:var(--text-sub)">Lógica de orçamento</span><span style="color:var(--green);font-weight:600">100%</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px"><div style="width:100%;background:var(--green);height:6px;border-radius:4px"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+              <span style="color:var(--text-sub)">Gerador de PDF</span><span style="color:var(--green);font-weight:600">100%</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px"><div style="width:100%;background:var(--green);height:6px;border-radius:4px"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+              <span style="color:var(--text-sub)">Pacotes de produção</span><span style="color:var(--green);font-weight:600">100%</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px"><div style="width:100%;background:var(--green);height:6px;border-radius:4px"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+              <span style="color:var(--text-sub)">Calculadora de viabilidade</span><span style="color:var(--green);font-weight:600">100%</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px"><div style="width:100%;background:var(--green);height:6px;border-radius:4px"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+              <span style="color:var(--text-sub)">Multi-tenant / SaaS</span><span style="color:var(--acc);font-weight:600">0%</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px"><div style="width:0%;background:var(--acc);height:6px;border-radius:4px"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+              <span style="color:var(--text-sub)">Autenticação pública</span><span style="color:var(--acc);font-weight:600">0%</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px"><div style="width:0%;background:var(--acc);height:6px;border-radius:4px"></div></div>
+          </div>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:center;background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:32px 40px">
+        <div style="font-family:var(--font-h);font-size:72px;font-weight:700;color:var(--acc);line-height:1">65%</div>
+        <div style="font-size:11px;color:var(--text-sub);margin-top:8px">do produto<br>já construído</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       02 — NOME E NICHO
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">02 — Marca & Nicho</div>
+      <div class="section-title">Nome e <span class="accent">Posicionamento</span></div>
+      <p class="section-sub">Identidade de marca clara, nicho específico e defensável.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:28px">
+      <div>
+        <div style="font-family:var(--font-h);font-size:15px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Opções de Nome</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="name-option winner">
+            <div class="name-badge gold">Setflow</div>
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--text);font-weight:600">Set + Workflow — Fluxo do set de gravação</div>
+              <div style="font-size:10px;color:var(--text-sub)">Curto, pronunciável em PT e EN, domínio disponível</div>
+            </div>
+            <div class="winner-tag">Escolha</div>
+          </div>
+          <div class="name-option">
+            <div class="name-badge muted">Crewly</div>
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--text-sub)">Gestão de crew criativo — opção internacional</div>
+            </div>
+          </div>
+          <div class="name-option">
+            <div class="name-badge muted">Framedesk</div>
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--text-sub)">Mesa de trabalho da produção — mais corporativo</div>
+            </div>
+          </div>
+          <div class="name-option">
+            <div class="name-badge muted">Claquete</div>
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--text-sub)">Identidade brasileira forte — mais difícil de escalar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-h);font-size:15px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Nicho de Entrada</div>
+        <div class="card card-accent" style="margin-bottom:14px">
+          <div style="font-family:var(--font-h);font-size:22px;font-weight:700;color:var(--acc);margin-bottom:10px">"Software de orçamento para produtoras de vídeo"</div>
+          <p style="font-size:11px;color:var(--text-sub);line-height:1.65">Específico o suficiente para crescer por indicação e SEO. Amplo o suficiente para ter escala.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:8px;padding:10px 14px">
+            <i class="fas fa-check-circle" style="color:var(--green)"></i>
+            <span style="font-size:11px;color:var(--text-sub)">Mercado validado com dinheiro (StudioBinder, Wrapbook)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:8px;padding:10px 14px">
+            <i class="fas fa-check-circle" style="color:var(--green)"></i>
+            <span style="font-size:11px;color:var(--text-sub)">Zero concorrentes locais com esse nível de detalhe</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:8px;padding:10px 14px">
+            <i class="fas fa-check-circle" style="color:var(--green)"></i>
+            <span style="font-size:11px;color:var(--text-sub)">Boom de conteúdo digital: +340% de produtoras desde 2020</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:8px;padding:10px 14px">
+            <i class="fas fa-check-circle" style="color:var(--green)"></i>
+            <span style="font-size:11px;color:var(--text-sub)">Churn baixo — ferramenta operacional integrada à rotina</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       03 — CLIENTES / TIERS
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">03 — Mercado</div>
+      <div class="section-title">Níveis de <span class="blue">Clientes</span></div>
+      <p class="section-sub">Quatro tiers de clientes com características, dores e disposição a pagar distintas.</p>
+    </div>
+
+    <div class="grid-2" style="gap:16px">
+
+      <div class="tier-card tier-1">
+        <div class="tier-header">
+          <div class="tier-icon blue">🎥</div>
+          <div>
+            <div class="tier-name" style="color:var(--blue)">Tier 1 — Freelancer</div>
+            <div class="tier-label">Micro Produtora</div>
+          </div>
+        </div>
+        <div class="tier-price blue">R$ 79–149<span style="font-size:13px;color:var(--text-dim)">/mês</span></div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:0">
+          <div class="tier-row"><span class="tier-row-label">Faturamento</span><span class="tier-row-val">R$ 5k–30k/mês</span></div>
+          <div class="tier-row"><span class="tier-row-label">Equipe</span><span class="tier-row-val">1–3 pessoas</span></div>
+          <div class="tier-row"><span class="tier-row-label">Dor principal</span><span class="tier-row-val">Parecer profissional</span></div>
+          <div class="tier-row"><span class="tier-row-label">Volume Brasil</span><span class="tier-row-val">~80.000 profissionais</span></div>
+          <div class="tier-row"><span class="tier-row-label">Canal</span><span class="tier-row-val">Instagram / YouTube</span></div>
+        </div>
+      </div>
+
+      <div class="tier-card tier-2">
+        <div class="tier-header">
+          <div class="tier-icon gold">🎬</div>
+          <div>
+            <div class="tier-name" style="color:var(--acc)">Tier 2 — Produtora</div>
+            <div class="tier-label">Estabelecida <span class="focus-tag">Foco Principal</span></div>
+          </div>
+        </div>
+        <div class="tier-price gold">R$ 297–697<span style="font-size:13px;color:var(--text-dim)">/mês</span></div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:0">
+          <div class="tier-row"><span class="tier-row-label">Faturamento</span><span class="tier-row-val">R$ 50k–300k/mês</span></div>
+          <div class="tier-row"><span class="tier-row-label">Equipe</span><span class="tier-row-val">5–20 pessoas</span></div>
+          <div class="tier-row"><span class="tier-row-label">Dor principal</span><span class="tier-row-val">Controlar margem por projeto</span></div>
+          <div class="tier-row"><span class="tier-row-label">Volume Brasil</span><span class="tier-row-val">~15.000 empresas</span></div>
+          <div class="tier-row"><span class="tier-row-label">Canal</span><span class="tier-row-val">LinkedIn / Indicação</span></div>
+        </div>
+      </div>
+
+      <div class="tier-card tier-3">
+        <div class="tier-header">
+          <div class="tier-icon purple">📱</div>
+          <div>
+            <div class="tier-name" style="color:var(--purple)">Tier 3 — Agência</div>
+            <div class="tier-label">Agência de Conteúdo / Marketing</div>
+          </div>
+        </div>
+        <div class="tier-price purple">R$ 997–2.500<span style="font-size:13px;color:var(--text-dim)">/mês</span></div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:0">
+          <div class="tier-row"><span class="tier-row-label">Faturamento</span><span class="tier-row-val">R$ 200k–2M/mês</span></div>
+          <div class="tier-row"><span class="tier-row-label">Equipe</span><span class="tier-row-val">15–60 pessoas</span></div>
+          <div class="tier-row"><span class="tier-row-label">Dor principal</span><span class="tier-row-val">Escalar sem perder controle</span></div>
+          <div class="tier-row"><span class="tier-row-label">Volume Brasil</span><span class="tier-row-val">~3.000 empresas</span></div>
+          <div class="tier-row"><span class="tier-row-label">Canal</span><span class="tier-row-val">Outbound / Parceiros</span></div>
+        </div>
+      </div>
+
+      <div class="tier-card tier-4">
+        <div class="tier-header">
+          <div class="tier-icon green">🏢</div>
+          <div>
+            <div class="tier-name" style="color:var(--green)">Tier 4 — Enterprise</div>
+            <div class="tier-label">Estúdios / Broadcasters</div>
+          </div>
+        </div>
+        <div class="tier-price green">R$ 5k–15k<span style="font-size:13px;color:var(--text-dim)">/mês</span></div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:0">
+          <div class="tier-row"><span class="tier-row-label">Faturamento</span><span class="tier-row-val">R$ 2M+/mês</span></div>
+          <div class="tier-row"><span class="tier-row-label">Equipe</span><span class="tier-row-val">60+ pessoas</span></div>
+          <div class="tier-row"><span class="tier-row-label">Dor principal</span><span class="tier-row-val">Integração e compliance</span></div>
+          <div class="tier-row"><span class="tier-row-label">Horizonte</span><span class="tier-row-val">Futuro (ano 2–3)</span></div>
+          <div class="tier-row"><span class="tier-row-label">Canal</span><span class="tier-row-val">Venda consultiva direta</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       04 — CONCORRENTES
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">04 — Mercado</div>
+      <div class="section-title">Mapa de <span class="blue">Concorrentes</span></div>
+      <p class="section-sub">Quem já existe, onde crescem e onde deixam o Brasil desatendido.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div style="font-family:var(--font-h);font-size:14px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px">🌎 Internacionais — Validaram o Mercado</div>
+        <div class="card" style="padding:8px 20px">
+          <div class="competitor-row">
+            <div class="comp-icon">🎬</div>
+            <div>
+              <div class="comp-name">StudioBinder</div>
+              <div class="comp-desc">EUA · O mais próximo do Setflow. Roteiro, orçamento, call sheet, equipe. Valuation US$ 50–100M. Não tem presença relevante no Brasil.</div>
+              <div><span class="comp-tag tag-threat">Ameaça Futura</span><span class="comp-tag tag-gap" style="margin-left:6px">Gap: Sem BR</span></div>
+            </div>
+          </div>
+          <div class="competitor-row">
+            <div class="comp-icon">💼</div>
+            <div>
+              <div class="comp-name">Wrapbook</div>
+              <div class="comp-desc">EUA · Payroll e gestão de equipe para produções. Levantou US$ 100M+. Focado em RH, não em orçamento completo.</div>
+              <div><span class="comp-tag tag-indirect">Indireto</span></div>
+            </div>
+          </div>
+          <div class="competitor-row">
+            <div class="comp-icon">💛</div>
+            <div>
+              <div class="comp-name">HoneyBook</div>
+              <div class="comp-desc">EUA · Unicórnio US$ 2,4bi. Criativos solo (fotógrafo, designer). Não atende produtoras com equipe — essa é a lacuna.</div>
+              <div><span class="comp-tag tag-indirect">Indireto</span><span class="comp-tag tag-gap" style="margin-left:6px">Gap: Sem equipe</span></div>
+            </div>
+          </div>
+          <div class="competitor-row">
+            <div class="comp-icon">🇩🇪</div>
+            <div>
+              <div class="comp-name">Yamdu</div>
+              <div class="comp-desc">Alemanha · Gestão para produtoras de publicidade europeias. Zero presença no Brasil.</div>
+              <div><span class="comp-tag tag-gap">Sem presença BR</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-h);font-size:14px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px">🇧🇷 Brasil — Espaço em Aberto</div>
+        <div class="card" style="padding:8px 20px;margin-bottom:16px">
+          <div class="competitor-row">
+            <div class="comp-icon">🧾</div>
+            <div>
+              <div class="comp-name">Omie / Bling</div>
+              <div class="comp-desc">ERP genérico, focado em nota fiscal e estoque. Não tem lógica de equipe, câmera ou proposta criativa.</div>
+              <div><span class="comp-tag tag-indirect">Não é concorrente</span></div>
+            </div>
+          </div>
+          <div class="competitor-row">
+            <div class="comp-icon">📋</div>
+            <div>
+              <div class="comp-name">Notion / Planilha</div>
+              <div class="comp-desc">O que 90% das produtoras brasileiras usa hoje. Templates manuais, sem automação, sem PDF profissional.</div>
+              <div><span class="comp-tag tag-gap">Maior Oportunidade</span></div>
+            </div>
+          </div>
+          <div class="competitor-row">
+            <div class="comp-icon">📊</div>
+            <div>
+              <div class="comp-name">Monday / Asana</div>
+              <div class="comp-desc">Gestão genérica, caro, sem orçamento com estrutura de equipe criativa integrada.</div>
+              <div><span class="comp-tag tag-indirect">Indireto</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="highlight-green">
+          <strong>Conclusão:</strong> Não existe nenhuma empresa brasileira que faça especificamente gestão e orçamento para produtoras de vídeo com esse nível de detalhe. <strong>A janela está aberta agora.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       05 — EQUIPE
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">05 — Operação</div>
+      <div class="section-title">Equipe <span class="green">Mínima</span></div>
+      <p class="section-sub">Três posições essenciais para tirar o produto do papel. Não contrate antes de validar.</p>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:28px">
+
+      <div class="team-card">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--acc)"></div>
+        <div class="team-avatar" style="background:var(--acc-dim)">🎯</div>
+        <div class="team-role">Sócio 1</div>
+        <div class="team-name">Produto & <span style="color:var(--acc)">Vendas</span></div>
+        <ul class="team-resp" style="list-style:none;padding:0">
+          <li>Conhece o produto por dentro</li>
+          <li>Conhece o cliente (produtoras)</li>
+          <li>Faz demos e fecha contratos</li>
+          <li>Define roadmap do produto</li>
+        </ul>
+        <div class="team-salary" style="color:var(--acc)">R$ 3–5k <span>/mês pró-labore</span></div>
+      </div>
+
+      <div class="team-card">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--blue)"></div>
+        <div class="team-avatar" style="background:var(--blue-dim)">⚙️</div>
+        <div class="team-role">Sócio 2</div>
+        <div class="team-name">Tech & <span style="color:var(--blue)">Produto</span></div>
+        <ul class="team-resp" style="list-style:none;padding:0">
+          <li>Constrói o multi-tenant</li>
+          <li>Autenticação e infraestrutura</li>
+          <li>Mantém e evolui o produto</li>
+          <li>3–5 anos experiência em SaaS</li>
+        </ul>
+        <div class="team-salary" style="color:var(--blue)">R$ 6–9k <span>/mês ou equity</span></div>
+      </div>
+
+      <div class="team-card">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--green)"></div>
+        <div class="team-avatar" style="background:var(--green-dim)">🎧</div>
+        <div class="team-role">Contratado — Mês 4+</div>
+        <div class="team-name">Customer <span style="color:var(--green)">Success</span></div>
+        <ul class="team-resp" style="list-style:none;padding:0">
+          <li>Suporte ao cliente</li>
+          <li>Onboarding de novos usuários</li>
+          <li>Redução de churn</li>
+          <li>Entra com 30+ clientes</li>
+        </ul>
+        <div class="team-salary" style="color:var(--green)">R$ 2,5–3,5k <span>/mês CLT</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-blue">
+      <strong>Distribuição de equity sugerida:</strong> Sócio produto (sweat equity + capital menor) → 40–50%. Sócio tech (capital + execução) → 40–50%. Pool de funcionários futuro → 10%. Não dilua antes de 54 clientes pagantes.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       06 — INVESTIMENTO
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">06 — Financeiro</div>
+      <div class="section-title">Investimento <span class="accent">Necessário</span></div>
+      <p class="section-sub">Breakdown completo do que precisa ser investido para tirar o produto do papel em 12 meses.</p>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:28px">
+      <div class="be-card" style="background:linear-gradient(135deg,rgba(245,158,11,.06),var(--bg3));border-color:rgba(245,158,11,.2)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">Conservador</div>
+        <div style="font-family:var(--font-h);font-size:44px;font-weight:700;color:var(--acc);line-height:1">R$ 67k</div>
+        <div style="font-size:10px;color:var(--text-sub);margin-top:6px">Dev freelancer<br>Marketing orgânico</div>
+      </div>
+      <div class="be-card" style="background:linear-gradient(135deg,rgba(59,130,246,.08),var(--bg3));border-color:rgba(59,130,246,.25);border-width:2px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--blue);margin-bottom:8px">⭐ Realista</div>
+        <div style="font-family:var(--font-h);font-size:44px;font-weight:700;color:var(--blue);line-height:1">R$ 90k</div>
+        <div style="font-size:10px;color:var(--text-sub);margin-top:6px">Sócio dev<br>Algum marketing pago</div>
+      </div>
+      <div class="be-card" style="background:linear-gradient(135deg,rgba(139,92,246,.06),var(--bg3));border-color:rgba(139,92,246,.2)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">Agressivo</div>
+        <div style="font-family:var(--font-h);font-size:44px;font-weight:700;color:var(--purple);line-height:1">R$ 120k</div>
+        <div style="font-size:10px;color:var(--text-sub);margin-top:6px">Equipe maior<br>Marketing forte</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div style="font-family:var(--font-h);font-size:16px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Onde o dinheiro vai</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="invest-bar">
+            <div class="invest-label">Desenvolvimento MVP (multi-tenant + auth)</div>
+            <div class="invest-range" style="color:var(--blue)">R$ 17–29k</div>
+          </div>
+          <div class="invest-bar">
+            <div class="invest-label">Pró-labore 2 sócios (6 meses)</div>
+            <div class="invest-range" style="color:var(--acc)">R$ 18–28k</div>
+          </div>
+          <div class="invest-bar">
+            <div class="invest-label">Design / Landing Page</div>
+            <div class="invest-range" style="color:var(--purple)">R$ 5–10k</div>
+          </div>
+          <div class="invest-bar">
+            <div class="invest-label">Marketing e aquisição (8 meses)</div>
+            <div class="invest-range" style="color:var(--green)">R$ 10–18k</div>
+          </div>
+          <div class="invest-bar">
+            <div class="invest-label">Infra / Ferramentas SaaS (12 meses)</div>
+            <div class="invest-range" style="color:var(--acc)">R$ 9–13k</div>
+          </div>
+          <div class="invest-bar">
+            <div class="invest-label">Jurídico (empresa + contratos)</div>
+            <div class="invest-range" style="color:var(--text-sub)">R$ 3,5–6k</div>
+          </div>
+          <div class="invest-bar">
+            <div class="invest-label">Buffer / Imprevistos</div>
+            <div class="invest-range" style="color:var(--text-dim)">R$ 4–8k</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-h);font-size:16px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Fontes de Recurso</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="card" style="padding:14px 18px;display:flex;gap:12px;align-items:flex-start">
+            <div style="font-size:20px">💰</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:15px;font-weight:700;margin-bottom:3px">Capital dos Sócios</div>
+              <div style="font-size:10px;color:var(--text-sub)">Mais controle, sem diluição. Dividir 50/50 ou sweat equity para o sócio produto.</div>
+            </div>
+          </div>
+          <div class="card" style="padding:14px 18px;display:flex;gap:12px;align-items:flex-start;border-color:rgba(245,158,11,.2)">
+            <div style="font-size:20px">🎬</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:15px;font-weight:700;margin-bottom:3px;color:var(--acc)">Receita da Produtora ⭐</div>
+              <div style="font-size:10px;color:var(--text-sub)">3 projetos/mês (~R$ 24k) cobrem os custos enquanto o SaaS cresce. Não precisa escolher um ou outro.</div>
+            </div>
+          </div>
+          <div class="card" style="padding:14px 18px;display:flex;gap:12px;align-items:flex-start">
+            <div style="font-size:20px">🚀</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:15px;font-weight:700;margin-bottom:3px">Aceleradoras BR</div>
+              <div style="font-size:10px;color:var(--text-sub)">ACE, Darwin, Distrito, Seed Lab. Ticket R$ 100–500k por 5–10% equity. Entrar após 54 clientes.</div>
+            </div>
+          </div>
+          <div class="card" style="padding:14px 18px;display:flex;gap:12px;align-items:flex-start">
+            <div style="font-size:20px">👼</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:15px;font-weight:700;margin-bottom:3px">Investidor Anjo</div>
+              <div style="font-size:10px;color:var(--text-sub)">Alguém que conhece o mercado criativo. Ticket menor, mentoria valiosa no setor.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       07 — FINANCEIRO / BREAK-EVEN
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">07 — Financeiro</div>
+      <div class="section-title">Break-even & <span class="green">Projeção</span></div>
+      <p class="section-sub">Quantos clientes, qual ticket e como o MRR cresce ao longo dos 36 meses.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:28px">
+
+      <div style="text-align:center">
+        <div class="be-card">
+          <div style="position:relative">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Clientes para Break-even</div>
+            <div class="be-number">54</div>
+            <div class="be-label">clientes pagando R$ 350/mês médio</div>
+            <div style="margin-top:16px;font-family:var(--font-h);font-size:24px;font-weight:700;color:var(--green)">= R$ 18.900 MRR</div>
+            <div style="font-size:10px;color:var(--text-sub);margin-top:4px">cobre todos os custos operacionais</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-h);font-size:16px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Por plano de preço</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Plano</th>
+              <th>Preço/mês</th>
+              <th>Clientes p/ Break-even</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="pill pill-blue">Starter</span></td>
+              <td style="color:var(--blue);font-family:var(--font-h);font-weight:700">R$ 197</td>
+              <td style="font-weight:600">97 clientes</td>
+            </tr>
+            <tr>
+              <td><span class="pill pill-gold">Pro</span></td>
+              <td style="color:var(--acc);font-family:var(--font-h);font-weight:700">R$ 397</td>
+              <td style="font-weight:600">48 clientes</td>
+            </tr>
+            <tr>
+              <td><span class="pill pill-green">Studio</span></td>
+              <td style="color:var(--green);font-family:var(--font-h);font-weight:700">R$ 697</td>
+              <td style="font-weight:600">28 clientes</td>
+            </tr>
+            <tr style="background:rgba(245,158,11,.04)">
+              <td><strong>Mix realista</strong></td>
+              <td style="color:var(--acc);font-family:var(--font-h);font-weight:700">R$ 350 média</td>
+              <td style="color:var(--acc);font-weight:700;font-family:var(--font-h);font-size:15px">54 clientes</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:20px">
+          <div style="font-family:var(--font-h);font-size:14px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Em projetos de produção</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:7px;padding:8px 12px;font-size:11px">
+              <span style="color:var(--text-sub)">OWNAGE V3 (R$ 11k)</span>
+              <span style="color:var(--green);font-weight:700">2 projetos/mês</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:7px;padding:8px 12px;font-size:11px">
+              <span style="color:var(--text-sub)">OWNAGE V2 (R$ 6k)</span>
+              <span style="color:var(--acc);font-weight:700">3–4 projetos/mês</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:7px;padding:8px 12px;font-size:11px">
+              <span style="color:var(--text-sub)">Mix médio (R$ 8k)</span>
+              <span style="color:var(--blue);font-weight:700">3 projetos/mês</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO MRR -->
+    <div class="card">
+      <div style="font-family:var(--font-h);font-size:16px;font-weight:600;margin-bottom:4px">Projeção MRR — 36 meses</div>
+      <div style="font-size:10px;color:var(--text-sub);margin-bottom:0">Cenário realista de crescimento</div>
+
+      <div class="mrr-chart">
+        <!-- Mês 1-3 -->
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$3k</div>
+          <div class="mrr-bar" style="height:3%;background:linear-gradient(to top,var(--acc),var(--acc2))"></div>
+          <div class="mrr-period">Mês 3</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$5k</div>
+          <div class="mrr-bar" style="height:5%;background:linear-gradient(to top,var(--acc),var(--acc2))"></div>
+          <div class="mrr-period">Mês 4</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$8k</div>
+          <div class="mrr-bar" style="height:8%;background:linear-gradient(to top,var(--acc),var(--acc2))"></div>
+          <div class="mrr-period">Mês 5</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$11k</div>
+          <div class="mrr-bar" style="height:11%;background:linear-gradient(to top,var(--acc),var(--acc2))"></div>
+          <div class="mrr-period">Mês 6</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$15k</div>
+          <div class="mrr-bar" style="height:15%;background:linear-gradient(to top,var(--blue),#60a5fa)"></div>
+          <div class="mrr-period">Mês 7</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val" style="color:var(--green)">R$19k ⭐</div>
+          <div class="mrr-bar" style="height:19%;background:linear-gradient(to top,var(--green),#34d399)"></div>
+          <div class="mrr-period" style="font-weight:700;color:var(--green)">Break-even</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$25k</div>
+          <div class="mrr-bar" style="height:25%;background:linear-gradient(to top,var(--green),#34d399)"></div>
+          <div class="mrr-period">Mês 10</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$35k</div>
+          <div class="mrr-bar" style="height:35%;background:linear-gradient(to top,var(--green),#34d399)"></div>
+          <div class="mrr-period">Mês 12</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$60k</div>
+          <div class="mrr-bar" style="height:55%;background:linear-gradient(to top,var(--purple),#a78bfa)"></div>
+          <div class="mrr-period">Mês 18</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$120k</div>
+          <div class="mrr-bar" style="height:80%;background:linear-gradient(to top,var(--purple),#a78bfa)"></div>
+          <div class="mrr-period">Mês 24</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val">R$270k</div>
+          <div class="mrr-bar" style="height:90%;background:linear-gradient(to top,#ec4899,#f472b6)"></div>
+          <div class="mrr-period">Mês 30</div>
+        </div>
+        <div class="mrr-bar-wrap">
+          <div class="mrr-val" style="color:var(--acc)">R$750k</div>
+          <div class="mrr-bar" style="height:100%;background:linear-gradient(to top,var(--acc),#fde68a)"></div>
+          <div class="mrr-period" style="color:var(--acc);font-weight:700">Mês 36</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       08 — ROTA / ROADMAP
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">08 — Execução</div>
+      <div class="section-title">A <span class="accent">Rota</span> Completa</div>
+      <p class="section-sub">Sequência exata de execução. Cada fase tem objetivo claro e critério de passagem.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="timeline">
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-gold">0</div>
+          <div class="timeline-phase">Fase 0 · Semana 1–8 · Custo: R$ 1.000</div>
+          <div class="timeline-title" style="color:var(--acc)">Validação — Antes de Gastar</div>
+          <div class="timeline-actions">
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--acc)"></i><span>Identificar 20 produtoras por indicação</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--acc)"></i><span>Fazer demos ao vivo do produto atual</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--acc)"></i><span>Cobrar R$ 200–300/mês manualmente</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--acc)"></i><span><strong>Meta: 3 pagantes confirmados</strong></span></div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-blue">1</div>
+          <div class="timeline-phase">Fase 1 · Mês 2–5 · Custo: R$ 30–52k</div>
+          <div class="timeline-title" style="color:var(--blue)">Construção do MVP SaaS</div>
+          <div class="timeline-actions">
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--blue)"></i><span>Multi-tenant + isolamento de dados</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--blue)"></i><span>Autenticação pública (Supabase/Clerk)</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--blue)"></i><span>Onboarding guiado + white-label PDF</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--blue)"></i><span>Pagamento recorrente (Stripe/Pagar.me)</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--blue)"></i><span>Landing page profissional</span></div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-green">2</div>
+          <div class="timeline-phase">Fase 2 · Mês 5–12 · Custo: R$ 36–60k</div>
+          <div class="timeline-title" style="color:var(--green)">Go-to-Market</div>
+          <div class="timeline-actions">
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--green)"></i><span>Conteúdo: YouTube sobre gestão de produtoras</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--green)"></i><span>LinkedIn para diretores de produção</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--green)"></i><span>Parceria com cursos audiovisuais</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--green)"></i><span>3–5 clientes âncora (famosos no setor)</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--green)"></i><span>SET Expo / eventos do setor</span></div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-purple">3</div>
+          <div class="timeline-phase">Fase 3 · Mês 12–36</div>
+          <div class="timeline-title" style="color:var(--purple)">Escala</div>
+          <div class="timeline-actions">
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--purple)"></i><span>White-label para agências maiores</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--purple)"></i><span>Contratos digitais integrados</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--purple)"></i><span>Emissão de NF-e dentro da plataforma</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--purple)"></i><span>App mobile para uso no set</span></div>
+            <div class="timeline-action"><i class="fas fa-arrow-right" style="color:var(--purple)"></i><span>Rodada de aceleração / investimento</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-h);font-size:16px;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Semana a Semana — Fase 0</div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--acc)">
+            <div style="font-family:var(--font-h);font-size:13px;font-weight:700;color:var(--acc);margin-bottom:4px">Semana 1–2</div>
+            <div style="font-size:11px;color:var(--text-sub)">Listar 20 produtoras conhecidas ou por indicação. Marcar demos ao vivo. Não mostrar preço antes da demo.</div>
+          </div>
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--blue)">
+            <div style="font-family:var(--font-h);font-size:13px;font-weight:700;color:var(--blue);margin-bottom:4px">Semana 3–4</div>
+            <div style="font-size:11px;color:var(--text-sub)">Fechar 3 clientes piloto a R$ 200/mês. Coletar feedback intensivo. Descobrir o que falta e o que atrapalha.</div>
+          </div>
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--purple)">
+            <div style="font-family:var(--font-h);font-size:13px;font-weight:700;color:var(--purple);margin-bottom:4px">Mês 2–3</div>
+            <div style="font-size:11px;color:var(--text-sub)">Com R$ 600/mês validados, contratar dev para multi-tenant. Não precisa ser senior — precisa ser confiável e entender SaaS.</div>
+          </div>
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--green)">
+            <div style="font-family:var(--font-h);font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">Mês 4–5</div>
+            <div style="font-size:11px;color:var(--text-sub)">Beta fechado para 20 empresas. Subir para R$ 297/mês na virada para público. Primeiro case documentado.</div>
+          </div>
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--acc)">
+            <div style="font-family:var(--font-h);font-size:13px;font-weight:700;color:var(--acc);margin-bottom:4px">Mês 6</div>
+            <div style="font-size:11px;color:var(--text-sub)">Product Hunt BR, posts no LinkedIn, primeiro case de cliente público. Iniciar parceria com cursos do setor.</div>
+          </div>
+        </div>
+
+        <div class="highlight">
+          <strong>Regra de ouro:</strong> Não construa mais produto antes de 3 pessoas pagarem. <strong>Três pagantes ensinam mais do que 6 meses de desenvolvimento solo.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       09 — DESAFIOS
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">09 — Riscos</div>
+      <div class="section-title">Principais <span class="accent">Desafios</span></div>
+      <p class="section-sub">Honestidade total sobre o que pode travar o crescimento — e como mitigar.</p>
+    </div>
+
+    <div class="card">
+      <div class="challenge-item">
+        <div class="challenge-level">
+          <div class="challenge-dot c-alto"></div>
+          <div class="challenge-level-text t-alto">ALTO</div>
+        </div>
+        <div>
+          <div class="challenge-title">Arquitetura Multi-tenant</div>
+          <div class="challenge-desc">Hoje o sistema é single-tenant (uma empresa). Para vender como SaaS, cada tabela precisa de isolamento por cliente. Fazer errado significa vazar dados de um cliente para outro — isso mata um SaaS na hora. <strong style="color:var(--acc)">Mitigação: contratar dev experiente em SaaS desde o início, usar Supabase com Row Level Security.</strong></div>
+        </div>
+      </div>
+      <div class="challenge-item">
+        <div class="challenge-level">
+          <div class="challenge-dot c-alto"></div>
+          <div class="challenge-level-text t-alto">ALTO</div>
+        </div>
+        <div>
+          <div class="challenge-title">Vendas — O Maior Desafio Real</div>
+          <div class="challenge-desc">Construir o produto é a parte fácil. O mercado criativo brasileiro decide por indicação, não por anúncio. Desconfia de software novo. Precisa ver alguém do setor usando antes de adotar. <strong style="color:var(--acc)">Mitigação: 3–5 clientes âncora famosos no setor que usem publicamente valem mais que R$ 50k em anúncio.</strong></div>
+        </div>
+      </div>
+      <div class="challenge-item">
+        <div class="challenge-level">
+          <div class="challenge-dot c-medio"></div>
+          <div class="challenge-level-text t-medio">MÉDIO</div>
+        </div>
+        <div>
+          <div class="challenge-title">Infraestrutura Própria</div>
+          <div class="challenge-desc">Hoje tudo roda no Genspark. Para escalar é necessário servidor próprio, banco de dados gerenciado, CDN, backup automático e monitoramento. Custo: R$ 500–2.000/mês. <strong style="color:var(--acc)">Mitigação: Railway ou Supabase resolem 80% disso a baixo custo inicial.</strong></div>
+        </div>
+      </div>
+      <div class="challenge-item">
+        <div class="challenge-level">
+          <div class="challenge-dot c-medio"></div>
+          <div class="challenge-level-text t-medio">MÉDIO</div>
+        </div>
+        <div>
+          <div class="challenge-title">Suporte ao Cliente</div>
+          <div class="challenge-desc">Hoje o fundador resolve tudo. Com 50+ clientes, isso consome 30–40% do tempo. Produtora do Recife não consegue gerar PDF às 23h — quem atende? <strong style="color:var(--acc)">Mitigação: documentação robusta + Crisp para chat + contratar CS part-time ao atingir 30 clientes.</strong></div>
+        </div>
+      </div>
+      <div class="challenge-item">
+        <div class="challenge-level">
+          <div class="challenge-dot c-baixo"></div>
+          <div class="challenge-level-text t-baixo">BAIXO</div>
+        </div>
+        <div>
+          <div class="challenge-title">Concorrência Direta no Brasil</div>
+          <div class="challenge-desc">Não existe hoje nenhum player brasileiro com esse produto. O risco real é um concorrente aparecer após você validar o mercado. <strong style="color:var(--green)">Mitigação: velocidade de execução e profundidade de nicho são as maiores defesas. Churn baixo em ferramenta operacional integrada.</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       10 — VEREDICTO FINAL
+  ════════════════════════════════════════ -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-number">10 — Conclusão</div>
+      <div class="section-title">O <span class="green">Veredicto</span></div>
+      <p class="section-sub">Avaliação honesta de cada dimensão do negócio.</p>
+    </div>
+
+    <div class="verdict-grid" style="margin-bottom:28px">
+      <div class="verdict-item">
+        <div class="verdict-icon">🎯</div>
+        <div class="verdict-label">Problema Real</div>
+        <div class="verdict-val verdict-ok">✅ Confirmado</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">💰</div>
+        <div class="verdict-label">Mercado com Dinheiro</div>
+        <div class="verdict-val verdict-ok">✅ Confirmado</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">🏗️</div>
+        <div class="verdict-label">Produto Já Existe</div>
+        <div class="verdict-val verdict-ok">✅ 65% pronto</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">🇧🇷</div>
+        <div class="verdict-label">Concorrência no Brasil</div>
+        <div class="verdict-val verdict-ok">✅ Praticamente zero</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">🧠</div>
+        <div class="verdict-label">Conhece o Cliente</div>
+        <div class="verdict-val verdict-ok">✅ Você É o cliente</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">💵</div>
+        <div class="verdict-label">Capital Necessário</div>
+        <div class="verdict-val verdict-ok">✅ Baixo para validar</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">⚙️</div>
+        <div class="verdict-label">Dificuldade Técnica</div>
+        <div class="verdict-val verdict-warn">⚠️ Alta, superável</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">📢</div>
+        <div class="verdict-label">Dificuldade de Vendas</div>
+        <div class="verdict-val verdict-warn">⚠️ Maior desafio</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-icon">⏰</div>
+        <div class="verdict-label">Timing de Mercado</div>
+        <div class="verdict-val verdict-ok">✅ Agora</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:28px">
+      <div class="key-metric">
+        <div class="key-metric-val" style="color:var(--acc)">R$ 90k</div>
+        <div><div class="key-metric-title">Investimento Inicial</div><div class="key-metric-text">Cenário realista para 12 meses de operação</div></div>
+      </div>
+      <div class="key-metric">
+        <div class="key-metric-val" style="color:var(--green)">Mês 9</div>
+        <div><div class="key-metric-title">Break-even</div><div class="key-metric-text">Com 54 clientes pagando R$ 350/mês em média</div></div>
+      </div>
+      <div class="key-metric">
+        <div class="key-metric-val" style="color:var(--purple)">R$ 750k</div>
+        <div><div class="key-metric-title">MRR Mês 36</div><div class="key-metric-text">1.500 clientes, ticket médio R$ 500/mês</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-green" style="font-size:14px;padding:20px 24px">
+      <strong>A janela está aberta agora.</strong> O StudioBinder vai eventualmente fazer campanha em português ou um concorrente local vai aparecer. A vantagem de ser primeiro no Brasil é real — e finita. O maior risco não é técnico nem financeiro. <strong>É esperar o produto estar perfeito antes de começar a vender.</strong>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       CLOSING
+  ════════════════════════════════════════ -->
+  <div class="closing page">
+    <div class="closing-glow"></div>
+
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:32px;position:relative;flex-wrap:wrap">
+      <span class="pill pill-gold">SaaS B2B</span>
+      <span class="pill pill-blue">Produtoras de Vídeo</span>
+      <span class="pill pill-green">Brasil</span>
+      <span class="pill pill-gold">2026</span>
+    </div>
+
+    <div class="closing-title" style="position:relative">
+      O produto existe.<br>
+      <span style="color:var(--acc)">O mercado espera.</span>
+    </div>
+
+    <p class="closing-sub">
+      Você já construiu o mais difícil — a lógica de negócio. O que falta agora é distribuição, infraestrutura e coragem de colocar o produto na frente dos primeiros clientes pagantes.
+    </p>
+
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px">
+      <div style="font-family:var(--font-h);font-size:52px;font-weight:700;color:var(--acc);letter-spacing:.08em">SETFLOW</div>
+      <div style="font-size:12px;color:var(--text-dim);letter-spacing:.2em;text-transform:uppercase">Software para Produtoras · Brasil · 2026</div>
+    </div>
+
+    <hr class="divider-accent" style="margin-top:48px">
+
+    <div style="display:flex;justify-content:center;gap:40px;margin-top:24px;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div style="font-family:var(--font-h);font-size:22px;font-weight:700;color:var(--acc)">R$ 90k</div>
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em">Investimento</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:var(--font-h);font-size:22px;font-weight:700;color:var(--blue)">54</div>
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em">Break-even</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:var(--font-h);font-size:22px;font-weight:700;color:var(--green)">Mês 9</div>
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em">Equilíbrio</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:var(--font-h);font-size:22px;font-weight:700;color:var(--purple)">R$ 750k</div>
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em">MRR Mês 36</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /doc -->
+
+</body>
+</html>

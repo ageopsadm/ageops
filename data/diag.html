@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<pre id="r">Loading...</pre>
+<script>
+async function run(){
+  var files=['2021','2022','2023','2024','2025','2026'];
+  var log=[];
+
+  for(var fi=0;fi<files.length;fi++){
+    var yr=files[fi];
+    try{
+      var resp=await fetch(yr+'.xlsx');
+      var buf=await resp.arrayBuffer();
+      var wb=XLSX.read(buf,{type:'array',raw:false,cellDates:true});
+      var sn=wb.SheetNames[0];
+      var ws=wb.Sheets[sn];
+      
+      var rowsS=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      var rowsN=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      
+      // Find header row
+      var hr=0;
+      for(var i=0;i<Math.min(10,rowsS.length);i++){
+        var rowTxt=(rowsS[i]||[]).join(' ').toLowerCase();
+        if(rowTxt.indexOf('cliente')>=0){hr=i;break;}
+      }
+      
+      var headers=(rowsS[hr]||[]).map(function(h){return (h||'').toString().trim();});
+      log.push('=== '+yr+' (sheet:'+sn+', headerRow:'+hr+') ===');
+      log.push('COLS: '+headers.map(function(h,i){return '['+i+']"'+h+'"';}).join(', '));
+      
+      // Show ALL columns of first 5 data rows
+      for(var si=hr+1;si<=Math.min(hr+5,rowsS.length-1);si++){
+        var rs=rowsS[si]||[];
+        var rn=rowsN[si]||[];
+        // Check if row is empty
+        var hasData=rs.some(function(c){return c&&c.toString().trim()!=='';});
+        if(!hasData) continue;
+        log.push('--- Row '+si+' ---');
+        for(var ci=0;ci<Math.max(rs.length,rn.length);ci++){
+          var sv=rs[ci]!==undefined?rs[ci].toString():'';
+          var nv=rn[ci];
+          if(sv!==''||nv!==null){
+            log.push('  ['+ci+'] "'+headers[ci]+'" => STR:"'+sv+'" | NUM:'+(nv===null?'null':JSON.stringify(nv)));
+          }
+        }
+      }
+      log.push('');
+      
+    }catch(e){
+      log.push('ERRO '+yr+': '+e.message);
+    }
+  }
+  
+  document.getElementById('r').textContent=log.join('\n');
+  console.log('DIAG:'+log.join('||'));
+}
+run();
+</script>
+</body>
+</html>

@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="theme-red-black">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>AGE OPS — OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/os.css">
+</head>
+<body>
+
+<div class="scanlines"></div>
+<canvas id="particles-canvas"></canvas>
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-bg-text">AGE OPS</div>
+    <div class="login-box">
+        <div class="login-logo">
+            <i class="fas fa-crosshairs login-logo-icon"></i>
+            <div>
+                <div class="login-title">AGE OPS</div>
+                <div class="login-subtitle">OPERATING SYSTEM v3.0</div>
+            </div>
+        </div>
+        <form class="login-form" onsubmit="event.preventDefault(); doLogin()">
+            <div class="input-group">
+                <label class="input-label"><i class="fas fa-user"></i> USUÁRIO</label>
+                <input type="text" id="loginUser" class="hud-input" placeholder="seu_usuario" autocomplete="username">
+            </div>
+            <div class="input-group">
+                <label class="input-label"><i class="fas fa-lock"></i> SENHA</label>
+                <input type="password" id="loginPass" class="hud-input" placeholder="••••••••" autocomplete="current-password">
+            </div>
+            <div class="login-error" id="loginError"></div>
+            <button type="submit" class="btn-primary" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i> ACESSAR SISTEMA
+            </button>
+        </form>
+        <div class="login-hint">
+            <span>Admin: <b>gustavowng</b> · <b>vraulin</b> &nbsp;|&nbsp; Equipe: <b>paulin</b> · <b>ken</b> · <b>vic</b></span>
+        </div>
+    </div>
+</div>
+
+<!-- ========== MAIN OS ========== -->
+<div id="osMain" class="os-main" style="display:none">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-logo">
+                <i class="fas fa-crosshairs"></i>
+                <span>AGE OPS</span>
+            </div>
+            <!-- User card -->
+            <div class="sidebar-user" id="sidebarUser">
+                <div class="sidebar-avatar" id="sidebarAvatar"></div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarUserName">—</div>
+                    <div class="sidebar-user-role" id="sidebarUserRole">—</div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">OPERAÇÕES</div>
+            <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+                <i class="fas fa-chart-line"></i><span>Dashboard</span>
+            </a>
+            <a class="nav-item" data-page="projects" onclick="navigate('projects')">
+                <i class="fas fa-folder-open"></i><span>Projetos</span>
+            </a>
+            <a class="nav-item" data-page="fechamento" onclick="navigate('fechamento')">
+                <i class="fas fa-calculator"></i><span>Fechamento</span>
+            </a>
+            <a class="nav-item" data-page="cronograma" onclick="navigate('cronograma')">
+                <i class="fas fa-calendar-week"></i><span>Cronograma</span>
+            </a>
+            <a class="nav-item" data-page="historico" onclick="navigate('historico')">
+                <i class="fas fa-archive"></i><span>Histórico</span>
+            </a>
+            <a class="nav-item" data-page="clientes" onclick="navigate('clientes')">
+                <i class="fas fa-address-book"></i><span>Clientes</span>
+            </a>
+            <a class="nav-item" data-page="gestao" onclick="navigate('gestao')">
+                <i class="fas fa-project-diagram"></i><span>Gestão de Projetos</span>
+            </a>
+
+            <div class="nav-section-label">EQUIPE</div>
+            <a class="nav-item" data-page="colaboradores" onclick="navigate('colaboradores')">
+                <i class="fas fa-id-card"></i><span>Colaboradores</span>
+            </a>
+            <a class="nav-item" data-page="team-calendar" onclick="navigate('team-calendar')">
+                <i class="fas fa-calendar-alt"></i><span>Calendário da Equipe</span>
+            </a>
+
+            <div class="nav-section-label">PESSOAL</div>
+            <a class="nav-item" data-page="myday" onclick="navigate('myday')">
+                <i class="fas fa-crosshairs"></i><span>Meu Dia</span>
+            </a>
+            <a class="nav-item" data-page="mytasks" onclick="navigate('mytasks')">
+                <i class="fas fa-tasks"></i><span>Minhas Tarefas</span>
+            </a>
+            <a class="nav-item" data-page="myfinance" onclick="navigate('myfinance')">
+                <i class="fas fa-coins"></i><span>Financeiro</span>
+            </a>
+            <div class="nav-section-label" id="adminSection" style="display:none">ADMIN</div>
+            <a class="nav-item admin-only" data-page="team" onclick="navigate('team')" style="display:none">
+                <i class="fas fa-users"></i><span>Equipe</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <!-- XP BAR -->
+            <div class="sidebar-xp-wrap" id="sidebarXpWrap">
+                <div class="sidebar-xp-label">
+                    <span class="sidebar-xp-lvl" id="sidebarLvl">LVL 1</span>
+                    <span class="sidebar-xp-pts" id="sidebarXpPts">0 / 100 XP</span>
+                </div>
+                <div class="sidebar-xp-track">
+                    <div class="sidebar-xp-fill" id="sidebarXpFill" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="theme-mini-switcher" id="themeMiniSwitcher"></div>
+            <button class="btn-logout" onclick="doLogout()">
+                <i class="fas fa-sign-out-alt"></i><span>Sair</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MOBILE OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrap">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <button class="topbar-menu-btn" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-page-title" id="topbarTitle">Dashboard</div>
+            <div class="topbar-right">
+                <div class="topbar-clock" id="topbarClock">00:00</div>
+                <div class="topbar-avatar" id="topbarAvatar" onclick="navigate('myday')"></div>
+            </div>
+        </header>
+
+        <!-- PAGES -->
+        <main class="page-area">
+
+            <!-- ===== DASHBOARD PAGE ===== -->
+            <div id="page-dashboard" class="page active">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-chart-line"></i> DASHBOARD CORPORATIVO</h1>
+                    <div class="page-actions">
+                        <button class="btn-secondary" onclick="loadDashboard()"><i class="fas fa-sync"></i> Atualizar</button>
+                    </div>
+                </div>
+
+                <!-- KPI CARDS -->
+                <div class="kpi-grid" id="kpiGrid">
+                    <div class="kpi-card" id="kpi-revenue">
+                        <div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">FATURAMENTO TOTAL</div>
+                            <div class="kpi-value" id="kpiRevenue">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-profit">
+                        <div class="kpi-icon"><i class="fas fa-chart-pie"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">LUCRO TOTAL</div>
+                            <div class="kpi-value" id="kpiProfit">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-ticket">
+                        <div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">TICKET MÉDIO</div>
+                            <div class="kpi-value" id="kpiTicket">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-projects">
+                        <div class="kpi-icon"><i class="fas fa-folder"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">PROJETOS ATIVOS</div>
+                            <div class="kpi-value" id="kpiProjects">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-nps">
+                        <div class="kpi-icon"><i class="fas fa-star"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">NPS MÉDIO</div>
+                            <div class="kpi-value" id="kpiNps">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-newclients">
+                        <div class="kpi-icon"><i class="fas fa-user-plus"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">NOVOS CLIENTES</div>
+                            <div class="kpi-value" id="kpiNewClients">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-margin">
+                        <div class="kpi-icon"><i class="fas fa-percentage"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">MARGEM MÉDIA</div>
+                            <div class="kpi-value" id="kpiMargin">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-cost">
+                        <div class="kpi-icon"><i class="fas fa-receipt"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">CUSTO TOTAL</div>
+                            <div class="kpi-value" id="kpiCost">—</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpi-avgmonth">
+                        <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="kpi-body">
+                            <div class="kpi-label">MÉDIA MENSAL</div>
+                            <div class="kpi-value" id="kpiAvgMonth">—</div>
+                            <div class="kpi-sub" id="kpiAvgMonthSub">faturamento / mês</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BANNER HISTÓRICO 2021–2026 -->
+                <div id="dashHistBanner"></div>
+
+                <!-- CHARTS ROW 1 -->
+                <div class="charts-grid-2">
+                    <div class="chart-panel">
+                        <div class="chart-panel-header">
+                            <span><i class="fas fa-chart-bar"></i> FATURAMENTO POR MÊS</span>
+                        </div>
+                        <div class="chart-container" style="height:260px">
+                            <canvas id="chartMonthly"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-panel-header">
+                            <span><i class="fas fa-chart-pie"></i> RECEITA POR CATEGORIA</span>
+                        </div>
+                        <div class="chart-container" style="height:260px">
+                            <canvas id="chartCategory"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW 2 -->
+                <div class="charts-grid-3">
+                    <div class="chart-panel">
+                        <div class="chart-panel-header">
+                            <span><i class="fas fa-trophy"></i> RANKING CLIENTES (ATIVOS)</span>
+                        </div>
+                        <div id="clientRanking" class="ranking-list"></div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-panel-header">
+                            <span><i class="fas fa-chart-line"></i> LUCRO VS CUSTO</span>
+                        </div>
+                        <div class="chart-container" style="height:220px">
+                            <canvas id="chartProfitCost"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-panel-header">
+                            <span><i class="fas fa-star"></i> NPS POR PROJETO</span>
+                        </div>
+                        <div class="chart-container" style="height:220px">
+                            <canvas id="chartNps"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HISTÓRICO ANUAL (gráfico comparativo) -->
+                <div class="charts-grid-2">
+                    <div class="chart-panel">
+                        <div class="chart-panel-header">
+                            <span><i class="fas fa-history"></i> EVOLUÇÃO ANUAL 2021–2026</span>
+                            <span class="chart-header-action" onclick="navigate('historico')">Ver detalhe →</span>
+                        </div>
+                        <div class="chart-container" style="height:240px">
+                            <canvas id="chartHistEvolution"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-panel-header">
+                            <span><i class="fas fa-users"></i> TOP 5 CLIENTES — HISTÓRICO</span>
+                            <span class="chart-header-action" onclick="navigate('clientes')">Ver todos →</span>
+                        </div>
+                        <div id="dashHistTopClients" class="ranking-list"></div>
+                    </div>
+                </div>
+
+                <!-- HEALTH INDICATORS -->
+                <div class="chart-panel" style="margin-top:0">
+                    <div class="chart-panel-header">
+                        <span><i class="fas fa-heartbeat"></i> SAÚDE DO NEGÓCIO</span>
+                    </div>
+                    <div class="health-grid" id="healthGrid"></div>
+                </div>
+
+                <!-- DIAGNÓSTICO INTELIGENTE -->
+                <div class="diag-panel" id="diagPanel">
+                    <div class="diag-header">
+                        <span class="diag-title"><i class="fas fa-brain"></i> DIAGNÓSTICO ESTRATÉGICO — PRODUTORA / AGÊNCIA 5 ANOS</span>
+                        <span class="diag-subtitle" id="diagTimestamp">—</span>
+                    </div>
+                    <div class="diag-score-row" id="diagScoreRow">
+                        <!-- Score geral -->
+                    </div>
+                    <div class="diag-list" id="diagList">
+                        <!-- Diagnósticos injetados pelo JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PROJECTS PAGE ===== -->
+            <div id="page-projects" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-folder-open"></i> PROJETOS <span id="projYearBadge" style="font-size:11px;background:rgba(var(--pr),.15);border:1px solid rgba(var(--pr),.3);color:var(--c-p);padding:3px 10px;border-radius:4px;margin-left:8px;font-family:'Share Tech Mono',monospace;vertical-align:middle">2026</span></h1>
+                    <div class="page-actions">
+                        <button class="btn-ghost" title="Sincronizar com Dashboard" onclick="syncProjectsWithDashboard()" style="font-size:11px;padding:6px 12px"><i class="fas fa-sync-alt"></i> Sync</button>
+                        <button class="btn-secondary" onclick="exportProjectsCSV()"><i class="fas fa-download"></i> Exportar</button>
+                        <button class="btn-primary" onclick="openProjectModal()">
+                            <i class="fas fa-plus"></i> Novo Projeto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Painel integrado 2026: KPIs + mini-chart mensal -->
+                <div id="proj2026Panel" style="background:rgba(10,12,20,.6);border:1px solid rgba(var(--pr),.2);border-radius:8px;padding:14px 16px;margin-bottom:14px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                        <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--c-p);letter-spacing:.1em">
+                            <i class="fas fa-chart-bar" style="margin-right:6px"></i>DASHBOARD 2026 — SINCRONIZADO AO VIVO
+                        </div>
+                        <div id="projSyncStatus" style="font-size:9px;font-family:'Share Tech Mono',monospace;color:#00ff88">
+                            <i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i>LIVE
+                        </div>
+                    </div>
+                    <!-- KPIs rápidos da aba de projetos -->
+                    <div id="projKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px">
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">FATURAMENTO</div>
+                            <div class="kpi-mini-val" id="pkFat">—</div>
+                        </div>
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">CUSTO</div>
+                            <div class="kpi-mini-val" id="pkCost" style="color:#ff9944">—</div>
+                        </div>
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">LUCRO</div>
+                            <div class="kpi-mini-val" id="pkProfit" style="color:#00ff88">—</div>
+                        </div>
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">MARGEM</div>
+                            <div class="kpi-mini-val" id="pkMargin">—</div>
+                        </div>
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">PROJETOS</div>
+                            <div class="kpi-mini-val" id="pkN" style="color:#cc44ff">—</div>
+                        </div>
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">NPS MÉDIO</div>
+                            <div class="kpi-mini-val" id="pkNps" style="color:#ffcc00">—</div>
+                        </div>
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">NOVOS CLI.</div>
+                            <div class="kpi-mini-val" id="pkNew" style="color:#ff6600">—</div>
+                        </div>
+                        <div class="kpi-mini">
+                            <div class="kpi-mini-label">TICKET MÉDIO</div>
+                            <div class="kpi-mini-val" id="pkTicket">—</div>
+                        </div>
+                    </div>
+                    <!-- Barra de progresso mensal 2026 -->
+                    <div id="proj2026Monthly" style="display:flex;gap:4px;align-items:flex-end;height:40px"></div>
+                    <div id="proj2026MonthLabels" style="display:flex;gap:4px;margin-top:3px"></div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filter-bar" style="margin-bottom:10px">
+                    <select class="hud-select" id="filterCategory" onchange="loadProjects()">
+                        <option value="">Todas categorias</option>
+                        <option value="producao">Produção</option>
+                        <option value="evento">Evento</option>
+                        <option value="publicidade">Publicidade</option>
+                        <option value="campanha">Campanha</option>
+                        <option value="clipe">Clipe</option>
+                        <option value="producao_recorrente">Produção Recorrente</option>
+                    </select>
+                    <select class="hud-select" id="filterStatus" onchange="loadProjects()">
+                        <option value="">Todos status</option>
+                        <option value="pendente">Pendente</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="concluido">Concluído</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                    <select class="hud-select" id="filterMonth" onchange="loadProjects()">
+                        <option value="">Todos meses</option>
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7">Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                    <input type="text" class="hud-input search-input" id="searchProjects" placeholder="🔍 Buscar cliente, projeto ou segmento..." oninput="loadProjects()">
+                    <button class="btn-ghost" style="font-size:11px;padding:6px 12px;white-space:nowrap" onclick="clearProjectFilters()"><i class="fas fa-times"></i> Limpar</button>
+                </div>
+
+                <!-- Table -->
+                <div class="table-wrap">
+                    <table class="hud-table" id="projectsTable">
+                        <thead>
+                            <tr>
+                                <th style="cursor:pointer;white-space:nowrap" onclick="sortProjects('payment_date')">
+                                    PGTO <i class="fas fa-sort-amount-down" id="sortIconDate" style="font-size:8px;color:var(--c-p)"></i>
+                                </th>
+                                <th>CLIENTE</th>
+                                <th>PROJETO</th>
+                                <th>SEGMENTO</th>
+                                <th style="cursor:pointer;white-space:nowrap" onclick="sortProjects('total_value')">
+                                    VALOR <i class="fas fa-sort" id="sortIconVal" style="font-size:8px;opacity:.5"></i>
+                                </th>
+                                <th>CUSTO</th>
+                                <th>LUCRO%</th>
+                                <th>NPS</th>
+                                <th>STATUS</th>
+                                <th>NOVO?</th>
+                                <th>AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectsTableBody">
+                            <tr><td colspan="11" class="table-loading"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ===== MY DAY PAGE ===== -->
+            <div id="page-myday" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-crosshairs"></i> MEU DIA</h1>
+                    <div class="page-actions">
+                        <button class="btn-secondary" onclick="openAddDayModal()">
+                            <i class="fas fa-plus"></i> Novo Dia
+                        </button>
+                    </div>
+                </div>
+                <!-- Day tabs -->
+                <div class="day-tabs-wrap">
+                    <div class="day-tabs" id="myDayTabs"></div>
+                </div>
+                <!-- Day content -->
+                <div id="myDayContent"></div>
+            </div>
+
+            <!-- ===== MY TASKS PAGE ===== -->
+            <div id="page-mytasks" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-tasks"></i> MINHAS TAREFAS</h1>
+                    <div class="page-actions">
+                        <select class="hud-select" id="taskFilterDay" onchange="loadMyTasks()">
+                            <option value="">Todos os dias</option>
+                        </select>
+                        <button class="btn-primary" onclick="openAddTaskModal()">
+                            <i class="fas fa-plus"></i> Nova Tarefa
+                        </button>
+                    </div>
+                </div>
+                <!-- Progress -->
+                <div class="tasks-progress-bar-wrap">
+                    <div class="tasks-progress-info">
+                        <span class="tasks-prog-label"><i class="fas fa-bolt"></i> PROGRESSO GERAL</span>
+                        <span class="tasks-prog-pct" id="taskProgressPct">0%</span>
+                    </div>
+                    <div class="xp-track">
+                        <div class="xp-fill" id="taskProgressFill" style="width:0%"></div>
+                        <div class="xp-glow" id="taskProgressGlow" style="width:0%"></div>
+                    </div>
+                    <div class="tasks-prog-count" id="taskProgressCount">0 / 0 concluídas</div>
+                </div>
+                <!-- Tasks list -->
+                <div id="myTasksList"></div>
+            </div>
+
+            <!-- ===== MY FINANCE PAGE ===== -->
+            <div id="page-myfinance" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-coins"></i> FINANCEIRO PESSOAL</h1>
+                    <div class="page-actions">
+                        <button class="btn-primary" onclick="openAddFinanceModal()">
+                            <i class="fas fa-plus"></i> Novo Lançamento
+                        </button>
+                    </div>
+                </div>
+                <!-- Summary -->
+                <div class="finance-summary" id="financeSummary"></div>
+                <!-- List -->
+                <div id="myFinanceList"></div>
+            </div>
+
+            <!-- ===== TEAM PAGE (admin) ===== -->
+            <div id="page-team" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-users"></i> EQUIPE</h1>
+                </div>
+                <div id="teamGrid" class="team-grid-full"></div>
+            </div>
+
+            <!-- ===== CRONOGRAMA PAGE ===== -->
+            <div id="page-cronograma" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-calendar-week"></i> CRONOGRAMA DA EQUIPE</h1>
+                    <div class="page-actions">
+                        <button class="btn-ghost" onclick="schedPrevWeek()"><i class="fas fa-chevron-left"></i></button>
+                        <span class="sched-week-label" id="schedWeekLabel">—</span>
+                        <button class="btn-ghost" onclick="schedNextWeek()"><i class="fas fa-chevron-right"></i></button>
+                        <button class="btn-ghost" onclick="schedGoToday()"><i class="fas fa-crosshairs"></i> Hoje</button>
+                        <button class="btn-primary" onclick="openSchedModal()"><i class="fas fa-plus"></i> Novo Evento</button>
+                    </div>
+                </div>
+
+                <!-- FILTRO DE MEMBRO -->
+                <div class="sched-member-filter" id="schedMemberFilter">
+                    <button class="sched-member-btn active" data-member="all" onclick="schedFilterMember('all')">
+                        <i class="fas fa-users"></i> Todos
+                    </button>
+                    <button class="sched-member-btn" data-member="gustavowng" onclick="schedFilterMember('gustavowng')"
+                            style="--mc:#ff1a1a">
+                        <span class="sched-member-dot" style="background:#ff1a1a"></span> GUSTAVO
+                    </button>
+                    <button class="sched-member-btn" data-member="vraulin" onclick="schedFilterMember('vraulin')"
+                            style="--mc:#00aaff">
+                        <span class="sched-member-dot" style="background:#00aaff"></span> VRAULIN
+                    </button>
+                    <button class="sched-member-btn" data-member="pedrobarreto" onclick="schedFilterMember('pedrobarreto')"
+                            style="--mc:#cc44ff">
+                        <span class="sched-member-dot" style="background:#cc44ff"></span> PEDRO
+                    </button>
+                </div>
+
+                <!-- GRADE SEMANAL -->
+                <div class="sched-grid-wrap">
+                    <div class="sched-grid" id="schedGrid">
+                        <!-- preenchido por JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Novo/Editar Evento -->
+            <div class="modal-overlay" id="modalSchedEvent">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <span class="modal-title" id="modalSchedTitle">NOVO EVENTO</span>
+                        <button class="btn-icon" onclick="closeModal('modalSchedEvent')"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editSchedId">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label class="input-label">RESPONSÁVEL</label>
+                                <select id="schedMember" class="hud-select">
+                                    <option value="gustavowng">GUSTAVO</option>
+                                    <option value="vraulin">VRAULIN</option>
+                                    <option value="pedrobarreto">PEDRO BARRETO</option>
+                                    <option value="paulin">PAULIN</option>
+                                    <option value="vic">VIC</option>
+                                    <option value="amarante">AMARANTE</option>
+                                    <option value="ken">KEN</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">TIPO</label>
+                                <select id="schedType" class="hud-select">
+                                    <option value="gravacao">🎬 Gravação</option>
+                                    <option value="reuniao">🤝 Reunião</option>
+                                    <option value="tarefa">✅ Tarefa</option>
+                                    <option value="entrega">📦 Entrega</option>
+                                    <option value="evento">🎪 Evento</option>
+                                    <option value="outro">📌 Outro</option>
+                                </select>
+                            </div>
+                            <div class="input-group" style="grid-column:1/-1">
+                                <label class="input-label">TÍTULO / DESCRIÇÃO</label>
+                                <input type="text" id="schedTitle" class="hud-input" placeholder="Ex: Gravação Content Day — Yuri">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">DATA</label>
+                                <input type="date" id="schedDate" class="hud-input">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">LOCAL / CLIENTE</label>
+                                <input type="text" id="schedLocation" class="hud-input" placeholder="Ex: Estúdio, Online, Holambra...">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">INÍCIO</label>
+                                <input type="time" id="schedTimeStart" class="hud-input">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">FIM</label>
+                                <input type="time" id="schedTimeEnd" class="hud-input">
+                            </div>
+                            <div class="input-group" style="grid-column:1/-1">
+                                <label class="input-label">OBSERVAÇÕES</label>
+                                <input type="text" id="schedNotes" class="hud-input" placeholder="Detalhes adicionais...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-ghost" onclick="closeModal('modalSchedEvent')">Cancelar</button>
+                        <button class="btn-primary" onclick="saveSchedEvent()"><i class="fas fa-save"></i> Salvar</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- ===== FECHAMENTO PAGE ===== -->
+            <div id="page-fechamento" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-calculator"></i> FECHAMENTO DE PROJETO</h1>
+                    <div class="page-actions">
+                        <button class="btn-primary" onclick="openFechamentoModal()">
+                            <i class="fas fa-plus"></i> Novo Fechamento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SELETOR DE PROJETO -->
+                <div class="fech-selector-wrap">
+                    <div class="input-group" style="max-width:420px">
+                        <label class="input-label"><i class="fas fa-folder"></i> PROJETO SELECIONADO</label>
+                        <select class="hud-select" id="fechProjectSelect" onchange="loadFechamento()">
+                            <option value="">— Selecione um projeto —</option>
+                        </select>
+                    </div>
+                    <button class="btn-secondary" onclick="loadFechamentoList()">
+                        <i class="fas fa-sync"></i> Atualizar
+                    </button>
+                </div>
+
+                <!-- CARDS RESUMO DO FECHAMENTO -->
+                <div class="fech-summary-grid" id="fechSummaryGrid">
+                    <div class="fech-sum-card fech-receita">
+                        <div class="fech-sum-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                        <div class="fech-sum-body">
+                            <div class="fech-sum-label">VALOR DO PROJETO</div>
+                            <div class="fech-sum-value" id="fechValorProjeto">R$ 0,00</div>
+                        </div>
+                    </div>
+                    <div class="fech-sum-card fech-imposto">
+                        <div class="fech-sum-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <div class="fech-sum-body">
+                            <div class="fech-sum-label">IMPOSTO</div>
+                            <div class="fech-sum-value" id="fechImposto">R$ 0,00</div>
+                            <div class="fech-sum-sub" id="fechImpostoPct">0%</div>
+                        </div>
+                    </div>
+                    <div class="fech-sum-card fech-custo">
+                        <div class="fech-sum-icon"><i class="fas fa-receipt"></i></div>
+                        <div class="fech-sum-body">
+                            <div class="fech-sum-label">TOTAL DE GASTOS</div>
+                            <div class="fech-sum-value" id="fechTotalGastos">R$ 0,00</div>
+                        </div>
+                    </div>
+                    <div class="fech-sum-card fech-lucro" id="fechLucroCard">
+                        <div class="fech-sum-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="fech-sum-body">
+                            <div class="fech-sum-label">LUCRO LÍQUIDO</div>
+                            <div class="fech-sum-value" id="fechLucroLiquido">R$ 0,00</div>
+                            <div class="fech-sum-sub" id="fechLucroPct">0% de margem</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BARRA VISUAL DE DISTRIBUIÇÃO -->
+                <div class="fech-dist-wrap" id="fechDistWrap" style="display:none">
+                    <div class="fech-dist-label-row">
+                        <span class="fech-dist-label"><span style="background:#00ff88;display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px"></span>LUCRO</span>
+                        <span class="fech-dist-label"><span style="background:var(--c-p);display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px"></span>GASTOS</span>
+                        <span class="fech-dist-label"><span style="background:#ffcc00;display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px"></span>IMPOSTO</span>
+                    </div>
+                    <div class="fech-dist-bar">
+                        <div class="fech-dist-seg fech-seg-lucro" id="fechSegLucro" style="width:0%"></div>
+                        <div class="fech-dist-seg fech-seg-custo" id="fechSegCusto" style="width:0%"></div>
+                        <div class="fech-dist-seg fech-seg-imposto" id="fechSegImposto" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- PLANILHA DE GASTOS DETALHADOS -->
+                <div class="fech-gastos-section" id="fechGastosSection" style="display:none">
+                    <div class="fech-gastos-header">
+                        <div class="fech-gastos-title"><i class="fas fa-list"></i> GASTOS DETALHADOS</div>
+                        <button class="btn-primary" onclick="openGastoModal()">
+                            <i class="fas fa-plus"></i> Adicionar Gasto
+                        </button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="hud-table" id="fechGastosTable">
+                            <thead>
+                                <tr>
+                                    <th>DESCRIÇÃO</th>
+                                    <th>CATEGORIA</th>
+                                    <th>FORNECEDOR</th>
+                                    <th>VALOR</th>
+                                    <th>DATA</th>
+                                    <th>AÇÕES</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fechGastosBody">
+                                <tr><td colspan="6" class="table-loading">Selecione um projeto para ver os gastos</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- EMPTY STATE -->
+                <div id="fechEmptyState" style="text-align:center;padding:60px 20px;color:var(--bdm);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px">
+                    SELECIONE UM PROJETO ACIMA PARA VER O FECHAMENTO
+                </div>
+            </div>
+
+            <!-- ===== HISTÓRICO PAGE ===== -->
+            <div id="page-historico" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-archive"></i> HISTÓRICO — AGE OPS</h1>
+                    <div class="page-actions">
+                        <button class="btn-ghost" onclick="HIST.showOverall()">
+                            <i class="fas fa-globe"></i> Relatório Geral
+                        </button>
+                        <button class="btn-secondary" onclick="navigate('historico')">
+                            <i class="fas fa-sync"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Abas de ano -->
+                <div class="hist-tabs-wrap">
+                    <div class="hist-year-tabs" id="histYearTabs">
+                        <!-- preenchido por JS -->
+                    </div>
+                </div>
+
+                <!-- Painel do ano selecionado -->
+                <div id="histYearPanel" style="display:none">
+                    <!-- preenchido por JS -->
+                </div>
+
+                <!-- Relatório geral (todos os anos) -->
+                <div id="histOverallPanel" style="display:none">
+                    <!-- preenchido por JS -->
+                </div>
+            </div>
+
+            <!-- ===== GESTÃO DE PROJETOS PAGE ===== -->
+            <div id="page-gestao" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-project-diagram"></i> GESTÃO DE PROJETOS</h1>
+                    <div class="page-actions">
+                        <button class="btn-secondary" onclick="GESTAO.openFromProject()">
+                            <i class="fas fa-link"></i> Importar Projeto
+                        </button>
+                        <button class="btn-primary" onclick="GESTAO.openNewCard()">
+                            <i class="fas fa-plus"></i> Novo Card
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros Kanban -->
+                <div class="gestao-filter-bar">
+                    <input type="search" class="hud-input" placeholder="🔍 Buscar projeto ou cliente..." id="gestaoSearch"
+                           style="max-width:280px" oninput="GESTAO.search(this.value)">
+                    <select class="hud-select" id="gestaoPriority" onchange="GESTAO.filterPriority(this.value)">
+                        <option value="">Todas prioridades</option>
+                        <option value="alta">🔴 Alta</option>
+                        <option value="media">🟡 Média</option>
+                        <option value="baixa">🟢 Baixa</option>
+                    </select>
+                    <select class="hud-select" id="gestaoResponsible" onchange="GESTAO.filterResponsible(this.value)">
+                        <option value="">Todos responsáveis</option>
+                    </select>
+                    <button class="btn-ghost" onclick="GESTAO.reload()"><i class="fas fa-sync"></i> Atualizar</button>
+                </div>
+
+                <!-- Kanban Board -->
+                <div class="kanban-board" id="kanbanBoard">
+                    <!-- Colunas injetadas pelo JS -->
+                </div>
+            </div>
+
+            <!-- ===== COLABORADORES PAGE ===== -->
+            <div id="page-colaboradores" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-id-card"></i> COLABORADORES</h1>
+                    <div class="page-actions">
+                        <button class="btn-secondary" onclick="TEAM.openCalendar()">
+                            <i class="fas fa-calendar-alt"></i> Ver Calendário
+                        </button>
+                        <button class="btn-primary" onclick="TEAM.openNew()">
+                            <i class="fas fa-plus"></i> Novo Colaborador
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros de Colaboradores -->
+                <div class="colab-filter-bar">
+                    <button class="colab-filter-btn active" data-dept="all" onclick="TEAM.filterDept('all')">
+                        <i class="fas fa-border-all"></i> Todos
+                    </button>
+                    <button class="colab-filter-btn" data-dept="direcao" onclick="TEAM.filterDept('direcao')">
+                        <i class="fas fa-crown"></i> Direção
+                    </button>
+                    <button class="colab-filter-btn" data-dept="producao" onclick="TEAM.filterDept('producao')">
+                        <i class="fas fa-film"></i> Produção
+                    </button>
+                    <button class="colab-filter-btn" data-dept="criacao" onclick="TEAM.filterDept('criacao')">
+                        <i class="fas fa-paint-brush"></i> Criação
+                    </button>
+                    <button class="colab-filter-btn" data-dept="comercial" onclick="TEAM.filterDept('comercial')">
+                        <i class="fas fa-handshake"></i> Comercial
+                    </button>
+                    <button class="colab-filter-btn" data-dept="operacoes" onclick="TEAM.filterDept('operacoes')">
+                        <i class="fas fa-cogs"></i> Operações
+                    </button>
+                    <input type="search" class="hud-input" placeholder="Buscar colaborador..." style="max-width:220px;margin-left:auto"
+                           oninput="TEAM.search(this.value)">
+                </div>
+
+                <!-- Stats rápidos -->
+                <div class="colab-stats-row" id="colabStats">
+                    <!-- preenchido por JS -->
+                </div>
+
+                <!-- Grid de colaboradores -->
+                <div class="colab-grid" id="colabGrid">
+                    <!-- preenchido por JS -->
+                </div>
+            </div>
+
+            <!-- ===== CALENDÁRIO DA EQUIPE PAGE ===== -->
+            <div id="page-team-calendar" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-calendar-alt"></i> CALENDÁRIO DA EQUIPE</h1>
+                    <div class="page-actions">
+                        <button class="btn-ghost" onclick="TEAMCAL.prevMonth()"><i class="fas fa-chevron-left"></i></button>
+                        <span class="teamcal-month-label" id="teamcalMonthLabel">—</span>
+                        <button class="btn-ghost" onclick="TEAMCAL.nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                        <button class="btn-ghost" onclick="TEAMCAL.goToday()"><i class="fas fa-crosshairs"></i> Hoje</button>
+                        <button class="btn-secondary" onclick="TEAMCAL.toggleView()"><i class="fas fa-table"></i> <span id="teamcalViewLabel">Semana</span></button>
+                        <button class="btn-primary" onclick="TEAMCAL.openNewEvent()"><i class="fas fa-plus"></i> Novo Evento</button>
+                    </div>
+                </div>
+
+                <!-- Filtro de membros dinâmico -->
+                <div class="teamcal-member-filter" id="teamcalMemberFilter">
+                    <button class="teamcal-member-btn active" data-member="all" onclick="TEAMCAL.filterMember('all')">
+                        <i class="fas fa-users"></i> Todos
+                    </button>
+                    <!-- membros carregados dinamicamente -->
+                </div>
+
+                <!-- View toggle: Month / Week -->
+                <div id="teamcalMonthView">
+                    <div class="teamcal-weekdays">
+                        <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+                    </div>
+                    <div class="teamcal-grid" id="teamcalGrid">
+                        <!-- preenchido por JS -->
+                    </div>
+                </div>
+
+                <div id="teamcalWeekView" style="display:none">
+                    <div class="teamcal-week-grid" id="teamcalWeekGrid">
+                        <!-- preenchido por JS -->
+                    </div>
+                </div>
+
+                <!-- Legenda de membros -->
+                <div class="teamcal-legend" id="teamcalLegend">
+                    <!-- preenchido por JS -->
+                </div>
+            </div>
+
+            <!-- ===== CLIENTES PAGE ===== -->
+            <div id="page-clientes" class="page">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-address-book"></i> BANCO DE CLIENTES</h1>
+                    <div class="page-actions">
+                        <button class="btn-primary" onclick="CLIENTS.openAdd()">
+                            <i class="fas fa-plus"></i> Novo Cliente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats gerais -->
+                <div class="cli-stats-row">
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="cli-stat-body">
+                            <div class="cli-stat-label">TOTAL CLIENTES</div>
+                            <div class="cli-stat-value" id="cliStatTotal">—</div>
+                            <div class="cli-stat-sub">2021–2026</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card active">
+                        <div class="cli-stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="cli-stat-body">
+                            <div class="cli-stat-label">ATIVOS / RECORRENTES</div>
+                            <div class="cli-stat-value" id="cliStatAtivos">—</div>
+                            <div class="cli-stat-sub">em relacionamento</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card inactive">
+                        <div class="cli-stat-icon"><i class="fas fa-pause-circle"></i></div>
+                        <div class="cli-stat-body">
+                            <div class="cli-stat-label">INATIVOS</div>
+                            <div class="cli-stat-value" id="cliStatInativos">—</div>
+                            <div class="cli-stat-sub">potencial reativação</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card revenue">
+                        <div class="cli-stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="cli-stat-body">
+                            <div class="cli-stat-label">FATURAMENTO TOTAL</div>
+                            <div class="cli-stat-value" id="cliStatValor">—</div>
+                            <div class="cli-stat-sub">histórico completo</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon" style="color:#cc44ff"><i class="fas fa-folder-open"></i></div>
+                        <div class="cli-stat-body">
+                            <div class="cli-stat-label">PROJETOS HISTÓRICOS</div>
+                            <div class="cli-stat-value" id="cliStatProjects">—</div>
+                            <div class="cli-stat-sub">122 no total</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon" style="color:#ffcc00"><i class="fas fa-star"></i></div>
+                        <div class="cli-stat-body">
+                            <div class="cli-stat-label">NPS MÉDIO</div>
+                            <div class="cli-stat-value" id="cliStatNps">—</div>
+                            <div class="cli-stat-sub">2023–2024</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon" style="color:#00ff88"><i class="fas fa-redo"></i></div>
+                        <div class="cli-stat-body">
+                            <div class="cli-stat-label">CLIENTES RECORRENTES</div>
+                            <div class="cli-stat-value" id="cliStatMulti">—</div>
+                            <div class="cli-stat-sub">2+ projetos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="cli-filter-bar">
+                    <div class="cli-filter-group">
+                        <button class="cli-filter-btn active" data-clistatus="all" onclick="CLIENTS.filterStatus('all')">
+                            <i class="fas fa-border-all"></i> Todos
+                        </button>
+                        <button class="cli-filter-btn" data-clistatus="ativo" onclick="CLIENTS.filterStatus('ativo')">
+                            <i class="fas fa-check-circle"></i> Ativos
+                        </button>
+                        <button class="cli-filter-btn" data-clistatus="recorrente" onclick="CLIENTS.filterStatus('recorrente')">
+                            <i class="fas fa-sync"></i> Recorrentes
+                        </button>
+                        <button class="cli-filter-btn" data-clistatus="inativo" onclick="CLIENTS.filterStatus('inativo')">
+                            <i class="fas fa-pause-circle"></i> Inativos
+                        </button>
+                        <button class="cli-filter-btn" data-clistatus="potencial" onclick="CLIENTS.filterStatus('potencial')">
+                            <i class="fas fa-star"></i> Potencial
+                        </button>
+                    </div>
+                    <input type="search" class="hud-input" placeholder="Buscar cliente..." style="max-width:260px"
+                           oninput="CLIENTS.searchClients(this.value)">
+                </div>
+
+                <!-- Grid de clientes -->
+                <div id="cliGrid" class="cli-grid">
+                    <!-- preenchido por JS -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="modalProject">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title" id="modalProjectTitle">NOVO PROJETO</span>
+            <button class="modal-close" onclick="closeModal('modalProject')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editProjectId">
+            <div class="form-grid-2">
+                <div class="input-group">
+                    <label class="input-label">CLIENTE</label>
+                    <input type="text" id="pClient" class="hud-input" placeholder="Nome do cliente">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">NOME DO PROJETO</label>
+                    <input type="text" id="pName" class="hud-input" placeholder="Nome do projeto">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">CATEGORIA</label>
+                    <select id="pCategory" class="hud-select">
+                        <option value="evento">Evento</option>
+                        <option value="publicidade">Publicidade</option>
+                        <option value="campanha">Campanha</option>
+                        <option value="clipe">Clipe</option>
+                        <option value="producao_recorrente">Produção Recorrente</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">STATUS</label>
+                    <select id="pStatus" class="hud-select">
+                        <option value="pendente">Pendente</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="concluido">Concluído</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA INÍCIO</label>
+                    <input type="date" id="pStartDate" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA PAGAMENTO</label>
+                    <input type="date" id="pPayDate" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">VALOR TOTAL (R$)</label>
+                    <input type="number" id="pValue" class="hud-input" placeholder="0" oninput="calcProfit()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">CUSTO (R$)</label>
+                    <input type="number" id="pCost" class="hud-input" placeholder="0" oninput="calcProfit()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">LUCRO %</label>
+                    <input type="number" id="pProfit" class="hud-input" placeholder="Auto" readonly style="opacity:.7">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">NPS (0-10)</label>
+                    <input type="number" id="pNps" class="hud-input" placeholder="0" min="0" max="10">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">CLIENTE NOVO?</label>
+                    <select id="pNewClient" class="hud-select">
+                        <option value="false">Não</option>
+                        <option value="true">Sim</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalProject')">Cancelar</button>
+            <button class="btn-primary" onclick="saveProject()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal-overlay" id="modalTask">
+    <div class="modal-box modal-sm">
+        <div class="modal-header">
+            <span class="modal-title" id="modalTaskTitle">NOVA TAREFA</span>
+            <button class="modal-close" onclick="closeModal('modalTask')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editTaskId">
+            <div class="input-group">
+                <label class="input-label">TAREFA</label>
+                <input type="text" id="tLabel" class="hud-input" placeholder="Descrição da tarefa">
+            </div>
+            <div class="form-grid-2">
+                <div class="input-group">
+                    <label class="input-label">ÁREA</label>
+                    <input type="text" id="tArea" class="hud-input" placeholder="Ex: CONTRATOS">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DIA</label>
+                    <input type="text" id="tDay" class="hud-input" placeholder="Ex: Sexta, Segunda...">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">PRIORIDADE</label>
+                    <select id="tPriority" class="hud-select">
+                        <option value="high">Alta</option>
+                        <option value="med">Média</option>
+                        <option value="low">Baixa</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">VISIBILIDADE</label>
+                    <select id="tPrivate" class="hud-select">
+                        <option value="true">Privada (só eu)</option>
+                        <option value="false">Equipe</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalTask')">Cancelar</button>
+            <button class="btn-primary" onclick="saveTask()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Finance Modal -->
+<div class="modal-overlay" id="modalFinance">
+    <div class="modal-box modal-sm">
+        <div class="modal-header">
+            <span class="modal-title" id="modalFinTitle">NOVO LANÇAMENTO</span>
+            <button class="modal-close" onclick="closeModal('modalFinance')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editFinId">
+            <div class="input-group">
+                <label class="input-label">CLIENTE / ORIGEM</label>
+                <input type="text" id="fClient" class="hud-input" placeholder="Nome do cliente">
+            </div>
+            <div class="form-grid-2">
+                <div class="input-group">
+                    <label class="input-label">VALOR (R$)</label>
+                    <input type="number" id="fValue" class="hud-input" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">VENCIMENTO</label>
+                    <input type="date" id="fDate" class="hud-input">
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="input-label">DESCRIÇÃO</label>
+                <input type="text" id="fDesc" class="hud-input" placeholder="Observação">
+            </div>
+            <div class="input-group">
+                <label class="input-label">STATUS</label>
+                <select id="fReceived" class="hud-select">
+                    <option value="false">Pendente</option>
+                    <option value="true">Recebido</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalFinance')">Cancelar</button>
+            <button class="btn-primary" onclick="saveFinance()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Day Modal -->
+<div class="modal-overlay" id="modalDay">
+    <div class="modal-box modal-sm">
+        <div class="modal-header">
+            <span class="modal-title">NOVO DIA</span>
+            <button class="modal-close" onclick="closeModal('modalDay')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label class="input-label">LABEL DO DIA</label>
+                <input type="text" id="dLabel" class="hud-input" placeholder="Ex: Sexta-Feira, Segunda...">
+            </div>
+            <div class="input-group">
+                <label class="input-label">FOCO DO DIA</label>
+                <input type="text" id="dFocus" class="hud-input" placeholder="Ex: Contratos e fechamentos">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalDay')">Cancelar</button>
+            <button class="btn-primary" onclick="saveDay()"><i class="fas fa-save"></i> Criar Dia</button>
+        </div>
+    </div>
+</div>
+
+<!-- Fechamento Modal (novo fechamento / editar cabeçalho) -->
+<div class="modal-overlay" id="modalFechamento">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title" id="modalFechamentoTitle">NOVO FECHAMENTO</span>
+            <button class="modal-close" onclick="closeModal('modalFechamento')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editFechId">
+            <div class="input-group">
+                <label class="input-label">PROJETO</label>
+                <select id="fechProjeto" class="hud-select"></select>
+            </div>
+            <div class="form-grid-2">
+                <div class="input-group">
+                    <label class="input-label">VALOR TOTAL DO PROJETO (R$)</label>
+                    <input type="number" id="fechValor" class="hud-input" placeholder="0,00" step="0.01" oninput="calcFechLucro()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">IMPOSTO (R$)</label>
+                    <input type="number" id="fechImpostoVal" class="hud-input" placeholder="0,00" step="0.01" oninput="calcFechLucro()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">% DO IMPOSTO</label>
+                    <input type="number" id="fechImpostoPctInput" class="hud-input" placeholder="Ex: 6" step="0.01" oninput="calcFechImpostoFromPct()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">LUCRO LÍQUIDO (AUTO)</label>
+                    <input type="number" id="fechLucroInput" class="hud-input" placeholder="Calculado automaticamente" readonly style="opacity:.6">
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="input-label">OBSERVAÇÕES</label>
+                <input type="text" id="fechObs" class="hud-input" placeholder="Notas sobre este fechamento...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalFechamento')">Cancelar</button>
+            <button class="btn-primary" onclick="saveFechamento()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Gasto Modal -->
+<div class="modal-overlay" id="modalGasto">
+    <div class="modal-box modal-sm">
+        <div class="modal-header">
+            <span class="modal-title" id="modalGastoTitle">NOVO GASTO</span>
+            <button class="modal-close" onclick="closeModal('modalGasto')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editGastoId">
+            <div class="input-group">
+                <label class="input-label">DESCRIÇÃO DO GASTO</label>
+                <input type="text" id="gastoDesc" class="hud-input" placeholder="Ex: Aluguel de drone, Equipe, Transporte...">
+            </div>
+            <div class="form-grid-2">
+                <div class="input-group">
+                    <label class="input-label">CATEGORIA</label>
+                    <select id="gastoCategoria" class="hud-select">
+                        <option value="equipe">Equipe</option>
+                        <option value="equipamento">Equipamento</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="locacao">Locação</option>
+                        <option value="edicao">Edição/Pós</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="alimentacao">Alimentação</option>
+                        <option value="hospedagem">Hospedagem</option>
+                        <option value="software">Software</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">FORNECEDOR / QUEM RECEBEU</label>
+                    <input type="text" id="gastoFornecedor" class="hud-input" placeholder="Nome do fornecedor">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">VALOR (R$)</label>
+                    <input type="number" id="gastoValor" class="hud-input" placeholder="0,00" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA</label>
+                    <input type="date" id="gastoData" class="hud-input">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalGasto')">Cancelar</button>
+            <button class="btn-primary" onclick="saveGasto()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay" id="modalConfirm">
+    <div class="modal-box modal-xs">
+        <div class="modal-header">
+            <span class="modal-title">CONFIRMAR</span>
+            <button class="modal-close" onclick="closeModal('modalConfirm')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <p class="confirm-text" id="confirmText">Tem certeza?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalConfirm')">Cancelar</button>
+            <button class="btn-danger" id="confirmBtn">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: Colaborador ===== -->
+<div class="modal-overlay" id="modalColab">
+    <div class="modal-box" style="max-width:680px">
+        <div class="modal-header">
+            <span class="modal-title" id="modalColabTitle">NOVO COLABORADOR</span>
+            <button class="modal-close" onclick="closeModal('modalColab')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editColabId">
+            <div class="form-grid">
+                <div class="input-group" style="grid-column:1/-1">
+                    <label class="input-label">NOME COMPLETO</label>
+                    <input type="text" id="colabName" class="hud-input" placeholder="Nome completo do colaborador">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">USERNAME (LOGIN)</label>
+                    <input type="text" id="colabUsername" class="hud-input" placeholder="Ex: gustavowng">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">CARGO PRINCIPAL</label>
+                    <input type="text" id="colabRole" class="hud-input" placeholder="Ex: Diretor de Produção, Editor...">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">SETOR</label>
+                    <select id="colabDept" class="hud-select">
+                        <option value="direcao">Direção</option>
+                        <option value="producao">Produção</option>
+                        <option value="criacao">Criação</option>
+                        <option value="comercial">Comercial</option>
+                        <option value="operacoes">Operações</option>
+                        <option value="tecnologia">Tecnologia</option>
+                        <option value="administrativo">Administrativo</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">STATUS</label>
+                    <select id="colabStatus" class="hud-select">
+                        <option value="ativo">Ativo</option>
+                        <option value="ferias">Férias</option>
+                        <option value="afastado">Afastado</option>
+                        <option value="inativo">Inativo</option>
+                        <option value="freelancer">Freelancer</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">TIPO DE CONTRATO</label>
+                    <select id="colabContract" class="hud-select">
+                        <option value="clt">CLT</option>
+                        <option value="pj">PJ</option>
+                        <option value="freelancer">Freelancer</option>
+                        <option value="socio">Sócio</option>
+                        <option value="estagiario">Estagiário</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">E-MAIL</label>
+                    <input type="email" id="colabEmail" class="hud-input" placeholder="email@ownage.com.br">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">TELEFONE / WHATSAPP</label>
+                    <input type="text" id="colabPhone" class="hud-input" placeholder="(11) 99999-9999">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA DE ENTRADA</label>
+                    <input type="date" id="colabJoined" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">COR NO CALENDÁRIO</label>
+                    <input type="color" id="colabColor" class="hud-input" value="#ff1a1a" style="height:38px;padding:4px">
+                </div>
+                <div class="input-group" style="grid-column:1/-1">
+                    <label class="input-label">FUNÇÕES / RESPONSABILIDADES (separar por vírgula)</label>
+                    <input type="text" id="colabFunctions" class="hud-input" placeholder="Ex: Direção de arte, Roteiro, Gestão de equipe">
+                </div>
+                <div class="input-group" style="grid-column:1/-1">
+                    <label class="input-label">HABILIDADES TÉCNICAS (separar por vírgula)</label>
+                    <input type="text" id="colabSkills" class="hud-input" placeholder="Ex: Premiere, After Effects, DaVinci, Drone...">
+                </div>
+                <div class="input-group" style="grid-column:1/-1">
+                    <label class="input-label">OBSERVAÇÕES</label>
+                    <input type="text" id="colabNotes" class="hud-input" placeholder="Notas sobre este colaborador...">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalColab')">Cancelar</button>
+            <button class="btn-primary" onclick="TEAM.save()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: Detalhes do Colaborador ===== -->
+<div class="modal-overlay" id="modalColabDetail">
+    <div class="modal-box" style="max-width:600px">
+        <div class="modal-header">
+            <span class="modal-title" id="modalColabDetailTitle">COLABORADOR</span>
+            <button class="modal-close" onclick="closeModal('modalColabDetail')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="modalColabDetailBody">
+            <!-- preenchido por JS -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalColabDetail')">Fechar</button>
+            <button class="btn-secondary" onclick="TEAM.editFromDetail()"><i class="fas fa-edit"></i> Editar</button>
+            <button class="btn-primary" onclick="TEAMCAL.openNewEventFor()"><i class="fas fa-calendar-plus"></i> Alocar no Calendário</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: Evento do Calendário da Equipe ===== -->
+<div class="modal-overlay" id="modalTeamEvent">
+    <div class="modal-box" style="max-width:620px">
+        <div class="modal-header">
+            <span class="modal-title" id="modalTeamEventTitle">NOVO EVENTO</span>
+            <button class="modal-close" onclick="closeModal('modalTeamEvent')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editTeamEventId">
+            <div class="form-grid">
+                <div class="input-group" style="grid-column:1/-1">
+                    <label class="input-label">TÍTULO / DESCRIÇÃO</label>
+                    <input type="text" id="teamEventTitle" class="hud-input" placeholder="Ex: Gravação Content Day — Cliente X">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">MEMBRO RESPONSÁVEL</label>
+                    <select id="teamEventMember" class="hud-select">
+                        <!-- preenchido dinamicamente -->
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">TIPO DE EVENTO</label>
+                    <select id="teamEventType" class="hud-select">
+                        <option value="gravacao">🎬 Gravação</option>
+                        <option value="reuniao">🤝 Reunião</option>
+                        <option value="edicao">✂️ Edição</option>
+                        <option value="entrega">📦 Entrega</option>
+                        <option value="pre_producao">📋 Pré-produção</option>
+                        <option value="evento">🎪 Evento</option>
+                        <option value="folga">🌴 Folga/Férias</option>
+                        <option value="outro">📌 Outro</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA INÍCIO</label>
+                    <input type="date" id="teamEventDate" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA FIM (opcional)</label>
+                    <input type="date" id="teamEventDateEnd" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">HORÁRIO INÍCIO</label>
+                    <input type="time" id="teamEventTimeStart" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">HORÁRIO FIM</label>
+                    <input type="time" id="teamEventTimeEnd" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">LOCAL / CLIENTE</label>
+                    <input type="text" id="teamEventLocation" class="hud-input" placeholder="Ex: Estúdio, Online, Cliente...">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">PROJETO RELACIONADO (opcional)</label>
+                    <select id="teamEventProject" class="hud-select">
+                        <option value="">— Nenhum —</option>
+                    </select>
+                </div>
+                <div class="input-group" style="grid-column:1/-1">
+                    <label class="input-label">OBSERVAÇÕES</label>
+                    <input type="text" id="teamEventNotes" class="hud-input" placeholder="Detalhes adicionais...">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalTeamEvent')">Cancelar</button>
+            <button class="btn-primary" onclick="TEAMCAL.saveEvent()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: Card Gestão de Projetos ===== -->
+<div class="modal-overlay" id="modalGestao">
+    <div class="modal-box" style="max-width:680px">
+        <div class="modal-header">
+            <span class="modal-title" id="modalGestaoTitle">NOVO CARD DE PROJETO</span>
+            <button class="modal-close" onclick="closeModal('modalGestao')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editGestaoId">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label class="input-label">NOME DO PROJETO</label>
+                    <input type="text" id="gestaoName" class="hud-input" placeholder="Nome do projeto">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">CLIENTE</label>
+                    <input type="text" id="gestaoClient" class="hud-input" placeholder="Nome do cliente">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">ETAPA ATUAL</label>
+                    <select id="gestaoStage" class="hud-select">
+                        <option value="reuniao">🤝 Reunião</option>
+                        <option value="pre_producao">📋 Pré-produção</option>
+                        <option value="orcamento">💰 Orçamento</option>
+                        <option value="gravacao">🎬 Gravação</option>
+                        <option value="edicao">✂️ Edição</option>
+                        <option value="finalizacao">🔧 Finalização</option>
+                        <option value="entrega_aprovada">✅ Entrega Aprovada</option>
+                        <option value="postado">🚀 Postado</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">PRIORIDADE</label>
+                    <select id="gestaoPriorityInput" class="hud-select">
+                        <option value="alta">🔴 Alta</option>
+                        <option value="media">🟡 Média</option>
+                        <option value="baixa">🟢 Baixa</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">RESPONSÁVEL PRINCIPAL</label>
+                    <select id="gestaoResponsibleInput" class="hud-select">
+                        <option value="">— Selecionar —</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">CATEGORIA</label>
+                    <select id="gestaoCategory" class="hud-select">
+                        <option value="evento">Evento</option>
+                        <option value="publicidade">Publicidade</option>
+                        <option value="campanha">Campanha</option>
+                        <option value="clipe">Clipe</option>
+                        <option value="producao_recorrente">Produção Recorrente</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA DE INÍCIO</label>
+                    <input type="date" id="gestaoStartDate" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">DATA DE ENTREGA</label>
+                    <input type="date" id="gestaoDueDate" class="hud-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">VALOR DO PROJETO (R$)</label>
+                    <input type="number" id="gestaoValue" class="hud-input" placeholder="0,00">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">COR DO CARD</label>
+                    <input type="color" id="gestaoColor" class="hud-input" value="#ff1a1a" style="height:38px;padding:4px">
+                </div>
+                <div class="input-group" style="grid-column:1/-1">
+                    <label class="input-label">OBSERVAÇÕES DA ETAPA</label>
+                    <input type="text" id="gestaoNotes" class="hud-input" placeholder="Notas sobre o status atual...">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalGestao')">Cancelar</button>
+            <button class="btn-primary" onclick="GESTAO.save()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: Detalhe Card Gestão ===== -->
+<div class="modal-overlay" id="modalGestaoDetail">
+    <div class="modal-box" style="max-width:700px">
+        <div class="modal-header">
+            <span class="modal-title" id="modalGestaoDetailTitle">DETALHES DO PROJETO</span>
+            <button class="modal-close" onclick="closeModal('modalGestaoDetail')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="modalGestaoDetailBody">
+            <!-- preenchido por JS -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modalGestaoDetail')">Fechar</button>
+            <button class="btn-secondary" onclick="GESTAO.editFromDetail()"><i class="fas fa-edit"></i> Editar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Histórico do Cliente -->
+<div class="modal-overlay" id="modalCliHistory">
+    <div class="modal-box" style="max-width:780px">
+        <div class="modal-header">
+            <span class="modal-title" id="cliHistoryTitle">HISTÓRICO DO CLIENTE</span>
+            <button class="modal-close" onclick="closeModal('modalCliHistory')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="cliHistoryBody">
+            <!-- preenchido por JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar/Adicionar Cliente -->
+<div class="modal-overlay" id="modalCliEdit">
+    <div class="modal-box modal-sm">
+        <div class="modal-header">
+            <span class="modal-title">EDITAR CLIENTE</span>
+            <button class="modal-close" onclick="CLIENTS.closeEditModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label class="input-label">NOME DO CLIENTE</label>
+                <input type="text" id="cliEditName" class="hud-input" placeholder="Nome do cliente">
+            </div>
+            <div class="input-group">
+                <label class="input-label">STATUS</label>
+                <select id="cliEditStatus" class="hud-select">
+                    <option value="ativo">Ativo</option>
+                    <option value="recorrente">Recorrente</option>
+                    <option value="inativo">Inativo</option>
+                    <option value="potencial">Potencial</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">NPS MÉDIO</label>
+                <input type="number" id="cliEditNps" class="hud-input" placeholder="Ex: 9.5" min="0" max="10" step="0.1">
+            </div>
+            <div class="input-group">
+                <label class="input-label">OBSERVAÇÕES</label>
+                <input type="text" id="cliEditNotes" class="hud-input" placeholder="Notas sobre o cliente...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="CLIENTS.closeEditModal()">Cancelar</button>
+            <button class="btn-primary" onclick="CLIENTS.handleSave()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+    <i class="fas fa-check-circle toast-icon"></i>
+    <span id="toastText"></span>
+</div>
+
+<!-- Achievement Toast -->
+<div class="achievement-toast" id="achievementToast">
+    <div class="achievement-icon" id="achievementIcon">🏆</div>
+    <div class="achievement-body">
+        <div class="achievement-label">CONQUISTA DESBLOQUEADA</div>
+        <div class="achievement-title" id="achievementTitle">—</div>
+        <div class="achievement-pts" id="achievementPts">+0 XP</div>
+    </div>
+</div>
+
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Level Up Overlay (injected by JS) -->
+<div id="levelupOverlay" style="display:none" class="levelup-overlay">
+    <div class="levelup-box">
+        <div>⚡ LEVEL UP!</div>
+        <div class="levelup-sub" id="levelupSubtitle">NÍVEL 2 ATINGIDO</div>
+    </div>
+</div>
+
+<!-- Mission Complete Overlay -->
+<div class="mission-complete-overlay" id="missionCompleteOverlay" style="display:none">
+    <div class="mission-complete-box">
+        <span class="mission-complete-icon">🎯</span>
+        <div class="mission-complete-title">MISSÃO COMPLETA!</div>
+        <div class="mission-complete-sub" id="missionCompleteDay">SEXTA-FEIRA — 100%</div>
+        <div class="mission-complete-xp" id="missionCompleteXP">+50 XP BÔNUS</div>
+        <button class="mission-complete-close" onclick="closeMissionComplete()">[ CONTINUAR ]</button>
+    </div>
+</div>
+
+<script src="js/os-theme.js"></script>
+<script src="js/os-auth.js"></script>
+<script src="js/os-game.js"></script>
+<script src="js/os-sync.js"></script>
+<script src="js/os-app.js"></script>
+<script src="js/os-schedule.js"></script>
+<script src="js/os-historico.js"></script>
+<script src="js/os-clientes.js"></script>
+<script src="js/os-team.js"></script>
+<script src="js/os-gestao.js"></script>
+</body>
+</html>

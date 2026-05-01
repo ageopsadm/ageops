@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<title>Insert Clients</title>
+</head>
+<body>
+<pre id="log">Processing...</pre>
+<script>
+var logEl=document.getElementById('log');
+function log(msg){logEl.textContent+=msg+'\n';console.log(msg);}
+
+async function run(){
+  // Load all historical projects
+  var resp=await fetch('../tables/age_hist_projects?limit=500');
+  var data=await resp.json();
+  var projects=(data.data||[]).filter(function(p){return !p.deleted;});
+  log('Projects loaded: '+projects.length);
+
+  // Build client map
+  var clientMap={};
+  projects.forEach(function(p){
+    var name=(p.client_name||'').trim();
+    if(!name) return;
+    if(!clientMap[name]) clientMap[name]={name:name,total_value:0,total_projects:0,total_nps:0,nps_count:0,years:new Set(),first_year:9999,last_year:0,new_count:0};
+    var c=clientMap[name];
+    c.total_value+=parseFloat(p.value)||0;
+    c.total_projects++;
+    var nps=parseFloat(p.nps)||0;
+    if(nps>0){c.total_nps+=nps;c.nps_count++;}
+    var yr=parseInt(p.year)||0;
+    if(yr>0){c.years.add(yr);if(yr<c.first_year)c.first_year=yr;if(yr>c.last_year)c.last_year=yr;}
+    if(p.is_new_client===true||p.is_new_client==='true'||p.is_new_client==='Sim') c.new_count++;
+  });
+
+  log('Unique clients found: '+Object.keys(clientMap).length);
+
+  // Clear existing clients
+  log('Clearing existing clients...');
+  var existR=await fetch('../tables/age_clients_db?limit=200');
+  var existD=await existR.json();
+  var existing=(existD.data||[]).filter(function(c){return !c.deleted;});
+  for(var i=0;i<existing.length;i++){
+    await fetch('../tables/age_clients_db/'+existing[i].id,{method:'DELETE'});
+  }
+  log('Cleared '+existing.length+' existing clients.');
+
+  // Insert new clients
+  var inserted=0;
+  var entries=Object.values(clientMap).sort(function(a,b){return b.total_value-a.total_value;});
+  
+  for(var i=0;i<entries.length;i++){
+    var c=entries[i];
+    var avgNps=c.nps_count>0?parseFloat((c.total_nps/c.nps_count).toFixed(1)):0;
+    var yearsArr=[...c.years].sort();
+    var lastYear=c.last_year||0;
+    // Status based on recency
+    var status='inativo';
+    if(lastYear>=2026) status='ativo';
+    else if(lastYear>=2025) status='recorrente';
+    else if(lastYear>=2023) status='inativo';
+    
+    var payload={
+      client_name:c.name,
+      first_year:c.first_year||0,
+      last_year:lastYear,
+      total_projects:c.total_projects,
+      total_value:Math.round(c.total_value*100)/100,
+      avg_nps:avgNps,
+      status:status,
+      notes:'',
+      years_active:yearsArr.join(',')
+    };
+    
+    var r=await fetch('../tables/age_clients_db',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(r.ok){inserted++;log('OK: '+c.name+' | R$'+Math.round(c.total_value).toLocaleString('pt-BR')+' | '+c.total_projects+' proj | '+status);}
+    else{log('ERR: '+c.name+' | HTTP '+r.status);}
+  }
+  
+  log('\n=== DONE ===');
+  log('Inserted: '+inserted+'/'+entries.length);
+  console.log('DONE:inserted='+inserted);
+}
+run();
+</script>
+</body>
+</html>

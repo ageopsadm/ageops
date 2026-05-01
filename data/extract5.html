@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<pre id="r">Loading...</pre>
+<script>
+function parseNum(v){
+  if(v===undefined||v===null||v==='') return 0;
+  if(typeof v==='number') return v;
+  var s=v.toString().replace(/R\$\s*/gi,'').replace(/\s+/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  if(!s||s==='-') return 0;
+  var n=parseFloat(s);
+  return isNaN(n)?0:n;
+}
+function fmtDate(v){
+  if(!v) return '';
+  if(typeof v==='number'){
+    try{var d=XLSX.SSF.parse_date_code(v);if(d&&d.y>1900)return d.y+'-'+('0'+d.m).slice(-2)+'-'+('0'+d.d).slice(-2);}catch(e){}
+    return '';
+  }
+  var s=v.toString().trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+  var months={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+  var m=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if(m){var mo=months[m[2].toLowerCase().substring(0,3)];if(mo)return m[3]+'-'+('0'+mo).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)){var p=s.split(/[\/\-]/);return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');}
+  return s;
+}
+
+async function run(){
+  var files=['2021','2022','2023','2024','2025','2026'];
+  var ALL={};
+  var log=[];
+  var summary=[];
+
+  for(var fi=0;fi<files.length;fi++){
+    var yr=files[fi];
+    try{
+      var resp=await fetch(yr+'.xlsx');
+      var buf=await resp.arrayBuffer();
+      // Use raw:false to get formatted string values - critical for currency
+      var wb=XLSX.read(buf,{type:'array',raw:false,cellDates:true});
+      var sn=wb.SheetNames[0];
+      var ws=wb.Sheets[sn];
+      
+      // Get string version (raw:false) for all values
+      var rawStr=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      // Get numeric version for dates and numbers
+      var rawNum=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      
+      var hr=0;
+      for(var i=0;i<Math.min(8,rawStr.length);i++){
+        if((rawStr[i]||[]).join(' ').toLowerCase().indexOf('cliente')>=0){hr=i;break;}
+      }
+      
+      var headers=(rawStr[hr]||[]).map(function(h){return (h||'').toString().trim();});
+      log.push('=== '+yr+' | sheet:'+sn+' headerRow:'+hr+' ===');
+      log.push('COLS: '+headers.map(function(h,i){return '['+i+']"'+h+'"';}).join(', '));
+      
+      // Show first 3 data rows - BOTH string and raw numeric
+      for(var si=hr+1;si<=Math.min(hr+3,rawStr.length-1);si++){
+        var rs=rawStr[si]||[];
+        var rn=rawNum[si]||[];
+        log.push('STR['+si+']: '+rs.map(function(v,j){return '['+j+']'+(v||'');}).join(' | '));
+        log.push('NUM['+si+']: '+rn.map(function(v,j){return '['+j+']'+(v===null?'null':v);}).join(' | '));
+      }
+      
+      // Column mapping
+      var ci={client:-1,project:-1,sale_date:-1,pay_date:-1,month:-1,new_client:-1,value:-1,cost:-1,profit:-1,margin:-1,nps:-1,category:-1};
+      headers.forEach(function(orig,i){
+        var h=orig.toLowerCase().trim();
+        if(/^(cliente|clientes)$/.test(h)&&ci.client===-1) ci.client=i;
+        if(/^projeto/.test(h)&&ci.project===-1) ci.project=i;
+        if(/data.*venda|venda.*data/.test(h)) ci.sale_date=i;
+        if(/data.*pag|pag.*data/.test(h)) ci.pay_date=i;
+        if(/^m[eê]s$/.test(h)) ci.month=i;
+        if(/cliente.*novo/.test(h)&&ci.new_client===-1) ci.new_client=i;
+        if(/^nps$/.test(h)) ci.nps=i;
+        if(/categ/.test(h)&&ci.category===-1) ci.category=i;
+        if(/^faturamento$/.test(h)||/^or[cç]amento$/.test(h)||/^receita$/.test(h)) ci.value=i;
+        if(h==='valor'&&ci.value===-1) ci.value=i;
+        if(/valor.*total/i.test(h)&&ci.value===-1) ci.value=i;
+        if(/^(custos?|despesas?|gastos?)$/.test(h)&&ci.cost===-1) ci.cost=i;
+        if(/custo.*(prod|total|real)/i.test(h)&&ci.cost===-1) ci.cost=i;
+        if(/^lucro$/.test(h)&&ci.profit===-1) ci.profit=i;
+        if(/lucro.*(liq|total)/i.test(h)&&ci.profit===-1) ci.profit=i;
+        if(/^(margem|margin|%)$/.test(h)&&ci.margin===-1) ci.margin=i;
+        if(/lucro.*%/.test(h)&&ci.margin===-1) ci.margin=i;
+      });
+      
+      log.push('MAP: '+JSON.stringify(ci));
+      
+      var projs=[];
+      for(var ri=hr+1;ri<rawStr.length;ri++){
+        var rowS=rawStr[ri]||[];
+        var rowN=rawNum[ri]||[];
+        if(rowS.every(function(c){return !c||c.toString().trim()==''})) continue;
+        
+        var client=ci.client>=0?(rowS[ci.client]||'').toString().trim():'';
+        var proj=ci.project>=0?(rowS[ci.project]||'').toString().trim():'';
+        if(!client&&!proj) continue;
+        if(/^(total|soma|m[eê]dia|subtotal|grand total)/i.test(client)) continue;
+        if(!isNaN(parseFloat(client))&&isFinite(client)) continue; // skip number-only rows
+        
+        // For financial values: use STRING version (raw:false) which has the actual formatted number
+        function getFinancial(idx){
+          if(idx<0) return 0;
+          // Try string first (properly formatted)
+          var sv=(rowS[idx]||'').toString();
+          var pv=parseNum(sv);
+          if(pv!==0) return pv;
+          // Fallback to raw numeric
+          var nv=rowN[idx];
+          if(typeof nv==='number') return nv;
+          return 0;
+        }
+        
+        var val=getFinancial(ci.value);
+        var cost=getFinancial(ci.cost);
+        var profit=getFinancial(ci.profit);
+        var rawM=getFinancial(ci.margin);
+        var nps=ci.nps>=0?parseNum((rowS[ci.nps]||'').toString()):0;
+        
+        // Normalize margin
+        var margin=rawM;
+        if(margin>0&&margin<=1) margin=parseFloat((margin*100).toFixed(1));
+        else margin=parseFloat(margin.toFixed(1));
+        
+        // Derive
+        if(val>0&&profit===0&&cost>=0) profit=parseFloat((val-cost).toFixed(2));
+        if(val>0&&profit!==0&&margin===0) margin=parseFloat(((profit/val)*100).toFixed(1));
+        
+        // Date: use raw numeric for Excel serial conversion
+        var payDRaw=ci.pay_date>=0?rowN[ci.pay_date]||rowS[ci.pay_date]||'':'';
+        var saleDRaw=ci.sale_date>=0?rowN[ci.sale_date]||rowS[ci.sale_date]||'':'';
+        var monthRaw=ci.month>=0?rowN[ci.month]||0:0;
+        var month=parseInt(monthRaw)||0;
+        if(!month){var pd=fmtDate(payDRaw);if(pd&&pd.length>=7) month=parseInt(pd.substring(5,7));}
+        
+        var newCliRaw=ci.new_client>=0?(rowS[ci.new_client]||'').toString().trim():'';
+        
+        projs.push({
+          year:parseInt(yr),
+          client:client,
+          project_name:proj,
+          sale_date:fmtDate(saleDRaw),
+          pay_date:fmtDate(payDRaw),
+          month:month||0,
+          new_client:(/^(sim|yes|true|1)$/i.test(newCliRaw))?'Sim':'Nao',
+          value:val,cost:cost,profit:profit,margin:margin,
+          nps:(nps>10||nps<0)?0:nps,
+          category:ci.category>=0?(rowS[ci.category]||'').toString().trim()||'producao':'producao',
+          status:'concluido',deleted:false
+        });
+      }
+      
+      ALL[yr]=projs;
+      var totV=projs.reduce(function(s,p){return s+p.value;},0);
+      var totC=projs.reduce(function(s,p){return s+p.cost;},0);
+      var totP=projs.reduce(function(s,p){return s+p.profit;},0);
+      var avgM=projs.length?parseFloat((projs.reduce(function(s,p){return s+p.margin;},0)/projs.length).toFixed(1)):0;
+      summary.push(yr+'|'+projs.length+'|'+Math.round(totV)+'|'+Math.round(totC)+'|'+Math.round(totP)+'|'+avgM);
+      log.push('TOTALS: n='+projs.length+' fat=R$'+Math.round(totV).toLocaleString('pt-BR')+' custo=R$'+Math.round(totC).toLocaleString('pt-BR')+' lucro=R$'+Math.round(totP).toLocaleString('pt-BR')+' marg='+avgM+'%');
+      
+    }catch(e){
+      log.push('ERRO '+yr+': '+e.message);
+    }
+  }
+  
+  log.push('\n=== RESUMO ===');
+  log.push('Ano|Projetos|Faturamento|Custo|Lucro|Margem');
+  summary.forEach(function(s){log.push(s);});
+  
+  document.getElementById('r').textContent=log.join('\n');
+  window.__ALL=ALL;
+  console.log('LOGS:'+log.join('||'));
+  console.log('DATA:'+JSON.stringify(ALL));
+}
+run();
+</script>
+</body>
+</html>

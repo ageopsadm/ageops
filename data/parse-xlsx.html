@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Parser XLSX — AGE OPS</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  body { font-family: monospace; background:#111; color:#0f0; padding:20px; font-size:11px; }
+  pre { white-space:pre-wrap; word-break:break-all; }
+  h2 { color:#ff0; margin-top:30px; }
+  .err { color:#f55; }
+  .ok { color:#0f0; }
+  button { background:#222; color:#0f0; border:1px solid #0f0; padding:8px 16px; cursor:pointer; margin:4px; font-family:monospace; }
+  button:hover { background:#0f0; color:#000; }
+  #output { margin-top:20px; }
+</style>
+</head>
+<body>
+<h1 style="color:#ff0">📊 AGE OPS — XLSX Parser</h1>
+<p>Clique para processar cada arquivo e exibir os dados completos:</p>
+
+<button onclick="parseFile('2021')">📂 2021</button>
+<button onclick="parseFile('2022')">📂 2022</button>
+<button onclick="parseFile('2023')">📂 2023</button>
+<button onclick="parseFile('2024')">📂 2024</button>
+<button onclick="parseFile('2025')">📂 2025</button>
+<button onclick="parseFile('2026')">📂 2026</button>
+<button onclick="parseAll()">🚀 PROCESSAR TODOS</button>
+<button onclick="exportJSON()">💾 EXPORTAR JSON</button>
+
+<div id="output"></div>
+
+<script>
+const ALL_DATA = {};
+
+async function parseFile(year) {
+  const out = document.getElementById('output');
+  out.innerHTML += `<h2>⏳ Carregando ${year}...</h2>`;
+  
+  try {
+    const resp = await fetch(`${year}.xlsx`);
+    const buf = await resp.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array', cellDates: true, cellNF: true, cellText: false });
+    
+    const allSheets = wb.SheetNames;
+    out.innerHTML += `<p class="ok">✅ ${year} — Abas: ${allSheets.join(', ')}</p>`;
+    
+    // Tenta a primeira aba com dados de projetos
+    let sheetName = allSheets[0];
+    // Procura aba com "projeto" ou "dashboard" no nome
+    for (const s of allSheets) {
+      if (/proj|dash|kpi|fat|ven/i.test(s)) { sheetName = s; break; }
+    }
+    
+    const ws = wb.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+    
+    out.innerHTML += `<p class="ok">📋 Aba: "${sheetName}" — ${data.length} linhas</p>`;
+    
+    // Mostra header e primeiras 5 linhas
+    if (data.length > 0) {
+      out.innerHTML += `<p style="color:#ffcc00">COLUNAS (linha 0): ${JSON.stringify(data[0])}</p>`;
+      if (data.length > 1) out.innerHTML += `<p>Linha 1: ${JSON.stringify(data[1])}</p>`;
+      if (data.length > 2) out.innerHTML += `<p>Linha 2: ${JSON.stringify(data[2])}</p>`;
+      if (data.length > 3) out.innerHTML += `<p>Linha 3: ${JSON.stringify(data[3])}</p>`;
+      if (data.length > 4) out.innerHTML += `<p>Linha 4: ${JSON.stringify(data[4])}</p>`;
+      if (data.length > 5) out.innerHTML += `<p>Linha 5: ${JSON.stringify(data[5])}</p>`;
+    }
+    
+    // Processar dados
+    const projects = processSheet(year, sheetName, ws, data);
+    ALL_DATA[year] = projects;
+    
+    out.innerHTML += `<p class="ok">✅ ${year}: ${projects.length} projetos extraídos</p>`;
+    
+    // Mostrar todos os projetos
+    let table = `<table style="border-collapse:collapse;width:100%;margin-top:10px">`;
+    table += `<tr style="background:#222;color:#ff0">
+      <th style="padding:4px;border:1px solid #333">Cliente</th>
+      <th>Projeto</th>
+      <th>Data Pgto</th>
+      <th>Mês</th>
+      <th>Orçamento</th>
+      <th>Custo</th>
+      <th>Lucro</th>
+      <th>Margem%</th>
+      <th>NPS</th>
+      <th>Novo?</th>
+    </tr>`;
+    
+    for (const p of projects) {
+      table += `<tr style="border-bottom:1px solid #222">
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#aef">${p.client}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a">${p.project_name}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#888">${p.pay_date}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#888">${p.month}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#0f0">${fmtBRL(p.value)}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#f80">${fmtBRL(p.cost)}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#0cf">${fmtBRL(p.profit)}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#f0f">${p.margin}%</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#ff0">${p.nps}</td>
+        <td style="padding:3px;border:1px solid #1a1a1a;color:#888">${p.new_client}</td>
+      </tr>`;
+    }
+    
+    // Totais
+    const totVal = projects.reduce((s,p)=>s+(p.value||0),0);
+    const totCost = projects.reduce((s,p)=>s+(p.cost||0),0);
+    const totProfit = projects.reduce((s,p)=>s+(p.profit||0),0);
+    const avgMargin = projects.length ? (projects.reduce((s,p)=>s+(p.margin||0),0)/projects.length).toFixed(1) : 0;
+    
+    table += `<tr style="background:#1a2a1a;font-weight:bold;color:#ff0">
+      <td colspan="4" style="padding:4px;text-align:right">TOTAL ${year}:</td>
+      <td style="padding:4px;color:#0f0">${fmtBRL(totVal)}</td>
+      <td style="padding:4px;color:#f80">${fmtBRL(totCost)}</td>
+      <td style="padding:4px;color:#0cf">${fmtBRL(totProfit)}</td>
+      <td style="padding:4px;color:#f0f">${avgMargin}%</td>
+      <td colspan="2" style="padding:4px">${projects.length} projetos</td>
+    </tr>`;
+    table += `</table>`;
+    
+    out.innerHTML += table;
+    
+    return projects;
+  } catch(e) {
+    out.innerHTML += `<p class="err">❌ Erro ${year}: ${e.message}</p>`;
+    console.error(year, e);
+    return [];
+  }
+}
+
+function processSheet(year, sheetName, ws, data) {
+  if (!data || data.length < 2) return [];
+  
+  // Encontrar linha de cabeçalho
+  let headerRow = 0;
+  for (let i = 0; i < Math.min(5, data.length); i++) {
+    const row = data[i].join(' ').toLowerCase();
+    if (row.includes('cliente') || row.includes('projeto') || row.includes('orçamento') || row.includes('orcamento')) {
+      headerRow = i;
+      break;
+    }
+  }
+  
+  const headers = data[headerRow].map(h => (h || '').toString().toLowerCase().trim());
+  const out = document.getElementById('output');
+  out.innerHTML += `<p style="color:#aaa">Headers encontrados (linha ${headerRow}): ${JSON.stringify(headers)}</p>`;
+  
+  // Mapeamento de colunas
+  const colIdx = {};
+  headers.forEach((h, i) => {
+    const clean = h.replace(/\s+/g,' ').replace(/[^\w\s]/g,'');
+    if (/^cliente/.test(clean)) colIdx.client = i;
+    else if (/^projeto/.test(clean)) colIdx.project = i;
+    else if (/venda/.test(clean) && /data/.test(clean)) colIdx.sale_date = i;
+    else if (/pagamento/.test(clean) && /data/.test(clean)) colIdx.pay_date = i;
+    else if (/^m[eê]s/.test(clean)) colIdx.month = i;
+    else if (/novo/.test(clean)) colIdx.new_client = i;
+    else if (/or[cç]amento|valor total|receita|faturamento|venda/i.test(h)) colIdx.value = i;
+    else if (/custo|cost/i.test(h)) colIdx.cost = i;
+    else if (/lucro(?! %)/i.test(h) && !/margin|%/.test(h)) colIdx.profit = i;
+    else if (/margem|margin|lucro %|%/i.test(h)) colIdx.margin = i;
+    else if (/nps/i.test(h)) colIdx.nps = i;
+    else if (/categoria|tipo|category/i.test(h)) colIdx.category = i;
+  });
+  
+  out.innerHTML += `<p style="color:#8af">Mapeamento: ${JSON.stringify(colIdx)}</p>`;
+  
+  const projects = [];
+  
+  for (let i = headerRow + 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row || row.every(c => !c || c.toString().trim() === '')) continue;
+    
+    const client = getVal(row, colIdx.client);
+    const projName = getVal(row, colIdx.project);
+    
+    // Pular linhas sem cliente ou projeto
+    if (!client && !projName) continue;
+    // Pular linhas de total/sumário
+    if (/total|soma|m[eê]dia|average/i.test(client)) continue;
+    
+    const value = parseNum(getVal(row, colIdx.value));
+    const cost = parseNum(getVal(row, colIdx.cost));
+    let profit = parseNum(getVal(row, colIdx.profit));
+    let margin = parseNum(getVal(row, colIdx.margin));
+    
+    // Calcular se não tiver
+    if (value > 0 && cost >= 0 && profit === 0) profit = value - cost;
+    if (value > 0 && margin === 0) margin = parseFloat(((profit / value) * 100).toFixed(1));
+    
+    const payDateRaw = getVal(row, colIdx.pay_date);
+    const saleDateRaw = getVal(row, colIdx.sale_date);
+    
+    projects.push({
+      year: parseInt(year),
+      client: client || '',
+      project_name: projName || '',
+      sale_date: formatDate(saleDateRaw),
+      pay_date: formatDate(payDateRaw),
+      month: parseInt(getVal(row, colIdx.month)) || extractMonth(payDateRaw),
+      new_client: getVal(row, colIdx.new_client) || '',
+      value: value,
+      cost: cost,
+      profit: profit,
+      margin: margin,
+      nps: parseNum(getVal(row, colIdx.nps)) || 0,
+      category: getVal(row, colIdx.category) || 'producao',
+      status: 'concluido',
+      deleted: false
+    });
+  }
+  
+  return projects;
+}
+
+function getVal(row, idx) {
+  if (idx === undefined || idx === null) return '';
+  const v = row[idx];
+  return v !== undefined && v !== null ? v.toString().trim() : '';
+}
+
+function parseNum(val) {
+  if (!val || val === '' || val === '-' || val === 'N/A') return 0;
+  // Remove R$, espaços, pontos de milhar, substitui vírgula decimal
+  const clean = val.toString()
+    .replace(/R\$\s*/gi, '')
+    .replace(/\s/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+    .replace(/[^\d.\-]/g, '');
+  const n = parseFloat(clean);
+  return isNaN(n) ? 0 : n;
+}
+
+function formatDate(val) {
+  if (!val) return '';
+  // Já no formato DD/MM/YYYY ou YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.substring(0, 10);
+  if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(val)) {
+    const parts = val.split(/[\/\-]/);
+    return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  }
+  // Formato "1-Feb-2021" ou "20-Nov-2021"
+  const months = {jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+  const m = val.match(/(\d{1,2})[-\/]([a-zA-Z]+)[-\/](\d{4})/);
+  if (m) {
+    const mo = months[m[2].toLowerCase().substring(0,3)];
+    if (mo) return `${m[3]}-${String(mo).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  }
+  return val;
+}
+
+function extractMonth(dateStr) {
+  const d = formatDate(dateStr);
+  if (d && d.length >= 7) return parseInt(d.substring(5,7));
+  return 0;
+}
+
+function fmtBRL(v) {
+  if (!v) return 'R$ 0';
+  return 'R$ ' + parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+async function parseAll() {
+  document.getElementById('output').innerHTML = '';
+  for (const y of ['2021','2022','2023','2024','2025','2026']) {
+    await parseFile(y);
+  }
+  document.getElementById('output').innerHTML += '<h2 style="color:#0f0">✅ TODOS PROCESSADOS! Clique em EXPORTAR JSON</h2>';
+}
+
+function exportJSON() {
+  const json = JSON.stringify(ALL_DATA, null, 2);
+  document.getElementById('output').innerHTML += `<h2>📄 JSON COMPLETO:</h2><pre style="background:#000;padding:10px;max-height:400px;overflow:auto">${json}</pre>`;
+  
+  // Também mostra totais por ano
+  let summary = '<h2>📊 RESUMO POR ANO:</h2><table style="border-collapse:collapse">';
+  summary += '<tr style="background:#333;color:#ff0"><th style="padding:8px">Ano</th><th>Projetos</th><th>Faturamento</th><th>Custo</th><th>Lucro</th><th>Margem</th></tr>';
+  for (const y of ['2021','2022','2023','2024','2025','2026']) {
+    const p = ALL_DATA[y] || [];
+    const totV = p.reduce((s,x)=>s+x.value,0);
+    const totC = p.reduce((s,x)=>s+x.cost,0);
+    const totP = p.reduce((s,x)=>s+x.profit,0);
+    const avgM = p.length ? (p.reduce((s,x)=>s+x.margin,0)/p.length).toFixed(1) : 0;
+    summary += `<tr style="border-bottom:1px solid #333">
+      <td style="padding:6px;color:#ff0">${y}</td>
+      <td style="padding:6px;color:#aaa">${p.length}</td>
+      <td style="padding:6px;color:#0f0">${fmtBRL(totV)}</td>
+      <td style="padding:6px;color:#f80">${fmtBRL(totC)}</td>
+      <td style="padding:6px;color:#0cf">${fmtBRL(totP)}</td>
+      <td style="padding:6px;color:#f0f">${avgM}%</td>
+    </tr>`;
+  }
+  summary += '</table>';
+  document.getElementById('output').innerHTML += summary;
+}
+</script>
+</body>
+</html>

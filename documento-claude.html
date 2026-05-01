@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGE OPS — Documento Completo para Análise</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222535;
+    --border: rgba(255,255,255,.08);
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --textsub: #94a3b8;
+    --textmuted: #64748b;
+    --font: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #fff; color: #111; font-size: 12px; }
+    .no-print { display: none !important; }
+    .card { border: 1px solid #ddd !important; background: #fafafa !important; break-inside: avoid; }
+    h1,h2,h3 { color: #111 !important; }
+    .tag { background: #eee !important; color: #333 !important; }
+    code { background: #f0f0f0 !important; color: #333 !important; }
+    .section-label { color: #555 !important; }
+    a { color: #333 !important; text-decoration: none; }
+    .kpi-val { color: #111 !important; }
+    table { border-collapse: collapse; }
+    td,th { border: 1px solid #ccc !important; }
+  }
+
+  .wrapper { max-width: 900px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* ── HEADER ── */
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .doc-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(59,130,246,.15);
+    color: var(--blue);
+    border: 1px solid rgba(59,130,246,.25);
+  }
+  .tag.green { background: rgba(34,197,94,.12); color: var(--green); border-color: rgba(34,197,94,.2); }
+  .tag.purple { background: rgba(168,85,247,.12); color: var(--purple); border-color: rgba(168,85,247,.2); }
+  .tag.orange { background: rgba(245,158,11,.12); color: var(--orange); border-color: rgba(245,158,11,.2); }
+  .doc-title { font-size: 32px; font-weight: 800; line-height: 1.2; }
+  .doc-title span { color: var(--green); }
+  .doc-subtitle { color: var(--textsub); font-size: 16px; max-width: 680px; }
+
+  /* ── PRINT BTN ── */
+  .print-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .print-bar p { font-size: 13px; color: var(--textsub); }
+  .btn-print {
+    background: var(--green);
+    color: #0f1117;
+    border: none;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: opacity .2s;
+  }
+  .btn-print:hover { opacity: .85; }
+  .btn-copy {
+    background: transparent;
+    color: var(--textsub);
+    border: 1px solid var(--border);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-copy:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* ── SECTIONS ── */
+  .section { margin-bottom: 56px; }
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 24px 0 10px;
+  }
+  p { color: var(--textsub); margin-bottom: 12px; }
+  p strong { color: var(--text); }
+  ul, ol { padding-left: 20px; color: var(--textsub); margin-bottom: 12px; }
+  li { margin-bottom: 6px; }
+  li strong { color: var(--text); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--textmuted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .kpi-val { font-size: 22px; font-weight: 800; color: var(--green); font-family: var(--mono); }
+  .kpi-val.blue { color: var(--blue); }
+  .kpi-val.purple { color: var(--purple); }
+  .kpi-val.orange { color: var(--orange); }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--textmuted);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    font-size: 13px;
+    color: var(--textsub);
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  td strong { color: var(--text); }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* ── CODE ── */
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: rgba(255,255,255,.06);
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: var(--green);
+  }
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--textsub);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  pre .c { color: var(--textmuted); }
+  pre .k { color: var(--blue); }
+  pre .s { color: var(--green); }
+  pre .n { color: var(--purple); }
+
+  /* ── QUOTE ── */
+  .quote {
+    border-left: 3px solid var(--green);
+    padding: 14px 20px;
+    background: rgba(34,197,94,.05);
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+    font-style: italic;
+    color: var(--text);
+    font-size: 15px;
+  }
+
+  /* ── FLOW ── */
+  .flow {
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 16px 0;
+  }
+  .flow-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .flow-arrow {
+    color: var(--textmuted);
+    font-size: 16px;
+    padding: 0 8px;
+  }
+
+  /* ── MODULE LIST ── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .module-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .module-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    background: rgba(34,197,94,.1);
+  }
+  .module-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .module-desc { font-size: 12px; color: var(--textsub); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* ── TABLE OF CONTENTS ── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 48px;
+  }
+  .toc-title { font-size: 12px; font-weight: 700; color: var(--textmuted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px; }
+  .toc ol { padding-left: 18px; }
+  .toc li { margin-bottom: 5px; }
+  .toc a { color: var(--blue); text-decoration: none; font-size: 13px; }
+  .toc a:hover { text-decoration: underline; }
+
+  .highlight {
+    background: rgba(245,158,11,.08);
+    border: 1px solid rgba(245,158,11,.2);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--orange);
+  }
+  .highlight strong { color: var(--orange); }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .badge-green { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge-blue { background: rgba(59,130,246,.15); color: var(--blue); }
+  .badge-orange { background: rgba(245,158,11,.15); color: var(--orange); }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <div class="doc-meta">
+      <span class="tag green">Documento Técnico</span>
+      <span class="tag">Validação de Negócio</span>
+      <span class="tag purple">Para Claude</span>
+      <span class="tag orange">Abril 2026</span>
+    </div>
+    <div class="doc-title">AGE OPS — <span>Sistema Operacional</span><br>Documento Completo de Análise</div>
+    <p class="doc-subtitle">
+      Visão 360° do projeto AGE OPS: o que é, como foi construído, dados reais de operação,
+      validação como ideia de negócio e mapeamento de potencial para outras empresas.
+      Preparado para análise estratégica pelo Claude.
+    </p>
+  </div>
+
+  <!-- PRINT BAR -->
+  <div class="print-bar no-print">
+    <p>💡 Copie o conteúdo desta página e cole diretamente no Claude para análise completa.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-copy" onclick="copyAll()">📋 Copiar tudo como texto</button>
+      <button class="btn-print" onclick="window.print()">🖨️ Salvar / Imprimir PDF</button>
+    </div>
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="toc">
+    <div class="toc-title">Índice do Documento</div>
+    <ol>
+      <li><a href="#s1">Contexto — Quem somos e de onde surgiu o AGE OPS</a></li>
+      <li><a href="#s2">O que é o AGE OPS — Descrição técnica e funcional</a></li>
+      <li><a href="#s3">Módulos do Sistema — Lista completa de funcionalidades</a></li>
+      <li><a href="#s4">Dados Reais de Operação — 5 anos de histórico</a></li>
+      <li><a href="#s5">Arquitetura Técnica — Como foi construído</a></li>
+      <li><a href="#s6">Diferenciais do Projeto — O que o torna único</a></li>
+      <li><a href="#s7">Validação como Ideia de Negócio — Análise do mercado</a></li>
+      <li><a href="#s8">Perfil de Clientes Ideais — Para quem vender</a></li>
+      <li><a href="#s9">Modelo de Negócio — Precificação e estrutura de serviço</a></li>
+      <li><a href="#s10">Questionamentos para o Claude — O que precisamos analisar</a></li>
+    </ol>
+  </div>
+
+  <!-- SEÇÃO 1 -->
+  <div class="section" id="s1">
+    <div class="section-label">Contexto</div>
+    <h2>1. Quem somos e de onde surgiu o AGE OPS</h2>
+
+    <p>
+      A <strong>AGE</strong> é uma produtora audiovisual brasileira especializada em vídeos, videoclipes, eventos ao vivo, content days, publicidade e podcasts. Fundada em 2021, opera desde então com uma equipe enxuta de criadores e freelancers, atendendo clientes que vão de artistas da música (Universal Music, MC Bill, Jay P) a empresas e marcas (Cobertec, Escola de Planejados, Casa 46).
+    </p>
+
+    <p>
+      Durante 4 anos de operação, o controle de negócios era feito por <strong>planilhas Excel dispersas</strong>: uma por ano, sem padronização, sem integração, sem visibilidade em tempo real. Informações como margem de lucro, custo por projeto, NPS de clientes e produtividade da equipe existiam "espalhadas" e dependiam de consolidação manual.
+    </p>
+
+    <p>
+      O AGE OPS nasceu da necessidade real do Gustavo (fundador) de <strong>operar sua empresa de qualquer lugar, com visibilidade total, e delegar com confiança para a equipe</strong>. A ideia central: se o sistema sabe de tudo, qualquer colaborador pode tomar decisões corretas sem depender do fundador presente.
+    </p>
+
+    <div class="quote">
+      "O diferencial não é a ferramenta — é a adaptação personalizada para as necessidades reais do negócio de cada pessoa."
+    </div>
+
+    <p>
+      O projeto foi desenvolvido inteiramente dentro da plataforma Genspark, usando HTML, CSS e JavaScript puro com uma API RESTful de banco de dados. Sem backend proprietário, sem servidor dedicado — 100% operacional via browser.
+    </p>
+  </div>
+
+  <!-- SEÇÃO 2 -->
+  <div class="section" id="s2">
+    <div class="section-label">Descrição do Produto</div>
+    <h2>2. O que é o AGE OPS</h2>
+
+    <p>
+      O AGE OPS é um <strong>sistema operacional web completo</strong> para gestão de produtoras e agências criativas. Ele centraliza em uma única aplicação tudo que uma empresa de serviços criativos precisa para operar: projetos, financeiro, equipe, clientes, NPS, orçamentos e estratégia.
+    </p>
+
+    <div class="card-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Módulos ativos</div>
+        <div class="kpi-val">13+</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Anos de dados</div>
+        <div class="kpi-val blue">5 anos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Projetos históricos</div>
+        <div class="kpi-val purple">122</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Clientes únicos</div>
+        <div class="kpi-val orange">73</div>
+      </div>
+    </div>
+
+    <p>
+      O sistema opera com <strong>uma única URL</strong> — sem instalação, sem servidor, sem app. Qualquer membro da equipe acessa pelo browser com login e senha, com permissões por papel (Admin vs Equipe). O fundador pode estar em qualquer cidade e ter visão completa em tempo real.
+    </p>
+
+    <h3>Filosofia de Design</h3>
+    <ul>
+      <li><strong>Fonte única de verdade:</strong> todos os módulos leem dos mesmos dados, evitando divergências entre "a planilha do financeiro" e "a planilha do projeto".</li>
+      <li><strong>Integração bidirecional:</strong> alterar o custo no Fechamento atualiza automaticamente o Projeto, que atualiza o Dashboard, que atualiza o Histórico.</li>
+      <li><strong>Operação offline-first:</strong> dados críticos (planilha 2026) ficam em memória, garantindo performance mesmo com latência de rede.</li>
+      <li><strong>Delegação real:</strong> cada membro da equipe enxerga exatamente o que precisa para tomar decisões sem escalar para o fundador.</li>
+    </ul>
+  </div>
+
+  <!-- SEÇÃO 3 -->
+  <div class="section" id="s3">
+    <div class="section-label">Produto</div>
+    <h2>3. Módulos do Sistema — Lista Completa</h2>
+
+    <div class="module-grid">
+      <div class="module-item">
+        <div class="module-icon">📊</div>
+        <div>
+          <div class="module-name">Dashboard Executivo</div>
+          <div class="module-desc">KPIs em tempo real, banner histórico 2021–2026, gráficos, top 5 clientes, diagnóstico estratégico com 12 indicadores e score operacional</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">📋</div>
+        <div>
+          <div class="module-name">Gestão de Projetos</div>
+          <div class="module-desc">CRUD completo com edição inline, filtros, exportação CSV, sync ao vivo com banco, KPIs de 2026 integrados, mini bar chart mensal</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">💰</div>
+        <div>
+          <div class="module-name">Fechamento Financeiro</div>
+          <div class="module-desc">Gestão de gastos detalhados por projeto, custo real que propaga para projetos e dashboard automaticamente</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">📑</div>
+        <div>
+          <div class="module-name">Orçamentos Inteligentes</div>
+          <div class="module-desc">Catálogo de pacotes (videoclipe, institucional, evento, podcast etc.), calculadora de viabilidade, gerador de PDF com layout da empresa, histórico de propostas</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">⭐</div>
+        <div>
+          <div class="module-name">NPS Anônimo por Etapa</div>
+          <div class="module-desc">Links únicos por etapa do projeto (briefing, gravação, entrega), página pública 100% anônima, score NPS com promotores/detratores, insights automáticos</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">👥</div>
+        <div>
+          <div class="module-name">Gestão de Colaboradores</div>
+          <div class="module-desc">Cadastro completo com função, especialidades, nível, diária, equipamentos, portfólio, avaliação interna, WhatsApp/Instagram/e-mail, tags</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">📅</div>
+        <div>
+          <div class="module-name">Histórico Inteligente</div>
+          <div class="module-desc">Dashboard por ano (2021–2026) com KPIs, gráficos, ranking de clientes, segmentos, contexto textual de cada ano, relatório geral com CAGR</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">🏢</div>
+        <div>
+          <div class="module-name">CRM de Clientes</div>
+          <div class="module-desc">73 clientes importados, 7 métricas por card, filtros por status, histórico completo por cliente, total faturado, NPS médio, última interação</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">🗂️</div>
+        <div>
+          <div class="module-name">Kanban de Produção</div>
+          <div class="module-desc">Pipeline de 6 etapas (Reunião → Orçamento → Produção → Gravação → Finalização → No Ar), cards arrastáveis, integrado com status dos projetos</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">📈</div>
+        <div>
+          <div class="module-name">Pipeline Comercial</div>
+          <div class="module-desc">Funil de vendas com Leads → Proposta → Negociação → Fechado, gestão de oportunidades em aberto</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">🎯</div>
+        <div>
+          <div class="module-name">Meu Dia / Tarefas</div>
+          <div class="module-desc">Sistema de dias e foco pessoal com gamificação (XP), gestão de tarefas com progresso, cronograma semanal</div>
+        </div>
+      </div>
+      <div class="module-item">
+        <div class="module-icon">💳</div>
+        <div>
+          <div class="module-name">Financeiro Pessoal</div>
+          <div class="module-desc">Lançamentos financeiros pessoais do fundador integrados ao sistema operacional da empresa</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Pacotes de Orçamento disponíveis (catálogo AGE)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Pacote</th>
+          <th>Preço base</th>
+          <th>Custo base</th>
+          <th>Margem</th>
+          <th>Categoria</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Videoclipe</strong></td><td>R$8.000</td><td>R$3.800</td><td>52,5%</td><td>Vídeo</td></tr>
+        <tr><td><strong>Vídeo Institucional</strong></td><td>R$8.000</td><td>R$3.200</td><td>60%</td><td>Vídeo</td></tr>
+        <tr><td><strong>Vídeo Simples</strong></td><td>R$3.500</td><td>R$1.600</td><td>54%</td><td>Vídeo</td></tr>
+        <tr><td><strong>Visita Horizontal</strong></td><td>R$5.000</td><td>R$2.200</td><td>56%</td><td>Vídeo</td></tr>
+        <tr><td><strong>Podcast</strong></td><td>R$3.500</td><td>R$1.500</td><td>57%</td><td>Áudio/Vídeo</td></tr>
+        <tr><td><strong>Evento Completo</strong></td><td>R$7.000</td><td>R$3.600</td><td>48%</td><td>Evento</td></tr>
+        <tr><td><strong>Evento Básico</strong></td><td>R$3.500</td><td>R$1.800</td><td>48%</td><td>Evento</td></tr>
+        <tr><td><strong>Content Day</strong></td><td>R$4.500</td><td>R$2.000</td><td>55%</td><td>Vídeo</td></tr>
+        <tr><td><strong>Social Media</strong></td><td>R$5.500</td><td>R$2.200</td><td>60%</td><td>Digital</td></tr>
+        <tr><td><strong>Serviço Customizado</strong></td><td>livre</td><td>livre</td><td>calculada</td><td>qualquer</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SEÇÃO 4 -->
+  <div class="section" id="s4">
+    <div class="section-label">Dados Reais</div>
+    <h2>4. Dados Reais de Operação — 5 Anos de Histórico</h2>
+
+    <p>O AGE OPS foi alimentado com dados reais extraídos diretamente das planilhas da empresa de 2021 a 2026. Esses dados validam o sistema e servem como benchmark para análise de viabilidade de negócio.</p>
+
+    <h3>Resumo Financeiro Histórico</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Ano</th>
+          <th>Projetos</th>
+          <th>Clientes</th>
+          <th>Faturamento</th>
+          <th>Custo</th>
+          <th>Lucro</th>
+          <th>Margem</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>2021</strong></td><td>12</td><td>9</td><td>R$67.415</td><td>s/dado</td><td>—</td><td>N/D</td></tr>
+        <tr><td><strong>2022</strong></td><td>25</td><td>22</td><td>R$109.042</td><td>R$58.835</td><td>R$50.207</td><td>46,1%</td></tr>
+        <tr><td><strong>2023</strong> ⭐</td><td>28</td><td>18</td><td>R$210.591</td><td>R$97.431</td><td>R$113.160</td><td>53,7%</td></tr>
+        <tr><td><strong>2024</strong></td><td>22</td><td>17</td><td>R$162.440</td><td>R$77.538</td><td>R$84.902</td><td>52,3%</td></tr>
+        <tr><td><strong>2025</strong></td><td>23</td><td>18</td><td>R$110.190</td><td>s/dado</td><td>—</td><td>N/D</td></tr>
+        <tr><td><strong>2026</strong> (Q1+Q2*)</td><td>17</td><td>12</td><td>R$52.550</td><td>R$22.479</td><td>R$30.071</td><td>57,2%</td></tr>
+        <tr style="border-top:2px solid rgba(255,255,255,.1)">
+          <td><strong>TOTAL</strong></td>
+          <td><strong>127</strong></td>
+          <td><strong>73</strong></td>
+          <td><strong>R$712.228</strong></td>
+          <td><strong>R$253.783+</strong></td>
+          <td><strong>R$278.340+</strong></td>
+          <td><strong>~52%</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--textmuted)">* 2026 inclui 15 projetos realizados (Jan–Abr) + 2 contratos futuros Cobertec (Mai–Jun). 2021 e 2025 sem dados de custo nas planilhas originais.</p>
+
+    <h3>Top 5 Clientes (histórico 2021–2026)</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Cliente</th><th>Faturamento</th><th>Projetos</th><th>Período</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><strong>JAY P</strong></td><td>R$243.600</td><td>27</td><td>2022–2025</td></tr>
+        <tr><td>2</td><td><strong>UNIVERSAL MUSIC</strong></td><td>R$105.100</td><td>5</td><td>2022–2024</td></tr>
+        <tr><td>3</td><td><strong>Giana Mello</strong></td><td>R$96.100</td><td>12</td><td>2021–2025</td></tr>
+        <tr><td>4</td><td><strong>LOU GARCIA</strong></td><td>R$86.900</td><td>4</td><td>2023–2024</td></tr>
+        <tr><td>5</td><td><strong>KG NETWORK</strong></td><td>R$69.550</td><td>6</td><td>2022–2025</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Dados 2026 — Projetos ativos (Jan–Jun)</h3>
+    <table>
+      <thead>
+        <tr><th>Cliente</th><th>Projeto</th><th>Mês</th><th>Valor</th><th>Margem</th><th>NPS</th><th>Segmento</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Yuri Guillen</td><td>Muito Longe</td><td>Jan</td><td>R$10.000</td><td>71%</td><td>10</td><td>Moda</td></tr>
+        <tr><td>Marcella</td><td>Miss Brasil</td><td>Fev</td><td>R$3.600</td><td>72%</td><td>—</td><td>Publicidade</td></tr>
+        <tr><td>Viezes</td><td>Leilão</td><td>Fev</td><td>R$2.600</td><td>73%</td><td>—</td><td>Eventos</td></tr>
+        <tr><td>Talita Perosa Nutri</td><td>Ao Vivo</td><td>Mar</td><td>R$5.200</td><td>21%</td><td>—</td><td>Ao Vivo</td></tr>
+        <tr><td>Thadeu Meneghini</td><td>Ao Vivo</td><td>Mar</td><td>R$5.000</td><td>50%</td><td>10</td><td>Ao Vivo</td></tr>
+        <tr><td>Escola de Planejados</td><td>Master</td><td>Mar</td><td>R$9.400</td><td>57%</td><td>7</td><td>Publicidade</td></tr>
+        <tr><td>Cobertec e Solutec</td><td>Publicidade</td><td>Mar</td><td>R$3.000</td><td>83%</td><td>—</td><td>Publicidade</td></tr>
+        <tr><td>Casa 46</td><td>Visita Benjamim Back</td><td>Abr</td><td>R$6.300</td><td>84%</td><td>—</td><td>Publicidade</td></tr>
+        <tr><td>Ecologyk</td><td>Clipe</td><td>Abr</td><td>R$1.000</td><td>0%</td><td>7</td><td>Videoclipe</td></tr>
+        <tr><td>Thiago Sub</td><td>Content Day</td><td>Abr</td><td>R$1.500</td><td>33%</td><td>10</td><td>Videoclipe</td></tr>
+        <tr><td>Yuri Guillen</td><td>Content Day</td><td>Abr</td><td>R$1.500</td><td>33%</td><td>7</td><td>Moda</td></tr>
+        <tr><td>Irmãs Lira</td><td>Content Day</td><td>Abr</td><td>R$2.250</td><td>56%</td><td>10</td><td>Videoclipe</td></tr>
+        <tr><td>Thadeu Meneghini</td><td>Content Day</td><td>Abr</td><td>R$1.500</td><td>33%</td><td>10</td><td>Videoclipe</td></tr>
+        <tr><td>MC Bill</td><td>Content Day</td><td>Abr</td><td>R$1.500</td><td>33%</td><td>8</td><td>Videoclipe</td></tr>
+        <tr><td>Cobertec e Solutec</td><td>Publicidade Maio</td><td>Mai*</td><td>R$3.000</td><td>83%</td><td>—</td><td>Publicidade</td></tr>
+        <tr><td>Cobertec e Solutec</td><td>Publicidade Junho</td><td>Jun*</td><td>R$3.000</td><td>83%</td><td>—</td><td>Publicidade</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--textmuted)">* Projetos futuros com contrato trimestral assinado (badge FUT na interface).</p>
+
+    <div class="highlight">
+      <strong>📌 Insight relevante para análise:</strong> A empresa possui 73 clientes históricos, dos quais a grande maioria está inativa nos últimos 12 meses. O sistema identifica automaticamente o potencial de reativação — um dado que só ficou visível após a centralização no AGE OPS.
+    </div>
+  </div>
+
+  <!-- SEÇÃO 5 -->
+  <div class="section" id="s5">
+    <div class="section-label">Arquitetura</div>
+    <h2>5. Arquitetura Técnica — Como Foi Construído</h2>
+
+    <h3>Stack tecnológica</h3>
+    <div class="card-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Frontend</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">HTML5 + CSS3 + JS puro</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Banco de dados</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">RESTful Table API (Genspark)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Infra</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">100% browser — zero servidor</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Tamanho total</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">~600KB (1 arquivo HTML)</div>
+      </div>
+    </div>
+
+    <h3>Tabelas do banco de dados</h3>
+    <table>
+      <thead>
+        <tr><th>Tabela</th><th>Descrição</th><th>Campos principais</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>age_hist_projects</code></td><td>Projetos históricos 2021–2026</td><td>year, client_name, project_name, value, cost, profit, margin_pct, nps, category, segment</td></tr>
+        <tr><td><code>age_clients_db</code></td><td>73 clientes únicos com métricas</td><td>client_name, total_value, total_projects, avg_nps, status, last_project_date</td></tr>
+        <tr><td><code>age_projects</code></td><td>Projetos ativos do ano corrente</td><td>client_name, project_name, category, segment, total_value, cost, profit_pct, nps, status, is_new_client</td></tr>
+        <tr><td><code>age_fechamento</code></td><td>Fechamentos financeiros por projeto</td><td>project_id, custo_total, gastos (array), status, observacoes</td></tr>
+        <tr><td><code>age_project_stages</code></td><td>Cards do Kanban</td><td>stage, client_name, project_name, project_id, order</td></tr>
+        <tr><td><code>age_colaboradores</code></td><td>Colaboradores e freelancers</td><td>nome, funcao, especialidades, nivel, diaria, whatsapp, instagram, email, equipamentos, portfolio, avaliacao</td></tr>
+        <tr><td><code>age_nps_campanhas</code></td><td>Links NPS por etapa</td><td>token, etapa, client_name, project_name, created_at</td></tr>
+        <tr><td><code>age_nps_respostas</code></td><td>Respostas anônimas</td><td>token, nota, sub_notas (comunicacao, qualidade, prazo, experiencia), comentario, indicaria</td></tr>
+        <tr><td><code>age_leads</code></td><td>Pipeline comercial</td><td>client_name, stage, value, probability, next_action</td></tr>
+        <tr><td><code>age_tasks</code></td><td>Tarefas pessoais</td><td>title, status, priority, due_date, user</td></tr>
+        <tr><td><code>age_finance</code></td><td>Financeiro pessoal</td><td>type, value, category, date, description</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Fluxo de integração entre módulos</h3>
+    <p>Um dos aspectos mais sofisticados do sistema é que todos os módulos se comunicam automaticamente via um barramento de eventos interno (<code>os-sync.js</code>):</p>
+    <pre>
+<span class="c">/* Exemplo: salvar um gasto no Fechamento dispara uma cadeia */</span>
+
+<span class="n">FECHAMENTO</span> <span class="k">salva gasto</span>
+  → <span class="s">age_projects.cost</span> atualizado (custo real)
+  → <span class="s">age_projects.profit_pct</span> recalculado
+  → <span class="n">Dashboard</span> recarrega KPIs com margem real
+  → <span class="s">age_hist_projects</span> sincronizado (se projeto concluído)
+  → <span class="s">age_clients_db</span> recalcula métricas do cliente
+
+<span class="n">KANBAN</span> <span class="k">move card para "No Ar"</span>
+  → <span class="s">age_projects.status</span> = "concluido"
+  → <span class="n">Dashboard</span> atualiza contagem de projetos ativos
+  → <span class="n">Histórico</span> inclui projeto nas métricas anuais</pre>
+
+    <h3>Decisões de arquitetura relevantes</h3>
+    <ul>
+      <li><strong>Dados críticos em memória (JS const):</strong> a planilha 2026 (<code>PROJ_2026_SHEET</code>) fica como constante JavaScript. Isso garante performance e resiliência a falhas de rede, mas exige sincronização manual com o banco.</li>
+      <li><strong>Edição inline com lock de concorrência:</strong> cada célula da tabela de projetos tem um sistema de "lock" (<code>_ieSaving Set</code>) que evita chamadas duplicadas ao banco durante digitação rápida.</li>
+      <li><strong>Deduplicação automática:</strong> o sistema detecta e remove registros duplicados no histórico que podem surgir de re-importações de planilhas.</li>
+      <li><strong>ID preservation no Sync:</strong> o botão Sync nunca deleta e recria registros (o que quebraria vínculos com fechamentos). Em vez disso, faz UPDATE quando o registro existe, preservando o UUID original.</li>
+      <li><strong>NPS completamente anônimo:</strong> o sistema técnico garante que nem mesmo o banco sabe qual cliente respondeu o NPS — o token de acesso não carrega informações pessoais.</li>
+    </ul>
+  </div>
+
+  <!-- SEÇÃO 6 -->
+  <div class="section" id="s6">
+    <div class="section-label">Diferenciais</div>
+    <h2>6. Diferenciais do Projeto</h2>
+
+    <div class="card">
+      <h3 style="margin-top:0">🎯 Personalização Real, Não Genérica</h3>
+      <p>Enquanto ferramentas como Asana, Monday ou Notion são horizontais (servem para qualquer empresa), o AGE OPS foi construído <strong>especificamente para o fluxo de uma produtora audiovisual</strong>: catálogo de pacotes com equipe e custo base, etapas do Kanban refletindo o fluxo real de produção, métricas de NPS por etapa (não só ao final), histórico de artistas vs. marcas como segmentos distintos.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">🔗 Integração Total Entre Módulos</h3>
+      <p>Não é uma coleção de ferramentas — é um sistema. Alterar o custo num fechamento reflete imediatamente no dashboard, no histórico e no cliente. Isso elimina o problema clássico de "minha planilha de projetos diz uma coisa, meu financeiro diz outra".</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">📍 Operação Remota Real</h3>
+      <p>O fundador pode estar em qualquer lugar e a equipe opera de forma autônoma. Cada colaborador entra com seu login e vê exatamente o que precisa. Sem dependência de estar no escritório ou de "perguntar para o Gustavo".</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">📊 Histórico com Inteligência</h3>
+      <p>122 projetos de 5 anos digitalizados e indexados. O sistema compara automaticamente anos, identifica padrões, mostra quais clientes voltaram, quais segmentos cresceram, qual foi o melhor e pior mês. Isso é dado que a concorrência não tem — e que o fundador leva no bolso.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">💡 Calculadora de Viabilidade em Tempo Real</h3>
+      <p>Ao montar um orçamento, o sistema monta a equipe automaticamente baseado no pacote escolhido, calcula custo real, mostra margem esperada e alerta se o negócio é inviável antes de enviar a proposta. Isso evita aceitar projetos que dariam prejuízo — algo que acontece com frequência em produtoras sem controle.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">📲 Zero Instalação, Zero Servidor</h3>
+      <p>O sistema roda 100% no browser. Nenhuma instalação, nenhuma dependência de IT, nenhum servidor para manter. Isso elimina a barreira de adoção que destrói a maioria dos projetos de sistema interno.</p>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 7 -->
+  <div class="section" id="s7">
+    <div class="section-label">Validação de Negócio</div>
+    <h2>7. Validação como Ideia de Negócio</h2>
+
+    <h3>O problema que resolve</h3>
+    <p>PMEs de serviços criativos (produtoras, agências, estúdios) no Brasil operam em um gap perigoso:</p>
+    <ul>
+      <li><strong>Muito pequenas</strong> para contratar ERPs como SAP, Totvs ou sistemas de gestão que custam R$2k–15k/mês.</li>
+      <li><strong>Muito complexas</strong> para se contentar com planilhas Excel ou Notion (perdas de informação, duplicação, sem integração).</li>
+      <li><strong>Sem profissional de TI interno</strong> para implementar e manter ferramentas genéricas.</li>
+    </ul>
+    <p>Esse gap existe em <strong>centenas de milhares de empresas no Brasil</strong> que faturam entre R$500k e R$10M/ano.</p>
+
+    <h3>Tamanho do mercado endereçável</h3>
+    <table>
+      <thead>
+        <tr><th>Segmento</th><th>Nº estimado de empresas BR</th><th>Problema específico</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Produtoras de vídeo/audiovisual</strong></td><td>8.000–15.000</td><td>Projetos x equipe x custo x entrega</td></tr>
+        <tr><td><strong>Agências de marketing</strong></td><td>30.000+</td><td>Pipeline, NPS, financeiro integrado</td></tr>
+        <tr><td><strong>Agências de publicidade</strong></td><td>10.000+</td><td>Orçamentos, jobs, margem por cliente</td></tr>
+        <tr><td><strong>Empresas de eventos</strong></td><td>20.000+</td><td>Briefing, logística, fechamento financeiro</td></tr>
+        <tr><td><strong>Estúdios de arquitetura/design</strong></td><td>15.000+</td><td>Gestão de projetos, horas, margem</td></tr>
+        <tr><td><strong>Consultorias pequenas</strong></td><td>50.000+</td><td>Projetos, equipe, faturamento, clientes</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Validação real (o próprio AGE como caso)</h3>
+    <div class="card-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Tempo para construir v1</div>
+        <div class="kpi-val blue" style="font-size:16px">~3 semanas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Dados migrados</div>
+        <div class="kpi-val" style="font-size:16px">5 anos / 122 projetos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Usuários ativos</div>
+        <div class="kpi-val orange" style="font-size:16px">6 pessoas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Insights descobertos</div>
+        <div class="kpi-val purple" style="font-size:16px">Vários novos</div>
+      </div>
+    </div>
+    <p>O próprio AGE OPS é a validação. O Gustavo descobriu, ao digitalizar os dados, que tinha <strong>73 clientes únicos</strong> — dado que não sabia de cor. Que o melhor ano foi 2023 com margem de 53,7%. Que clientes importantes como JAY P representaram R$243k em 5 anos. Esse tipo de inteligência muda decisões de negócio.</p>
+
+    <h3>Concorrentes diretos e posicionamento</h3>
+    <table>
+      <thead>
+        <tr><th>Concorrente</th><th>Posição</th><th>Gap que o AGE OPS preenche</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Monday.com</strong></td><td>Gestão de projetos horizontal</td><td>Sem módulo financeiro integrado, sem orçamentos com viabilidade, sem NPS, sem histórico de anos anteriores</td></tr>
+        <tr><td><strong>Asana / Trello</strong></td><td>Task management</td><td>Zero financeiro, zero CRM, zero orçamentos</td></tr>
+        <tr><td><strong>Pipedrive</strong></td><td>CRM de vendas</td><td>Sem gestão de produção, sem fechamento financeiro, sem NPS</td></tr>
+        <tr><td><strong>Notion</strong></td><td>Workspace flexível</td><td>Requer muito setup, sem integração automática entre módulos, sem dashboards calculados</td></tr>
+        <tr><td><strong>Omie / Nibo</strong></td><td>ERP financeiro BR</td><td>Sem gestão de projetos criativos, sem Kanban de produção, sem catálogo de pacotes</td></tr>
+        <tr><td><strong>Solutionados / Operand</strong></td><td>Gestão para agências BR</td><td>Genérico, sem personalização por setor, custo alto</td></tr>
+      </tbody>
+    </table>
+
+    <div class="quote">
+      A proposta de valor única: não é uma ferramenta horizontal que a empresa precisa aprender a usar. É um sistema construído <em>para o fluxo específico daquela empresa</em>, entregue pronto para usar em 15 dias.
+    </div>
+  </div>
+
+  <!-- SEÇÃO 8 -->
+  <div class="section" id="s8">
+    <div class="section-label">Mercado-Alvo</div>
+    <h2>8. Perfil de Clientes Ideais</h2>
+
+    <h3>Perfil de empresa que mais se beneficia</h3>
+    <ul>
+      <li><strong>Faturamento:</strong> R$500k a R$10M/ano</li>
+      <li><strong>Equipe:</strong> 2 a 30 pessoas (fixas + freelancers)</li>
+      <li><strong>Setor:</strong> serviços criativos (audiovisual, marketing, publicidade, eventos, arquitetura, consultoria)</li>
+      <li><strong>Dor atual:</strong> operando por planilhas + WhatsApp, fundador centralizando tudo, sem visibilidade de margem real</li>
+      <li><strong>Maturidade digital:</strong> já usa ferramentas básicas mas não tem sistema integrado</li>
+    </ul>
+
+    <h3>Segmentos prioritários com análise de fit</h3>
+    <div class="card">
+      <h3 style="margin-top:0">🎬 Produtoras de Vídeo / Audiovisual <span class="badge badge-green">FIT MÁXIMO</span></h3>
+      <p>Exatamente o caso da AGE. Fluxo de produção (briefing → gravação → edição → entrega), catálogo de serviços com equipe variável, clientes recorrentes vs. esporádicos, NPS por etapa faz sentido total, fechamento financeiro com custo de freelancers é o maior ponto de dor.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">📣 Agências de Marketing / Social Media <span class="badge badge-green">FIT ALTO</span></h3>
+      <p>Múltiplos clientes simultâneos, jobs mensais recorrentes, equipe mista, necessidade de mostrar ROI para o cliente. O módulo de NPS anônimo por etapa é um diferencial enorme — permite medir satisfação sem constranger o cliente.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🎪 Empresas de Eventos <span class="badge badge-blue">FIT ALTO</span></h3>
+      <p>Orçamentos complexos com muitas variáveis (equipe, equipamento, local), fechamento financeiro pós-evento com gastos detalhados, pipeline de vendas (cotação → aprovado → realizado), histórico de clientes recorrentes.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🏛️ Arquitetura / Design de Interiores <span class="badge badge-blue">FIT MÉDIO-ALTO</span></h3>
+      <p>Projetos longos com marcos, equipe de colaboradores externos, orçamentos por etapa, necessidade de CRM de clientes com histórico. Adaptação necessária: substituir "gravação" por "visita técnica", etc.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🧠 Consultorias e Treinamentos <span class="badge badge-orange">FIT MÉDIO</span></h3>
+      <p>Pipeline de vendas, gestão de projetos por cliente, financeiro integrado. Menos aderência ao catálogo de pacotes com equipe variável — requer adaptação no módulo de orçamentos.</p>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 9 -->
+  <div class="section" id="s9">
+    <div class="section-label">Modelo de Negócio</div>
+    <h2>9. Modelo de Negócio — Precificação e Estrutura</h2>
+
+    <h3>Estrutura de receita proposta</h3>
+    <table>
+      <thead>
+        <tr><th>Plano</th><th>Desenvolvimento</th><th>Mensalidade</th><th>Perfil de cliente</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Starter</strong></td>
+          <td>R$8.000–15.000</td>
+          <td>R$497–800/mês</td>
+          <td>Produtora ou agência pequena, até R$1M/ano, equipe até 5 pessoas</td>
+        </tr>
+        <tr>
+          <td><strong>Growth</strong></td>
+          <td>R$18.000–35.000</td>
+          <td>R$1.500–2.500/mês</td>
+          <td>Agência estabelecida, R$1M–5M/ano, múltiplos departamentos</td>
+        </tr>
+        <tr>
+          <td><strong>Pro / Enterprise</strong></td>
+          <td>R$40.000+</td>
+          <td>R$4.000–8.000/mês</td>
+          <td>Grupo de empresas ou holding, R$5M+/ano, múltiplos CNPJs</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>O que está incluso na mensalidade</h3>
+    <ul>
+      <li>Hospedagem e infraestrutura do sistema</li>
+      <li>Atualizações de segurança e manutenção técnica</li>
+      <li>Suporte via WhatsApp (tempo de resposta por plano)</li>
+      <li>1 evolução de funcionalidade por trimestre (Growth e Pro)</li>
+      <li>Backup diário dos dados</li>
+      <li>Onboarding e treinamento da equipe</li>
+      <li>Novas integrações com ferramentas do cliente (Pro)</li>
+    </ul>
+
+    <h3>Projeção de receita com 4 novos clientes/mês</h3>
+    <table>
+      <thead>
+        <tr><th>Métrica</th><th>Valor estimado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Receita de desenvolvimento (4 projetos × R$15k médio)</td><td><strong>R$60.000/mês</strong></td></tr>
+        <tr><td>Receita recorrente após 12 meses (48 clientes × R$1.200 médio)</td><td><strong>R$57.600/mês</strong></td></tr>
+        <tr><td>Receita total no mês 13 (desenvolvimento + mensalidades)</td><td><strong>~R$117.600/mês</strong></td></tr>
+        <tr><td>Receita anual após estabilização (ano 2)</td><td><strong>R$1M–1,4M/ano</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Estrutura de equipe mínima para 4 clientes/mês</h3>
+    <ul>
+      <li><strong>1 Dev + IA</strong> — implementação e adaptação do sistema (pode ser 1 desenvolvedor usando Claude/Cursor)</li>
+      <li><strong>1 Customer Success</strong> — onboarding, treinamento, suporte, coleta de feedbacks</li>
+      <li><strong>1 Comercial</strong> — prospecção, apresentação, fechamento (pode ser o próprio fundador no início)</li>
+      <li><strong>Terceirizado:</strong> design gráfico (identidade visual do sistema para o cliente)</li>
+    </ul>
+
+    <h3>Sobre a plataforma — Genspark vs. Desenvolvimento próprio</h3>
+    <p>
+      O sistema atual roda 100% na Genspark. Para escalar como negócio de forma profissional, o caminho natural é:
+    </p>
+    <ol>
+      <li><strong>Curto prazo (0–6 meses):</strong> usar a Genspark para os primeiros clientes, validar o modelo, gerar caixa</li>
+      <li><strong>Médio prazo (6–18 meses):</strong> migrar para infraestrutura própria (ex: Vercel + Supabase) com Claude/Cursor para acelerar desenvolvimento</li>
+      <li><strong>Longo prazo (18m+):</strong> produto SaaS com painel de administração, permitindo que o próprio cliente personalize parâmetros sem necessidade de dev</li>
+    </ol>
+    <p>
+      A vantagem competitiva real <strong>não está na tecnologia</strong> — está no conhecimento de negócio do setor criativo, na capacidade de entender a dor do cliente e traduzir para um sistema que funciona no dia seguinte.
+    </p>
+  </div>
+
+  <!-- SEÇÃO 10 -->
+  <div class="section" id="s10">
+    <div class="section-label">Para o Claude</div>
+    <h2>10. Questionamentos para Análise</h2>
+
+    <p>Com base em todo o contexto acima, pedimos ao Claude que analise e responda:</p>
+
+    <div class="card">
+      <h3 style="margin-top:0">🔍 Análise de Validação do Negócio</h3>
+      <ol>
+        <li style="margin-bottom:12px">Olhando para a estrutura modular do AGE OPS descrita aqui, quais módulos têm maior potencial de valor para outros tipos de empresa além de produtoras audiovisuais? Por quê?</li>
+        <li style="margin-bottom:12px">O modelo de cobrar desenvolvimento (R$8k–40k) + mensalidade (R$500–8k) é o mais adequado para esse tipo de serviço, ou existe um modelo alternativo (ex: SaaS por usuário, revenue share, pacote all-in anual) que poderia funcionar melhor?</li>
+        <li style="margin-bottom:12px">Qual é o maior risco desse modelo de negócio (construir sistemas personalizados para cada cliente) e como mitigá-lo?</li>
+        <li style="margin-bottom:12px">Dado que o sistema foi construído sem backend próprio (100% browser + API Genspark), qual é a percepção de profissionalismo e confiabilidade para um cliente corporativo? Isso é um obstáculo real ou pode ser contornado?</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">📐 Análise de Produto</h3>
+      <ol>
+        <li style="margin-bottom:12px">Quais funcionalidades do AGE OPS (listadas na seção 3) seriam consideradas "must-have" para qualquer empresa de serviços criativos vs. quais são "nice-to-have" específicas da AGE?</li>
+        <li style="margin-bottom:12px">O sistema de NPS anônimo por etapa é um diferencial real de mercado ou já existe algo equivalente facilmente disponível? Como posicionar isso comercialmente?</li>
+        <li style="margin-bottom:12px">A calculadora de viabilidade em tempo real nos orçamentos (que calcula margem antes de enviar a proposta) — qual é o potencial de ROI que isso representa para um cliente típico?</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">🚀 Análise de Go-to-Market</h3>
+      <ol>
+        <li style="margin-bottom:12px">Qual o melhor canal para chegar nos donos de produtoras e agências no Brasil? (Instagram, LinkedIn, indicação, eventos, YouTube, parcerias com associações?)</li>
+        <li style="margin-bottom:12px">Como estruturar uma demonstração comercial do sistema que seja impactante em 15 minutos para um dono de produtora que nunca ouviu falar da solução?</li>
+        <li style="margin-bottom:12px">Qual seria a proposta de valor em uma única frase para usar como tagline comercial?</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">🧩 Análise de Escalabilidade</h3>
+      <ol>
+        <li style="margin-bottom:12px">Como transformar esse serviço customizado em um produto semi-padronizado, sem perder o diferencial de personalização? Existe um "núcleo comum" que serve 80% dos clientes?</li>
+        <li style="margin-bottom:12px">Qual seria a estrutura técnica ideal para manter 20, 50, 100 sistemas de clientes diferentes ao mesmo tempo com uma equipe pequena?</li>
+        <li style="margin-bottom:12px">Considerando os dados reais do AGE (R$700k+ em projetos, 73 clientes, 5 anos), como usar esses dados como prova social e estudo de caso na venda para novos clientes?</li>
+      </ol>
+    </div>
+
+    <div class="highlight">
+      <strong>📌 Contexto adicional para o Claude:</strong> O Gustavo tem experiência operando uma produtora real com os desafios descritos. O sistema não é teórico — está em uso ativo há meses com equipe de 6 pessoas. O objetivo agora é entender se e como transformar esse conhecimento de produto em um negócio escalável de software/serviço para outras empresas do setor criativo brasileiro.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div style="text-align:center;color:var(--textmuted);font-size:13px;padding-bottom:40px">
+    Documento gerado por AGE OPS v4.0 — Abril 2026<br>
+    Para uso interno e análise estratégica
+  </div>
+
+</div>
+
+<script>
+function copyAll() {
+  const sections = document.querySelectorAll('.section, .toc');
+  let text = '# AGE OPS — Documento Completo para Análise Estratégica\nGerado em Abril 2026\n\n';
+
+  // Adicionar conteúdo estruturado
+  text += `====================================\n`;
+  text += `CONTEXTO GERAL\n`;
+  text += `====================================\n\n`;
+  text += `A AGE é uma produtora audiovisual brasileira operando desde 2021. O AGE OPS é o sistema operacional web construído internamente para centralizar toda a gestão da empresa em uma única plataforma acessível de qualquer lugar.\n\n`;
+  text += `Stack: HTML5 + CSS3 + JavaScript puro + API RESTful (Genspark)\nSem backend próprio, sem instalação, 100% browser.\n\n`;
+
+  text += `====================================\n`;
+  text += `DADOS HISTÓRICOS (5 ANOS REAIS)\n`;
+  text += `====================================\n\n`;
+  text += `2021: 12 projetos, 9 clientes, fat R$67.415\n`;
+  text += `2022: 25 projetos, 22 clientes, fat R$109.042, custo R$58.835, lucro R$50.207, margem 46.1%\n`;
+  text += `2023: 28 projetos, 18 clientes, fat R$210.591, custo R$97.431, lucro R$113.160, margem 53.7%\n`;
+  text += `2024: 22 projetos, 17 clientes, fat R$162.440, custo R$77.538, lucro R$84.902, margem 52.3%\n`;
+  text += `2025: 23 projetos, 18 clientes, fat R$110.190\n`;
+  text += `2026 (Q1+Q2): 17 projetos, 12 clientes, fat R$52.550, custo R$22.479, lucro R$30.071, margem 57.2%\n`;
+  text += `TOTAL: 127 projetos, 73 clientes únicos, ~R$712k faturado\n\n`;
+  text += `Top clientes: JAY P (R$243k, 27 proj), Universal Music (R$105k), Giana Mello (R$96k), Lou Garcia (R$86k), KG Network (R$69k)\n\n`;
+
+  text += `====================================\n`;
+  text += `MÓDULOS DO SISTEMA\n`;
+  text += `====================================\n\n`;
+  text += `1. Dashboard Executivo — KPIs em tempo real, histórico 5 anos, diagnóstico estratégico\n`;
+  text += `2. Gestão de Projetos — CRUD completo, edição inline, filtros, CSV\n`;
+  text += `3. Fechamento Financeiro — gastos detalhados, propagação automática de custos\n`;
+  text += `4. Orçamentos Inteligentes — catálogo de pacotes, calculadora de viabilidade, PDF automático\n`;
+  text += `5. NPS Anônimo por Etapa — links únicos, formulário público anônimo, score + insights\n`;
+  text += `6. Gestão de Colaboradores — função, diária, equipamentos, portfólio, avaliação\n`;
+  text += `7. Histórico Inteligente — análise por ano 2021-2026, CAGR, comparativo\n`;
+  text += `8. CRM de Clientes — 73 clientes, 7 métricas, histórico de projetos\n`;
+  text += `9. Kanban de Produção — 6 etapas, cards arrastáveis, integrado com status\n`;
+  text += `10. Pipeline Comercial — funil de vendas Leads → Fechado\n`;
+  text += `11. Meu Dia / Tarefas — foco pessoal, gamificação XP\n`;
+  text += `12. Financeiro Pessoal — lançamentos pessoais do fundador\n\n`;
+
+  text += `====================================\n`;
+  text += `CATÁLOGO DE PACOTES (Orçamentos)\n`;
+  text += `====================================\n\n`;
+  text += `Videoclipe: R$8.000 (custo R$3.800, margem ~52%)\n`;
+  text += `Vídeo Institucional: R$8.000 (custo R$3.200, margem ~60%)\n`;
+  text += `Vídeo Simples: R$3.500 (custo R$1.600, margem ~54%)\n`;
+  text += `Visita Horizontal: R$5.000 (custo R$2.200, margem ~56%)\n`;
+  text += `Podcast: R$3.500 (custo R$1.500, margem ~57%)\n`;
+  text += `Evento Completo: R$7.000 (custo R$3.600, margem ~48%)\n`;
+  text += `Evento Básico: R$3.500 (custo R$1.800, margem ~48%)\n`;
+  text += `Content Day: R$4.500 (custo R$2.000, margem ~55%)\n`;
+  text += `Social Media: R$5.500 (custo R$2.200, margem ~60%)\n\n`;
+
+  text += `====================================\n`;
+  text += `MODELO DE NEGÓCIO PROPOSTO\n`;
+  text += `====================================\n\n`;
+  text += `Serviço: adaptar e personalizar o AGE OPS para outras empresas de serviços criativos.\n\n`;
+  text += `Plano Starter: R$8k-15k desenvolvimento + R$500-800/mês manutenção\n`;
+  text += `Plano Growth: R$18k-35k desenvolvimento + R$1.500-2.500/mês\n`;
+  text += `Plano Pro: R$40k+ desenvolvimento + R$4.000-8.000/mês\n\n`;
+  text += `Projeção com 4 clientes/mês: R$60k/mês em desenvolvimento + R$57.6k/mês em recorrente após 12 meses = ~R$117k/mês no mês 13.\n\n`;
+  text += `Equipe mínima: 1 dev+IA, 1 customer success, 1 comercial (pode ser o fundador)\n\n`;
+
+  text += `====================================\n`;
+  text += `DIFERENCIAIS COMPETITIVOS\n`;
+  text += `====================================\n\n`;
+  text += `1. Personalização real — não é horizontal como Monday/Asana. É construído para o fluxo da empresa.\n`;
+  text += `2. Integração total — alterar custo no fechamento propaga para projeto, dashboard, histórico e cliente automaticamente.\n`;
+  text += `3. Operação remota real — equipe opera autônoma sem depender do fundador.\n`;
+  text += `4. Histórico com inteligência — dados históricos indexados revelam padrões invisíveis em planilhas.\n`;
+  text += `5. Calculadora de viabilidade — evita aceitar projetos com margem negativa.\n`;
+  text += `6. Zero instalação — 100% browser, nenhuma dependência de IT.\n`;
+  text += `7. NPS anônimo por etapa — sem constranger o cliente, com sigilo técnico garantido.\n\n`;
+
+  text += `====================================\n`;
+  text += `CONCORRENTES\n`;
+  text += `====================================\n\n`;
+  text += `Monday.com / Asana / Trello: gestão de projetos horizontal, sem financeiro integrado\n`;
+  text += `Pipedrive: CRM de vendas, sem produção ou financeiro\n`;
+  text += `Notion: flexível mas sem integração automática, requer muito setup\n`;
+  text += `Omie / Nibo: ERP financeiro BR, sem gestão de projetos criativos\n`;
+  text += `Operand / Solutionados: gestão para agências BR mas genérico e caro\n\n`;
+
+  text += `====================================\n`;
+  text += `ARQUITETURA TÉCNICA\n`;
+  text += `====================================\n\n`;
+  text += `Frontend: HTML5 + CSS3 + JavaScript puro (sem frameworks)\n`;
+  text += `Banco: RESTful Table API (Genspark) — GET/POST/PUT/PATCH/DELETE\n`;
+  text += `Tamanho: ~600KB total (1 arquivo HTML principal)\n`;
+  text += `Usuários simultâneos: 6 (gustavowng, vraulin, paulin, ken, vic, pedrobarreto)\n`;
+  text += `Papéis: Admin, Equipe\n\n`;
+  text += `Tabelas: age_hist_projects (122 registros), age_clients_db (73), age_projects (variável), age_fechamento, age_project_stages, age_colaboradores, age_nps_campanhas, age_nps_respostas, age_leads, age_tasks, age_finance\n\n`;
+  text += `Integração entre módulos via barramento SYNC.emit/on — fechamento propaga custo para projeto, kanban propaga status, histórico se atualiza automaticamente.\n\n`;
+
+  text += `====================================\n`;
+  text += `PERGUNTAS PARA O CLAUDE ANALISAR\n`;
+  text += `====================================\n\n`;
+  text += `1. Quais módulos têm maior potencial para outros tipos de empresa?\n`;
+  text += `2. O modelo desenvolvimento + mensalidade é o ideal ou existe alternativa melhor?\n`;
+  text += `3. Qual o maior risco desse modelo de negócio e como mitigá-lo?\n`;
+  text += `4. Sistema 100% browser (sem backend próprio) é obstáculo para clientes corporativos?\n`;
+  text += `5. Quais funcionalidades são must-have vs nice-to-have para qualquer empresa criativa?\n`;
+  text += `6. O NPS anônimo por etapa é diferencial real ou existe equivalente no mercado?\n`;
+  text += `7. ROI da calculadora de viabilidade nos orçamentos — como quantificar?\n`;
+  text += `8. Melhores canais para chegar em donos de produtoras e agências no Brasil?\n`;
+  text += `9. Como estruturar demo de 15 minutos que seja impactante?\n`;
+  text += `10. Proposta de valor em uma frase — tagline comercial?\n`;
+  text += `11. Como transformar serviço customizado em produto semi-padronizado sem perder personalização?\n`;
+  text += `12. Estrutura técnica para manter 50-100 sistemas de clientes com equipe pequena?\n`;
+  text += `13. Como usar os dados reais do AGE (R$700k+, 73 clientes, 5 anos) como prova social na venda?\n`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => btn.textContent = orig, 2500);
+  }).catch(() => {
+    alert('Não foi possível copiar automaticamente. Use Ctrl+A e Ctrl+C para selecionar tudo.');
+  });
+}
+</script>
+</body>
+</html>

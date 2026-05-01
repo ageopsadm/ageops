@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head><body>
+<pre id="r">Carregando auto...</pre>
+<script>
+function parseNum(v){
+  if(v===undefined||v===null||v==='') return 0;
+  if(typeof v==='number') return v;
+  var s=String(v).replace(/R\$\s*/gi,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  if(!s||s==='-') return 0;
+  var n=parseFloat(s);
+  return isNaN(n)?0:n;
+}
+async function run(){
+  var el=document.getElementById('r');
+  try{
+    var resp=await fetch('2026_new.xlsx');
+    var buf=await resp.arrayBuffer();
+    var wb=XLSX.read(buf,{type:'array',raw:true});
+    var out='Abas: '+wb.SheetNames.join(', ')+'\n\n';
+    var ws=wb.Sheets[wb.SheetNames[0]];
+    var raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+    for(var r=0;r<Math.min(raw.length,100);r++){
+      var row=raw[r];
+      if(row.some(c=>c!=='')){
+        out+='R'+r+': '+JSON.stringify(row)+'\n';
+      }
+    }
+    el.textContent=out;
+    console.log('DONE',out.substring(0,3000));
+  }catch(e){
+    el.textContent='ERR:'+e.message;
+    console.error(e);
+  }
+}
+window.onload=run;
+</script></body></html>

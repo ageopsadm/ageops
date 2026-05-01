@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<pre id="r">Loading...</pre>
+<script>
+// Known column names per year (from analysis)
+// All years seem to share: Cliente[0], Projeto[1], Data Venda[2], Data Pgto[3], Mes[4], Cliente Novo[5 or 6],
+// Faturamento[7], Custos[8], Lucro[9], Margem[10], Categoria[11], Segmento[12], NPS[13]
+
+function parseNum(v){
+  if(v===undefined||v===null||v==='') return 0;
+  if(typeof v==='number') return v;
+  var s=v.toString().replace(/R\$\s*/gi,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  if(!s||s==='-') return 0;
+  var n=parseFloat(s);
+  return isNaN(n)?0:n;
+}
+
+function fmtDate(v){
+  if(!v) return '';
+  if(typeof v==='number'){
+    // Excel serial
+    try{var d=XLSX.SSF.parse_date_code(v);if(d&&d.y>1900) return d.y+'-'+('0'+d.m).slice(-2)+'-'+('0'+d.d).slice(-2);}catch(e){}
+    return '';
+  }
+  var s=v.toString().trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+  var months={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+  var m=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if(m){var mo=months[m[2].toLowerCase().substring(0,3)];if(mo) return m[3]+'-'+('0'+mo).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)){var p=s.split(/[\/\-]/);return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');}
+  return s;
+}
+
+async function run(){
+  var files=['2021','2022','2023','2024','2025','2026'];
+  var ALL={};
+  var log=[];
+  var summary=[];
+
+  for(var fi=0;fi<files.length;fi++){
+    var yr=files[fi];
+    try{
+      var resp=await fetch(yr+'.xlsx');
+      var buf=await resp.arrayBuffer();
+      var wb=XLSX.read(buf,{type:'array',raw:false});
+      var sn=wb.SheetNames[0];
+      var ws=wb.Sheets[sn];
+      var raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      var rawN=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      
+      var hr=0;
+      for(var i=0;i<Math.min(8,raw.length);i++){
+        if((raw[i]||[]).join(' ').toLowerCase().indexOf('cliente')>=0){hr=i;break;}
+      }
+      
+      var headers=(raw[hr]||[]).map(function(h){return (h||'').toString().trim();});
+      log.push('=== '+yr+' | sheet:'+sn+' headerRow:'+hr+' ===');
+      log.push('COLS: '+headers.map(function(h,i){return '['+i+']"'+h+'"';}).join(', '));
+      
+      // Show rows hr+1 to hr+5 with raw numeric values
+      for(var si=hr+1;si<=Math.min(hr+5,rawN.length-1);si++){
+        var rn=rawN[si]||[];
+        var clientVal=(rn[0]||'').toString();
+        if(!clientVal) continue;
+        log.push('row['+si+']: '+rn.map(function(v,j){return '['+j+']'+(v===null?'':v);}).join(' | '));
+      }
+      
+      // Build column index using header names
+      var ci={client:-1,project:-1,sale_date:-1,pay_date:-1,month:-1,new_client:-1,value:-1,cost:-1,profit:-1,margin:-1,nps:-1,category:-1};
+      headers.forEach(function(orig,i){
+        var h=orig.toLowerCase().trim();
+        if(/^(cliente|clientes)$/.test(h)) ci.client=i;
+        if(/^projeto/.test(h)) ci.project=i;
+        if(/data.*venda|venda.*data/.test(h)) ci.sale_date=i;
+        if(/data.*pag|pag.*data/.test(h)) ci.pay_date=i;
+        if(/^m[eê]s$/.test(h)) ci.month=i;
+        if(/cliente.*novo|novo.*cliente/.test(h)&&ci.new_client===-1) ci.new_client=i;
+        if(/^nps$/.test(h)) ci.nps=i;
+        if(/categ/.test(h)&&ci.category===-1) ci.category=i;
+        // Financial columns - match exact names used in spreadsheet
+        if(/^faturamento$/.test(h)||/^or[cç]amento$/.test(h)||/^receita$/.test(h)) ci.value=i;
+        if(/valor.*total/i.test(h)&&ci.value===-1) ci.value=i;
+        if(h==='valor'&&ci.value===-1) ci.value=i;
+        if(/^(custos?|cost|despesas?|gastos?)$/.test(h)) ci.cost=i;
+        if(/custo.*(prod|real|total)/i.test(h)&&ci.cost===-1) ci.cost=i;
+        if(/^lucro$/.test(h)) ci.profit=i;
+        if(/lucro.*(liq|total)/i.test(h)&&ci.profit===-1) ci.profit=i;
+        if(/^(margem|margin|%)$/.test(h)||/lucro.*%/.test(h)||/marg.*%/.test(h)) ci.margin=i;
+      });
+      
+      log.push('MAP: '+JSON.stringify(ci));
+      
+      var projs=[];
+      for(var ri=hr+1;ri<raw.length;ri++){
+        var row=raw[ri]||[];
+        var rowN=rawN[ri]||[];
+        if(row.every(function(c){return !c||c.toString().trim()==''})) continue;
+        
+        var client=ci.client>=0?(rowN[ci.client]||row[ci.client]||'').toString().trim():'';
+        var proj=ci.project>=0?(rowN[ci.project]||row[ci.project]||'').toString().trim():'';
+        if(!client&&!proj) continue;
+        if(/^(total|soma|m[eê]dia|subtotal|grand)/i.test(client)) continue;
+        if(typeof client==='number') continue; // skip rows where client is a number (totals)
+        
+        function getN(idx){
+          if(idx<0||idx===undefined) return 0;
+          var nv=rawN[idx];
+          if(typeof nv==='number') return nv;
+          return parseNum((row[idx]||'').toString());
+        }
+        
+        var val=getN(ci.value);
+        var cost=getN(ci.cost);
+        var profit=getN(ci.profit);
+        var rawMargin=getN(ci.margin);
+        var nps=getN(ci.nps);
+        
+        // Margin: if stored as decimal (0.45) convert to percentage (45)
+        var margin=rawMargin;
+        if(margin>0&&margin<=1) margin=parseFloat((margin*100).toFixed(1));
+        else if(margin>1) margin=parseFloat(margin.toFixed(1));
+        
+        // Derive missing
+        if(val>0&&profit===0&&cost>=0) profit=parseFloat((val-cost).toFixed(2));
+        if(val>0&&profit!==0&&margin===0) margin=parseFloat(((profit/val)*100).toFixed(1));
+        
+        var payDRaw=ci.pay_date>=0?rowN[ci.pay_date]||row[ci.pay_date]||'':'';
+        var saleDRaw=ci.sale_date>=0?rowN[ci.sale_date]||row[ci.sale_date]||'':'';
+        var monthRaw=ci.month>=0?rowN[ci.month]||0:0;
+        var month=parseInt(monthRaw)||0;
+        if(!month){
+          var pd=fmtDate(payDRaw);
+          if(pd&&pd.length>=7) month=parseInt(pd.substring(5,7));
+        }
+        
+        var newCliRaw=ci.new_client>=0?(row[ci.new_client]||'').toString().trim():'';
+        
+        projs.push({
+          year:parseInt(yr),
+          client:client,
+          project_name:proj,
+          sale_date:fmtDate(saleDRaw.toString()),
+          pay_date:fmtDate(payDRaw.toString()),
+          month:month||0,
+          new_client:(/^(sim|yes|true|1)$/i.test(newCliRaw))?'Sim':'Nao',
+          value:val,
+          cost:cost,
+          profit:profit,
+          margin:margin,
+          nps:nps>10?0:nps,
+          category:ci.category>=0?(row[ci.category]||'').toString().trim()||'producao':'producao',
+          status:'concluido',
+          deleted:false
+        });
+      }
+      
+      ALL[yr]=projs;
+      var totV=projs.reduce(function(s,p){return s+p.value;},0);
+      var totC=projs.reduce(function(s,p){return s+p.cost;},0);
+      var totP=projs.reduce(function(s,p){return s+p.profit;},0);
+      var avgM=projs.length?parseFloat((projs.reduce(function(s,p){return s+p.margin;},0)/projs.length).toFixed(1)):0;
+      summary.push(yr+'|'+projs.length+'|'+Math.round(totV)+'|'+Math.round(totC)+'|'+Math.round(totP)+'|'+avgM);
+      log.push('TOTALS: projs='+projs.length+' fat=R$'+Math.round(totV).toLocaleString('pt-BR')+' custo=R$'+Math.round(totC).toLocaleString('pt-BR')+' lucro=R$'+Math.round(totP).toLocaleString('pt-BR')+' margem='+avgM+'%');
+      
+    }catch(e){
+      log.push('ERRO '+yr+': '+e.message+' '+e.stack);
+    }
+  }
+  
+  log.push('\n=== SUMMARY ===');
+  log.push('Ano|Projetos|Faturamento|Custo|Lucro|Margem%');
+  summary.forEach(function(s){log.push(s);});
+  
+  document.getElementById('r').textContent=log.join('\n');
+  window.__ALL=ALL;
+  console.log('LOGS:'+log.join('||'));
+  console.log('FINAL:'+JSON.stringify(ALL));
+}
+run();
+</script>
+</body>
+</html>

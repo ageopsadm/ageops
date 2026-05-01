@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head><title>Audit Console</title></head>
+<body>
+<script>
+async function run() {
+  const [rH, rP, rC] = await Promise.all([
+    fetch('../tables/age_hist_projects?limit=500'),
+    fetch('../tables/age_projects?limit=300'),
+    fetch('../tables/age_clients_db?limit=300')
+  ]);
+  const hist   = ((await rH.json()).data||[]).filter(r=>!r.deleted);
+  const active = ((await rP.json()).data||[]).filter(r=>!r.deleted);
+  const clis   = ((await rC.json()).data||[]).filter(r=>!r.deleted);
+  const fmt = v => 'R$'+(parseFloat(v)||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+
+  console.log('=== HIST TOTAL:', hist.length);
+
+  // Por ano
+  const EXP = {
+    2021:{fat:67415,custo:0,n:12},2022:{fat:109042,custo:58835,n:25},
+    2023:{fat:210591,custo:97431,n:28},2024:{fat:162440,custo:77538,n:22},
+    2025:{fat:110190,custo:0,n:23},2026:{fat:46200,custo:19979,n:12}
+  };
+  for (const y of [2021,2022,2023,2024,2025,2026]) {
+    const yp=hist.filter(p=>p.year==y);
+    const fat=yp.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+    const cst=yp.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+    const pro=yp.reduce((s,p)=>s+(parseFloat(p.profit)||0),0);
+    const e=EXP[y];
+    console.log(`${y}| n:${yp.length}(exp${e.n}) fat:${fmt(fat)}(exp${fmt(e.fat)}) custo:${fmt(cst)} lucro:${fmt(pro)}`);
+  }
+
+  // Clientes no hist (top 25)
+  const cliMap={};
+  hist.forEach(p=>{ const c=(p.client_name||'?').trim(); if(!cliMap[c])cliMap[c]={n:0,v:0}; cliMap[c].n++; cliMap[c].v+=parseFloat(p.value)||0; });
+  const sorted=Object.entries(cliMap).sort((a,b)=>b[1].v-a[1].v);
+  console.log('\n=== TOP 25 CLIENTES NO HIST:');
+  sorted.slice(0,25).forEach(([name,d])=>console.log(`  ${d.n}p | ${fmt(d.v)} | ${name}`));
+
+  // Comparar clients_db vs hist
+  console.log('\n=== CLIENTS_DB vs HIST (divergências):');
+  let divs=0;
+  clis.forEach(c=>{
+    const name=(c.client_name||'').trim().toLowerCase();
+    const hp=hist.filter(p=>(p.client_name||'').trim().toLowerCase()===name);
+    const dbN=parseInt(c.total_projects)||0;
+    const dbV=parseFloat(c.total_value)||0;
+    const hV=hp.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+    if(hp.length!==dbN || Math.abs(hV-dbV)>1){
+      console.log(`  ✗ ${c.client_name}: DB(${dbN}p,${fmt(dbV)}) HIST(${hp.length}p,${fmt(hV)})`);
+      divs++;
+    }
+  });
+  if(!divs) console.log('  Sem divergências');
+
+  // Duplicatas
+  console.log('\n=== DUPLICATAS:');
+  const seen={};let dups=0;
+  hist.forEach(p=>{
+    const k=`${p.year}|${(p.client_name||'').toLowerCase()}|${(p.project_name||'').toLowerCase()}`;
+    if(seen[k]){console.log('  DUP:',p.year,p.client_name,p.project_name,'val:',p.value);dups++;}
+    seen[k]=true;
+  });
+  if(!dups) console.log('  Nenhuma');
+
+  // age_projects
+  const nc=active.filter(p=>p.status!=='cancelado');
+  const fatA=nc.reduce((s,p)=>s+(parseFloat(p.total_value)||0),0);
+  const cstA=nc.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+  console.log(`\n=== ACTIVE PROJECTS: total:${active.length} n-cancelados:${nc.length} fat:${fmt(fatA)} custo:${fmt(cstA)}`);
+  console.log('  Status breakdown:', 
+    ['concluido','em_andamento','pendente','cancelado'].map(s=>`${s}:${active.filter(p=>p.status===s).length}`).join(' | '));
+
+  // Campos faltando
+  console.log('\n=== CAMPOS PROBLEMÁTICOS:');
+  console.log('  sem month:', hist.filter(p=>!p.month||p.month==0).length);
+  console.log('  sem value:', hist.filter(p=>!(parseFloat(p.value)>0)).length);
+  console.log('  sem client:', hist.filter(p=>!p.client_name).length);
+  console.log('  margin_pct=0:', hist.filter(p=>p.year==2022||p.year==2023||p.year==2024||p.year==2026).filter(p=>!(parseFloat(p.margin_pct)>0)).length, '(anos 2022-2024,2026)');
+  console.log('  year=null:', hist.filter(p=>!p.year).length);
+
+  console.log('\nDONE');
+}
+run().catch(e=>console.error('ERRO:',e));
+</script>
+</body>
+</html>

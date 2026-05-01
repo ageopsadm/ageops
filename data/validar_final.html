@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<title>AGE OPS — Validação Final</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:monospace;background:#080c14;color:#adc;padding:20px;font-size:12px}
+h1{color:#ffcc00;margin-bottom:4px}
+p.sub{color:#667;margin-bottom:12px;font-size:11px}
+.card{background:#0d1420;border:1px solid #1a2a3a;border-radius:6px;padding:14px;margin-bottom:10px}
+.card h2{color:#00aaff;font-size:13px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;color:#667;padding:3px 6px;border-bottom:1px solid #1a2a3a}
+td{padding:3px 6px;border-bottom:1px solid #0f1a26}
+.ok{color:#00ff88}.err{color:#ff4444}.warn{color:#ffcc00}.info{color:#00aaff}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700}
+.badge-ok{background:#00ff8822;color:#00ff88}
+.badge-err{background:#ff444422;color:#ff4444}
+.badge-warn{background:#ffcc0022;color:#ffcc00}
+button{background:#111;border:1px solid #00aaff;color:#00aaff;padding:8px 16px;cursor:pointer;font-family:monospace;font-size:12px;border-radius:4px;margin-bottom:12px}
+button:hover{background:#00aaff;color:#000}
+</style>
+</head>
+<body>
+<h1>✅ AGE OPS — Validação Final do Banco</h1>
+<p class="sub">Verifica se os dados estão corretos após o fix_master</p>
+<button onclick="runValidation()">🔍 Executar Validação Completa</button>
+<div id="out"></div>
+
+<script>
+var expected = {
+  2021:{n:12,fat:67415,custo:0},
+  2022:{n:25,fat:109042,custo:58835},
+  2023:{n:28,fat:210591,custo:97431},
+  2024:{n:22,fat:162440,custo:77538},
+  2025:{n:23,fat:110190,custo:0},
+  2026:{n:12,fat:46200,custo:19979}
+};
+
+async function runValidation() {
+  document.getElementById('out').innerHTML = '<p class="info">Carregando...</p>';
+  
+  try {
+    // Buscar todos os projetos históricos
+    var allProjs = [];
+    var page = 1;
+    while (true) {
+      var r = await fetch('../tables/age_hist_projects?limit=200&page='+page);
+      var d = await r.json();
+      var rows = (d.data||[]).filter(p=>!p.deleted);
+      allProjs = allProjs.concat(rows);
+      if (rows.length < 200 || allProjs.length >= d.total) break;
+      page++;
+    }
+
+    // Deduplicar
+    var seen = new Map();
+    var unique = allProjs.filter(p => {
+      var k = (parseInt(p.year)||0)+'|'+(p.client_name||'').toLowerCase().trim()+'|'+(p.project_name||'').toLowerCase().trim();
+      if (seen.has(k)) return false;
+      seen.set(k, true); return true;
+    });
+
+    // Clientes
+    var cliR = await fetch('../tables/age_clients_db?limit=300');
+    var cliD = await cliR.json();
+    var clients = (cliD.data||[]).filter(c=>!c.deleted);
+
+    // Calcular por ano
+    var byYear = {};
+    unique.forEach(p => {
+      var y = parseInt(p.year)||0;
+      if(!byYear[y]) byYear[y]={n:0,fat:0,custo:0,lucro:0,cli:new Set()};
+      byYear[y].n++;
+      byYear[y].fat   += parseFloat(p.value)||0;
+      byYear[y].custo += parseFloat(p.cost)||0;
+      byYear[y].lucro += parseFloat(p.profit)||0;
+      if(p.client_name) byYear[y].cli.add((p.client_name||'').toLowerCase().trim());
+    });
+
+    // Top clientes
+    var cliMap = {};
+    unique.forEach(p=>{
+      var n=(p.client_name||'?'); 
+      if(!cliMap[n]) cliMap[n]={v:0,c:0};
+      cliMap[n].v+=parseFloat(p.value)||0;
+      cliMap[n].c++;
+    });
+    var topCli = Object.entries(cliMap).sort((a,b)=>b[1].v-a[1].v).slice(0,10);
+
+    // Renderizar
+    var html = '';
+
+    // STATUS GERAL
+    var totalOk = unique.length === 122;
+    var duplicatas = allProjs.length - unique.length;
+    html += `<div class="card">
+      <h2>📊 STATUS GERAL DO BANCO</h2>
+      <table>
+        <tr><th>Métrica</th><th>Banco (bruto)</th><th>Após dedup.</th><th>Esperado</th><th>Status</th></tr>
+        <tr>
+          <td>Total de projetos</td>
+          <td class="${allProjs.length===122?'ok':'warn'}">${allProjs.length}</td>
+          <td class="${unique.length===122?'ok':'warn'}">${unique.length}</td>
+          <td>122</td>
+          <td><span class="badge badge-${unique.length===122?'ok':(duplicatas>0?'warn':'err')}">${unique.length===122?'✓ OK':duplicatas>0?'⚠ DUPL.':'✗ ERRO'}</span></td>
+        </tr>
+        <tr>
+          <td>Clientes cadastrados</td>
+          <td colspan="2" class="ok">${clients.length}</td>
+          <td>~73</td>
+          <td><span class="badge badge-${clients.length>=70?'ok':'warn'}">${clients.length>=70?'✓ OK':'⚠ VERIFIQUE'}</span></td>
+        </tr>
+        ${duplicatas > 0 ? `<tr><td colspan="5" class="warn">⚠ ${duplicatas} duplicatas detectadas. Execute fix_master.html → Limpar + Reimportar</td></tr>` : ''}
+      </table>
+    </div>`;
+
+    // POR ANO
+    html += `<div class="card"><h2>📅 VALIDAÇÃO POR ANO</h2>
+      <table>
+        <tr><th>Ano</th><th>Proj. DB</th><th>Proj. Esp.</th><th>Fat. DB</th><th>Fat. Esp.</th><th>Custo DB</th><th>Custo Esp.</th><th>Clientes</th><th>Status</th></tr>`;
+    
+    [2021,2022,2023,2024,2025,2026].forEach(yr => {
+      var got = byYear[yr] || {n:0,fat:0,custo:0,cli:new Set()};
+      var exp = expected[yr];
+      var nOk = got.n === exp.n;
+      var fatOk = Math.abs(got.fat - exp.fat) < 50;
+      var custoOk = Math.abs(got.custo - exp.custo) < 50;
+      var ok = nOk && fatOk && custoOk;
+      html += `<tr>
+        <td><b class="info">${yr}</b></td>
+        <td class="${nOk?'ok':'err'}">${got.n}</td>
+        <td>${exp.n}</td>
+        <td class="${fatOk?'ok':'err'}">R$${Math.round(got.fat).toLocaleString('pt-BR')}</td>
+        <td>R$${exp.fat.toLocaleString('pt-BR')}</td>
+        <td class="${custoOk?'ok':'warn'}">${exp.custo===0?'(s/reg)':'R$'+Math.round(got.custo).toLocaleString('pt-BR')}</td>
+        <td>${exp.custo===0?'0 (s/reg)':'R$'+exp.custo.toLocaleString('pt-BR')}</td>
+        <td>${got.cli.size}</td>
+        <td><span class="badge badge-${ok?'ok':(nOk?'warn':'err')}">${ok?'✓ OK':!nOk?'✗ N':'⚠ ΔFat'}</span></td>
+      </tr>`;
+    });
+    
+    var totalFat = unique.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+    var totalCusto = unique.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+    html += `<tr style="background:#1a2a3a">
+      <td><b>TOTAL</b></td>
+      <td colspan="2"><b class="ok">${unique.length} / 122</b></td>
+      <td colspan="2"><b class="${Math.abs(totalFat-705878)<100?'ok':'err'}">R$${Math.round(totalFat).toLocaleString('pt-BR')} / R$705.878</b></td>
+      <td colspan="2"><b class="ok">R$${Math.round(totalCusto).toLocaleString('pt-BR')} / R$253.783</b></td>
+      <td colspan="2"></td>
+    </tr></table></div>`;
+
+    // TOP CLIENTES
+    var topExpected = {
+      'JAY P':          {v:243600,c:27},
+      'UNIVERSAL MUSIC':{v:105100,c:5},
+      'Giana Mello':    {v:96100, c:12},
+      'LOU GARCIA':     {v:86900, c:4},
+      'KG NETWORK':     {v:69550, c:6},
+    };
+
+    html += `<div class="card"><h2>🏆 TOP 10 CLIENTES (por faturamento)</h2>
+      <table>
+        <tr><th>#</th><th>Cliente</th><th>Projetos (DB)</th><th>Projetos (Esp.)</th><th>Fat. DB</th><th>Fat. Esp.</th><th>Status</th></tr>`;
+    
+    topCli.forEach(([name,d],i) => {
+      var exp = topExpected[name];
+      var hasExp = !!exp;
+      var ok = hasExp && Math.abs(d.v - exp.v) < 500 && d.c === exp.c;
+      html += `<tr>
+        <td>${i+1}</td>
+        <td><b>${name}</b></td>
+        <td class="${hasExp&&d.c===exp.c?'ok':'warn'}">${d.c}</td>
+        <td>${hasExp?exp.c:'—'}</td>
+        <td class="${hasExp&&Math.abs(d.v-exp.v)<500?'ok':'warn'}">R$${Math.round(d.v).toLocaleString('pt-BR')}</td>
+        <td>${hasExp?'R$'+exp.v.toLocaleString('pt-BR'):'—'}</td>
+        <td><span class="badge badge-${!hasExp?'info':ok?'ok':'warn'}">${!hasExp?'ℹ NOVO':ok?'✓ OK':'⚠ DIF'}</span></td>
+      </tr>`;
+    });
+    html += '</table></div>';
+
+    // CLIENTES DB
+    html += `<div class="card"><h2>👥 CLIENTES CADASTRADOS (age_clients_db)</h2>
+      <table>
+        <tr><th>Cliente</th><th>Projetos</th><th>Fat. Total</th><th>NPS</th><th>Status</th><th>Anos</th></tr>`;
+    clients.slice(0,15).forEach(c => {
+      html += `<tr>
+        <td><b>${c.client_name}</b></td>
+        <td>${c.total_projects||'—'}</td>
+        <td>R$${Math.round(parseFloat(c.total_value)||0).toLocaleString('pt-BR')}</td>
+        <td>${parseFloat(c.avg_nps)>0?parseFloat(c.avg_nps).toFixed(1)+'★':'—'}</td>
+        <td class="${c.status==='ativo'?'ok':c.status==='recorrente'?'info':'warn'}">${c.status}</td>
+        <td>${c.years_active||'—'}</td>
+      </tr>`;
+    });
+    if (clients.length > 15) html += `<tr><td colspan="6" class="dim">... e mais ${clients.length-15} clientes</td></tr>`;
+    html += '</table></div>';
+
+    document.getElementById('out').innerHTML = html;
+  } catch(e) {
+    document.getElementById('out').innerHTML = '<p class="err">Erro: '+e.message+'</p>';
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>

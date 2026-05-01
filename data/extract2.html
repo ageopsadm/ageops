@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<pre id="r">Carregando...</pre>
+<script>
+const MONTHS={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+
+function parseNum(v){
+  if(v===undefined||v===null||v==='')return null;
+  const s=v.toString().replace(/R\$\s*/gi,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  if(s===''||s==='-')return null;
+  const n=parseFloat(s);
+  return isNaN(n)?null:n;
+}
+
+function fmtDate(v){
+  if(!v)return'';
+  const s=v.toString().trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.substring(0,10);
+  const m=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if(m){const mo=MONTHS[m[2].toLowerCase().substring(0,3)];if(mo)return`${m[3]}-${String(mo).padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)){const p=s.split(/[\/\-]/);return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+  // Excel serial number
+  if(/^\d+$/.test(s)){
+    const d=XLSX.SSF.parse_date_code(parseInt(s));
+    if(d)return`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  }
+  return s;
+}
+
+async function run(){
+  const files=['2021','2022','2023','2024','2025','2026'];
+  const ALL={};
+  const log=[];
+
+  for(const yr of files){
+    try{
+      const r=await fetch(`${yr}.xlsx`);
+      const buf=await r.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array',cellDates:false,raw:false,cellNF:false});
+      const sn=wb.SheetNames[0];
+      const ws=wb.Sheets[sn];
+      
+      // Get raw with all values
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      // Also get raw numeric values
+      const rawNum=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      
+      // Find header row - look for row with "cliente" AND at least one numeric keyword
+      let hr=0;
+      for(let i=0;i<Math.min(8,raw.length);i++){
+        const joined=(raw[i]||[]).join(' ').toLowerCase();
+        if(joined.includes('cliente')){hr=i;break;}
+      }
+      
+      const headers=(raw[hr]||[]).map(h=>(h||'').toString().trim());
+      const headersL=headers.map(h=>h.toLowerCase());
+      
+      // Log ALL headers with index
+      log.push(`\n=== ${yr} | sheet:${sn} | headerRow:${hr} ===`);
+      log.push(`HEADERS: ${headers.map((h,i)=>`[${i}]${h}`).join(' | ')}`);
+      
+      // Show first 3 data rows with all values
+      for(let i=hr+1;i<Math.min(hr+4,raw.length);i++){
+        const row=rawNum[i]||[];
+        log.push(`row[${i}]: ${row.map((v,j)=>`[${j}]${v}`).join(' | ')}`);
+      }
+      
+      // Smart column detection - try multiple patterns
+      const ci={};
+      headersL.forEach((h,i)=>{
+        if(!h)return;
+        // Client
+        if(/^cliente/.test(h)&&ci.client===undefined) ci.client=i;
+        // Project  
+        else if(/^projeto/.test(h)&&ci.project===undefined) ci.project=i;
+        // Dates
+        if(/data.*venda|venda.*data/.test(h)) ci.sale_date=i;
+        if(/data.*pag|pag.*data/.test(h)) ci.pay_date=i;
+        // Month
+        if(/^m[eê]s$/.test(h)||h==='mes') ci.month=i;
+        // New client
+        if(/novo/.test(h)) ci.new_client=i;
+        // NPS
+        if(/^nps$/.test(h)) ci.nps=i;
+        // Category
+        if(/categ|tipo de|type/.test(h)) ci.category=i;
+      });
+      
+      // For financial columns, look more broadly
+      // Try to identify by position: value tends to be before cost
+      // Look for columns containing R$ values in data rows
+      const numericCols={};
+      for(let i=hr+1;i<Math.min(hr+10,rawNum.length);i++){
+        const row=rawNum[i]||[];
+        row.forEach((v,j)=>{
+          if(typeof v==='number'&&v>0&&j>2){
+            if(!numericCols[j])numericCols[j]={count:0,total:0,header:headersL[j]||''};
+            numericCols[j].count++;
+            numericCols[j].total+=v;
+          }
+        });
+      }
+      log.push(`Numeric cols detected: ${JSON.stringify(numericCols)}`);
+      
+      // Now map financial cols by header name more aggressively
+      headersL.forEach((h,i)=>{
+        if(!h)return;
+        const orig=headers[i];
+        // Value/Budget
+        if(ci.value===undefined){
+          if(/or[cç]amento/i.test(orig)||/valor.*(total|proj)/i.test(orig)||/receita/i.test(orig)||/faturamento/i.test(orig)||(/^valor$/i.test(orig.trim()))) ci.value=i;
+        }
+        // Cost
+        if(ci.cost===undefined){
+          if(/^custo$/i.test(orig.trim())||/custo.*(prod|total)/i.test(orig)||/^cost$/i.test(orig.trim())) ci.cost=i;
+        }
+        // Profit
+        if(ci.profit===undefined){
+          if(/^lucro$/i.test(orig.trim())||/lucro.*(liq|total|r\$)/i.test(orig)) ci.profit=i;
+        }
+        // Margin
+        if(ci.margin===undefined){
+          if(/marg/i.test(orig)||/lucro.*%/i.test(orig)||/%.*lucro/i.test(orig)) ci.margin=i;
+        }
+      });
+      
+      log.push(`ColMap: ${JSON.stringify(ci)}`);
+      
+      // Parse projects using rawNum for financial data
+      const projs=[];
+      for(let i=hr+1;i<raw.length;i++){
+        const row=raw[i]||[];
+        const rowN=rawNum[i]||[];
+        if(row.every(c=>!c||c.toString().trim()===''))continue;
+        
+        const client=ci.client!==undefined?(row[ci.client]||'').toString().trim():'';
+        const proj=ci.project!==undefined?(row[ci.project]||'').toString().trim():'';
+        if(!client&&!proj)continue;
+        if(/^(total|soma|m[eê]dia|subtotal|average)/i.test(client))continue;
+        
+        // Get financial values - try rawNum first, fallback to parsed string
+        let val=ci.value!==undefined?(typeof rowN[ci.value]==='number'?rowN[ci.value]:parseNum(row[ci.value])):null;
+        let cost=ci.cost!==undefined?(typeof rowN[ci.cost]==='number'?rowN[ci.cost]:parseNum(row[ci.cost])):null;
+        let profit=ci.profit!==undefined?(typeof rowN[ci.profit]==='number'?rowN[ci.profit]:parseNum(row[ci.profit])):null;
+        let margin=ci.margin!==undefined?(typeof rowN[ci.margin]==='number'?rowN[ci.margin]:parseNum(row[ci.margin])):null;
+        let nps=ci.nps!==undefined?(typeof rowN[ci.nps]==='number'?rowN[ci.nps]:parseNum(row[ci.nps])):null;
+        
+        val=val||0; cost=cost||0; profit=profit||0; margin=margin||0; nps=nps||0;
+        
+        // Derive missing values
+        if(val>0&&profit===0&&cost>=0) profit=parseFloat((val-cost).toFixed(2));
+        if(val>0&&profit!==0&&margin===0) margin=parseFloat(((profit/val)*100).toFixed(1));
+        // Sometimes margin is stored as decimal (0.45 instead of 45)
+        if(margin>0&&margin<1) margin=parseFloat((margin*100).toFixed(1));
+        
+        const payD=ci.pay_date!==undefined?(row[ci.pay_date]||'').toString():'';
+        const saleD=ci.sale_date!==undefined?(row[ci.sale_date]||'').toString():'';
+        let month=ci.month!==undefined?parseInt(row[ci.month]||0):0;
+        if(!month){
+          const pd=fmtDate(payD);
+          if(pd&&pd.length>=7)month=parseInt(pd.substring(5,7));
+        }
+        
+        const newCli=ci.new_client!==undefined?(row[ci.new_client]||'').toString().trim():'';
+        
+        projs.push({
+          year:parseInt(yr),client,project_name:proj,
+          sale_date:fmtDate(saleD),pay_date:fmtDate(payD),
+          month:month||0,
+          new_client:(/sim|yes|true|1/i.test(newCli))?'Sim':'Não',
+          value:val,cost,profit,margin,nps,
+          category:(ci.category!==undefined?(row[ci.category]||'').toString().trim())||'producao',
+          status:'concluido',deleted:false
+        });
+      }
+      
+      ALL[yr]=projs;
+      const totV=projs.reduce((s,p)=>s+p.value,0);
+      const totC=projs.reduce((s,p)=>s+p.cost,0);
+      const totP=projs.reduce((s,p)=>s+p.profit,0);
+      log.push(`RESULT ${yr}: ${projs.length} projetos | Fat:R$${Math.round(totV).toLocaleString('pt-BR')} | Custo:R$${Math.round(totC).toLocaleString('pt-BR')} | Lucro:R$${Math.round(totP).toLocaleString('pt-BR')}`);
+      
+    }catch(e){
+      log.push(`ERRO ${yr}: ${e.message}\n${e.stack}`);
+    }
+  }
+  
+  document.getElementById('r').textContent=log.join('\n');
+  window.__ALL=ALL;
+  console.log('RESULT:'+JSON.stringify(ALL));
+}
+run();
+</script>
+</body>
+</html>

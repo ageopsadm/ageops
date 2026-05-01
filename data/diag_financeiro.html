@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head><title>Diagnóstico Financeiro</title>
+<style>
+  body { background:#0a0e1a; color:#e4eeff; font-family:monospace; padding:20px; }
+  pre { background:#111827; border:1px solid #223; padding:16px; border-radius:8px; overflow:auto; }
+  h2 { color:#00aaff; }
+  .ok { color:#00ff88; }
+  .warn { color:#ffcc00; }
+  .err { color:#ff4444; }
+  .sep { color:#334; margin:8px 0; }
+</style>
+</head>
+<body>
+<h2>🔎 Diagnóstico Financeiro — AGE OPS</h2>
+<pre id="out">Carregando...</pre>
+<script>
+const log = [];
+function w(s, cls) { log.push(cls ? `<span class="${cls}">${s}</span>` : s); }
+function sep() { w('─'.repeat(70), 'sep'); }
+
+async function run() {
+  /* Dados esperados das planilhas */
+  const EXPECTED = {
+    2021:{ fat:67415,  custo:0,     lucro:67415,  n:12 },
+    2022:{ fat:109042, custo:58835, lucro:50207,  n:25 },
+    2023:{ fat:210591, custo:97431, lucro:113160, n:28 },
+    2024:{ fat:162440, custo:77538, lucro:84902,  n:22 },
+    2025:{ fat:110190, custo:0,     lucro:110190, n:23 },
+    2026:{ fat:46200,  custo:19979, lucro:26221,  n:12 }
+  };
+
+  w('=== DIAGNÓSTICO DE FATURAMENTO ANUAL ===');
+  w(`Verificando tabela age_hist_projects...`);
+  sep();
+
+  const res = await fetch('../tables/age_hist_projects?limit=500');
+  const data = await res.json();
+  const rows = (data.data || []).filter(r => !r.deleted);
+  w(`Total de registros no banco: ${rows.length}`, rows.length >= 122 ? 'ok' : 'err');
+  sep();
+
+  /* Totais por ano */
+  const years = [2021,2022,2023,2024,2025,2026];
+  let totalFatDB = 0, totalFatExp = 0;
+  let totalCustoDB = 0, totalCustoExp = 0;
+  
+  for (const y of years) {
+    const yp = rows.filter(r => r.year == y);
+    const fat  = yp.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+    const cust = yp.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+    const pro  = yp.reduce((s,p)=>s+(parseFloat(p.profit)||0),0);
+    const mg   = fat > 0 ? (pro/fat*100) : 0;
+    const exp  = EXPECTED[y];
+    
+    const fatOk  = Math.abs(fat - exp.fat) < 1;
+    const nOk    = yp.length === exp.n;
+    const semCst = exp.custo === 0;
+    
+    w(`\n${y}: ${yp.length} proj | Fat: R$${fat.toLocaleString('pt-BR')} (exp: R$${exp.fat.toLocaleString('pt-BR')}) ${fatOk?'✓':'✗'} | Custo: R$${cust.toLocaleString('pt-BR')} ${semCst?'(sem registro)':''} | Lucro: R$${pro.toLocaleString('pt-BR')} | Margem: ${mg.toFixed(1)}%`, 
+      fatOk && nOk ? 'ok' : (fatOk ? 'warn' : 'err'));
+    
+    totalFatDB += fat;
+    totalFatExp += exp.fat;
+    totalCustoDB += cust;
+    totalCustoExp += exp.custo;
+  }
+
+  sep();
+  w(`\nTOTAL DB:    Fat R$${totalFatDB.toLocaleString('pt-BR')} | Custo R$${totalCustoDB.toLocaleString('pt-BR')}`);
+  w(`TOTAL EXP:   Fat R$${totalFatExp.toLocaleString('pt-BR')} | Custo R$${totalCustoExp.toLocaleString('pt-BR')}`);
+  const fatMatch = Math.abs(totalFatDB - totalFatExp) < 1;
+  w(`STATUS FATURAMENTO: ${fatMatch ? '✓ CORRETO' : '✗ DIVERGÊNCIA: ' + Math.abs(totalFatDB - totalFatExp).toFixed(0)}`, fatMatch ? 'ok' : 'err');
+  sep();
+
+  /* Verificar age_projects */
+  w(`\n=== PROJETOS ATIVOS (age_projects) ===`);
+  const rp = await fetch('../tables/age_projects?limit=300');
+  const dp = await rp.json();
+  const projs = (dp.data||[]).filter(p=>!p.deleted);
+  const active = projs.filter(p=>p.status!=='cancelado');
+  const totalFatAtivo = active.reduce((s,p)=>s+(parseFloat(p.total_value)||0),0);
+  const totalCustoAtivo = active.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+  const totalLucroAtivo = totalFatAtivo - totalCustoAtivo;
+  const margAtivo = totalFatAtivo > 0 ? (totalLucroAtivo/totalFatAtivo*100) : 0;
+  w(`Total projetos: ${projs.length} | Ativos (não cancelados): ${active.length}`);
+  w(`Faturamento ativo: R$${totalFatAtivo.toLocaleString('pt-BR')}`);
+  w(`Custo ativo: R$${totalCustoAtivo.toLocaleString('pt-BR')}`);
+  w(`Lucro ativo: R$${totalLucroAtivo.toLocaleString('pt-BR')}`);
+  w(`Margem ativo: ${margAtivo.toFixed(1)}%`, margAtivo > 30 ? 'ok' : margAtivo > 15 ? 'warn' : 'err');
+  sep();
+
+  /* Verificar fechamentos */
+  w(`\n=== FECHAMENTOS (age_fechamento) ===`);
+  const rf = await fetch('../tables/age_fechamento?limit=300');
+  const df = await rf.json();
+  const fechs = (df.data||[]).filter(f=>!f.deleted);
+  w(`Total fechamentos: ${fechs.length}`, 'ok');
+  if (fechs.length > 0) {
+    const totalFat = fechs.reduce((s,f)=>s+(parseFloat(f.total_value)||0),0);
+    const totalImp = fechs.reduce((s,f)=>s+(parseFloat(f.imposto_valor)||0),0);
+    const totalLuc = fechs.reduce((s,f)=>s+(parseFloat(f.lucro_liquido)||0),0);
+    w(`Faturamento fechado: R$${totalFat.toLocaleString('pt-BR')}`);
+    w(`Impostos: R$${totalImp.toLocaleString('pt-BR')}`);
+    w(`Lucro líquido: R$${totalLuc.toLocaleString('pt-BR')}`);
+  }
+  sep();
+
+  /* Verificar gastos */
+  w(`\n=== GASTOS (age_gastos) ===`);
+  const rg = await fetch('../tables/age_gastos?limit=500');
+  const dg = await rg.json();
+  const gastos = (dg.data||[]).filter(g=>!g.deleted);
+  const totalGastos = gastos.reduce((s,g)=>s+(parseFloat(g.valor)||0),0);
+  w(`Total lançamentos: ${gastos.length} | Total valor: R$${totalGastos.toLocaleString('pt-BR')}`, 'ok');
+  sep();
+
+  /* Verificar clientes */
+  w(`\n=== CLIENTES (age_clients_db) ===`);
+  const rc = await fetch('../tables/age_clients_db?limit=200');
+  const dc = await rc.json();
+  const clis = (dc.data||[]).filter(c=>!c.deleted);
+  const totalCliVal = clis.reduce((s,c)=>s+(parseFloat(c.total_value)||0),0);
+  w(`Total clientes: ${clis.length}`);
+  w(`Faturamento acumulado nos clientes: R$${totalCliVal.toLocaleString('pt-BR')}`);
+  w(`Top 5:`, 'ok');
+  clis.sort((a,b)=>(parseFloat(b.total_value)||0)-(parseFloat(a.total_value)||0)).slice(0,5)
+    .forEach((c,i) => w(`  ${i+1}. ${c.client_name} — R$${(parseFloat(c.total_value)||0).toLocaleString('pt-BR')} — ${c.total_projects}p`));
+  sep();
+  w('\n✅ DIAGNÓSTICO CONCLUÍDO', 'ok');
+
+  document.getElementById('out').innerHTML = log.join('\n');
+}
+run().catch(e => { document.getElementById('out').innerHTML = `ERRO: ${e.message}`; });
+</script>
+</body>
+</html>

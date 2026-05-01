@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGE OPS — Seu negócio operando de qualquer lugar</title>
+  <meta name="description" content="Sistemas operacionais personalizados para sua empresa operar de qualquer lugar. Delegue, controle e cresça com inteligência.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="#" class="nav-logo">
+      <span class="logo-age">AGE</span><span class="logo-ops">OPS</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#como-funciona">Como funciona</a></li>
+      <li><a href="#diferenciais">Diferenciais</a></li>
+      <li><a href="#servicos">Serviços</a></li>
+      <li><a href="#precos">Preços</a></li>
+      <li><a href="#contato" class="btn-nav">Falar com especialista</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     HERO
+══════════════════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="hero-glow glow-1"></div>
+    <div class="hero-glow glow-2"></div>
+  </div>
+  <div class="hero-container">
+    <div class="hero-badge">
+      <i class="fas fa-bolt"></i>
+      Sistema Operacional Personalizado
+    </div>
+    <h1 class="hero-title">
+      Sua empresa operando<br>
+      <span class="gradient-text">de qualquer lugar.</span>
+    </h1>
+    <p class="hero-sub">
+      Criamos sistemas 100% adaptados ao DNA do seu negócio para você delegar com confiança, controlar com precisão e crescer sem depender de ninguém estar no mesmo lugar.
+    </p>
+    <div class="hero-actions">
+      <a href="#contato" class="btn-primary">
+        <i class="fas fa-rocket"></i> Quero meu sistema
+      </a>
+      <a href="#como-funciona" class="btn-ghost">
+        Ver como funciona <i class="fas fa-arrow-down"></i>
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num" data-target="40">0</span><span class="stat-suffix">+</span>
+        <span class="stat-label">Módulos disponíveis</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="15">0</span><span class="stat-suffix"> dias</span>
+        <span class="stat-label">Prazo médio de entrega</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="100">0</span><span class="stat-suffix">%</span>
+        <span class="stat-label">Personalizado pro seu negócio</span>
+      </div>
+    </div>
+  </div>
+  <!-- Dashboard mockup flutuante -->
+  <div class="hero-mockup">
+    <div class="mockup-window">
+      <div class="mockup-bar">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span class="mockup-url">ageops.sistema.com.br</span>
+      </div>
+      <div class="mockup-body">
+        <div class="mockup-sidebar">
+          <div class="mock-logo">AGE OPS</div>
+          <div class="mock-nav-item active"><i class="fas fa-chart-line"></i> Dashboard</div>
+          <div class="mock-nav-item"><i class="fas fa-folder"></i> Projetos</div>
+          <div class="mock-nav-item"><i class="fas fa-users"></i> Clientes</div>
+          <div class="mock-nav-item"><i class="fas fa-dollar-sign"></i> Financeiro</div>
+          <div class="mock-nav-item"><i class="fas fa-star"></i> NPS</div>
+          <div class="mock-nav-item"><i class="fas fa-cog"></i> Relatórios</div>
+        </div>
+        <div class="mockup-content">
+          <div class="mock-header">
+            <span class="mock-greeting">Olá, Gustavo 👋</span>
+            <span class="mock-date">Abril 2026</span>
+          </div>
+          <div class="mock-kpis">
+            <div class="mock-kpi green">
+              <span class="mock-kpi-label">Faturamento</span>
+              <span class="mock-kpi-val">R$ 52.5k</span>
+              <span class="mock-kpi-badge">▲ 24%</span>
+            </div>
+            <div class="mock-kpi blue">
+              <span class="mock-kpi-label">Projetos</span>
+              <span class="mock-kpi-val">17</span>
+              <span class="mock-kpi-badge">↗ ativos</span>
+            </div>
+            <div class="mock-kpi purple">
+              <span class="mock-kpi-label">NPS Médio</span>
+              <span class="mock-kpi-val">8.4</span>
+              <span class="mock-kpi-badge">★ ótimo</span>
+            </div>
+          </div>
+          <div class="mock-chart">
+            <div class="mock-chart-title">Evolução Mensal</div>
+            <div class="mock-bars">
+              <div class="mock-bar" style="--h:40%"><span>Jan</span></div>
+              <div class="mock-bar" style="--h:55%"><span>Fev</span></div>
+              <div class="mock-bar" style="--h:70%"><span>Mar</span></div>
+              <div class="mock-bar active" style="--h:90%"><span>Abr</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     PROBLEMA / DOR
+══════════════════════════════════════ -->
+<section class="pain" id="problema">
+  <div class="container">
+    <div class="pain-label">O PROBLEMA</div>
+    <h2 class="section-title">Você ainda gerencia sua empresa<br><span class="gradient-text">no modo difícil?</span></h2>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon"><i class="fas fa-file-excel"></i></div>
+        <h3>Planilhas que só você entende</h3>
+        <p>Dados espalhados, sem histórico claro. Quando você sai, a empresa trava.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon"><i class="fas fa-comments"></i></div>
+        <h3>Decisões por WhatsApp</h3>
+        <p>Aprovações, briefings e atualizações enterrados em grupos. Nada rastreável.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon"><i class="fas fa-user-lock"></i></div>
+        <h3>Tudo depende de você</h3>
+        <p>Nenhum colaborador consegue tocar o negócio sozinho. Você é o gargalo.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon"><i class="fas fa-eye-slash"></i></div>
+        <h3>Zero visibilidade real</h3>
+        <p>Você não sabe sua margem real, quem são seus melhores clientes ou onde perde dinheiro.</p>
+      </div>
+    </div>
+    <div class="pain-arrow">
+      <i class="fas fa-arrow-down"></i>
+      <span>A AGE OPS resolve tudo isso</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     COMO FUNCIONA
+══════════════════════════════════════ -->
+<section class="how" id="como-funciona">
+  <div class="container">
+    <div class="section-label">PROCESSO</div>
+    <h2 class="section-title">Do briefing ao sistema<br><span class="gradient-text">em 4 etapas.</span></h2>
+    <div class="steps">
+      <div class="step" data-step="01">
+        <div class="step-icon"><i class="fas fa-comments"></i></div>
+        <div class="step-content">
+          <h3>Imersão no negócio</h3>
+          <p>Entendemos como sua empresa realmente funciona — processos, equipe, gargalos, metas. Não usamos templates genéricos.</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" data-step="02">
+        <div class="step-icon"><i class="fas fa-sitemap"></i></div>
+        <div class="step-content">
+          <h3>Arquitetura personalizada</h3>
+          <p>Desenhamos os módulos, fluxos e permissões de acesso específicos para o seu modelo de negócio e sua equipe.</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" data-step="03">
+        <div class="step-icon"><i class="fas fa-code"></i></div>
+        <div class="step-content">
+          <h3>Desenvolvimento ágil</h3>
+          <p>Construímos seu sistema em sprints com entregas visíveis. Você acompanha e valida em tempo real, sem surpresas.</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" data-step="04">
+        <div class="step-icon"><i class="fas fa-rocket"></i></div>
+        <div class="step-content">
+          <h3>Entrega + treinamento</h3>
+          <p>Sistema no ar, equipe treinada, documentação completa. E suporte contínuo para evoluir conforme seu negócio cresce.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     DIFERENCIAIS
+══════════════════════════════════════ -->
+<section class="diff" id="diferenciais">
+  <div class="container">
+    <div class="diff-split">
+      <div class="diff-left">
+        <div class="section-label">NOSSO DIFERENCIAL</div>
+        <h2 class="section-title">Não é software.<br><span class="gradient-text">É liberdade operacional.</span></h2>
+        <p class="diff-desc">Enquanto outras ferramentas te forçam a adaptar seu negócio a elas, a AGE OPS adapta o sistema ao seu negócio. Cada módulo, cada permissão, cada relatório — pensado para a sua realidade.</p>
+        <a href="#contato" class="btn-primary">Quero essa liberdade</a>
+      </div>
+      <div class="diff-right">
+        <div class="diff-item">
+          <div class="diff-check"><i class="fas fa-check"></i></div>
+          <div>
+            <h4>Delegação real</h4>
+            <p>Colaboradores acessam exatamente o que precisam. Nada mais, nada menos. Você define quem vê o quê.</p>
+          </div>
+        </div>
+        <div class="diff-item">
+          <div class="diff-check"><i class="fas fa-check"></i></div>
+          <div>
+            <h4>Acesso de qualquer lugar</h4>
+            <p>Navegador, celular, tablet. Sua empresa opera no laptop da praia, no celular no avião, no computador do cliente.</p>
+          </div>
+        </div>
+        <div class="diff-item">
+          <div class="diff-check"><i class="fas fa-check"></i></div>
+          <div>
+            <h4>Inteligência nos dados</h4>
+            <p>Diagnósticos automáticos que identificam onde você perde dinheiro, quais clientes valem mais e o que priorizar.</p>
+          </div>
+        </div>
+        <div class="diff-item">
+          <div class="diff-check"><i class="fas fa-check"></i></div>
+          <div>
+            <h4>Entrega em semanas</h4>
+            <p>Enquanto agências tradicionais levam meses, entregamos seu sistema em 2 a 6 semanas — pronto para usar.</p>
+          </div>
+        </div>
+        <div class="diff-item">
+          <div class="diff-check"><i class="fas fa-check"></i></div>
+          <div>
+            <h4>Evolui com você</h4>
+            <p>Seu sistema não fica parado no tempo. Novos módulos, integrações e melhorias conforme seu negócio cresce.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     MÓDULOS / SERVIÇOS
+══════════════════════════════════════ -->
+<section class="modules" id="servicos">
+  <div class="container">
+    <div class="section-label">O QUE ENTREGAMOS</div>
+    <h2 class="section-title">Módulos que transformam<br><span class="gradient-text">como você opera.</span></h2>
+    <p class="section-sub">Cada sistema é único. Esses são os blocos que combinamos e personalizamos para o seu negócio:</p>
+    <div class="modules-grid">
+      <div class="module-card">
+        <div class="module-icon" style="--c:#6366f1"><i class="fas fa-chart-line"></i></div>
+        <h4>Dashboard Executivo</h4>
+        <p>Visão em tempo real de faturamento, margem, projetos e KPIs do negócio. Uma tela, tudo que importa.</p>
+        <div class="module-tag">Inteligência</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="--c:#0ea5e9"><i class="fas fa-folder-open"></i></div>
+        <h4>Gestão de Projetos</h4>
+        <p>Pipeline Kanban, etapas, prazos, responsáveis e status — tudo num lugar só e visível para toda equipe.</p>
+        <div class="module-tag">Operação</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="--c:#10b981"><i class="fas fa-dollar-sign"></i></div>
+        <h4>Controle Financeiro</h4>
+        <p>Fechamento por projeto, custos, margem real, lucro líquido. Você sabe exatamente quanto ganhou em cada trabalho.</p>
+        <div class="module-tag">Financeiro</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="--c:#f59e0b"><i class="fas fa-file-invoice-dollar"></i></div>
+        <h4>Orçamentos Inteligentes</h4>
+        <p>Monte propostas com catálogo de serviços, descontos, impostos e cálculo automático de viabilidade e margem.</p>
+        <div class="module-tag">Comercial</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="--c:#ec4899"><i class="fas fa-star"></i></div>
+        <h4>NPS Anônimo por Etapa</h4>
+        <p>Colete satisfação do cliente em cada fase da entrega. Sigiloso, simples e com análise automática de pontos de melhoria.</p>
+        <div class="module-tag">Experiência</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="--c:#8b5cf6"><i class="fas fa-users"></i></div>
+        <h4>Gestão de Equipe</h4>
+        <p>Colaboradores, freelancers, disponibilidade, especialidades, agenda e cronograma integrados ao sistema.</p>
+        <div class="module-tag">Pessoas</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="--c:#ef4444"><i class="fas fa-history"></i></div>
+        <h4>Histórico Inteligente</h4>
+        <p>Anos de dados organizados, rankings de clientes, análise de padrões e diagnósticos estratégicos automáticos.</p>
+        <div class="module-tag">Estratégia</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="--c:#14b8a6"><i class="fas fa-user-tie"></i></div>
+        <h4>CRM de Clientes</h4>
+        <p>Base completa de clientes com histórico, NPS, projetos, valor total e status de relacionamento.</p>
+        <div class="module-tag">Relacionamento</div>
+      </div>
+      <div class="module-card feature-card">
+        <div class="module-icon" style="--c:#f97316"><i class="fas fa-robot"></i></div>
+        <h4>Diagnóstico com IA</h4>
+        <p>O sistema analisa seus dados e entrega insights automáticos: onde você perde margem, quem são seus melhores clientes e o que fazer na próxima semana.</p>
+        <div class="module-tag">IA</div>
+        <div class="feature-badge">DIFERENCIAL</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     COMPARATIVO
+══════════════════════════════════════ -->
+<section class="compare" id="comparativo">
+  <div class="container">
+    <div class="section-label">POR QUE AGE OPS</div>
+    <h2 class="section-title">Antes vs. <span class="gradient-text">Depois</span></h2>
+    <div class="compare-table">
+      <div class="compare-header">
+        <div class="compare-col col-feature">Situação</div>
+        <div class="compare-col col-before"><i class="fas fa-times-circle"></i> Sem AGE OPS</div>
+        <div class="compare-col col-after"><i class="fas fa-check-circle"></i> Com AGE OPS</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col col-feature">Gestão de projetos</div>
+        <div class="compare-col col-before">Planilhas e WhatsApp</div>
+        <div class="compare-col col-after">Pipeline visual em tempo real</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col col-feature">Controle financeiro</div>
+        <div class="compare-col col-before">Margem estimada no chute</div>
+        <div class="compare-col col-after">Lucro real por projeto</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col col-feature">Equipe</div>
+        <div class="compare-col col-before">Dependência total do dono</div>
+        <div class="compare-col col-after">Colaboradores autônomos com acesso certo</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col col-feature">Satisfação do cliente</div>
+        <div class="compare-col col-before">Sem coleta, sem dados</div>
+        <div class="compare-col col-after">NPS anônimo por etapa, análise automática</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col col-feature">Decisões estratégicas</div>
+        <div class="compare-col col-before">Feeling e intuição</div>
+        <div class="compare-col col-after">Diagnósticos com IA baseados em dados reais</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col col-feature">Acesso</div>
+        <div class="compare-col col-before">Só no escritório</div>
+        <div class="compare-col col-after">Qualquer lugar, qualquer dispositivo</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col col-feature">Tempo de implantação</div>
+        <div class="compare-col col-before">Meses (se acontecer)</div>
+        <div class="compare-col col-after">2 a 6 semanas</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     PREÇOS
+══════════════════════════════════════ -->
+<section class="pricing" id="precos">
+  <div class="container">
+    <div class="section-label">INVESTIMENTO</div>
+    <h2 class="section-title">Planos que cabem<br><span class="gradient-text">no tamanho do seu negócio.</span></h2>
+    <p class="section-sub">Desenvolvimento único + suporte mensal recorrente. Você paga uma vez para ter o sistema e mantém ele evoluindo todo mês.</p>
+
+    <div class="pricing-grid">
+      <!-- Plano Starter -->
+      <div class="price-card">
+        <div class="price-tier">STARTER</div>
+        <div class="price-desc">Para quem está começando a estruturar a operação</div>
+        <div class="price-dev">
+          <span class="price-label">Desenvolvimento</span>
+          <span class="price-val">R$ 8.000 <span class="price-to">– 15.000</span></span>
+        </div>
+        <div class="price-monthly">
+          <span class="price-label">Manutenção mensal</span>
+          <span class="price-val-month">R$ 500<span class="price-period">/mês</span></span>
+        </div>
+        <ul class="price-features">
+          <li><i class="fas fa-check"></i> Dashboard + 3 módulos personalizados</li>
+          <li><i class="fas fa-check"></i> Até 5 usuários simultâneos</li>
+          <li><i class="fas fa-check"></i> Hospedagem inclusa</li>
+          <li><i class="fas fa-check"></i> Suporte por e-mail</li>
+          <li><i class="fas fa-check"></i> 2 ajustes por mês</li>
+          <li><i class="fas fa-check"></i> Treinamento da equipe</li>
+        </ul>
+        <a href="#contato" class="btn-price-ghost">Começar</a>
+      </div>
+
+      <!-- Plano Growth — destaque -->
+      <div class="price-card featured">
+        <div class="price-badge">MAIS ESCOLHIDO</div>
+        <div class="price-tier">GROWTH</div>
+        <div class="price-desc">Para empresas que precisam de controle total da operação</div>
+        <div class="price-dev">
+          <span class="price-label">Desenvolvimento</span>
+          <span class="price-val">R$ 18.000 <span class="price-to">– 35.000</span></span>
+        </div>
+        <div class="price-monthly">
+          <span class="price-label">Manutenção mensal</span>
+          <span class="price-val-month">R$ 1.500<span class="price-period">/mês</span></span>
+        </div>
+        <ul class="price-features">
+          <li><i class="fas fa-check"></i> Dashboard + 6 módulos personalizados</li>
+          <li><i class="fas fa-check"></i> Usuários ilimitados</li>
+          <li><i class="fas fa-check"></i> Hospedagem + backup diário</li>
+          <li><i class="fas fa-check"></i> Suporte prioritário</li>
+          <li><i class="fas fa-check"></i> 5 ajustes por mês</li>
+          <li><i class="fas fa-check"></i> NPS + relatórios automáticos</li>
+          <li><i class="fas fa-check"></i> Diagnóstico com IA incluso</li>
+          <li><i class="fas fa-check"></i> Reunião mensal de evolução</li>
+        </ul>
+        <a href="#contato" class="btn-price">Quero o Growth</a>
+      </div>
+
+      <!-- Plano Pro -->
+      <div class="price-card">
+        <div class="price-tier">PRO</div>
+        <div class="price-desc">Para operações complexas que precisam de total customização</div>
+        <div class="price-dev">
+          <span class="price-label">Desenvolvimento</span>
+          <span class="price-val">R$ 40.000<span class="price-to">+</span></span>
+        </div>
+        <div class="price-monthly">
+          <span class="price-label">Manutenção mensal</span>
+          <span class="price-val-month">R$ 4.000<span class="price-period">/mês</span></span>
+        </div>
+        <ul class="price-features">
+          <li><i class="fas fa-check"></i> Sistema completo multi-módulo</li>
+          <li><i class="fas fa-check"></i> Integrações externas (WhatsApp, API)</li>
+          <li><i class="fas fa-check"></i> Módulos novos todo trimestre</li>
+          <li><i class="fas fa-check"></i> Dev dedicado parcial</li>
+          <li><i class="fas fa-check"></i> SLA de suporte garantido</li>
+          <li><i class="fas fa-check"></i> Treinamento contínuo da equipe</li>
+          <li><i class="fas fa-check"></i> Relatório executivo mensal</li>
+        </ul>
+        <a href="#contato" class="btn-price-ghost">Falar com especialista</a>
+      </div>
+    </div>
+
+    <div class="pricing-note">
+      <i class="fas fa-info-circle"></i>
+      Todos os planos incluem período de diagnóstico gratuito antes da proposta. Sem surpresas, sem letras miúdas.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SEGMENTOS
+══════════════════════════════════════ -->
+<section class="segments" id="segmentos">
+  <div class="container">
+    <div class="section-label">PARA QUEM É</div>
+    <h2 class="section-title">Funciona para <span class="gradient-text">qualquer segmento.</span></h2>
+    <div class="segments-grid">
+      <div class="segment-pill"><i class="fas fa-video"></i> Produtoras de vídeo</div>
+      <div class="segment-pill"><i class="fas fa-bullhorn"></i> Agências de marketing</div>
+      <div class="segment-pill"><i class="fas fa-camera"></i> Estúdios de fotografia</div>
+      <div class="segment-pill"><i class="fas fa-hard-hat"></i> Construtoras</div>
+      <div class="segment-pill"><i class="fas fa-heartbeat"></i> Clínicas e consultórios</div>
+      <div class="segment-pill"><i class="fas fa-drafting-compass"></i> Arquitetura e design</div>
+      <div class="segment-pill"><i class="fas fa-balance-scale"></i> Escritórios jurídicos</div>
+      <div class="segment-pill"><i class="fas fa-box"></i> E-commerces</div>
+      <div class="segment-pill"><i class="fas fa-utensils"></i> Restaurantes e food</div>
+      <div class="segment-pill"><i class="fas fa-graduation-cap"></i> Educação e cursos</div>
+      <div class="segment-pill"><i class="fas fa-concierge-bell"></i> Eventos e hospitalidade</div>
+      <div class="segment-pill"><i class="fas fa-plus"></i> Muito mais...</div>
+    </div>
+    <p class="segments-note">Se sua empresa tem projetos, equipe, clientes e financeiro para controlar — a AGE OPS tem um sistema para você.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     CTA CENTRAL
+══════════════════════════════════════ -->
+<section class="cta-mid">
+  <div class="cta-mid-bg">
+    <div class="cta-glow"></div>
+  </div>
+  <div class="container">
+    <div class="cta-mid-content">
+      <h2>Sua empresa merece operar<br><span class="gradient-text">com inteligência.</span></h2>
+      <p>Uma conversa de 30 minutos é suficiente para entendermos o que você precisa e mostrarmos o que é possível fazer.</p>
+      <a href="#contato" class="btn-primary btn-lg">
+        <i class="fas fa-calendar-check"></i>
+        Agendar conversa gratuita
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FAQ
+══════════════════════════════════════ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-label">DÚVIDAS</div>
+    <h2 class="section-title">Perguntas <span class="gradient-text">frequentes.</span></h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">
+          Preciso saber programar para usar o sistema?
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="faq-a">
+          <p>Não. O sistema é entregue pronto, com interface intuitiva projetada para ser usada por qualquer pessoa da sua equipe, mesmo sem conhecimento técnico. Fazemos o treinamento completo.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          Quanto tempo leva para ter meu sistema no ar?
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="faq-a">
+          <p>Sistemas mais simples ficam prontos em 2 semanas. Sistemas completos com muitos módulos entre 4 e 6 semanas. Muito menos que o mercado tradicional de software.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          Meus dados ficam seguros?
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="faq-a">
+          <p>Sim. Os dados são hospedados em servidores dedicados com backup diário. Cada empresa tem seu ambiente isolado, sem compartilhamento de informações entre clientes.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          Posso adicionar novos módulos depois?
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="faq-a">
+          <p>Sim, essa é a proposta. O sistema é construído para crescer com você. Nos planos mensais, a evolução do sistema faz parte do serviço.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          O sistema funciona no celular?
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="faq-a">
+          <p>Sim. O sistema é responsivo e funciona em qualquer navegador — celular, tablet, notebook ou desktop. Sem precisar instalar nada.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          Qual a diferença entre a AGE OPS e ferramentas como Monday ou Notion?
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="faq-a">
+          <p>Essas ferramentas são genéricas — você precisa adaptar seu negócio a elas. A AGE OPS faz o contrário: adapta o sistema ao seu negócio. É a diferença entre um terno de prateleira e um terno feito sob medida.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     CONTATO
+══════════════════════════════════════ -->
+<section class="contact" id="contato">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-left">
+        <div class="section-label">CONTATO</div>
+        <h2 class="section-title">Vamos construir<br><span class="gradient-text">seu sistema.</span></h2>
+        <p class="contact-desc">Preencha o formulário e entraremos em contato em até 24 horas para uma conversa inicial sem compromisso.</p>
+        <div class="contact-info">
+          <div class="contact-info-item">
+            <i class="fab fa-whatsapp"></i>
+            <span>Resposta rápida via WhatsApp</span>
+          </div>
+          <div class="contact-info-item">
+            <i class="fas fa-clock"></i>
+            <span>Diagnóstico inicial gratuito</span>
+          </div>
+          <div class="contact-info-item">
+            <i class="fas fa-shield-alt"></i>
+            <span>Sem spam, sem pressão</span>
+          </div>
+        </div>
+      </div>
+      <div class="contact-right">
+        <form class="contact-form" id="contactForm" onsubmit="submitForm(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Seu nome *</label>
+              <input type="text" id="fName" placeholder="João Silva" required>
+            </div>
+            <div class="form-group">
+              <label>Empresa *</label>
+              <input type="text" id="fCompany" placeholder="Empresa Ltda." required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>WhatsApp *</label>
+              <input type="tel" id="fPhone" placeholder="(11) 99999-9999" required>
+            </div>
+            <div class="form-group">
+              <label>Segmento</label>
+              <select id="fSegment">
+                <option value="">Selecione...</option>
+                <option>Produtora de vídeo / eventos</option>
+                <option>Agência de marketing</option>
+                <option>Estúdio de fotografia</option>
+                <option>Construtora / imobiliária</option>
+                <option>Clínica / consultório</option>
+                <option>Arquitetura / design</option>
+                <option>Educação / cursos</option>
+                <option>Outro</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Qual é o maior problema operacional da sua empresa hoje?</label>
+            <textarea id="fMessage" rows="4" placeholder="Ex: Minha equipe não consegue trabalhar sem mim, não tenho visibilidade financeira real, tudo fica no WhatsApp..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Qual plano te interessa?</label>
+            <div class="form-radio-group">
+              <label class="radio-option">
+                <input type="radio" name="plano" value="starter"> Starter (R$ 8-15k)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="plano" value="growth" checked> Growth (R$ 18-35k)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="plano" value="pro"> Pro (R$ 40k+)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="plano" value="ainda_nao_sei"> Ainda não sei
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary btn-submit" id="submitBtn">
+            <i class="fas fa-paper-plane"></i>
+            <span id="submitText">Enviar e agendar conversa</span>
+          </button>
+        </form>
+        <div class="form-success" id="formSuccess">
+          <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+          <h3>Mensagem enviada!</h3>
+          <p>Entraremos em contato em até 24 horas. Fique de olho no WhatsApp.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FOOTER
+══════════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="nav-logo footer-logo">
+          <span class="logo-age">AGE</span><span class="logo-ops">OPS</span>
+        </div>
+        <p>Sistemas operacionais personalizados para empresas que querem operar com liberdade e inteligência.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h5>Serviços</h5>
+          <a href="#servicos">Módulos do sistema</a>
+          <a href="#precos">Planos e preços</a>
+          <a href="#como-funciona">Como funciona</a>
+        </div>
+        <div class="footer-col">
+          <h5>Empresa</h5>
+          <a href="#diferenciais">Nosso diferencial</a>
+          <a href="#segmentos">Segmentos</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div class="footer-col">
+          <h5>Contato</h5>
+          <a href="#contato">Falar com especialista</a>
+          <a href="https://wa.me/5511999999999" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          <a href="mailto:contato@ageops.com.br"><i class="fas fa-envelope"></i> E-mail</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 AGE OPS. Todos os direitos reservados.</span>
+      <span>Sistemas que liberam você para crescer.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head><body>
+<button onclick="run()">EXTRAIR DADOS 2026</button>
+<pre id="r">Clique no botão acima...</pre>
+<script>
+function parseNum(v){
+  if(v===undefined||v===null||v==='') return 0;
+  if(typeof v==='number') return v;
+  var s=String(v).replace(/R\$\s*/gi,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  if(!s||s==='-') return 0;
+  var n=parseFloat(s);
+  return isNaN(n)?0:n;
+}
+function fmtDate(v){
+  if(!v) return '';
+  if(typeof v==='number'){
+    try{var d=XLSX.SSF.parse_date_code(v);if(d&&d.y>1900)return d.y+'-'+('0'+d.m).slice(-2)+'-'+('0'+d.d).slice(-2);}catch(e){}
+    return '';
+  }
+  var s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.substring(0,10);
+  var months={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};
+  var m=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if(m){var mo=months[m[2].toLowerCase().substring(0,3)];if(mo)return m[3]+'-'+('0'+mo).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)){var p=s.split(/[\/\-]/);return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');}
+  return s;
+}
+async function run(){
+  var el=document.getElementById('r');
+  el.textContent='Carregando...';
+  try{
+    var resp=await fetch('2026_new.xlsx');
+    var buf=await resp.arrayBuffer();
+    var wb=XLSX.read(buf,{type:'array',raw:false,cellDates:true});
+    
+    el.textContent='Abas: '+wb.SheetNames.join(', ')+'\n\n';
+    
+    // Percorrer todas as abas
+    for(var si=0;si<wb.SheetNames.length;si++){
+      var sn=wb.SheetNames[si];
+      var ws=wb.Sheets[sn];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+      el.textContent+='=== ABA: '+sn+' ('+rows.length+' linhas) ===\n';
+      
+      // Mostrar primeiras 5 linhas como header dump
+      for(var r=0;r<Math.min(rows.length,5);r++){
+        el.textContent+='Row'+r+': '+JSON.stringify(rows[r])+'\n';
+      }
+      el.textContent+='\n';
+      
+      // Tentar encontrar header row com "cliente"
+      var hdr=-1;
+      for(var r=0;r<Math.min(rows.length,15);r++){
+        var rowStr=rows[r].join('|').toLowerCase();
+        if(rowStr.includes('cliente')||rowStr.includes('project')){hdr=r;break;}
+      }
+      if(hdr>=0){
+        el.textContent+='Header row: '+hdr+' -> '+JSON.stringify(rows[hdr])+'\n';
+        var headers=rows[hdr];
+        var projects=[];
+        for(var r=hdr+1;r<rows.length;r++){
+          var row=rows[r];
+          // Pular linhas vazias
+          var hasData=row.some(c=>c!==''&&c!==null&&c!==undefined);
+          if(!hasData) continue;
+          var obj={};
+          headers.forEach(function(h,i){obj[h]=row[i]||'';});
+          projects.push(obj);
+        }
+        el.textContent+='Projetos encontrados: '+projects.length+'\n';
+        // Mostrar todos
+        projects.forEach(function(p,i){
+          el.textContent+='\n['+i+'] '+JSON.stringify(p);
+        });
+      }
+      el.textContent+='\n\n';
+    }
+    
+    // Versão raw para não perder nada
+    el.textContent+='\n\n=== RAW PRIMEIRA ABA ===\n';
+    var ws0=wb.Sheets[wb.SheetNames[0]];
+    var raw=XLSX.utils.sheet_to_json(ws0,{header:1,defval:'',raw:true});
+    for(var r=0;r<Math.min(raw.length,80);r++){
+      var anyVal=raw[r].some(c=>c!==''&&c!==undefined&&c!==null);
+      if(anyVal) el.textContent+='R'+r+': '+JSON.stringify(raw[r])+'\n';
+    }
+    
+  }catch(e){el.textContent='ERRO: '+e.message+'\n'+e.stack;}
+}
+</script></body></html>

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Avaliação de Experiência</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:  #2563eb;
+      --brand2: #1d4ed8;
+      --green:  #16a34a;
+      --yellow: #d97706;
+      --red:    #dc2626;
+      --gray:   #f1f5f9;
+      --text:   #0f172a;
+      --sub:    #64748b;
+      --border: #e2e8f0;
+      --card:   #ffffff;
+      --bg:     #f8fafc;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    /* ── Hero gradient ── */
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 60%, #7c3aed 100%);
+      padding: 40px 20px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 50px;
+      background: var(--bg);
+      clip-path: ellipse(55% 100% at 50% 100%);
+    }
+    .hero-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      opacity: .85;
+    }
+    .hero-logo-dot {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,.2);
+      border: 2px solid rgba(255,255,255,.4);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hero h1 {
+      font-size: clamp(22px, 5vw, 32px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      font-size: 14px;
+      color: rgba(255,255,255,.75);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+    .etapa-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(10px);
+    }
+
+    /* ── Main container ── */
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+      margin-top: -30px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 30px rgba(0,0,0,.08);
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-subtitle {
+      font-size: 11px;
+      color: var(--sub);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    /* ── NPS Scale ── */
+    .nps-scale {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .nps-btn {
+      width: 48px;
+      height: 48px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--sub);
+      cursor: pointer;
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+    .nps-btn:hover { transform: translateY(-3px); }
+    .nps-btn.selected { color: #fff; border-color: transparent; transform: translateY(-3px) scale(1.1); }
+    .nps-btn[data-v="0"] { --clr: #dc2626; }
+    .nps-btn[data-v="1"] { --clr: #dc2626; }
+    .nps-btn[data-v="2"] { --clr: #dc2626; }
+    .nps-btn[data-v="3"] { --clr: #dc2626; }
+    .nps-btn[data-v="4"] { --clr: #dc2626; }
+    .nps-btn[data-v="5"] { --clr: #dc2626; }
+    .nps-btn[data-v="6"] { --clr: #dc2626; }
+    .nps-btn[data-v="7"] { --clr: #d97706; }
+    .nps-btn[data-v="8"] { --clr: #d97706; }
+    .nps-btn[data-v="9"] { --clr: #16a34a; }
+    .nps-btn[data-v="10"]{ --clr: #16a34a; }
+    .nps-btn:hover, .nps-btn.selected { background: var(--clr); border-color: var(--clr); color: #fff; }
+    .nps-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--sub);
+      padding: 0 2px;
+    }
+
+    /* ── Sub-notas ── */
+    .sub-notas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .sub-nota-item label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .star-row {
+      display: flex;
+      gap: 5px;
+    }
+    .star-btn {
+      width: 34px; height: 34px;
+      border: none;
+      background: none;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform .15s;
+      line-height: 1;
+    }
+    .star-btn:hover, .star-btn.active { transform: scale(1.15); }
+    .star-btn.active { filter: drop-shadow(0 0 4px #f59e0b); }
+
+    /* ── Textarea ── */
+    textarea, input[type="text"], input[type="email"] {
+      width: 100%;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      padding: 12px 14px;
+      resize: vertical;
+      transition: border-color .2s;
+      background: var(--card);
+    }
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--brand);
+    }
+
+    /* ── Sim / Não ── */
+    .yesno {
+      display: flex;
+      gap: 10px;
+    }
+    .yesno-btn {
+      flex: 1;
+      height: 48px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--card);
+      color: var(--sub);
+      transition: all .2s;
+    }
+    .yesno-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .yesno-btn.yes.active { background: #dcfce7; border-color: #16a34a; color: #16a34a; }
+    .yesno-btn.no.active  { background: #fee2e2; border-color: #dc2626;  color: #dc2626; }
+
+    /* ── Submit ── */
+    .btn-submit {
+      width: 100%;
+      height: 54px;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .25s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(37,99,235,.3);
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37,99,235,.4); }
+    .btn-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* ── States ── */
+    #stateLoading, #stateError, #stateExpired, #stateSuccess { display: none; }
+    #stateSuccess {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .success-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+    }
+
+    /* ── Anonimato info ── */
+    .anon-bar {
+      background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 11px;
+      color: #1e40af;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+    .anon-bar i { margin-top: 1px; flex-shrink: 0; }
+
+    /* ── Step indicator ── */
+    .step-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all .3s;
+    }
+    .step-dot.active   { background: var(--brand); width: 24px; border-radius: 4px; }
+    .step-dot.done     { background: var(--green); }
+
+    /* ── Progress ── */
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand), #7c3aed);
+      border-radius: 2px;
+      transition: width .4s ease;
+    }
+
+    /* Emoji mood ── */
+    .mood-row {
+      display: flex;
+      justify-content: space-around;
+      margin: 10px 0;
+    }
+    .mood-btn {
+      font-size: 28px;
+      background: none;
+      border: 2px solid transparent;
+      border-radius: 50%;
+      width: 50px; height: 50px;
+      cursor: pointer;
+      transition: all .2s;
+      line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mood-btn:hover { transform: scale(1.15); border-color: var(--border); }
+    .mood-btn.active { border-color: var(--brand); background: var(--gray); transform: scale(1.2); }
+
+    /* ── form label ── */
+    .form-label-lg {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+      margin-bottom: 8px;
+    }
+    .optional-tag {
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--sub);
+      margin-left: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .nps-btn { width: 40px; height: 40px; font-size: 13px; }
+      .sub-notas { grid-template-columns: 1fr; }
+      .hero { padding: 30px 16px 70px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero" id="heroSection">
+  <div class="hero-logo">
+    <div class="hero-logo-dot"><i class="fas fa-star" style="color:#fff;font-size:14px"></i></div>
+    <span style="color:rgba(255,255,255,.9);font-size:12px;font-weight:600;letter-spacing:.05em">AVALIAÇÃO DE EXPERIÊNCIA</span>
+  </div>
+  <div class="etapa-badge" id="etapaBadge"><i class="fas fa-spinner fa-spin"></i> Carregando…</div>
+  <h1>Como foi sua experiência?</h1>
+  <p>Sua avaliação é completamente <strong style="color:#fff">anônima</strong> e nos ajuda a melhorar a cada projeto. Seja honesto(a) — seu feedback é essencial.</p>
+</header>
+
+<!-- ═══════════ CONTAINER ═══════════ -->
+<main class="container">
+
+  <!-- Loading -->
+  <div id="stateLoading" style="display:flex;flex-direction:column;align-items:center;padding:60px 0;gap:16px">
+    <div style="width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite"></div>
+    <span style="font-size:12px;color:var(--sub)">Carregando formulário…</span>
+  </div>
+
+  <!-- Error -->
+  <div id="stateError" class="card" style="text-align:center;padding:40px">
+    <i class="fas fa-exclamation-triangle" style="font-size:36px;color:var(--yellow);margin-bottom:16px"></i>
+    <h2 style="font-size:18px;margin-bottom:8px">Link inválido</h2>
+    <p style="font-size:12px;color:var(--sub)">Este link de avaliação não existe ou foi removido. Entre em contato com a equipe.</p>
+  </div>
+
+  <!-- Expired -->
+  <div id="stateExpired" class="card" style="text-align:center;padding:40px">
+    <i class="fas fa-clock" style="font-size:36px;color:var(--sub);margin-bottom:16px"></i>
+    <h2 style="font-size:18px;margin-bottom:8px">Link expirado</h2>
+    <p style="font-size:12px;color:var(--sub)">O prazo para responder esta avaliação já encerrou. Obrigado pela sua participação!</p>
+  </div>
+
+  <!-- Success -->
+  <div id="stateSuccess" class="card">
+    <div class="success-icon">🎉</div>
+    <h2 style="font-size:22px;font-weight:800;margin-bottom:10px">Obrigado pela avaliação!</h2>
+    <p style="font-size:13px;color:var(--sub);line-height:1.7;max-width:380px;margin:0 auto 20px">
+      Sua resposta foi registrada de forma <strong>anônima</strong>. Seu feedback é muito importante para continuarmos evoluindo.
+    </p>
+    <div id="successMsg" style="background:var(--gray);border-radius:10px;padding:16px;font-size:12px;color:var(--sub);text-align:left"></div>
+  </div>
+
+  <!-- Form -->
+  <div id="stateForm">
+
+    <!-- Barra de anonimato -->
+    <div class="anon-bar">
+      <i class="fas fa-shield-alt"></i>
+      <div>
+        <strong>100% anônimo</strong> — Suas respostas não identificam você nem o projeto avaliado. Sinta-se à vontade para ser completamente honesto(a).
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <!-- Step dots -->
+    <div class="step-dots" id="stepDots"></div>
+
+    <!-- ═══ STEP 1: Nota Geral ═══ -->
+    <div class="card" id="step1" data-step="1">
+      <div class="card-title"><i class="fas fa-star" style="color:#f59e0b"></i> Nota geral da experiência</div>
+      <div class="card-subtitle">De 0 a 10, o quanto você ficou satisfeito(a) com a experiência geral?</div>
+
+      <div class="nps-scale" id="npsScaleMain">
+        <button class="nps-btn" data-v="0">0</button>
+        <button class="nps-btn" data-v="1">1</button>
+        <button class="nps-btn" data-v="2">2</button>
+        <button class="nps-btn" data-v="3">3</button>
+        <button class="nps-btn" data-v="4">4</button>
+        <button class="nps-btn" data-v="5">5</button>
+        <button class="nps-btn" data-v="6">6</button>
+        <button class="nps-btn" data-v="7">7</button>
+        <button class="nps-btn" data-v="8">8</button>
+        <button class="nps-btn" data-v="9">9</button>
+        <button class="nps-btn" data-v="10">10</button>
+      </div>
+      <div class="nps-labels">
+        <span>😞 Péssimo</span>
+        <span>😐 Regular</span>
+        <span>😄 Excelente</span>
+      </div>
+
+      <!-- Feedback animado -->
+      <div id="notaFeedback" style="margin-top:14px;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:600;display:none;text-align:center"></div>
+    </div>
+
+    <!-- ═══ STEP 2: Sub-notas ═══ -->
+    <div class="card" id="step2" data-step="2" style="display:none">
+      <div class="card-title"><i class="fas fa-chart-bar" style="color:#2563eb"></i> Avalie aspectos específicos</div>
+      <div class="card-subtitle">Dê uma nota de 1 a 5 estrelas para cada item <span class="optional-tag">(opcional)</span></div>
+
+      <div class="sub-notas">
+        <div class="sub-nota-item">
+          <label><i class="fas fa-comments" style="color:#2563eb;margin-right:4px"></i>Comunicação</label>
+          <div class="star-row" id="starComunicacao" data-field="nota_comunicacao"></div>
+        </div>
+        <div class="sub-nota-item">
+          <label><i class="fas fa-gem" style="color:#7c3aed;margin-right:4px"></i>Qualidade do resultado</label>
+          <div class="star-row" id="starQualidade" data-field="nota_qualidade"></div>
+        </div>
+        <div class="sub-nota-item">
+          <label><i class="fas fa-clock" style="color:#d97706;margin-right:4px"></i>Cumprimento do prazo</label>
+          <div class="star-row" id="starPrazo" data-field="nota_prazo"></div>
+        </div>
+        <div class="sub-nota-item">
+          <label><i class="fas fa-heart" style="color:#ec4899;margin-right:4px"></i>Experiência geral</label>
+          <div class="star-row" id="starExperiencia" data-field="nota_experiencia"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 3: Comentários ═══ -->
+    <div class="card" id="step3" data-step="3" style="display:none">
+      <div class="card-title"><i class="fas fa-quote-left" style="color:#7c3aed"></i> Sua opinião detalhada</div>
+      <div class="card-subtitle">Compartilhe o que foi bom, o que pode melhorar e qualquer comentário livre. <span class="optional-tag">(todos opcionais)</span></div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div>
+          <label class="form-label-lg">
+            <i class="fas fa-thumbs-up" style="color:#16a34a;margin-right:4px"></i>
+            O que você mais gostou?
+          </label>
+          <textarea id="pontoPositivo" rows="3" placeholder="Ex: A comunicação foi ótima, o resultado superou as expectativas…"></textarea>
+        </div>
+        <div>
+          <label class="form-label-lg">
+            <i class="fas fa-lightbulb" style="color:#d97706;margin-right:4px"></i>
+            O que poderia ser melhorado?
+          </label>
+          <textarea id="pontoMelhoria" rows="3" placeholder="Ex: O prazo de entrega poderia ser mais curto…"></textarea>
+        </div>
+        <div>
+          <label class="form-label-lg">
+            <i class="fas fa-pen" style="color:#2563eb;margin-right:4px"></i>
+            Comentário livre
+          </label>
+          <textarea id="comentarioLivre" rows="4" placeholder="Escreva o que quiser — este espaço é todo seu!"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 4: Indicação ═══ -->
+    <div class="card" id="step4" data-step="4" style="display:none">
+      <div class="card-title"><i class="fas fa-share-alt" style="color:#16a34a"></i> Indicação</div>
+      <div class="card-subtitle">Com base na sua experiência, você indicaria nossos serviços para outras pessoas?</div>
+
+      <div class="yesno" id="indicariaGroup">
+        <button class="yesno-btn yes" onclick="setIndicaria(true)">✅ Sim, com certeza!</button>
+        <button class="yesno-btn no"  onclick="setIndicaria(false)">❌ Não no momento</button>
+      </div>
+
+      <div style="margin-top:20px">
+        <label class="form-label-lg">
+          <i class="fas fa-smile" style="color:#f59e0b;margin-right:4px"></i>
+          Como você se sente sobre o resultado?
+          <span class="optional-tag">(opcional)</span>
+        </label>
+        <div class="mood-row" id="moodRow">
+          <button class="mood-btn" data-mood="muito_insatisfeito" title="Muito insatisfeito">😞</button>
+          <button class="mood-btn" data-mood="insatisfeito" title="Insatisfeito">🙁</button>
+          <button class="mood-btn" data-mood="neutro" title="Neutro">😐</button>
+          <button class="mood-btn" data-mood="satisfeito" title="Satisfeito">🙂</button>
+          <button class="mood-btn" data-mood="muito_satisfeito" title="Muito satisfeito">😄</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Navegação ═══ -->
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button id="btnBack" onclick="prevStep()"
+        style="flex:0 0 auto;height:54px;padding:0 20px;border:2px solid var(--border);background:var(--card);border-radius:12px;
+               font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--sub);cursor:pointer;
+               display:none;transition:all .2s"
+        onmouseover="this.style.borderColor='#94a3b8'" onmouseout="this.style.borderColor='var(--border)'">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+      <button id="btnNext" onclick="nextStep()"
+        class="btn-submit" style="flex:1">
+        Próximo <i class="fas fa-arrow-right"></i>
+      </button>
+      <button id="btnSubmit" onclick="submitNps()"
+        class="btn-submit" style="flex:1;display:none">
+        <i class="fas fa-paper-plane"></i> Enviar avaliação
+      </button>
+    </div>
+
+    <!-- Segurança / rodapé -->
+    <div style="text-align:center;padding:16px 0;font-size:11px;color:#94a3b8;display:flex;align-items:center;justify-content:center;gap:6px">
+      <i class="fas fa-lock"></i>
+      Respostas anônimas — nenhum dado pessoal é coletado ou vinculado a você
+    </div>
+  </div><!-- /stateForm -->
+
+</main>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card { animation: fadeInUp .35s ease both; }
+</style>
+
+<script>
+/* ═════════════════════════════════════════
+   NPS PUBLIC PAGE — Age Ops
+═════════════════════════════════════════ */
+const TOTAL_STEPS = 4;
+let currentStep   = 1;
+let campanhaData  = null;
+let indicariaVal  = null;
+let moodVal       = null;
+let notaGeral     = null;
+
+const subNotas = {
+  nota_comunicacao: 0,
+  nota_qualidade:   0,
+  nota_prazo:       0,
+  nota_experiencia: 0,
+};
+
+/* ── Lê token da URL ── */
+function getToken() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get('t') || '';
+}
+
+/* ── Feedback de nota ── */
+const NOTA_FEEDBACK = {
+  0:  { txt: '😞 Isso é muito sério. Vamos entender o que aconteceu.', bg: '#fee2e2', cor: '#dc2626' },
+  1:  { txt: '😔 Ficamos muito tristes com isso. Queremos melhorar.', bg: '#fee2e2', cor: '#dc2626' },
+  2:  { txt: '😟 Entendemos. Sua honestidade nos ajuda muito.', bg: '#fee2e2', cor: '#dc2626' },
+  3:  { txt: '😕 Obrigado pela honestidade. Temos muito a melhorar.', bg: '#fef9c3', cor: '#92400e' },
+  4:  { txt: '🙁 Ficamos abaixo do esperado. Vamos trabalhar nisso.', bg: '#fef9c3', cor: '#92400e' },
+  5:  { txt: '😐 Metade do caminho. Podemos e queremos fazer melhor.', bg: '#fef9c3', cor: '#92400e' },
+  6:  { txt: '😌 Quase lá! Seu feedback vai nos ajudar a chegar lá.', bg: '#fef9c3', cor: '#92400e' },
+  7:  { txt: '🙂 Obrigado! Ainda temos espaço para crescer.', bg: '#fefce8', cor: '#a16207' },
+  8:  { txt: '😊 Ótima nota! Ficamos felizes com isso.', bg: '#f0fdf4', cor: '#15803d' },
+  9:  { txt: '😄 Incrível! Você fez nosso dia!', bg: '#dcfce7', cor: '#15803d' },
+  10: { txt: '🎉 Nota máxima! Você é incrível. Muito obrigado!', bg: '#dcfce7', cor: '#15803d' },
+};
+
+/* ── Inicialização ── */
+window.addEventListener('DOMContentLoaded', async () => {
+  show('stateLoading');
+  buildStarRows();
+  buildStepDots();
+  const token = getToken();
+  if (!token) { show('stateError'); return; }
+  try {
+    // busca campanha pelo token
+    const r = await fetch(`tables/age_nps_campanhas?limit=500`);
+    const data = await r.json();
+    const campanha = (data.data || []).find(c => c.token === token);
+    if (!campanha) { show('stateError'); return; }
+    if (!campanha.ativo) { show('stateExpired'); return; }
+    if (campanha.data_expiracao && new Date(campanha.data_expiracao) < new Date()) {
+      show('stateExpired'); return;
+    }
+    campanhaData = campanha;
+    // atualiza hero com a etapa
+    document.getElementById('etapaBadge').innerHTML =
+      `<i class="fas fa-tag"></i> ${campanha.etapa || 'Avaliação geral'}`;
+    show('stateForm');
+    updateStepUI();
+  } catch(e) {
+    console.error(e);
+    show('stateError');
+  }
+});
+
+/* ── show/hide estados ── */
+function show(id) {
+  ['stateLoading','stateError','stateExpired','stateSuccess','stateForm'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? (s === 'stateForm' ? 'block' : 'flex') : 'none';
+  });
+  if (id === 'stateForm') document.getElementById('stateForm').style.display = 'block';
+  if (id === 'stateLoading') document.getElementById('stateLoading').style.display = 'flex';
+  if (id === 'stateSuccess') document.getElementById('stateSuccess').style.display = 'block';
+  if (id === 'stateError') document.getElementById('stateError').style.display = 'block';
+  if (id === 'stateExpired') document.getElementById('stateExpired').style.display = 'block';
+}
+
+/* ── Build star rows ── */
+function buildStarRows() {
+  ['starComunicacao','starQualidade','starPrazo','starExperiencia'].forEach(rowId => {
+    const row = document.getElementById(rowId);
+    const field = row.dataset.field;
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'star-btn';
+      btn.textContent = '★';
+      btn.dataset.val = i;
+      btn.style.color = '#e2e8f0';
+      btn.addEventListener('click', () => setStars(rowId, field, i));
+      btn.addEventListener('mouseover', () => highlightStars(rowId, i));
+      btn.addEventListener('mouseout', () => renderStars(rowId, subNotas[field]));
+      row.appendChild(btn);
+    }
+  });
+}
+
+function setStars(rowId, field, val) {
+  subNotas[field] = val;
+  renderStars(rowId, val);
+}
+function highlightStars(rowId, upTo) {
+  const btns = document.getElementById(rowId).querySelectorAll('.star-btn');
+  btns.forEach((b,i) => { b.style.color = i < upTo ? '#f59e0b' : '#e2e8f0'; });
+}
+function renderStars(rowId, val) {
+  const btns = document.getElementById(rowId).querySelectorAll('.star-btn');
+  btns.forEach((b,i) => {
+    b.style.color = i < val ? '#f59e0b' : '#e2e8f0';
+    b.classList.toggle('active', i < val);
+  });
+}
+
+/* ── Build step dots ── */
+function buildStepDots() {
+  const dotsEl = document.getElementById('stepDots');
+  dotsEl.innerHTML = '';
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot';
+    d.id = `dot${i}`;
+    dotsEl.appendChild(d);
+  }
+}
+
+/* ── NPS scale click ── */
+document.querySelectorAll('#npsScaleMain .nps-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#npsScaleMain .nps-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    notaGeral = parseInt(btn.dataset.v);
+    // feedback
+    const fb = NOTA_FEEDBACK[notaGeral];
+    const el = document.getElementById('notaFeedback');
+    el.style.display = 'block';
+    el.style.background = fb.bg;
+    el.style.color = fb.cor;
+    el.textContent = fb.txt;
+    updateProgress();
+  });
+});
+
+/* ── Mood ── */
+document.querySelectorAll('#moodRow .mood-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#moodRow .mood-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    moodVal = btn.dataset.mood;
+  });
+});
+
+/* ── Indicaria ── */
+function setIndicaria(val) {
+  indicariaVal = val;
+  document.querySelectorAll('.yesno-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(val ? '.yesno-btn.yes' : '.yesno-btn.no').classList.add('active');
+  updateProgress();
+}
+
+/* ── Progress ── */
+function updateProgress() {
+  const fields = [
+    notaGeral !== null,
+    Object.values(subNotas).some(v => v > 0),
+    !!(document.getElementById('pontoPositivo')?.value ||
+       document.getElementById('pontoMelhoria')?.value  ||
+       document.getElementById('comentarioLivre')?.value),
+    indicariaVal !== null,
+  ];
+  const filled = fields.filter(Boolean).length;
+  document.getElementById('progressBar').style.width = ((filled / TOTAL_STEPS) * 100) + '%';
+}
+
+/* ── Step navigation ── */
+function nextStep() {
+  if (currentStep === 1 && notaGeral === null) {
+    shakeEl('npsScaleMain');
+    return;
+  }
+  if (currentStep < TOTAL_STEPS) {
+    goToStep(currentStep + 1);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 1) goToStep(currentStep - 1);
+}
+
+function goToStep(step) {
+  document.getElementById(`step${currentStep}`).style.display = 'none';
+  currentStep = step;
+  document.getElementById(`step${currentStep}`).style.display = 'block';
+  updateStepUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateStepUI() {
+  // dots
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const d = document.getElementById(`dot${i}`);
+    if (!d) continue;
+    d.className = 'step-dot';
+    if (i < currentStep)  d.classList.add('done');
+    if (i === currentStep) d.classList.add('active');
+  }
+  // buttons
+  document.getElementById('btnBack').style.display = currentStep > 1 ? 'flex' : 'none';
+  document.getElementById('btnNext').style.display   = currentStep < TOTAL_STEPS ? 'flex' : 'none';
+  document.getElementById('btnSubmit').style.display = currentStep === TOTAL_STEPS ? 'flex' : 'none';
+  updateProgress();
+}
+
+function shakeEl(id) {
+  const el = document.getElementById(id);
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = 'shake .4s ease';
+  setTimeout(() => el.style.animation = '', 500);
+}
+
+/* ── Submit ── */
+async function submitNps() {
+  if (notaGeral === null) { alert('Por favor, dê uma nota geral antes de enviar.'); return; }
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando…';
+
+  const payload = {
+    campanha_token: campanhaData.token,
+    etapa_avaliada: campanhaData.etapa,
+    nota_geral:     notaGeral,
+    nota_comunicacao: subNotas.nota_comunicacao || null,
+    nota_qualidade:   subNotas.nota_qualidade   || null,
+    nota_prazo:       subNotas.nota_prazo       || null,
+    nota_experiencia: subNotas.nota_experiencia || null,
+    ponto_positivo:  document.getElementById('pontoPositivo').value.trim()  || null,
+    ponto_melhoria:  document.getElementById('pontoMelhoria').value.trim()  || null,
+    comentario_livre:document.getElementById('comentarioLivre').value.trim()|| null,
+    indicaria:       indicariaVal,
+    humor:           moodVal,
+    respondido_em:   Date.now(),
+    // NUNCA salvamos: nome, e-mail, IP, projeto, cliente
+  };
+
+  try {
+    await fetch('tables/age_nps_respostas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    // Sucesso
+    const notaLabel = notaGeral >= 9 ? '🎉 Promotor' : notaGeral >= 7 ? '😊 Neutro' : '😔 Detrator';
+    document.getElementById('successMsg').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:24px;font-weight:900;color:${notaGeral>=9?'#16a34a':notaGeral>=7?'#d97706':'#dc2626'}">${notaGeral}</span>
+        <span style="font-size:11px;font-weight:700">${notaLabel}</span>
+      </div>
+      <div>Sua nota <strong>${notaGeral}/10</strong> foi registrada de forma completamente anônima.<br>
+      Obrigado por dedicar um tempinho para nos avaliar — isso faz toda a diferença! 🙏</div>
+    `;
+    show('stateSuccess');
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar avaliação';
+    alert('Erro ao enviar. Por favor, tente novamente.');
+  }
+}
+
+/* ── CSS shake ── */
+const style = document.createElement('style');
+style.textContent = `@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>

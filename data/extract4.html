@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<pre id="r">Loading...</pre>
+<script>
+function parseNum(v){
+  if(v===undefined||v===null||v==='') return null;
+  var s=v.toString().replace(/R\$\s*/gi,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  if(s===''||s==='-') return null;
+  var n=parseFloat(s);
+  return isNaN(n)?null:n;
+}
+function fmtDate(v){
+  if(!v) return '';
+  var s=v.toString().trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+  var months={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+  var m=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if(m){var mo=months[m[2].toLowerCase().substring(0,3)];if(mo) return m[3]+'-'+('0'+mo).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  return s;
+}
+
+async function run(){
+  var files=['2021','2022','2023','2024','2025','2026'];
+  var ALL={};
+  var log=[];
+
+  for(var fi=0;fi<files.length;fi++){
+    var yr=files[fi];
+    try{
+      var resp=await fetch(yr+'.xlsx');
+      var buf=await resp.arrayBuffer();
+      var wb=XLSX.read(buf,{type:'array',raw:false});
+      var sn=wb.SheetNames[0];
+      var ws=wb.Sheets[sn];
+      var raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      var rawN=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      
+      var hr=0;
+      for(var i=0;i<Math.min(8,raw.length);i++){
+        if((raw[i]||[]).join(' ').toLowerCase().indexOf('cliente')>=0){hr=i;break;}
+      }
+      
+      var headers=(raw[hr]||[]).map(function(h){return (h||'').toString().trim();});
+      var headersLog=headers.map(function(h,i){return '['+i+']"'+h+'"';}).join(', ');
+      log.push('=== '+yr+' | headerRow:'+hr+' ===');
+      log.push('COLS: '+headersLog);
+      
+      // show rows hr+1 to hr+3 with all values
+      for(var si=hr+1;si<=Math.min(hr+3,rawN.length-1);si++){
+        var rn=rawN[si]||[];
+        log.push('data['+si+']: '+rn.map(function(v,j){return '['+j+']'+(v===null?'null':(v+''));}).join(', '));
+      }
+      
+      // map ALL columns
+      var ci={};
+      headers.forEach(function(orig,i){
+        var h=orig.toLowerCase().trim();
+        if(!h) return;
+        // Client / Project
+        if(/^cliente/.test(h)&&ci.client===undefined) ci.client=i;
+        if(/^projeto/.test(h)&&ci.project===undefined) ci.project=i;
+        // Dates
+        if(/data.*venda|venda.*data/.test(h)) ci.sale_date=i;
+        if(/data.*pag|pag.*data/.test(h)) ci.pay_date=i;
+        if(/^m[eê]s$/.test(h)) ci.month=i;
+        if(/novo/.test(h)) ci.new_client=i;
+        if(/^nps$/.test(h)) ci.nps=i;
+        if(/categ|tipo/.test(h)) ci.category=i;
+        // Financial
+        if(/or[cç]amento/i.test(orig)) ci.value=i;
+        if(/faturamento/i.test(orig)&&ci.value===undefined) ci.value=i;
+        if(/receita/i.test(orig)&&ci.value===undefined) ci.value=i;
+        if(orig.trim().toLowerCase()==='valor'&&ci.value===undefined) ci.value=i;
+        if(/valor.*total/i.test(orig)&&ci.value===undefined) ci.value=i;
+        // COST - many possible names
+        if(/^custo$/.test(orig.trim().toLowerCase())) ci.cost=i;
+        if(/custo.*prod/i.test(orig)&&ci.cost===undefined) ci.cost=i;
+        if(/custo.*total/i.test(orig)&&ci.cost===undefined) ci.cost=i;
+        if(/gastos/i.test(orig)&&ci.cost===undefined) ci.cost=i;
+        if(/despesa/i.test(orig)&&ci.cost===undefined) ci.cost=i;
+        if(/^cost$/.test(orig.trim().toLowerCase())&&ci.cost===undefined) ci.cost=i;
+        // Profit
+        if(/^lucro$/.test(orig.trim().toLowerCase())) ci.profit=i;
+        if(/lucro.*liq/i.test(orig)&&ci.profit===undefined) ci.profit=i;
+        // Margin
+        if(/^margem$/.test(orig.trim().toLowerCase())) ci.margin=i;
+        if(/marg.*%/i.test(orig)&&ci.margin===undefined) ci.margin=i;
+        if(/lucro.*%/i.test(orig)&&ci.margin===undefined) ci.margin=i;
+        if(/^%$/.test(orig.trim())&&ci.margin===undefined) ci.margin=i;
+      });
+      
+      log.push('MAP: '+JSON.stringify(ci));
+      
+      // Extra: find all columns with numeric values > 100 in data rows (likely financial)
+      var numCols={};
+      for(var ri2=hr+1;ri2<Math.min(hr+15,rawN.length);ri2++){
+        var rr=rawN[ri2]||[];
+        rr.forEach(function(v,j){
+          if(typeof v==='number'&&v>100&&j>2){
+            if(!numCols[j]) numCols[j]={h:headers[j],vals:[]};
+            numCols[j].vals.push(v);
+          }
+        });
+      }
+      log.push('NumericCols(>100): '+Object.keys(numCols).map(function(j){return '['+j+']"'+numCols[j].h+'"='+numCols[j].vals.slice(0,3).join(',');}).join(' | '));
+      
+      // parse projects
+      var projs=[];
+      for(var ri=hr+1;ri<raw.length;ri++){
+        var row=raw[ri]||[];
+        var rowN=rawN[ri]||[];
+        if(row.every(function(c){return !c||c.toString().trim()==''})) continue;
+        var client=ci.client!==undefined?(row[ci.client]||'').toString().trim():'';
+        var proj=ci.project!==undefined?(row[ci.project]||'').toString().trim():'';
+        if(!client&&!proj) continue;
+        if(/^(total|soma|m[eê]dia|subtotal)/i.test(client)) continue;
+        
+        function getF(idx){
+          if(idx===undefined) return 0;
+          var nv=rowN[idx];
+          if(typeof nv==='number') return nv;
+          var pv=parseNum((row[idx]||'').toString());
+          return pv===null?0:pv;
+        }
+        
+        var val=getF(ci.value);
+        var cost=getF(ci.cost);
+        var profit=getF(ci.profit);
+        var margin=getF(ci.margin);
+        var nps=getF(ci.nps);
+        
+        if(val>0&&profit===0&&cost>=0) profit=parseFloat((val-cost).toFixed(2));
+        if(val>0&&profit!==0&&margin===0) margin=parseFloat(((profit/val)*100).toFixed(1));
+        if(margin>0&&margin<1) margin=parseFloat((margin*100).toFixed(1));
+        
+        var payD=ci.pay_date!==undefined?(row[ci.pay_date]||'').toString():'';
+        var saleD=ci.sale_date!==undefined?(row[ci.sale_date]||'').toString():'';
+        var month=ci.month!==undefined?parseInt(row[ci.month]||0):0;
+        if(!month){var pd=fmtDate(payD);if(pd&&pd.length>=7) month=parseInt(pd.substring(5,7));}
+        
+        var newCli=ci.new_client!==undefined?(row[ci.new_client]||'').toString().trim():'';
+        
+        projs.push({
+          year:parseInt(yr),client:client,project_name:proj,
+          sale_date:fmtDate(saleD),pay_date:fmtDate(payD),month:month||0,
+          new_client:(/sim|yes|1/i.test(newCli))?'Sim':'Nao',
+          value:val,cost:cost,profit:profit,margin:margin,nps:nps,
+          category:ci.category!==undefined?(row[ci.category]||'').toString().trim()||'producao':'producao',
+          status:'concluido',deleted:false
+        });
+      }
+      
+      ALL[yr]=projs;
+      var totV=projs.reduce(function(s,p){return s+p.value;},0);
+      var totC=projs.reduce(function(s,p){return s+p.cost;},0);
+      var totP=projs.reduce(function(s,p){return s+p.profit;},0);
+      log.push('TOTALS '+yr+': projs='+projs.length+' fat='+Math.round(totV)+' custo='+Math.round(totC)+' lucro='+Math.round(totP));
+      
+    }catch(e){
+      log.push('ERRO '+yr+': '+e.message);
+    }
+  }
+  
+  document.getElementById('r').textContent=log.join('\n');
+  window.__ALL=ALL;
+  console.log('LOG:'+log.join('||'));
+  console.log('DATA:'+JSON.stringify(ALL));
+}
+run();
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head><body>
+<pre id="r">Carregando...</pre>
+<script>
+function fmtDate(serial){
+  if(typeof serial!=='number'||serial<1) return '';
+  var d=XLSX.SSF.parse_date_code(serial);
+  if(!d||!d.y) return '';
+  return d.y+'-'+('0'+d.m).slice(-2)+'-'+('0'+d.d).slice(-2);
+}
+async function run(){
+  var el=document.getElementById('r');
+  try{
+    var resp=await fetch('2026_new.xlsx');
+    var buf=await resp.arrayBuffer();
+    var wb=XLSX.read(buf,{type:'array',raw:true});
+    var ws=wb.Sheets[wb.SheetNames[0]];
+    var raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+    
+    // Row 0 = headers
+    var hdrs=raw[0];
+    var projects=[];
+    for(var r=1;r<raw.length;r++){
+      var row=raw[r];
+      if(!row[0]&&!row[1]) continue; // skip empty
+      var cliente=String(row[0]||'').trim();
+      if(!cliente) continue;
+      
+      var sale_date=fmtDate(row[2]);
+      var pay_date=fmtDate(row[3]);
+      var mes=parseInt(row[4])||0;
+      var isNew=(String(row[5]).toLowerCase()==='sim');
+      var fat=typeof row[7]==='number'?row[7]:0;
+      var cost=typeof row[8]==='number'?row[8]:0;
+      var lucro=typeof row[9]==='number'?row[9]:0;
+      var margin=typeof row[10]==='number'?Math.round(row[10]*100):0;
+      var cat=String(row[11]||'').trim();
+      var seg=String(row[12]||'').trim();
+      var nps=typeof row[13]==='number'?row[13]:0;
+      
+      var p={
+        cliente:cliente,
+        projeto:String(row[1]||'').trim(),
+        sale_date:sale_date,
+        pay_date:pay_date,
+        mes:mes,
+        novo:isNew,
+        fat:fat,
+        cost:cost,
+        lucro:lucro,
+        margin:margin,
+        cat:cat,
+        seg:seg,
+        nps:nps
+      };
+      projects.push(p);
+    }
+    
+    // Totais
+    var totFat=projects.reduce(function(s,p){return s+p.fat;},0);
+    var totCost=projects.reduce(function(s,p){return s+p.cost;},0);
+    var totLucro=projects.reduce(function(s,p){return s+p.lucro;},0);
+    var novos=projects.filter(function(p){return p.novo;}).length;
+    var clientes=[...new Set(projects.map(function(p){return p.cliente.toLowerCase();}))].length;
+    var npsRows=projects.filter(function(p){return p.nps>0;});
+    var avgNps=npsRows.length?npsRows.reduce(function(s,p){return s+p.nps;},0)/npsRows.length:0;
+    
+    // Por mês
+    var byMonth={};
+    projects.forEach(function(p){
+      if(!byMonth[p.mes])byMonth[p.mes]={fat:0,cost:0,n:0};
+      byMonth[p.mes].fat+=p.fat;
+      byMonth[p.mes].cost+=p.cost;
+      byMonth[p.mes].n++;
+    });
+    
+    var out='=== PROJETOS 2026 ('+projects.length+') ===\n';
+    out+='Headers: '+JSON.stringify(hdrs)+'\n\n';
+    projects.forEach(function(p,i){
+      out+='['+i+'] '+JSON.stringify(p)+'\n';
+    });
+    out+='\n=== TOTAIS ===\n';
+    out+='Fat: '+totFat+'\nCost: '+totCost+'\nLucro: '+totLucro+'\nProjetos: '+projects.length+'\nNovos: '+novos+'\nClientes únicos: '+clientes+'\nNPS médio: '+avgNps.toFixed(1)+'\n';
+    out+='\n=== POR MÊS ===\n';
+    Object.keys(byMonth).sort().forEach(function(m){
+      out+='Mês '+m+': fat='+byMonth[m].fat+' cost='+byMonth[m].cost+' n='+byMonth[m].n+'\n';
+    });
+    
+    el.textContent=out;
+    console.log('PROJETOS_JSON:'+JSON.stringify(projects));
+    console.log('TOTAIS:fat='+totFat+' cost='+totCost+' lucro='+totLucro+' n='+projects.length+' novos='+novos+' cli='+clientes+' nps='+avgNps.toFixed(1));
+    console.log('BYMONTH:'+JSON.stringify(byMonth));
+  }catch(e){
+    el.textContent='ERR:'+e.message+'\n'+e.stack;
+    console.error(e.message);
+  }
+}
+window.onload=run;
+</script></body></html>

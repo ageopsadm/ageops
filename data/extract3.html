@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<pre id="r">Loading...</pre>
+<script>
+function parseNum(v){
+  if(v===undefined||v===null||v==='') return null;
+  var s=v.toString().replace(/R\$\s*/gi,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  if(s===''||s==='-') return null;
+  var n=parseFloat(s);
+  return isNaN(n)?null:n;
+}
+
+function fmtDate(v){
+  if(!v) return '';
+  var s=v.toString().trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+  var months={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+  var m=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if(m){var mo=months[m[2].toLowerCase().substring(0,3)];if(mo) return m[3]+'-'+('0'+mo).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)){var p=s.split(/[\/\-]/);return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');}
+  return s;
+}
+
+async function run(){
+  var files=['2021','2022','2023','2024','2025','2026'];
+  var ALL={};
+  var log=[];
+
+  for(var fi=0;fi<files.length;fi++){
+    var yr=files[fi];
+    try{
+      var resp=await fetch(yr+'.xlsx');
+      var buf=await resp.arrayBuffer();
+      var wb=XLSX.read(buf,{type:'array',raw:false});
+      var sn=wb.SheetNames[0];
+      var ws=wb.Sheets[sn];
+      var raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      var rawN=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      
+      // find header row
+      var hr=0;
+      for(var i=0;i<Math.min(8,raw.length);i++){
+        var joined=(raw[i]||[]).join(' ').toLowerCase();
+        if(joined.indexOf('cliente')>=0){hr=i;break;}
+      }
+      
+      var headers=(raw[hr]||[]).map(function(h){return (h||'').toString().trim();});
+      log.push('=== '+yr+' sheet:'+sn+' headerRow:'+hr+' ===');
+      log.push('HEADERS: '+headers.map(function(h,i){return '['+i+']'+h;}).join(' | '));
+      
+      // show sample rows
+      for(var si=hr+1;si<Math.min(hr+4,rawN.length);si++){
+        var row=rawN[si]||[];
+        log.push('row['+si+']: '+row.map(function(v,j){return '['+j+']'+(v===null?'null':v);}).join(' | '));
+      }
+      
+      var ci={};
+      headers.forEach(function(orig,i){
+        var h=orig.toLowerCase().trim();
+        if(/^cliente/.test(h)&&ci.client===undefined) ci.client=i;
+        if(/^projeto/.test(h)&&ci.project===undefined) ci.project=i;
+        if(/data.*venda|venda.*data/.test(h)) ci.sale_date=i;
+        if(/data.*pag|pag.*data/.test(h)) ci.pay_date=i;
+        if(/^m[eê]s$/.test(h)||h==='mes') ci.month=i;
+        if(/novo/.test(h)) ci.new_client=i;
+        if(/^nps$/.test(h)) ci.nps=i;
+        if(/categ|tipo de|type/.test(h)) ci.category=i;
+        if(/or[cç]amento/i.test(orig)||(/valor.*(total|proj)/i.test(orig))||/receita/i.test(orig)||/faturamento/i.test(orig)||(orig.trim().toLowerCase()==='valor')) { if(ci.value===undefined) ci.value=i; }
+        if((/^custo$/i.test(orig.trim())||/custo.*(prod|total)/i.test(orig))&&ci.cost===undefined) ci.cost=i;
+        if((/^lucro$/i.test(orig.trim())||/lucro.*(liq|total|r\$)/i.test(orig))&&ci.profit===undefined) ci.profit=i;
+        if((/marg/i.test(orig)||/lucro.*%/i.test(orig)||/%.*lucro/i.test(orig))&&ci.margin===undefined) ci.margin=i;
+      });
+      
+      log.push('ColMap: '+JSON.stringify(ci));
+      
+      var projs=[];
+      for(var ri=hr+1;ri<raw.length;ri++){
+        var row=raw[ri]||[];
+        var rowN=rawN[ri]||[];
+        if(row.every(function(c){return !c||c.toString().trim()=='';})) continue;
+        var client=ci.client!==undefined?(row[ci.client]||'').toString().trim():'';
+        var proj=ci.project!==undefined?(row[ci.project]||'').toString().trim():'';
+        if(!client&&!proj) continue;
+        if(/^(total|soma|m[eê]dia|subtotal)/i.test(client)) continue;
+        
+        function getF(idx){
+          if(idx===undefined) return 0;
+          var nv=rowN[idx];
+          if(typeof nv==='number') return nv;
+          var sv=(row[idx]||'').toString();
+          var pv=parseNum(sv);
+          return pv===null?0:pv;
+        }
+        
+        var val=getF(ci.value);
+        var cost=getF(ci.cost);
+        var profit=getF(ci.profit);
+        var margin=getF(ci.margin);
+        var nps=getF(ci.nps);
+        
+        if(val>0&&profit===0&&cost>=0) profit=parseFloat((val-cost).toFixed(2));
+        if(val>0&&profit!==0&&margin===0) margin=parseFloat(((profit/val)*100).toFixed(1));
+        if(margin>0&&margin<1) margin=parseFloat((margin*100).toFixed(1));
+        
+        var payD=ci.pay_date!==undefined?(row[ci.pay_date]||'').toString():'';
+        var saleD=ci.sale_date!==undefined?(row[ci.sale_date]||'').toString():'';
+        var month=ci.month!==undefined?parseInt(row[ci.month]||0):0;
+        if(!month){var pd=fmtDate(payD);if(pd&&pd.length>=7) month=parseInt(pd.substring(5,7));}
+        
+        var newCli=ci.new_client!==undefined?(row[ci.new_client]||'').toString().trim():'';
+        
+        projs.push({
+          year:parseInt(yr),client:client,project_name:proj,
+          sale_date:fmtDate(saleD),pay_date:fmtDate(payD),
+          month:month||0,
+          new_client:(/sim|yes|true|1/i.test(newCli))?'Sim':'Nao',
+          value:val,cost:cost,profit:profit,margin:margin,nps:nps,
+          category:ci.category!==undefined?(row[ci.category]||'').toString().trim()||'producao':'producao',
+          status:'concluido',deleted:false
+        });
+      }
+      
+      ALL[yr]=projs;
+      var totV=projs.reduce(function(s,p){return s+p.value;},0);
+      var totC=projs.reduce(function(s,p){return s+p.cost;},0);
+      var totP=projs.reduce(function(s,p){return s+p.profit;},0);
+      log.push('RESULT '+yr+': '+projs.length+' projetos | Fat:R$'+Math.round(totV).toLocaleString('pt-BR')+' | Custo:R$'+Math.round(totC).toLocaleString('pt-BR')+' | Lucro:R$'+Math.round(totP).toLocaleString('pt-BR'));
+      
+    }catch(e){
+      log.push('ERRO '+yr+': '+e.message);
+    }
+  }
+  
+  document.getElementById('r').textContent=log.join('\n');
+  window.__ALL=ALL;
+  console.log('RESULT:'+JSON.stringify(ALL));
+}
+run();
+</script>
+</body>
+</html>

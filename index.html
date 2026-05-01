@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGE OPS — Carregando...</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      background:#111;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      font-family:'Segoe UI',sans-serif;
+    }
+    .loader{text-align:center;color:#fff}
+    .logo{
+      font-size:36px;
+      font-weight:900;
+      letter-spacing:.1em;
+      margin-bottom:6px;
+      color:#fff;
+    }
+    .logo span{color:#22c55e}
+    .sub{
+      font-size:10px;
+      color:#555;
+      letter-spacing:.25em;
+      text-transform:uppercase;
+      margin-bottom:32px;
+    }
+    .spinner{
+      width:32px;height:32px;
+      border:2.5px solid rgba(255,255,255,.08);
+      border-top-color:#22c55e;
+      border-radius:50%;
+      animation:spin .7s linear infinite;
+      margin:0 auto 16px;
+    }
+    .msg{font-size:11px;color:#444;letter-spacing:.05em}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <div class="logo">AGE<span>OPS</span></div>
+    <div class="sub">Sistema Operacional v4.0</div>
+    <div class="spinner"></div>
+    <div class="msg">Carregando sistema...</div>
+  </div>
+  <script>
+    /* Setar auto-login antes de navegar */
+    try { sessionStorage.setItem('_age_autologin', 'gustavowng'); } catch(e){}
+    /* Redirecionar imediatamente para o sistema */
+    window.location.replace('age-ops-v4.html?_al=1');
+  </script>
+</body>
+</html>

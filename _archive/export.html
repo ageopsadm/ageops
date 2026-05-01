@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>AGE OPS v4 — Exportar para Claude</title>
+<style>
+body{background:#070910;color:#c8d8f0;font-family:'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
+.box{background:#0d0f1a;border:1px solid rgba(61,111,255,.3);border-radius:12px;padding:32px;max-width:480px;width:100%;text-align:center}
+h1{font-family:monospace;font-size:18px;color:#3d6fff;letter-spacing:.2em;margin-bottom:6px}
+p{color:#7890b0;font-size:13px;margin-bottom:24px;line-height:1.6}
+.btn{display:block;width:100%;padding:14px;background:rgba(61,111,255,.2);border:1px solid rgba(61,111,255,.5);border-radius:8px;color:#3d6fff;font-family:monospace;font-size:13px;letter-spacing:.1em;cursor:pointer;text-decoration:none;margin-bottom:10px;transition:all .2s}
+.btn:hover{background:rgba(61,111,255,.35);box-shadow:0 0 20px rgba(61,111,255,.2)}
+.info{font-family:monospace;font-size:10px;color:#7890b0;margin-top:16px;line-height:1.8;text-align:left;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:6px;padding:12px}
+.info b{color:#c8d8f0}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>AGE OPS v4</h1>
+  <p>Arquivo completo e autocontido, pronto para importar no Claude ou outro editor.</p>
+  
+  <a id="dlBtn" class="btn" href="age-ops-v4.html" download="age-ops-v4.html">
+    ⬇ BAIXAR age-ops-v4.html
+  </a>
+  
+  <button class="btn" onclick="copyContent()">📋 COPIAR CONTEÚDO (clipboard)</button>
+  
+  <div class="info">
+    <b>O que está incluído:</b><br>
+    ✅ Dashboard 2026 com dados reais da planilha<br>
+    ✅ 13 projetos · R$47.950 fat · R$20.979 custo<br>
+    ✅ Integração Projetos ↔ Dashboard ↔ Fechamento<br>
+    ✅ Cronograma ↔ Meu Dia (bidirecional)<br>
+    ✅ Sem gamificação — design limpo e otimizado<br>
+    ✅ Clientes sem duplicatas (1 entrada por cliente)<br>
+    ✅ Login, sidebar colapsável, mobile-ready<br><br>
+    <b>Como usar no Claude:</b><br>
+    1. Baixe o arquivo acima<br>
+    2. Abra o Claude → Artifacts ou Projects<br>
+    3. Faça upload / cole o conteúdo<br>
+    4. Continue editando normalmente
+  </div>
+  
+  <div id="copyMsg" style="color:#00e676;font-family:monospace;font-size:11px;margin-top:10px;min-height:16px"></div>
+</div>
+
+<script>
+async function copyContent() {
+  try {
+    const r = await fetch('age-ops-v4.html');
+    const txt = await r.text();
+    await navigator.clipboard.writeText(txt);
+    document.getElementById('copyMsg').textContent = '✅ Conteúdo copiado! (' + Math.round(txt.length/1024) + ' KB)';
+  } catch(e) {
+    document.getElementById('copyMsg').textContent = '❌ Erro — use o botão Download acima.';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<title>AGE OPS — XLSX Importer v2</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+body{font-family:monospace;background:#0a0a12;color:#0f0;padding:20px;font-size:12px;}
+pre{white-space:pre-wrap;word-break:break-all;margin:0}
+.ok{color:#0f0}.err{color:#f55}.warn{color:#ff0}.info{color:#0cf}
+#log{background:#000;padding:14px;border:1px solid #333;border-radius:6px;max-height:75vh;overflow-y:auto;margin-top:14px;}
+button{background:#111;color:#0f0;border:1px solid #0f0;padding:8px 18px;cursor:pointer;font-family:monospace;font-size:13px;margin:4px;border-radius:4px;}
+button:hover{background:#0f0;color:#000;}
+button.danger{border-color:#f55;color:#f55;}
+button.danger:hover{background:#f55;color:#000;}
+h1{color:#ff0;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<h1>📊 AGE OPS — XLSX → DB Importer v2</h1>
+<button onclick="runFull()">🚀 IMPORTAR (LIMPAR + INSERIR TUDO)</button>
+<button onclick="runDiag()">🔍 APENAS DIAGNÓSTICO (sem inserir)</button>
+<button class="danger" onclick="clearOnly()">🗑️ APENAS LIMPAR TABELA</button>
+<button onclick="document.getElementById('log').innerHTML=''">🧹 Limpar Log</button>
+<div id="log"><pre>Aguardando...</pre></div>
+
+<script>
+var logEl=document.getElementById('log');
+function addLog(msg,cls){
+  var pre=document.createElement('pre');
+  pre.className=cls||'';
+  pre.textContent=msg;
+  logEl.appendChild(pre);
+  logEl.scrollTop=logEl.scrollHeight;
+}
+
+// Parse number from raw XLSX value (number) or formatted string
+function getNum(rowN, rowS, idx){
+  if(idx<0) return 0;
+  // Raw numeric is most reliable
+  var nv=rowN[idx];
+  if(typeof nv==='number' && !isNaN(nv)) return nv;
+  // Fallback to string
+  var sv=(rowS[idx]||'').toString().trim();
+  sv=sv.replace(/R\$\s*/gi,'').replace(/\s+/g,'').trim();
+  // Remove thousands separator (comma for US format, dot for BR)
+  // US format: 8,000.00
+  if(/^\-?\d{1,3}(,\d{3})*(\.\d+)?$/.test(sv)){
+    sv=sv.replace(/,/g,'');
+  }
+  // BR format: 8.000,00
+  else if(/^\-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(sv)){
+    sv=sv.replace(/\./g,'').replace(',','.');
+  }
+  else {
+    sv=sv.replace(/[^\d.\-]/g,'');
+  }
+  var n=parseFloat(sv);
+  return isNaN(n)?0:n;
+}
+
+// Parse margin: may be 0-1 (decimal) or 0-100 (percent)
+function parseMargin(rawM){
+  if(rawM>0&&rawM<=1.5) return parseFloat((rawM*100).toFixed(1));
+  return parseFloat(rawM.toFixed(1));
+}
+
+// Format date from raw Excel value
+function fmtDate(raw){
+  if(!raw) return '';
+  // If it's a Date object
+  if(raw instanceof Date){
+    var y=raw.getUTCFullYear(),m=raw.getUTCMonth()+1,d=raw.getUTCDate();
+    if(y>1900) return y+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2);
+  }
+  var s=raw.toString().trim();
+  // Already ISO YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // ISO with time: 2021-11-20T00:00:00.000Z
+  if(/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.substring(0,10);
+  // JS Date string: "Sat Nov 20 2021..."
+  if(/[A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}/.test(s)||s.indexOf('GMT')>=0){
+    var d=new Date(s);
+    if(!isNaN(d.getTime())){
+      var y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+      return y+'-'+('0'+m).slice(-2)+'-'+('0'+dd).slice(-2);
+    }
+  }
+  // "20-Nov-2021" format
+  var months={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+  var m=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if(m){var mo=months[m[2].toLowerCase().substring(0,3)];if(mo)return m[3]+'-'+('0'+mo).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  // DD/MM/YYYY or DD-MM-YYYY
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(s)){
+    var p=s.split(/[\/\-]/);
+    return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  }
+  // Excel numeric serial number
+  if(/^\d+$/.test(s)){
+    var serial=parseInt(s);
+    if(serial>40000&&serial<50000){ // valid Excel date range
+      try{var d=XLSX.SSF.parse_date_code(serial);if(d&&d.y>1900)return d.y+'-'+('0'+d.m).slice(-2)+'-'+('0'+d.d).slice(-2);}catch(e){}
+    }
+  }
+  return '';
+}
+
+async function parseXLSX(yr){
+  addLog('['+yr+'] Carregando arquivo...','info');
+  var resp=await fetch(yr+'.xlsx');
+  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  var buf=await resp.arrayBuffer();
+  var wb=XLSX.read(buf,{type:'array',cellDates:true});
+  var sn=wb.SheetNames[0];
+  var ws=wb.Sheets[sn];
+  
+  // raw:false = formatted strings (good for text/dates display)
+  var rowsS=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+  // raw:true = raw values (numbers, serial dates, etc.) - best for financial data
+  var rowsN=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+  
+  // Find header row
+  var hr=0;
+  for(var i=0;i<Math.min(10,rowsS.length);i++){
+    if((rowsS[i]||[]).join(' ').toLowerCase().indexOf('cliente')>=0){hr=i;break;}
+  }
+  
+  var headers=(rowsS[hr]||[]).map(function(h){return (h||'').toString().trim();});
+  addLog('['+yr+'] Headers (linha '+hr+'): '+headers.map(function(h,i){return '['+i+']"'+h+'"';}).join(', '),'info');
+  
+  // Column mapping
+  var ci={client:-1,project:-1,sale_date:-1,pay_date:-1,month:-1,new_client:-1,value:-1,cost:-1,profit:-1,margin:-1,nps:-1,category:-1,segment:-1};
+  headers.forEach(function(orig,i){
+    var h=orig.toLowerCase().trim();
+    if(/^(cliente|clientes)$/.test(h)&&ci.client===-1) ci.client=i;
+    if(/^projeto/.test(h)&&ci.project===-1) ci.project=i;
+    if(/data.*venda|venda.*data/.test(h)) ci.sale_date=i;
+    if(/data.*pag|pag.*data/.test(h)) ci.pay_date=i;
+    if(/^m[eê]s$/.test(h)) ci.month=i;
+    if(/cliente.*novo/.test(h)&&ci.new_client===-1) ci.new_client=i;
+    if(/^nps$/.test(h)) ci.nps=i;
+    if(/categ/.test(h)&&ci.category===-1) ci.category=i;
+    if(/segmen/.test(h)&&ci.segment===-1) ci.segment=i;
+    if(/^faturamento$/.test(h)||/^or[cç]amento$/.test(h)||/^receita$/.test(h)) ci.value=i;
+    if(h==='valor'&&ci.value===-1) ci.value=i;
+    if(/valor.*total/i.test(h)&&ci.value===-1) ci.value=i;
+    if(/^(custos?|despesas?|gastos?)$/.test(h)&&ci.cost===-1) ci.cost=i;
+    if(/custo.*(prod|total|real|var)/i.test(h)&&ci.cost===-1) ci.cost=i;
+    if(/^lucro$/.test(h)&&ci.profit===-1) ci.profit=i;
+    if(/lucro.*(liq|total)/i.test(h)&&ci.profit===-1) ci.profit=i;
+    if(/^(margem|margin)$/.test(h)&&ci.margin===-1) ci.margin=i;
+    if(/lucro.*%|marg.*%|^%$/.test(h)&&ci.margin===-1) ci.margin=i;
+  });
+  
+  addLog('['+yr+'] Mapeamento: client='+ci.client+' proj='+ci.project+' val='+ci.value+' cost='+ci.cost+' profit='+ci.profit+' margin='+ci.margin+' nps='+ci.nps+' cat='+ci.category,'info');
+  
+  var projs=[];
+  var skipped=0;
+  
+  for(var ri=hr+1;ri<rowsS.length;ri++){
+    var rowS=rowsS[ri]||[];
+    var rowN=rowsN[ri]||[];
+    if(rowS.every(function(c){return !c||c.toString().trim()==''})) continue;
+    
+    var client=ci.client>=0?(rowS[ci.client]||'').toString().trim():'';
+    var proj=ci.project>=0?(rowS[ci.project]||'').toString().trim():'';
+    if(!client&&!proj){skipped++;continue;}
+    if(/^(total|soma|m[eê]dia|subtotal|grand total|m[eê]dia geral)/i.test(client)){skipped++;continue;}
+    if(/^\d+$/.test(client.replace(/[,.\s]/g,''))){skipped++;continue;}
+    
+    var val=getNum(rowN,rowS,ci.value);
+    var cost=getNum(rowN,rowS,ci.cost);
+    var profit=getNum(rowN,rowS,ci.profit);
+    var rawM=getNum(rowN,rowS,ci.margin);
+    var nps=getNum(rowN,rowS,ci.nps);
+    
+    var margin=parseMargin(rawM);
+    
+    // Derive missing values
+    if(val>0&&profit===0&&cost>=0) profit=parseFloat((val-cost).toFixed(2));
+    if(val>0&&profit!==0&&margin===0) margin=parseFloat(((profit/val)*100).toFixed(1));
+    
+    // Dates: use raw from rowN (cellDates:true gives Date objects or ISO strings)
+    var payDateRaw=ci.pay_date>=0?(rowN[ci.pay_date]||rowS[ci.pay_date]||''):'';
+    var saleDateRaw=ci.sale_date>=0?(rowN[ci.sale_date]||rowS[ci.sale_date]||''):'';
+    var payDate=fmtDate(payDateRaw);
+    var saleDate=fmtDate(saleDateRaw);
+    
+    var month=ci.month>=0?(parseInt(rowN[ci.month])||0):0;
+    if(!month&&payDate&&payDate.length>=7) month=parseInt(payDate.substring(5,7));
+    if(!month&&saleDate&&saleDate.length>=7) month=parseInt(saleDate.substring(5,7));
+    
+    var newCli=ci.new_client>=0?(rowS[ci.new_client]||'').toString().trim():'';
+    var cat=ci.category>=0?(rowS[ci.category]||'').toString().trim():'';
+    var seg=ci.segment>=0?(rowS[ci.segment]||'').toString().trim():'';
+    
+    projs.push({
+      year:parseInt(yr),
+      client:client,
+      project_name:proj,
+      sale_date:saleDate,
+      pay_date:payDate,
+      month:month||0,
+      new_client:(/^(sim|yes|true|1)$/i.test(newCli))?'Sim':'Nao',
+      value:Math.round(val*100)/100,
+      cost:Math.round(cost*100)/100,
+      profit:Math.round(profit*100)/100,
+      margin:parseFloat(margin.toFixed(1)),
+      nps:(nps>10||nps<0)?0:nps,
+      category:cat||'producao',
+      segment:seg||'',
+      status:'concluido',
+      deleted:false
+    });
+  }
+  
+  addLog('['+yr+'] Projetos encontrados: '+projs.length+' | Linhas ignoradas: '+skipped,'warn');
+  
+  var totV=projs.reduce(function(s,p){return s+p.value;},0);
+  var totC=projs.reduce(function(s,p){return s+p.cost;},0);
+  var totP=projs.reduce(function(s,p){return s+p.profit;},0);
+  var avgM=projs.length?parseFloat((projs.reduce(function(s,p){return s+p.margin;},0)/projs.length).toFixed(1)):0;
+  
+  addLog('['+yr+'] Faturamento: R$ '+Math.round(totV).toLocaleString('pt-BR'),'ok');
+  addLog('['+yr+'] Custo:       R$ '+Math.round(totC).toLocaleString('pt-BR'),'ok');
+  addLog('['+yr+'] Lucro:       R$ '+Math.round(totP).toLocaleString('pt-BR'),'ok');
+  addLog('['+yr+'] Margem avg:  '+avgM+'%','ok');
+  
+  addLog('['+yr+'] Amostra (3 primeiros projetos):','');
+  projs.slice(0,3).forEach(function(p){
+    addLog('  '+p.client+' | '+p.project_name+' | mes:'+p.month+' | fat:R$'+p.value.toLocaleString('pt-BR')+' | custo:R$'+p.cost.toLocaleString('pt-BR')+' | lucro:R$'+p.profit.toLocaleString('pt-BR')+' | marg:'+p.margin+'% | NPS:'+p.nps,'');
+  });
+  
+  return projs;
+}
+
+async function clearTable(){
+  addLog('\n[DB] Buscando registros existentes para deletar...','warn');
+  var page=1;
+  var totalDeleted=0;
+  var hasMore=true;
+  while(hasMore){
+    var r=await fetch('../tables/age_hist_projects?page='+page+'&limit=100');
+    var data=await r.json();
+    if(!data.data||data.data.length===0){hasMore=false;break;}
+    var items=data.data.filter(function(d){return !d.deleted;});
+    if(items.length===0){
+      if(data.data.length<100) hasMore=false;
+      else page++;
+      continue;
+    }
+    var dels=items.map(function(item){
+      return fetch('../tables/age_hist_projects/'+item.id,{method:'DELETE'}).then(function(){totalDeleted++;});
+    });
+    await Promise.all(dels);
+    addLog('[DB] Deletados: '+totalDeleted+'...','warn');
+    if(data.data.length<100) hasMore=false;
+    else page++;
+  }
+  addLog('[DB] ✅ Total deletados: '+totalDeleted,'ok');
+  return totalDeleted;
+}
+
+async function insertBatch(projs){
+  var inserted=0,errors=0;
+  var batchSize=5;
+  for(var i=0;i<projs.length;i+=batchSize){
+    var batch=projs.slice(i,i+batchSize);
+    var promises=batch.map(function(row){
+      return fetch('../tables/age_hist_projects',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(row)
+      }).then(function(r){
+        if(r.ok) inserted++;
+        else errors++;
+        return r;
+      }).catch(function(){errors++;});
+    });
+    await Promise.all(promises);
+    if((i+batchSize)%50===0||i+batchSize>=projs.length){
+      addLog('  Progresso: '+Math.min(i+batchSize,projs.length)+'/'+projs.length+' (ok:'+inserted+' err:'+errors+')','');
+    }
+  }
+  return {inserted:inserted,errors:errors};
+}
+
+async function runDiag(){
+  addLog('=== DIAGNÓSTICO (sem inserção no banco) ===','ok');
+  var years=['2021','2022','2023','2024','2025','2026'];
+  var grand={n:0,fat:0,custo:0,lucro:0};
+  for(var fi=0;fi<years.length;fi++){
+    var yr=years[fi];
+    addLog('\n--- '+yr+' ---','warn');
+    try{
+      var projs=await parseXLSX(yr);
+      grand.n+=projs.length;
+      grand.fat+=projs.reduce(function(s,p){return s+p.value;},0);
+      grand.custo+=projs.reduce(function(s,p){return s+p.cost;},0);
+      grand.lucro+=projs.reduce(function(s,p){return s+p.profit;},0);
+    }catch(e){addLog('ERRO: '+e.message,'err');}
+  }
+  addLog('\n=== TOTAIS GERAIS ===','warn');
+  addLog('Projetos: '+grand.n,'ok');
+  addLog('Faturamento: R$ '+Math.round(grand.fat).toLocaleString('pt-BR'),'ok');
+  addLog('Custo:       R$ '+Math.round(grand.custo).toLocaleString('pt-BR'),'ok');
+  addLog('Lucro:       R$ '+Math.round(grand.lucro).toLocaleString('pt-BR'),'ok');
+  addLog('\n✅ DIAGNÓSTICO CONCLUÍDO!','ok');
+}
+
+async function clearOnly(){
+  addLog('=== LIMPANDO TABELA ===','warn');
+  await clearTable();
+  addLog('✅ Tabela limpa!','ok');
+}
+
+async function runFull(){
+  addLog('=== IMPORTAÇÃO COMPLETA ===','ok');
+  addLog('Passo 1: Limpando dados antigos...','warn');
+  await clearTable();
+  
+  addLog('\nPasso 2: Processando e inserindo dados...','warn');
+  var years=['2021','2022','2023','2024','2025','2026'];
+  var grand={n:0,fat:0,custo:0,lucro:0,inserted:0,errors:0};
+  
+  for(var fi=0;fi<years.length;fi++){
+    var yr=years[fi];
+    addLog('\n--- '+yr+' ---','warn');
+    try{
+      var projs=await parseXLSX(yr);
+      addLog('['+yr+'] Inserindo '+projs.length+' projetos no banco...','warn');
+      var res=await insertBatch(projs);
+      addLog('['+yr+'] ✅ Inseridos: '+res.inserted+' | Erros: '+res.errors,'ok');
+      
+      grand.n+=projs.length;
+      grand.fat+=projs.reduce(function(s,p){return s+p.value;},0);
+      grand.custo+=projs.reduce(function(s,p){return s+p.cost;},0);
+      grand.lucro+=projs.reduce(function(s,p){return s+p.profit;},0);
+      grand.inserted+=res.inserted;
+      grand.errors+=res.errors;
+    }catch(e){
+      addLog('['+yr+'] ❌ ERRO: '+e.message,'err');
+    }
+  }
+  
+  addLog('\n=== RESUMO FINAL ===','warn');
+  addLog('Total de projetos processados: '+grand.n,'ok');
+  addLog('Faturamento total: R$ '+Math.round(grand.fat).toLocaleString('pt-BR'),'ok');
+  addLog('Custo total:       R$ '+Math.round(grand.custo).toLocaleString('pt-BR'),'ok');
+  addLog('Lucro total:       R$ '+Math.round(grand.lucro).toLocaleString('pt-BR'),'ok');
+  addLog('Registros inseridos no banco: '+grand.inserted,'ok');
+  addLog('Erros: '+grand.errors,(grand.errors>0?'err':'ok'));
+  addLog('\n✅ IMPORTAÇÃO CONCLUÍDA!','ok');
+}
+</script>
+</body>
+</html>

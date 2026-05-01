@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head><title>Auditoria Completa</title>
+<style>
+  body { background:#0a0e1a; color:#e4eeff; font-family:monospace; padding:20px; font-size:12px; }
+  pre { background:#111827; border:1px solid #223; padding:16px; border-radius:8px; overflow:auto; white-space:pre-wrap; }
+  h2 { color:#00aaff; margin-top:24px; }
+  .ok { color:#00ff88; } .warn { color:#ffcc00; } .err { color:#ff4444; } .sep { color:#334; }
+  .dim { color:#556677; }
+</style>
+</head>
+<body>
+<h2>🔎 Auditoria Completa — AGE OPS</h2>
+<pre id="out">Carregando dados do banco...</pre>
+<script>
+const L = [];
+const w = (s, cls) => L.push(cls ? `<span class="${cls}">${s}</span>` : s);
+const sep = () => w('─'.repeat(80), 'sep');
+const fmt = v => (parseFloat(v)||0).toLocaleString('pt-BR', {style:'currency',currency:'BRL',maximumFractionDigits:0});
+
+async function run() {
+  // ── 1. Buscar todos os dados ──
+  const [rH, rP, rC] = await Promise.all([
+    fetch('../tables/age_hist_projects?limit=500'),
+    fetch('../tables/age_projects?limit=300'),
+    fetch('../tables/age_clients_db?limit=300')
+  ]);
+  const hist   = ((await rH.json()).data||[]).filter(r=>!r.deleted);
+  const active = ((await rP.json()).data||[]).filter(r=>!r.deleted);
+  const clis   = ((await rC.json()).data||[]).filter(r=>!r.deleted);
+
+  w(`=== AUDITORIA age_hist_projects ===`, 'ok');
+  w(`Total registros: ${hist.length}`);
+  sep();
+
+  // ── 2. Por ano ──
+  const EXPECTED = {
+    2021:{fat:67415, custo:0,    lucro:67415, n:12},
+    2022:{fat:109042,custo:58835,lucro:50207, n:25},
+    2023:{fat:210591,custo:97431,lucro:113160,n:28},
+    2024:{fat:162440,custo:77538,lucro:84902, n:22},
+    2025:{fat:110190,custo:0,    lucro:110190,n:23},
+    2026:{fat:46200, custo:19979,lucro:26221, n:12}
+  };
+
+  w(`\n── POR ANO ──`);
+  for (const y of [2021,2022,2023,2024,2025,2026]) {
+    const yp  = hist.filter(p=>p.year==y);
+    const fat = yp.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+    const cst = yp.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+    const pro = yp.reduce((s,p)=>s+(parseFloat(p.profit)||0),0);
+    const exp = EXPECTED[y];
+    const nOk = yp.length===exp.n;
+    const fOk = Math.abs(fat-exp.fat)<1;
+    w(`\n${y}: ${yp.length} proj (exp:${exp.n}) ${nOk?'✓':'✗'} | Fat: ${fmt(fat)} (exp:${fmt(exp.fat)}) ${fOk?'✓':'✗'} | Custo: ${fmt(cst)} | Lucro: ${fmt(pro)}`,
+      nOk&&fOk ? 'ok' : fOk ? 'warn' : 'err');
+    
+    // Listar projetos com problemas
+    yp.filter(p=>!parseFloat(p.value)).forEach(p=>{
+      w(`  ⚠ VALOR ZERO: ${p.client_name} — ${p.project_name}`, 'warn');
+    });
+    // Mostrar sample
+    if (yp.length > 0) {
+      w(`  Sample: ${yp.slice(0,3).map(p=>`${p.client_name}/${fmt(p.value)}`).join(' | ')}`, 'dim');
+    }
+  }
+  sep();
+
+  // ── 3. Por cliente (top 20) ──
+  w(`\n── PROJETOS POR CLIENTE (Top 20 no hist) ──`);
+  const cliMap = {};
+  hist.forEach(p => {
+    const c = (p.client_name||'?').trim();
+    if (!cliMap[c]) cliMap[c] = {count:0,value:0,years:new Set()};
+    cliMap[c].count++;
+    cliMap[c].value += parseFloat(p.value)||0;
+    cliMap[c].years.add(p.year);
+  });
+  Object.entries(cliMap).sort((a,b)=>b[1].value-a[1].value).slice(0,20).forEach(([name,d]) => {
+    w(`  ${d.count}p | ${fmt(d.value)} | ${[...d.years].sort().join(',')} | ${name}`);
+  });
+  sep();
+
+  // ── 4. Verificar age_clients_db vs hist ──
+  w(`\n── age_clients_db vs age_hist_projects ──`);
+  clis.sort((a,b)=>(parseFloat(b.total_value)||0)-(parseFloat(a.total_value)||0)).slice(0,20).forEach(c => {
+    const name = (c.client_name||'').trim().toLowerCase();
+    const histProjs = hist.filter(p=>(p.client_name||'').trim().toLowerCase()===name);
+    const histVal   = histProjs.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+    const dbProj    = parseInt(c.total_projects)||0;
+    const dbVal     = parseFloat(c.total_value)||0;
+    const countOk   = histProjs.length === dbProj;
+    const valOk     = Math.abs(histVal - dbVal) < 1;
+    w(`  ${c.client_name}: DB(${dbProj}p, ${fmt(dbVal)}) vs HIST(${histProjs.length}p, ${fmt(histVal)}) ${countOk&&valOk?'✓':!countOk?'✗CONTAGEM':!valOk?'✗VALOR':''}`,
+      countOk&&valOk ? 'ok' : 'err');
+  });
+  sep();
+
+  // ── 5. Projetos ativos ──
+  w(`\n── age_projects (ativos) ──`);
+  w(`Total: ${active.length} | Concluídos: ${active.filter(p=>p.status==='concluido').length} | Em andamento: ${active.filter(p=>p.status==='em_andamento').length} | Pendente: ${active.filter(p=>p.status==='pendente').length}`);
+  const fatAtivo = active.filter(p=>p.status!=='cancelado').reduce((s,p)=>s+(parseFloat(p.total_value)||0),0);
+  const custAtivo = active.filter(p=>p.status!=='cancelado').reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+  w(`Fat ativo (não cancelado): ${fmt(fatAtivo)} | Custo: ${fmt(custAtivo)}`);
+  sep();
+
+  // ── 6. Verificar duplicatas no hist ──
+  w(`\n── POSSÍVEIS DUPLICATAS no hist ──`);
+  const seen = {};
+  let dups = 0;
+  hist.forEach(p => {
+    const key = `${p.year}|${(p.client_name||'').trim().toLowerCase()}|${(p.project_name||'').trim().toLowerCase()}`;
+    if (seen[key]) {
+      w(`  DUP: ${p.year} | ${p.client_name} | ${p.project_name} | val:${fmt(p.value)}`, 'err');
+      dups++;
+    }
+    seen[key] = true;
+  });
+  if (!dups) w(`  Nenhuma duplicata encontrada`, 'ok');
+  sep();
+
+  // ── 7. Campos nulos / problemáticos ──
+  w(`\n── CAMPOS PROBLEMÁTICOS ──`);
+  const noMonth = hist.filter(p=>!p.month||p.month==0);
+  const noYear  = hist.filter(p=>!p.year);
+  const noVal   = hist.filter(p=>!(parseFloat(p.value)>0));
+  const noClient= hist.filter(p=>!p.client_name);
+  w(`  Sem month: ${noMonth.length}${noMonth.length?(' → '+noMonth.slice(0,3).map(p=>p.client_name).join(', ')):''}`, noMonth.length?'warn':'ok');
+  w(`  Sem year:  ${noYear.length}`, noYear.length?'err':'ok');
+  w(`  Sem valor: ${noVal.length}${noVal.length?(' → '+noVal.slice(0,3).map(p=>p.client_name).join(', ')):''}`, noVal.length?'err':'ok');
+  w(`  Sem client:${noClient.length}`, noClient.length?'warn':'ok');
+  sep();
+
+  // ── 8. Distribuição de margin_pct ──
+  w(`\n── MARGIN_PCT (anos com custo registrado) ──`);
+  [2022,2023,2024,2026].forEach(y => {
+    const yp = hist.filter(p=>p.year==y);
+    const withMg = yp.filter(p=>parseFloat(p.margin_pct)>0);
+    const avg = withMg.length ? withMg.reduce((s,p)=>s+(parseFloat(p.margin_pct)||0),0)/withMg.length : 0;
+    w(`  ${y}: ${withMg.length}/${yp.length} com margin_pct | média ${avg.toFixed(1)}%`, 'dim');
+  });
+  sep();
+
+  w(`\n✅ AUDITORIA CONCLUÍDA — ${new Date().toLocaleTimeString('pt-BR')}`, 'ok');
+  document.getElementById('out').innerHTML = L.join('\n');
+}
+run().catch(e => { document.getElementById('out').textContent = 'ERRO: '+e.message; });
+</script>
+</body>
+</html>

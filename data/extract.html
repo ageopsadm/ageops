@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div id="r">Carregando...</div>
+<script>
+const MONTHS = {jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+
+function parseNum(v){
+  if(!v||v===''||v==='-')return 0;
+  const c=v.toString().replace(/R\$\s*/gi,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');
+  const n=parseFloat(c);return isNaN(n)?0:n;
+}
+function fmtDate(v){
+  if(!v)return'';
+  if(/^\d{4}-\d{2}-\d{2}/.test(v))return v.substring(0,10);
+  const m=v.toString().match(/(\d{1,2})[-\/]([a-zA-Z]+)[-\/](\d{4})/);
+  if(m){const mo=MONTHS[m[2].toLowerCase().substring(0,3)];if(mo)return`${m[3]}-${String(mo).padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(v)){const p=v.split(/[\/\-]/);return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+  return v;
+}
+function extractMonth(d){const fd=fmtDate(d);if(fd&&fd.length>=7)return parseInt(fd.substring(5,7));return 0;}
+
+async function run(){
+  const files=['2021','2022','2023','2024','2025','2026'];
+  const ALL={};
+  const log=[];
+  
+  for(const yr of files){
+    try{
+      const r=await fetch(`${yr}.xlsx`);
+      const buf=await r.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array',cellDates:false,raw:false});
+      const sn=wb.SheetNames[0];
+      const ws=wb.Sheets[sn];
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      
+      // find header row
+      let hr=0;
+      for(let i=0;i<Math.min(6,raw.length);i++){
+        const joined=(raw[i]||[]).join(' ').toLowerCase();
+        if(joined.includes('cliente')&&(joined.includes('projeto')||joined.includes('or'))){hr=i;break;}
+      }
+      
+      const headers=(raw[hr]||[]).map(h=>(h||'').toString().toLowerCase().trim());
+      log.push(`${yr} | sheet:${sn} | header row:${hr} | headers: ${JSON.stringify(headers)}`);
+      
+      // map columns
+      const ci={};
+      headers.forEach((h,i)=>{
+        const hn=h.replace(/\s+/g,' ');
+        if(/^cliente/.test(hn)&&ci.client===undefined) ci.client=i;
+        else if(/^projeto/.test(hn)&&ci.project===undefined) ci.project=i;
+        else if(/venda/.test(hn)&&/data/.test(hn)) ci.sale_date=i;
+        else if(/pagamento/.test(hn)&&/data/.test(hn)) ci.pay_date=i;
+        else if(/^m[eê]s$/.test(hn)||hn==='mes') ci.month=i;
+        else if(/novo/.test(hn)) ci.new_client=i;
+        else if(/or[cç]amento/i.test(h)||(/valor/i.test(h)&&/total/i.test(h))) ci.value=i;
+        else if(/custo|cost/i.test(h)&&!/recorrente/i.test(h)&&ci.cost===undefined) ci.cost=i;
+        else if(/^lucro$/i.test(hn)||(/lucro/i.test(h)&&!/margin|%|med/i.test(h)&&ci.profit===undefined)) ci.profit=i;
+        else if(/marg|lucro %|%/i.test(h)&&ci.margin===undefined) ci.margin=i;
+        else if(/^nps$/i.test(hn)) ci.nps=i;
+        else if(/categ|tipo/i.test(h)) ci.category=i;
+      });
+      log.push(`${yr} colmap: ${JSON.stringify(ci)}`);
+      
+      // also try raw value: look at row after header for numeric columns
+      const sample=raw[hr+1]||[];
+      log.push(`${yr} sample row[${hr+1}]: ${JSON.stringify(sample)}`);
+      
+      const projs=[];
+      for(let i=hr+1;i<raw.length;i++){
+        const row=raw[i]||[];
+        if(row.every(c=>!c||c.toString().trim()===''))continue;
+        const client=(ci.client!==undefined?row[ci.client]:'')||'';
+        const proj=(ci.project!==undefined?row[ci.project]:'')||'';
+        if(!client&&!proj)continue;
+        if(/^total|^soma|^m[eê]dia/i.test(client.toString()))continue;
+        
+        let val=parseNum(ci.value!==undefined?row[ci.value]:'');
+        let cost=parseNum(ci.cost!==undefined?row[ci.cost]:'');
+        let profit=parseNum(ci.profit!==undefined?row[ci.profit]:'');
+        let margin=parseNum(ci.margin!==undefined?row[ci.margin]:'');
+        let nps=parseNum(ci.nps!==undefined?row[ci.nps]:'');
+        
+        if(val>0&&profit===0&&cost>=0) profit=val-cost;
+        if(val>0&&profit!==0&&margin===0) margin=parseFloat(((profit/val)*100).toFixed(1));
+        
+        const payD=ci.pay_date!==undefined?row[ci.pay_date]:'';
+        const saleD=ci.sale_date!==undefined?row[ci.sale_date]:'';
+        let month=ci.month!==undefined?parseInt(row[ci.month]||0):0;
+        if(!month) month=extractMonth(payD)||extractMonth(saleD);
+        
+        projs.push({
+          year:parseInt(yr),
+          client:client.toString().trim(),
+          project_name:proj.toString().trim(),
+          sale_date:fmtDate(saleD.toString()),
+          pay_date:fmtDate(payD.toString()),
+          month,
+          new_client:(ci.new_client!==undefined?row[ci.new_client]:'')||'',
+          value:val,cost,profit,
+          margin:isNaN(margin)?0:margin,
+          nps:isNaN(nps)?0:nps,
+          category:(ci.category!==undefined?row[ci.category]:'')||'producao',
+          status:'concluido',deleted:false
+        });
+      }
+      
+      ALL[yr]=projs;
+      const totV=projs.reduce((s,p)=>s+p.value,0);
+      const totC=projs.reduce((s,p)=>s+p.cost,0);
+      log.push(`${yr}: ${projs.length} projetos | Fat: R$${totV.toLocaleString('pt-BR')} | Custo: R$${totC.toLocaleString('pt-BR')}`);
+      
+    }catch(e){
+      log.push(`ERRO ${yr}: ${e.message}`);
+    }
+  }
+  
+  document.getElementById('r').innerHTML='<pre>'+log.join('\n')+'</pre><hr><pre id="json">'+JSON.stringify(ALL,null,2)+'</pre>';
+  window.__ALL_DATA=ALL;
+  console.log('DONE', JSON.stringify(ALL));
+}
+
+run();
+</script>
+</body>
+</html>

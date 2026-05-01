@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>AGE OPS</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#111;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif}
+    .loader{text-align:center;color:#fff}
+    .logo{font-size:32px;font-weight:900;letter-spacing:.08em;margin-bottom:8px}
+    .sub{font-size:11px;color:#666;letter-spacing:.2em;margin-bottom:28px}
+    .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <div class="logo">AGE OPS</div>
+    <div class="sub">SISTEMA OPERACIONAL v4.0</div>
+    <div class="spinner"></div>
+  </div>
+  <script>
+    /* Seta flag de auto-login ANTES de navegar para o app */
+    try { sessionStorage.setItem('_age_autologin', 'gustavowng'); } catch(e){}
+    /* Redireciona passando parâmetro de auto-login na URL para máxima compatibilidade */
+    window.location.replace('age-ops-v4.html?_al=1');
+  </script>
+</body>
+</html>

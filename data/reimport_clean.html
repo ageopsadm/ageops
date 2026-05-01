@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<title>AGE OPS — Re-Import Limpo</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+body{font-family:monospace;background:#0a0a12;color:#0f0;padding:20px;font-size:12px;}
+pre{white-space:pre-wrap;word-break:break-all;margin:0}
+.ok{color:#00ff88}.err{color:#ff4444}.warn{color:#ffcc00}.info{color:#00aaff}.dim{color:#667788}
+#log{background:#000;padding:14px;border:1px solid #333;border-radius:6px;max-height:80vh;overflow-y:auto;margin-top:14px;}
+button{background:#111;color:#0f0;border:1px solid #0f0;padding:9px 20px;cursor:pointer;font-family:monospace;font-size:13px;margin:4px;border-radius:4px;font-weight:bold;}
+button:hover{background:#0f0;color:#000;}
+button.danger{border-color:#f55;color:#f55;}
+button.danger:hover{background:#f55;color:#000;}
+h1{color:#ffcc00;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<h1>🔄 AGE OPS — Re-Import Definitivo (Limpa + Insere 122 corretos)</h1>
+<button onclick="runFull()">🚀 EXECUTAR (Limpar + Reimportar tudo)</button>
+<button onclick="runDiagOnly()">🔍 Só Diagnóstico (sem alterar DB)</button>
+<button class="danger" onclick="clearHistOnly()">⚠ Só Limpar age_hist_projects</button>
+<button onclick="clearClientsAndRebuild()">👥 Reconstruir age_clients_db</button>
+<div id="log"><pre class="dim">Aguardando...</pre></div>
+
+<script>
+var logEl = document.getElementById('log');
+function L(msg, cls) {
+  var pre = document.createElement('pre');
+  pre.className = cls || 'dim';
+  pre.textContent = typeof msg === 'object' ? JSON.stringify(msg) : String(msg);
+  logEl.appendChild(pre);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ── Normalização de nomes de cliente (canonical) ──
+// Garante que clientes com variações de maiúsculas/minúsculas ficam com nome único
+const NAME_MAP = {
+  'jay p':            'JAY P',
+  'lou garcia':       'LOU GARCIA',
+  'cinq':             'CINQ',
+  'usina':            'USINA',
+  'loud':             'LOUD',
+  'kvsh':             'KVSH',
+  'heineken':         'HEINEKEN',
+  'rooftime':         'ROOFTIME',
+  'universal music':  'UNIVERSAL MUSIC',
+  'kzn':              'KZN',
+  'usbisqui':         'USBISQUI',
+  'sony':             'Sony',
+  'psych':            'Psych',
+  'yuri':             'YURI',
+  'flashbang':        'Flashbang',
+  'altamira':         'Altamira',
+  'bardeo2':          'Bardeo2',
+  'crosa':            'Crosa',
+  'reky':             'Reky',
+  'sayuri':           'Sayuri',
+  '5yncro':           '5YNCRO',
+  'kim':              'Kim Nefasto',
+  'prime talk':       'Prime Talk',
+  'blau':             'Blau',
+  'digital music':    'Digital Music',
+  'mc bonca':         'MC Bonca',
+  'anapura':          'Anapura',
+  '2strange':         '2Strange',
+  'zampini':          'Zampini',
+};
+
+function normalizeName(raw) {
+  if (!raw) return raw;
+  const trimmed = raw.trim();
+  const key = trimmed.toLowerCase().replace(/\s+/g, ' ');
+  return NAME_MAP[key] || trimmed;
+}
+
+// ── Parser numérico ──
+function getNum(rowN, rowS, idx) {
+  if (idx < 0) return 0;
+  var nv = rowN[idx];
+  if (typeof nv === 'number' && !isNaN(nv)) return nv;
+  var sv = (rowS[idx] || '').toString().trim()
+    .replace(/R\$\s*/gi,'').replace(/\s+/g,'');
+  if (/^-?\d{1,3}(,\d{3})*(\.\d+)?$/.test(sv)) sv = sv.replace(/,/g,'');
+  else if (/^-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(sv)) sv = sv.replace(/\./g,'').replace(',','.');
+  else sv = sv.replace(/[^\d.\-]/g,'');
+  var n = parseFloat(sv);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseMargin(rawM) {
+  if (rawM > 0 && rawM <= 1.5) return parseFloat((rawM * 100).toFixed(1));
+  return parseFloat((rawM || 0).toFixed(1));
+}
+
+function fmtDate(raw) {
+  if (!raw) return '';
+  if (raw instanceof Date) {
+    var y=raw.getUTCFullYear(),m=raw.getUTCMonth()+1,d=raw.getUTCDate();
+    if (y > 1900) return y+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2);
+  }
+  var s = raw.toString().trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.substring(0,10);
+  if (/[A-Z][a-z]{2}\s+[A-Z]/.test(s) || s.indexOf('GMT') >= 0) {
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      var y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+      return y+'-'+('0'+m).slice(-2)+'-'+('0'+dd).slice(-2);
+    }
+  }
+  var months={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
+  var m = s.match(/(\d{1,2})[-\/\s]([a-zA-Z]+)[-\/\s](\d{4})/);
+  if (m) { var mo=months[m[2].toLowerCase().substring(0,3)]; if(mo) return m[3]+'-'+('0'+mo).slice(-2)+'-'+('0'+m[1]).slice(-2); }
+  if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(s)) {
+    var p=s.split(/[\/\-]/);
+    return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  }
+  if (/^\d+$/.test(s)) {
+    var serial=parseInt(s);
+    if (serial > 40000 && serial < 50000) {
+      try {
+        var d = XLSX.SSF.parse_date_code(serial);
+        if (d && d.y > 1900) return d.y+'-'+('0'+d.m).slice(-2)+'-'+('0'+d.d).slice(-2);
+      } catch(e){}
+    }
+  }
+  return '';
+}
+
+// ── Parser de XLSX ──
+async function parseXLSX(yr) {
+  L('['+yr+'] Lendo arquivo...', 'info');
+  var resp = await fetch(yr + '.xlsx');
+  if (!resp.ok) throw new Error('Arquivo '+yr+'.xlsx não encontrado (HTTP '+resp.status+')');
+  var buf  = await resp.arrayBuffer();
+  var wb   = XLSX.read(buf, {type:'array', cellDates:true});
+  var ws   = wb.Sheets[wb.SheetNames[0]];
+  var rowsS = XLSX.utils.sheet_to_json(ws, {header:1, raw:false,  defval:''});
+  var rowsN = XLSX.utils.sheet_to_json(ws, {header:1, raw:true,   defval:null});
+
+  // Encontrar linha de cabeçalho
+  var hr = 0;
+  for (var i = 0; i < Math.min(10, rowsS.length); i++) {
+    if ((rowsS[i]||[]).join(' ').toLowerCase().indexOf('cliente') >= 0) { hr = i; break; }
+  }
+
+  var headers = (rowsS[hr]||[]).map(h => (h||'').toString().trim());
+  L('['+yr+'] Header row '+hr+': '+headers.map((h,i)=>'['+i+']='+h).join(' | '), 'dim');
+
+  var ci = {client:-1,project:-1,sale_date:-1,pay_date:-1,month:-1,new_client:-1,value:-1,cost:-1,profit:-1,margin:-1,nps:-1,category:-1,segment:-1};
+  headers.forEach((orig,i) => {
+    var h = orig.toLowerCase().trim();
+    if (/^(cliente|clientes)$/.test(h) && ci.client===-1)          ci.client = i;
+    if (/^projeto/.test(h) && ci.project===-1)                      ci.project = i;
+    if (/data.*venda|venda.*data/.test(h))                          ci.sale_date = i;
+    if (/data.*pag|pag.*data/.test(h))                              ci.pay_date = i;
+    if (/^m[eê]s$/.test(h))                                         ci.month = i;
+    if (/cliente.*novo/.test(h) && ci.new_client===-1)              ci.new_client = i;
+    if (/^nps$/.test(h))                                            ci.nps = i;
+    if (/categ/.test(h) && ci.category===-1)                        ci.category = i;
+    if (/segmen/.test(h) && ci.segment===-1)                        ci.segment = i;
+    if (/^faturamento$|^or[cç]amento$|^receita$/.test(h))          ci.value = i;
+    if (h==='valor' && ci.value===-1)                               ci.value = i;
+    if (/valor.*total/i.test(h) && ci.value===-1)                   ci.value = i;
+    if (/^(custos?|despesas?|gastos?)$/.test(h) && ci.cost===-1)   ci.cost = i;
+    if (/custo.*(prod|total|real|var)/i.test(h) && ci.cost===-1)   ci.cost = i;
+    if (/^lucro$/.test(h) && ci.profit===-1)                        ci.profit = i;
+    if (/lucro.*(liq|total)/i.test(h) && ci.profit===-1)           ci.profit = i;
+    if (/^(margem|margin)$/.test(h) && ci.margin===-1)             ci.margin = i;
+    if (/lucro.*%|marg.*%|^%$/.test(h) && ci.margin===-1)         ci.margin = i;
+  });
+  L('['+yr+'] Cols: client='+ci.client+' proj='+ci.project+' val='+ci.value+' cost='+ci.cost+' nps='+ci.nps+' seg='+ci.segment, 'info');
+
+  var projs = [], skipped = 0;
+  for (var ri = hr+1; ri < rowsS.length; ri++) {
+    var rowS = rowsS[ri]||[], rowN = rowsN[ri]||[];
+    if (rowS.every(c => !c || c.toString().trim() === '')) continue;
+
+    var client = ci.client >= 0 ? normalizeName((rowS[ci.client]||'').toString().trim()) : '';
+    var proj   = ci.project >= 0 ? (rowS[ci.project]||'').toString().trim() : '';
+    if (!client && !proj) { skipped++; continue; }
+    if (/^(total|soma|m[eê]dia|subtotal|grand total)/i.test(client)) { skipped++; continue; }
+    if (/^\d+$/.test(client.replace(/[,.\s]/g,''))) { skipped++; continue; }
+
+    var val    = getNum(rowN, rowS, ci.value);
+    var cost   = getNum(rowN, rowS, ci.cost);
+    var profit = getNum(rowN, rowS, ci.profit);
+    var rawM   = getNum(rowN, rowS, ci.margin);
+    var nps    = getNum(rowN, rowS, ci.nps);
+    var margin = parseMargin(rawM);
+
+    if (val > 0 && profit === 0 && cost >= 0) profit = parseFloat((val - cost).toFixed(2));
+    if (val > 0 && profit !== 0 && margin === 0) margin = parseFloat(((profit/val)*100).toFixed(1));
+
+    var payDate  = fmtDate(ci.pay_date  >= 0 ? (rowN[ci.pay_date]  || rowS[ci.pay_date]  || '') : '');
+    var saleDate = fmtDate(ci.sale_date >= 0 ? (rowN[ci.sale_date] || rowS[ci.sale_date] || '') : '');
+
+    var month = ci.month >= 0 ? (parseInt(rowN[ci.month])||0) : 0;
+    if (!month && payDate  && payDate.length  >= 7) month = parseInt(payDate.substring(5,7));
+    if (!month && saleDate && saleDate.length >= 7) month = parseInt(saleDate.substring(5,7));
+
+    var newCli = ci.new_client >= 0 ? (rowS[ci.new_client]||'').toString().trim() : '';
+    var cat    = ci.category   >= 0 ? (rowS[ci.category]  ||'').toString().trim() : '';
+    var seg    = ci.segment    >= 0 ? (rowS[ci.segment]   ||'').toString().trim() : '';
+
+    projs.push({
+      year:         parseInt(yr),
+      client_name:  client,
+      project_name: proj,
+      sale_date:    saleDate,
+      payment_date: payDate,
+      month:        month || 0,
+      is_new_client: /^(sim|yes|true|1)$/i.test(newCli),
+      value:        Math.round(val * 100) / 100,
+      cost:         Math.round(cost * 100) / 100,
+      profit:       Math.round(profit * 100) / 100,
+      margin_pct:   parseFloat(margin.toFixed(1)),
+      nps:          (nps > 10 || nps < 0) ? 0 : parseFloat(nps.toFixed(1)),
+      category:     cat || 'producao',
+      segment:      seg || '',
+      status:       'concluido'
+    });
+  }
+
+  var totV = projs.reduce((s,p)=>s+p.value, 0);
+  var totC = projs.reduce((s,p)=>s+p.cost, 0);
+  var totP = projs.reduce((s,p)=>s+p.profit, 0);
+  var avgM = projs.length ? (projs.reduce((s,p)=>s+p.margin_pct,0)/projs.length) : 0;
+
+  L(`[${yr}] → ${projs.length} projetos | Fat: R$${Math.round(totV).toLocaleString('pt-BR')} | Custo: R$${Math.round(totC).toLocaleString('pt-BR')} | Lucro: R$${Math.round(totP).toLocaleString('pt-BR')} | Marg avg: ${avgM.toFixed(1)}%`, 'ok');
+  L(`[${yr}] Ignoradas: ${skipped} linhas`, 'dim');
+
+  return projs;
+}
+
+// ── Limpar tabela ──
+async function clearTable(tbl) {
+  L(`[DB] Limpando ${tbl}...`, 'warn');
+  var page = 1, total = 0, hasMore = true;
+  while (hasMore) {
+    var r = await fetch(`../tables/${tbl}?page=${page}&limit=100`);
+    var d = await r.json();
+    var items = (d.data||[]).filter(i=>!i.deleted);
+    if (!items.length) { if ((d.data||[]).length < 100) hasMore = false; else page++; continue; }
+    await Promise.all(items.map(item => 
+      fetch(`../tables/${tbl}/${item.id}`, {method:'DELETE'}).then(()=>total++)
+    ));
+    L(`  Deletados: ${total}...`, 'warn');
+    if ((d.data||[]).length < 100) hasMore = false; else page++;
+  }
+  L(`[DB] ✓ ${tbl} limpa: ${total} registros removidos`, 'ok');
+  return total;
+}
+
+// ── Inserir em lotes ──
+async function insertBatch(tbl, projs) {
+  var ok = 0, err = 0;
+  for (var i = 0; i < projs.length; i += 5) {
+    var batch = projs.slice(i, i+5);
+    await Promise.all(batch.map(row =>
+      fetch(`../tables/${tbl}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(row)
+      }).then(r => { if (r.ok) ok++; else err++; })
+        .catch(() => err++)
+    ));
+    if ((i+5) % 50 === 0 || i+5 >= projs.length)
+      L(`  → ${Math.min(i+5, projs.length)}/${projs.length} (ok:${ok} err:${err})`, err?'err':'dim');
+  }
+  return {ok, err};
+}
+
+// ── Reconstruir clients_db ──
+async function rebuildClients(allProjs) {
+  L('\n[CLIENTS] Reconstruindo age_clients_db...', 'info');
+  await clearTable('age_clients_db');
+
+  // Agrupar projetos por cliente (nome normalizado)
+  var cliMap = {};
+  allProjs.forEach(p => {
+    var name = p.client_name || '?';
+    if (!cliMap[name]) cliMap[name] = [];
+    cliMap[name].push(p);
+  });
+
+  var rows = [];
+  Object.entries(cliMap).forEach(([name, projs]) => {
+    var totVal  = projs.reduce((s,p)=>s+(p.value||0), 0);
+    var withNps = projs.filter(p=>p.nps>0);
+    var avgNps  = withNps.length ? withNps.reduce((s,p)=>s+p.nps,0)/withNps.length : 0;
+    var years   = [...new Set(projs.map(p=>p.year))].sort();
+    var firstY  = years[0];
+    var lastY   = years[years.length-1];
+    var curYear = new Date().getFullYear();
+    var status  = lastY >= curYear ? 'ativo' : lastY >= curYear-1 ? 'recorrente' : 'inativo';
+
+    rows.push({
+      client_name:    name,
+      first_year:     firstY,
+      last_year:      lastY,
+      total_projects: projs.length,
+      total_value:    Math.round(totVal * 100) / 100,
+      avg_nps:        parseFloat(avgNps.toFixed(1)),
+      status,
+      notes:          '',
+      years_active:   years.join(',')
+    });
+  });
+
+  // Ordenar por valor desc
+  rows.sort((a,b)=>b.total_value-a.total_value);
+
+  L(`[CLIENTS] ${rows.length} clientes únicos → inserindo...`, 'info');
+  var res = await insertBatch('age_clients_db', rows);
+  L(`[CLIENTS] ✓ Inseridos: ${res.ok} | Erros: ${res.err}`, res.err?'err':'ok');
+
+  L('\n[CLIENTS] Top 10:');
+  rows.slice(0,10).forEach((c,i) => {
+    L(`  ${i+1}. ${c.client_name}: ${c.total_projects}p | R$${Math.round(c.total_value).toLocaleString('pt-BR')} | ${c.status} | ${c.years_active}`, 'ok');
+  });
+
+  return rows;
+}
+
+// ── FULL RUN ──
+async function runFull() {
+  logEl.innerHTML = '';
+  L('=== 🚀 RE-IMPORT COMPLETO — ' + new Date().toLocaleTimeString('pt-BR') + ' ===', 'ok');
+  
+  try {
+    // 1. Limpar
+    L('\n[FASE 1] Limpando tabelas...', 'warn');
+    await clearTable('age_hist_projects');
+
+    // 2. Parsear e inserir por ano
+    L('\n[FASE 2] Parseando planilhas...', 'info');
+    var allProjs = [];
+    var years = ['2021','2022','2023','2024','2025','2026'];
+    var grand = {n:0, fat:0, custo:0, lucro:0};
+
+    for (var yr of years) {
+      L('\n--- ' + yr + ' ---', 'warn');
+      var projs = await parseXLSX(yr);
+      
+      // Validar contagens esperadas
+      var expected = {2021:12,2022:25,2023:28,2024:22,2025:23,2026:12};
+      if (projs.length !== expected[yr]) {
+        L(`  ⚠ AVISO: esperado ${expected[yr]} projetos, obteve ${projs.length}. Verifique a planilha.`, 'warn');
+      }
+
+      L(`  Inserindo ${projs.length} projetos no banco...`, 'info');
+      var res = await insertBatch('age_hist_projects', projs);
+      L(`  ✓ Inseridos: ${res.ok} | Erros: ${res.err}`, res.err?'err':'ok');
+
+      allProjs = allProjs.concat(projs);
+      grand.n   += projs.length;
+      grand.fat += projs.reduce((s,p)=>s+p.value,0);
+      grand.custo+=projs.reduce((s,p)=>s+p.cost,0);
+      grand.lucro+=projs.reduce((s,p)=>s+p.profit,0);
+    }
+
+    // 3. Reconstruir clientes
+    L('\n[FASE 3] Reconstruindo clientes...', 'info');
+    await rebuildClients(allProjs);
+
+    // 4. Resumo final
+    L('\n=== ✅ RESUMO FINAL ===', 'ok');
+    L(`Total projetos: ${grand.n} (esperado: 122)`, grand.n===122?'ok':'warn');
+    L(`Faturamento total: R$${Math.round(grand.fat).toLocaleString('pt-BR')} (esperado: R$705.878)`, Math.abs(grand.fat-705878)<5?'ok':'err');
+    L(`Custo total:       R$${Math.round(grand.custo).toLocaleString('pt-BR')} (esperado: R$253.783)`, 'ok');
+    L(`Lucro total:       R$${Math.round(grand.lucro).toLocaleString('pt-BR')}`, 'ok');
+
+  } catch(e) {
+    L('ERRO FATAL: ' + e.message, 'err');
+    console.error(e);
+  }
+}
+
+// ── Só diagnóstico ──
+async function runDiagOnly() {
+  logEl.innerHTML = '';
+  L('=== 🔍 DIAGNÓSTICO (sem alterar DB) ===', 'info');
+  var years = ['2021','2022','2023','2024','2025','2026'];
+  var grand = {n:0, fat:0, custo:0, lucro:0};
+  for (var yr of years) {
+    L('\n--- ' + yr + ' ---', 'warn');
+    var projs = await parseXLSX(yr);
+    grand.n += projs.length;
+    grand.fat += projs.reduce((s,p)=>s+p.value,0);
+    grand.custo += projs.reduce((s,p)=>s+p.cost,0);
+    grand.lucro += projs.reduce((s,p)=>s+p.profit,0);
+    projs.slice(0,3).forEach(p => L(`  → ${p.client_name} | ${p.project_name} | ${p.month>0?'mes:'+p.month:''} | R$${p.value.toLocaleString('pt-BR')}`, ''));
+  }
+  L(`\nTOTAL: ${grand.n} projetos | Fat: R$${Math.round(grand.fat).toLocaleString('pt-BR')} | Custo: R$${Math.round(grand.custo).toLocaleString('pt-BR')} | Lucro: R$${Math.round(grand.lucro).toLocaleString('pt-BR')}`, 'ok');
+}
+
+async function clearHistOnly() {
+  logEl.innerHTML = '';
+  await clearTable('age_hist_projects');
+}
+
+async function clearClientsAndRebuild() {
+  logEl.innerHTML = '';
+  L('=== 👥 Reconstruindo apenas clientes ===', 'info');
+  // Buscar hist atual para recalcular
+  L('Buscando projetos do hist...', 'info');
+  var r = await fetch('../tables/age_hist_projects?limit=500');
+  var d = await r.json();
+  var projs = (d.data||[]).filter(p=>!p.deleted).map(p=>({
+    client_name: normalizeName(p.client_name),
+    year: p.year, value: parseFloat(p.value)||0,
+    nps: parseFloat(p.nps)||0
+  }));
+  L(`${projs.length} projetos encontrados no hist`, 'ok');
+  await rebuildClients(projs);
+}
+</script>
+</body>
+</html>

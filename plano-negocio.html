@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGE OPS — Plano de Negócio 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #161616;
+      --surface: #1a1a1a;
+      --border: rgba(255,255,255,.08);
+      --acc: #f59e0b;
+      --acc2: #fbbf24;
+      --acc-dim: rgba(245,158,11,.12);
+      --text: #f1f1f1;
+      --text-sub: #a1a1aa;
+      --text-dim: #52525b;
+      --green: #10b981;
+      --blue: #6366f1;
+      --red: #ef4444;
+      --purple: #8b5cf6;
+      --font-h: 'Rajdhani', sans-serif;
+      --font-b: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* ── PRINT BUTTON ── */
+    .print-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(10,10,10,.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(245,158,11,.3);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 9999;
+    }
+    .print-bar-logo { font-family: var(--font-h); font-size: 20px; font-weight: 700; }
+    .print-bar-logo span:first-child { color: var(--text); }
+    .print-bar-logo span:last-child  { color: var(--acc); }
+    .print-bar-info { font-size: 11px; color: var(--text-dim); letter-spacing: .1em; }
+    .btn-print {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--acc), var(--acc2));
+      color: #000; font-family: var(--font-h); font-size: 13px;
+      font-weight: 700; letter-spacing: .08em; padding: 10px 24px;
+      border-radius: 6px; border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(245,158,11,.4);
+    }
+    .btn-print:hover { opacity: .9; transform: translateY(-1px); }
+
+    /* ── DOCUMENTO ── */
+    .doc {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 100px 48px 80px;
+    }
+
+    /* ── CAPA ── */
+    .cover {
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      padding: 80px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 80px;
+    }
+    .cover-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+      pointer-events: none;
+    }
+    .cover-glow {
+      position: absolute;
+      width: 500px; height: 500px;
+      background: radial-gradient(ellipse, rgba(245,158,11,.12), transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    .cover-content { position: relative; z-index: 1; }
+    .cover-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--acc-dim);
+      border: 1px solid rgba(245,158,11,.3);
+      color: var(--acc);
+      font-family: var(--font-h); font-size: 11px; font-weight: 600;
+      letter-spacing: .2em; padding: 5px 14px; border-radius: 100px;
+      margin-bottom: 28px;
+    }
+    .cover-title {
+      font-family: var(--font-h);
+      font-size: 64px; font-weight: 700; line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    .cover-title .acc { color: var(--acc); }
+    .cover-sub {
+      font-size: 18px; color: var(--text-sub); max-width: 600px;
+      line-height: 1.7; margin-bottom: 48px;
+    }
+    .cover-meta {
+      display: flex; gap: 40px;
+    }
+    .cover-meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .cover-meta-label { font-size: 10px; letter-spacing: .15em; color: var(--text-dim); font-family: var(--font-h); }
+    .cover-meta-val { font-family: var(--font-h); font-size: 16px; font-weight: 600; color: var(--text); }
+
+    /* ── ÍNDICE ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 80px;
+    }
+    .toc-title {
+      font-family: var(--font-h); font-size: 11px; font-weight: 700;
+      letter-spacing: .25em; color: var(--acc); margin-bottom: 24px;
+    }
+    .toc-list { display: flex; flex-direction: column; gap: 0; }
+    .toc-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none; color: var(--text-sub);
+      transition: color .2s;
+    }
+    .toc-item:last-child { border-bottom: none; }
+    .toc-item:hover { color: var(--acc); }
+    .toc-num {
+      font-family: var(--font-h); font-size: 11px; font-weight: 700;
+      color: var(--acc); background: var(--acc-dim);
+      border: 1px solid rgba(245,158,11,.2);
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .toc-label { font-family: var(--font-h); font-size: 15px; font-weight: 600; }
+    .toc-dots { flex: 1; border-bottom: 1px dashed rgba(255,255,255,.08); margin: 0 8px; }
+    .toc-page { font-size: 11px; color: var(--text-dim); }
+
+    /* ── SEÇÕES ── */
+    .section {
+      margin-bottom: 80px;
+      page-break-inside: avoid;
+    }
+    .section-header {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      font-family: var(--font-h); font-size: 12px; font-weight: 700;
+      color: var(--acc); background: var(--acc-dim);
+      border: 1px solid rgba(245,158,11,.3);
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-title-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .section-label-tag {
+      font-size: 10px; letter-spacing: .2em; color: var(--text-dim);
+      font-family: var(--font-h); font-weight: 600;
+    }
+    .section-title {
+      font-family: var(--font-h); font-size: 28px; font-weight: 700; line-height: 1.2;
+    }
+    .section-title .acc {
+      background: linear-gradient(135deg, var(--acc), var(--acc2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── GRIDS ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .card-accent { border-left: 3px solid var(--acc); }
+    .card-green  { border-left: 3px solid var(--green); }
+    .card-blue   { border-left: 3px solid var(--blue); }
+    .card-red    { border-left: 3px solid var(--red); }
+    .card-purple { border-left: 3px solid var(--purple); }
+
+    .card-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; margin-bottom: 14px;
+    }
+    .card-icon.amber  { background: rgba(245,158,11,.12); color: var(--acc); }
+    .card-icon.green  { background: rgba(16,185,129,.12); color: var(--green); }
+    .card-icon.blue   { background: rgba(99,102,241,.12); color: var(--blue); }
+    .card-icon.red    { background: rgba(239,68,68,.12); color: var(--red); }
+    .card-icon.purple { background: rgba(139,92,246,.12); color: var(--purple); }
+
+    .card h4 {
+      font-family: var(--font-h); font-size: 15px; font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .card p { font-size: 12px; color: var(--text-sub); line-height: 1.65; }
+
+    /* ── KPI CARDS ── */
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .kpi-val {
+      font-family: var(--font-h); font-size: 28px; font-weight: 700;
+      color: var(--acc); line-height: 1; margin-bottom: 4px;
+    }
+    .kpi-label { font-size: 11px; color: var(--text-dim); letter-spacing: .08em; }
+    .kpi-sub { font-size: 11px; color: var(--text-sub); margin-top: 6px; }
+
+    /* ── TABELAS ── */
+    .table-wrap { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: var(--surface); }
+    thead th {
+      font-family: var(--font-h); font-size: 11px; font-weight: 700;
+      letter-spacing: .12em; color: var(--acc);
+      padding: 14px 16px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .2s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,.02); }
+    tbody td { padding: 12px 16px; font-size: 12px; color: var(--text-sub); }
+    tbody td:first-child { color: var(--text); font-weight: 500; }
+    .td-green { color: var(--green) !important; font-weight: 600 !important; }
+    .td-acc   { color: var(--acc)   !important; font-weight: 600 !important; }
+    .td-red   { color: var(--red)   !important; }
+    .td-dim   { color: var(--text-dim) !important; }
+
+    /* ── TIMELINE / ROADMAP ── */
+    .roadmap { display: flex; flex-direction: column; gap: 0; }
+    .roadmap-item {
+      display: grid; grid-template-columns: 140px 1px 1fr;
+      gap: 0 20px; padding-bottom: 36px; position: relative;
+    }
+    .roadmap-item:last-child { padding-bottom: 0; }
+    .roadmap-period {
+      text-align: right; padding-top: 2px;
+    }
+    .roadmap-period-label {
+      font-family: var(--font-h); font-size: 12px; font-weight: 700;
+      color: var(--acc); letter-spacing: .1em;
+    }
+    .roadmap-period-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+    .roadmap-line {
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .roadmap-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--acc), var(--acc2));
+      flex-shrink: 0; margin-top: 4px;
+      box-shadow: 0 0 12px rgba(245,158,11,.4);
+    }
+    .roadmap-connector {
+      flex: 1; width: 2px;
+      background: linear-gradient(to bottom, var(--acc), rgba(245,158,11,.1));
+      margin-top: 4px;
+    }
+    .roadmap-content {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; margin-top: 0;
+    }
+    .roadmap-content h4 {
+      font-family: var(--font-h); font-size: 16px; font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .roadmap-content ul {
+      list-style: none; display: flex; flex-direction: column; gap: 6px;
+    }
+    .roadmap-content ul li {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12px; color: var(--text-sub);
+    }
+    .roadmap-content ul li::before {
+      content: '→'; color: var(--acc); font-size: 12px; flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .roadmap-revenue {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.2);
+      color: var(--green); font-family: var(--font-h); font-size: 12px;
+      font-weight: 700; padding: 4px 12px; border-radius: 100px;
+      margin-top: 12px;
+    }
+
+    /* ── DESTAQUE / QUOTE ── */
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(245,158,11,.08), rgba(245,158,11,.03));
+      border: 1px solid rgba(245,158,11,.25);
+      border-radius: 12px; padding: 28px 32px; margin-bottom: 24px;
+      position: relative; overflow: hidden;
+    }
+    .highlight-box::before {
+      content: '"';
+      position: absolute; top: -10px; left: 20px;
+      font-size: 80px; color: rgba(245,158,11,.1);
+      font-family: var(--font-h); line-height: 1;
+    }
+    .highlight-box p {
+      font-family: var(--font-h); font-size: 18px; font-weight: 600;
+      line-height: 1.5; color: var(--text); position: relative; z-index: 1;
+    }
+    .highlight-box .author {
+      font-size: 11px; color: var(--acc); letter-spacing: .1em;
+      margin-top: 12px; display: block;
+    }
+
+    /* ── COMPARATIVO ── */
+    .vs-table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+    .vs-header {
+      display: grid; grid-template-columns: 2fr 1.5fr 1.5fr;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .vs-row { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr; border-bottom: 1px solid var(--border); }
+    .vs-row:last-child { border-bottom: none; }
+    .vs-cell { padding: 12px 16px; font-size: 12px; }
+    .vs-header .vs-cell {
+      font-family: var(--font-h); font-size: 11px; font-weight: 700;
+      letter-spacing: .12em;
+    }
+    .vs-cell.feature { color: var(--text-sub); }
+    .vs-cell.before { color: var(--text-dim); background: rgba(239,68,68,.03); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    .vs-cell.after  { color: var(--green); background: rgba(16,185,129,.03); font-weight: 500; }
+    .vs-header .vs-cell.before { color: var(--red); }
+    .vs-header .vs-cell.after  { color: var(--green); }
+
+    /* ── PRICE CARDS ── */
+    .price-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+    .price-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; position: relative;
+    }
+    .price-card.featured {
+      border-color: rgba(245,158,11,.35);
+      background: linear-gradient(135deg, rgba(245,158,11,.06), var(--surface));
+    }
+    .price-tier { font-family: var(--font-h); font-size: 12px; font-weight: 700; letter-spacing: .2em; color: var(--acc); margin-bottom: 8px; }
+    .price-dev-val { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: var(--text); margin: 12px 0 4px; }
+    .price-mrr-val { font-family: var(--font-h); font-size: 24px; font-weight: 700; color: var(--acc); }
+    .price-desc { font-size: 11px; color: var(--text-sub); line-height: 1.5; margin-bottom: 12px; }
+    .price-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .price-list li { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-sub); }
+    .price-list li i { color: var(--green); font-size: 9px; }
+    .price-badge-tag {
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--acc), var(--acc2));
+      color: #000; font-family: var(--font-h); font-size: 9px; font-weight: 700;
+      letter-spacing: .1em; padding: 3px 12px; border-radius: 100px; white-space: nowrap;
+    }
+
+    /* ── TEAM ── */
+    .team-phase {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; margin-bottom: 16px;
+    }
+    .team-phase-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .team-phase-title { font-family: var(--font-h); font-size: 16px; font-weight: 700; }
+    .team-phase-badge {
+      background: var(--acc-dim); border: 1px solid rgba(245,158,11,.2);
+      color: var(--acc); font-family: var(--font-h); font-size: 10px;
+      font-weight: 700; letter-spacing: .1em; padding: 3px 10px; border-radius: 4px;
+    }
+    .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+    .team-member {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px; text-align: center;
+    }
+    .team-avatar {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; margin: 0 auto 10px;
+    }
+    .team-member h5 { font-family: var(--font-h); font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .team-member .role { font-size: 10px; color: var(--text-dim); }
+    .team-member .salary { font-size: 11px; color: var(--acc); margin-top: 6px; font-family: var(--font-h); font-weight: 600; }
+
+    /* ── STACK TECH ── */
+    .stack-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+    .stack-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; text-align: center;
+    }
+    .stack-item i { font-size: 20px; color: var(--acc); margin-bottom: 8px; display: block; }
+    .stack-item h5 { font-family: var(--font-h); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .stack-item p { font-size: 10px; color: var(--text-dim); }
+    .stack-item .cost { font-size: 10px; color: var(--green); margin-top: 4px; font-family: var(--font-h); font-weight: 600; }
+
+    /* ── PROJEÇÃO ── */
+    .projection-bar {
+      background: var(--bg3); border-radius: 8px; overflow: hidden;
+      height: 32px; margin-bottom: 8px; position: relative;
+    }
+    .projection-fill {
+      height: 100%; border-radius: 8px;
+      background: linear-gradient(90deg, var(--acc), var(--acc2));
+      display: flex; align-items: center; padding-left: 12px;
+      font-family: var(--font-h); font-size: 12px; font-weight: 700; color: #000;
+      transition: width .5s ease;
+    }
+    .projection-label {
+      display: flex; justify-content: space-between;
+      font-size: 11px; margin-bottom: 16px;
+    }
+    .projection-label span { color: var(--text-dim); }
+    .projection-label strong { color: var(--acc); font-family: var(--font-h); }
+
+    /* ── FOOTER ── */
+    .doc-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 40px; margin-top: 80px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .doc-footer-logo { font-family: var(--font-h); font-size: 18px; font-weight: 700; }
+    .doc-footer-logo span:first-child { color: var(--text); }
+    .doc-footer-logo span:last-child  { color: var(--acc); }
+    .doc-footer-info { font-size: 11px; color: var(--text-dim); text-align: right; }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: #fff !important; color: #111 !important; font-size: 11px; }
+      .print-bar { display: none !important; }
+      .doc { padding: 20px 32px; }
+      :root {
+        --bg: #fff; --bg2: #f8f8f8; --bg3: #f0f0f0;
+        --surface: #f5f5f5; --border: rgba(0,0,0,.1);
+        --text: #111; --text-sub: #444; --text-dim: #888;
+        --acc: #d97706; --acc2: #f59e0b; --acc-dim: rgba(217,119,6,.1);
+        --green: #059669; --blue: #4f46e5; --red: #dc2626;
+      }
+      .cover { min-height: auto; page-break-after: always; }
+      .section { page-break-inside: avoid; }
+      .cover-grid, .cover-glow { display: none; }
+      .highlight-box::before { display: none; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- BARRA DE IMPRESSÃO -->
+<div class="print-bar">
+  <div class="print-bar-logo"><span>AGE</span><span>OPS</span></div>
+  <div class="print-bar-info">PLANO DE NEGÓCIO 2026 — CONFIDENCIAL</div>
+  <button class="btn-print" onclick="window.print()">
+    <i class="fas fa-download"></i> Salvar como PDF
+  </button>
+</div>
+
+<div class="doc">
+
+  <!-- ══════════════════ CAPA ══════════════════ -->
+  <div class="cover">
+    <div class="cover-grid"></div>
+    <div class="cover-glow"></div>
+    <div class="cover-content">
+      <div class="cover-badge"><i class="fas fa-bolt"></i> DOCUMENTO CONFIDENCIAL</div>
+      <div class="cover-title">
+        <div style="font-family:var(--font-h);font-size:72px;font-weight:700;letter-spacing:.05em;margin-bottom:8px">
+          <span style="color:var(--text)">AGE</span><span style="color:var(--acc)">OPS</span>
+        </div>
+        Plano de Negócio<br><span class="acc">& Rota de Crescimento</span>
+      </div>
+      <p class="cover-sub">Estratégia completa para construir uma empresa de sistemas operacionais personalizados — do modelo de negócio à infraestrutura técnica, precificação e projeção financeira.</p>
+      <div class="cover-meta">
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">DOCUMENTO</span>
+          <span class="cover-meta-val">Plano Estratégico</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">ANO</span>
+          <span class="cover-meta-val">2026</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">VERSÃO</span>
+          <span class="cover-meta-val">v1.0</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">EMPRESA</span>
+          <span class="cover-meta-val">AGE OPS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ ÍNDICE ══════════════════ -->
+  <div class="toc">
+    <div class="toc-title">ÍNDICE DO DOCUMENTO</div>
+    <div class="toc-list">
+      <a href="#s1" class="toc-item"><span class="toc-num">01</span><span class="toc-label">O Negócio — Proposta de Valor</span><span class="toc-dots"></span><span class="toc-page">Seção 1</span></a>
+      <a href="#s2" class="toc-item"><span class="toc-num">02</span><span class="toc-label">Mercado e Concorrência</span><span class="toc-dots"></span><span class="toc-page">Seção 2</span></a>
+      <a href="#s3" class="toc-item"><span class="toc-num">03</span><span class="toc-label">Modelo de Precificação</span><span class="toc-dots"></span><span class="toc-page">Seção 3</span></a>
+      <a href="#s4" class="toc-item"><span class="toc-num">04</span><span class="toc-label">Projeção Financeira — 4 Clientes/Mês</span><span class="toc-dots"></span><span class="toc-page">Seção 4</span></a>
+      <a href="#s5" class="toc-item"><span class="toc-num">05</span><span class="toc-label">Time Interno — Quando e Quem Contratar</span><span class="toc-dots"></span><span class="toc-page">Seção 5</span></a>
+      <a href="#s6" class="toc-item"><span class="toc-num">06</span><span class="toc-label">Infraestrutura Técnica — Saindo da Genspark</span><span class="toc-dots"></span><span class="toc-page">Seção 6</span></a>
+      <a href="#s7" class="toc-item"><span class="toc-num">07</span><span class="toc-label">Roadmap de Execução — 24 Meses</span><span class="toc-dots"></span><span class="toc-page">Seção 7</span></a>
+      <a href="#s8" class="toc-item"><span class="toc-num">08</span><span class="toc-label">Clientes Enterprise — Produtoras R$1M–5M/mês</span><span class="toc-dots"></span><span class="toc-page">Seção 8</span></a>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S1 — PROPOSTA DE VALOR ══════════════════ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">O NEGÓCIO</span>
+        <h2 class="section-title">Proposta de <span class="acc">Valor</span></h2>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p>A AGE OPS cria sistemas operacionais 100% personalizados para que empresas consigam operar de qualquer lugar — delegando com confiança, controlando com precisão e crescendo sem depender de ninguém estar presente.</p>
+      <span class="author">MISSÃO DA EMPRESA</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card card-accent">
+        <div class="card-icon amber"><i class="fas fa-crosshairs"></i></div>
+        <h4>O que vendemos</h4>
+        <p>Não vendemos software genérico. Vendemos <strong style="color:var(--text)">liberdade operacional</strong> — a capacidade de o dono de uma empresa sair do operacional e a empresa continuar funcionando perfeitamente.</p>
+      </div>
+      <div class="card card-accent">
+        <div class="card-icon amber"><i class="fas fa-users"></i></div>
+        <h4>Para quem vendemos</h4>
+        <p>PMEs com faturamento de R$100k a R$5M/mês que ainda operam com planilhas, WhatsApp e dependência total do dono. Produtoras, agências, construtoras, clínicas, escritórios e mais.</p>
+      </div>
+    </div>
+
+    <div class="grid-4">
+      <div class="card" style="text-align:center;padding:20px 16px">
+        <div style="font-family:var(--font-h);font-size:32px;font-weight:700;color:var(--acc)">40+</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Módulos disponíveis</div>
+      </div>
+      <div class="card" style="text-align:center;padding:20px 16px">
+        <div style="font-family:var(--font-h);font-size:32px;font-weight:700;color:var(--green)">15 dias</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Prazo médio de entrega</div>
+      </div>
+      <div class="card" style="text-align:center;padding:20px 16px">
+        <div style="font-family:var(--font-h);font-size:32px;font-weight:700;color:var(--blue)">100%</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Personalizado</div>
+      </div>
+      <div class="card" style="text-align:center;padding:20px 16px">
+        <div style="font-family:var(--font-h);font-size:32px;font-weight:700;color:var(--purple)">MRR</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Receita recorrente mensal</div>
+      </div>
+    </div>
+
+    <p style="color:var(--text-sub);font-size:13px;line-height:1.75;margin-bottom:16px">
+      O diferencial central é a <strong style="color:var(--text)">adaptação ao DNA do negócio do cliente</strong>. Enquanto ferramentas como Monday.com, Notion e Asana forçam o cliente a adaptar seu negócio a elas, a AGE OPS faz o oposto: constrói o sistema em torno de como o negócio já funciona — com os módulos, fluxos, permissões e relatórios que fazem sentido para aquela realidade específica.
+    </p>
+
+    <div class="vs-table">
+      <div class="vs-header">
+        <div class="vs-cell feature">Critério</div>
+        <div class="vs-cell before"><i class="fas fa-times-circle" style="margin-right:6px"></i>Sem AGE OPS</div>
+        <div class="vs-cell after"><i class="fas fa-check-circle" style="margin-right:6px"></i>Com AGE OPS</div>
+      </div>
+      <div class="vs-row"><div class="vs-cell feature">Gestão de projetos</div><div class="vs-cell before">Planilhas e WhatsApp</div><div class="vs-cell after">Pipeline Kanban em tempo real</div></div>
+      <div class="vs-row"><div class="vs-cell feature">Controle financeiro</div><div class="vs-cell before">Margem estimada no chute</div><div class="vs-cell after">Lucro real por projeto</div></div>
+      <div class="vs-row"><div class="vs-cell feature">Equipe</div><div class="vs-cell before">Dependência total do dono</div><div class="vs-cell after">Colaboradores autônomos</div></div>
+      <div class="vs-row"><div class="vs-cell feature">Satisfação do cliente</div><div class="vs-cell before">Sem coleta, sem dados</div><div class="vs-cell after">NPS anônimo por etapa</div></div>
+      <div class="vs-row"><div class="vs-cell feature">Decisões</div><div class="vs-cell before">Intuição e feeling</div><div class="vs-cell after">Diagnóstico com IA</div></div>
+      <div class="vs-row"><div class="vs-cell feature">Acesso</div><div class="vs-cell before">Só no escritório</div><div class="vs-cell after">Qualquer lugar, qualquer device</div></div>
+      <div class="vs-row"><div class="vs-cell feature">Tempo de entrega</div><div class="vs-cell before">6–18 meses</div><div class="vs-cell after">2–6 semanas</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S2 — MERCADO ══════════════════ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">ANÁLISE</span>
+        <h2 class="section-title">Mercado e <span class="acc">Concorrência</span></h2>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:32px">
+      <div class="card card-green">
+        <div class="card-icon green"><i class="fas fa-chart-line"></i></div>
+        <h4>Mercado endereçável</h4>
+        <p>Mais de 6,4 milhões de PMEs no Brasil. Menos de 5% usam sistemas de gestão personalizados. Oportunidade massiva e inexplorada.</p>
+      </div>
+      <div class="card card-blue">
+        <div class="card-icon blue"><i class="fas fa-robot"></i></div>
+        <h4>Janela da IA</h4>
+        <p>A IA reduziu o custo de desenvolvimento em 70–80%. Isso cria uma janela de 2–3 anos onde quem souber usar IA como ferramenta de dev sai na frente.</p>
+      </div>
+      <div class="card card-accent">
+        <div class="card-icon amber"><i class="fas fa-bullseye"></i></div>
+        <h4>Nicho ideal</h4>
+        <p>Empresas criativas e de serviço com R$100k–5M/mês. Sentem a dor operacional mas não têm orçamento para SAP/TOTVS (R$200k+).</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Concorrente</th>
+            <th>Tipo</th>
+            <th>Preço</th>
+            <th>Fraqueza principal</th>
+            <th>Nossa vantagem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Monday.com</td><td class="td-dim">SaaS genérico</td><td>$9–19/user/mês</td><td>Não personaliza o negócio</td><td class="td-green">Feito sob medida</td></tr>
+          <tr><td>Notion</td><td class="td-dim">Workspace</td><td>$8–16/user/mês</td><td>Ferramenta, não sistema</td><td class="td-green">Sistema pronto pra usar</td></tr>
+          <tr><td>Bitrix24</td><td class="td-dim">CRM genérico</td><td>R$300–2k/mês</td><td>Complexo, interface ruim</td><td class="td-green">UX simples e elegante</td></tr>
+          <tr><td>Agência de software</td><td class="td-dim">Dev tradicional</td><td>R$80–200k</td><td>6–18 meses de entrega</td><td class="td-green">Entrega em 2–6 semanas</td></tr>
+          <tr><td>SAP / TOTVS</td><td class="td-dim">ERP enterprise</td><td>R$200k–1M+</td><td>Inacessível para PME</td><td class="td-green">Preço de PME</td></tr>
+          <tr><td>Freelancer low-code</td><td class="td-dim">No-code</td><td>R$5–30k</td><td>Dependente de plataforma</td><td class="td-green">Infraestrutura própria</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight-box">
+      <p>A AGE OPS ocupa o espaço vazio entre o "não tenho sistema" e o "sistema custa R$200k". Personalizado como um ERP enterprise, rápido como uma ferramenta no-code, acessível como uma assinatura SaaS.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S3 — PRECIFICAÇÃO ══════════════════ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">MODELO COMERCIAL</span>
+        <h2 class="section-title">Precificação e <span class="acc">Planos</span></h2>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;background:rgba(245,158,11,.05);border-color:rgba(245,158,11,.2)">
+      <p style="font-family:var(--font-h);font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">
+        ⚡ Regra de ouro: nunca precifique pelo custo. Precifique pelo valor entregue.
+      </p>
+      <p style="color:var(--text-sub);font-size:12px">
+        Uma empresa que fatura R$500k/mês perdendo 10% de margem por falta de controle perde R$50k/mês. Seu sistema que custa R$2.000/mês tem ROI de 2.400% para esse cliente.
+      </p>
+    </div>
+
+    <div class="price-grid">
+      <div class="price-card">
+        <div class="price-tier">STARTER</div>
+        <p class="price-desc">Para quem está estruturando a operação pela primeira vez</p>
+        <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+          <div style="font-size:10px;letter-spacing:.1em;color:var(--text-dim);font-family:var(--font-h);margin-bottom:4px">DESENVOLVIMENTO</div>
+          <div class="price-dev-val">R$ 8.000 – 15.000</div>
+        </div>
+        <div style="margin-top:12px">
+          <div style="font-size:10px;letter-spacing:.1em;color:var(--text-dim);font-family:var(--font-h);margin-bottom:4px">MENSALIDADE</div>
+          <div class="price-mrr-val">R$ 500<span style="font-size:14px;color:var(--text-sub)">/mês</span></div>
+        </div>
+        <ul class="price-list">
+          <li><i class="fas fa-check"></i> Dashboard + 3 módulos</li>
+          <li><i class="fas fa-check"></i> Até 5 usuários</li>
+          <li><i class="fas fa-check"></i> 2 ajustes/mês</li>
+          <li><i class="fas fa-check"></i> Suporte e-mail</li>
+        </ul>
+      </div>
+      <div class="price-card featured">
+        <div class="price-badge-tag">MAIS ESCOLHIDO</div>
+        <div class="price-tier">GROWTH</div>
+        <p class="price-desc">Para empresas que precisam de controle total da operação</p>
+        <div style="border-top:1px solid rgba(245,158,11,.2);padding-top:12px;margin-top:4px">
+          <div style="font-size:10px;letter-spacing:.1em;color:var(--text-dim);font-family:var(--font-h);margin-bottom:4px">DESENVOLVIMENTO</div>
+          <div class="price-dev-val">R$ 18.000 – 35.000</div>
+        </div>
+        <div style="margin-top:12px">
+          <div style="font-size:10px;letter-spacing:.1em;color:var(--text-dim);font-family:var(--font-h);margin-bottom:4px">MENSALIDADE</div>
+          <div class="price-mrr-val">R$ 1.500<span style="font-size:14px;color:var(--text-sub)">/mês</span></div>
+        </div>
+        <ul class="price-list">
+          <li><i class="fas fa-check"></i> Dashboard + 6 módulos</li>
+          <li><i class="fas fa-check"></i> Usuários ilimitados</li>
+          <li><i class="fas fa-check"></i> NPS + IA incluso</li>
+          <li><i class="fas fa-check"></i> Reunião mensal</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">PRO</div>
+        <p class="price-desc">Para operações complexas com múltiplas integrações</p>
+        <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+          <div style="font-size:10px;letter-spacing:.1em;color:var(--text-dim);font-family:var(--font-h);margin-bottom:4px">DESENVOLVIMENTO</div>
+          <div class="price-dev-val">R$ 40.000+</div>
+        </div>
+        <div style="margin-top:12px">
+          <div style="font-size:10px;letter-spacing:.1em;color:var(--text-dim);font-family:var(--font-h);margin-bottom:4px">MENSALIDADE</div>
+          <div class="price-mrr-val">R$ 4.000<span style="font-size:14px;color:var(--text-sub)">/mês</span></div>
+        </div>
+        <ul class="price-list">
+          <li><i class="fas fa-check"></i> Sistema multi-módulo</li>
+          <li><i class="fas fa-check"></i> Integrações externas</li>
+          <li><i class="fas fa-check"></i> Dev dedicado parcial</li>
+          <li><i class="fas fa-check"></i> SLA garantido</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card card-accent">
+      <h4 style="margin-bottom:12px">💡 Ticket especial — Produtoras Enterprise (R$1M–5M/mês)</h4>
+      <div class="grid-2" style="margin-bottom:0">
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:var(--font-h);letter-spacing:.1em">DESENVOLVIMENTO</div>
+          <div style="font-family:var(--font-h);font-size:24px;font-weight:700;color:var(--text)">R$ 65.000 – 90.000</div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:4px">Representa menos de 1 semana de faturamento do cliente</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:var(--font-h);letter-spacing:.1em">MENSALIDADE</div>
+          <div style="font-family:var(--font-h);font-size:24px;font-weight:700;color:var(--acc)">R$ 4.500 – 6.000/mês</div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:4px">ROI estimado para o cliente: R$65k–250k/mês</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S4 — PROJEÇÃO FINANCEIRA ══════════════════ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">FINANCEIRO</span>
+        <h2 class="section-title">Projeção <span class="acc">4 Clientes/Mês</span></h2>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:32px">
+      <div class="kpi-card">
+        <div class="kpi-val">R$ 1,47M</div>
+        <div class="kpi-label">FATURAMENTO ANO 1</div>
+        <div class="kpi-sub">Projetos + mensalidades acumuladas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--green)">R$ 882k</div>
+        <div class="kpi-label">LUCRO LÍQUIDO ANO 1</div>
+        <div class="kpi-sub">Após impostos e operação</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--blue)">R$ 60k</div>
+        <div class="kpi-label">MRR NO MÊS 12</div>
+        <div class="kpi-sub">Receita garantida sem vender nada novo</div>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom:24px">
+      <table>
+        <thead>
+          <tr><th>Período</th><th>Clientes novos</th><th>Base acumulada</th><th>Receita projetos</th><th>MRR</th><th>Receita total</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Mês 1</td><td>4</td><td>4</td><td class="td-acc">R$ 90.000</td><td>R$ 5.000</td><td class="td-green">R$ 95.000</td></tr>
+          <tr><td>Mês 3</td><td>4</td><td>12</td><td class="td-acc">R$ 90.000</td><td>R$ 15.000</td><td class="td-green">R$ 105.000</td></tr>
+          <tr><td>Mês 6</td><td>4</td><td>24</td><td class="td-acc">R$ 90.000</td><td>R$ 30.000</td><td class="td-green">R$ 120.000</td></tr>
+          <tr><td>Mês 9</td><td>4</td><td>36</td><td class="td-acc">R$ 90.000</td><td>R$ 45.000</td><td class="td-green">R$ 135.000</td></tr>
+          <tr><td>Mês 12</td><td>4</td><td>48</td><td class="td-acc">R$ 90.000</td><td>R$ 60.000</td><td class="td-green">R$ 150.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-bottom:8px;font-family:var(--font-h);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--text-sub)">CRESCIMENTO DO MRR — ACUMULADO MENSAL</div>
+    <div style="margin-bottom:24px">
+      <div class="projection-label"><span>Mês 1 — R$ 5.000</span><strong>Mês 12 — R$ 60.000</strong></div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div><div class="projection-bar"><div class="projection-fill" style="width:8%">M1</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:17%">M2</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:25%">M3</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:33%">M4</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:42%">M5</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:50%">M6</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:58%">M7</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:67%">M8</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:75%">M9</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:83%">M10</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:92%">M11</div></div></div>
+        <div><div class="projection-bar"><div class="projection-fill" style="width:100%">M12 — R$ 60.000</div></div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card card-green">
+        <h4 style="margin-bottom:12px">Ano 1 — Resumo financeiro</h4>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">Receita de projetos</span><span style="color:var(--text);font-family:var(--font-h);font-weight:700">R$ 1.080.000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">MRR acumulado</span><span style="color:var(--text);font-family:var(--font-h);font-weight:700">R$ 390.000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">Faturamento bruto</span><span style="color:var(--acc);font-family:var(--font-h);font-weight:700">R$ 1.470.000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">Impostos (~15%)</span><span style="color:var(--red);font-family:var(--font-h);font-weight:700">- R$ 220.500</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">Operação (~25%)</span><span style="color:var(--red);font-family:var(--font-h);font-weight:700">- R$ 367.500</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding-top:4px"><span style="color:var(--text);font-weight:600">Lucro líquido</span><span style="color:var(--green);font-family:var(--font-h);font-weight:700;font-size:16px">R$ 882.000</span></div>
+        </div>
+      </div>
+      <div class="card card-blue">
+        <h4 style="margin-bottom:12px">O poder do Ano 2</h4>
+        <p style="color:var(--text-sub);font-size:12px;line-height:1.65;margin-bottom:16px">No Ano 2, os 48 clientes herdados já garantem R$60k/mês antes de vender qualquer coisa nova. A recorrência dobra o faturamento automaticamente.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">MRR herdado (início)</span><span style="color:var(--acc);font-family:var(--font-h);font-weight:700">R$ 60.000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">MRR ao fim do Ano 2</span><span style="color:var(--acc);font-family:var(--font-h);font-weight:700">R$ 120.000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><span style="color:var(--text-sub)">Receita mensalidades Ano 2</span><span style="color:var(--text);font-family:var(--font-h);font-weight:700">R$ 1.080.000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding-top:4px"><span style="color:var(--text);font-weight:600">Total Ano 2</span><span style="color:var(--green);font-family:var(--font-h);font-weight:700;font-size:16px">R$ 2.160.000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S5 — TIME ══════════════════ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">PESSOAS</span>
+        <h2 class="section-title">Time — Quando e <span class="acc">Quem Contratar</span></h2>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;background:rgba(245,158,11,.05);border-color:rgba(245,158,11,.2)">
+      <p style="font-family:var(--font-h);font-size:15px;font-weight:600;color:var(--text)">⚡ Regra de ouro: só contrate quando a demanda já está provada, não antes. Use freelancers PJ no início.</p>
+    </div>
+
+    <div class="team-phase">
+      <div class="team-phase-header">
+        <div>
+          <div class="team-phase-title">Fase 1 — Meses 1 a 6</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">0 a 24 clientes acumulados</div>
+        </div>
+        <div class="team-phase-badge">CUSTO: R$ 15–20K/MÊS</div>
+      </div>
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(245,158,11,.12);color:var(--acc)"><i class="fas fa-user-tie"></i></div>
+          <h5>Você — CEO</h5>
+          <div class="role">Comercial + Estratégia + Produto</div>
+          <div class="salary">Sócio</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(99,102,241,.12);color:var(--blue)"><i class="fas fa-code"></i></div>
+          <h5>Dev Sênior</h5>
+          <div class="role">Arquitetura + Código core</div>
+          <div class="salary">R$ 7–9k (PJ)</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(16,185,129,.12);color:var(--green)"><i class="fas fa-laptop-code"></i></div>
+          <h5>Dev Pleno</h5>
+          <div class="role">Módulos + Ajustes</div>
+          <div class="salary">R$ 4–6k (PJ)</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(139,92,246,.12);color:var(--purple)"><i class="fas fa-headset"></i></div>
+          <h5>CS / Onboarding</h5>
+          <div class="role">Treinamento + Suporte</div>
+          <div class="salary">R$ 3–4k (PJ)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-phase">
+      <div class="team-phase-header">
+        <div>
+          <div class="team-phase-title">Fase 2 — Meses 7 a 12</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">24 a 48 clientes acumulados</div>
+        </div>
+        <div class="team-phase-badge">CUSTO: R$ 35–50K/MÊS</div>
+      </div>
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(245,158,11,.12);color:var(--acc)"><i class="fas fa-chess-king"></i></div>
+          <h5>Você — CEO</h5>
+          <div class="role">Estratégia + Grandes contas</div>
+          <div class="salary">Sócio</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(99,102,241,.12);color:var(--blue)"><i class="fas fa-sitemap"></i></div>
+          <h5>Tech Lead</h5>
+          <div class="role">Lidera devs + Arquitetura</div>
+          <div class="salary">R$ 10–14k (PJ)</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(99,102,241,.12);color:var(--blue)"><i class="fas fa-code-branch"></i></div>
+          <h5>2× Dev Pleno</h5>
+          <div class="role">Desenvolvimento paralelo</div>
+          <div class="salary">R$ 5–7k cada (PJ)</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(245,158,11,.12);color:var(--acc)"><i class="fas fa-handshake"></i></div>
+          <h5>Closer Comercial</h5>
+          <div class="role">Fecha contratos</div>
+          <div class="salary">R$ 3k + comissão</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(139,92,246,.12);color:var(--purple)"><i class="fas fa-users-cog"></i></div>
+          <h5>Head de CS</h5>
+          <div class="role">Lida com clientes ativos</div>
+          <div class="salary">R$ 5–7k (PJ)</div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar" style="background:rgba(139,92,246,.12);color:var(--purple)"><i class="fas fa-user-check"></i></div>
+          <h5>CS Jr</h5>
+          <div class="role">Suporte básico</div>
+          <div class="salary">R$ 2,5–3k (PJ)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Fase</th><th>Período</th><th>Clientes na base</th><th>Pessoas</th><th>Custo time/mês</th><th>Lucro líquido/mês</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Início</td><td>Mês 1–3</td><td>0–12</td><td>Você + 3</td><td class="td-dim">R$ 15–20k</td><td class="td-green">R$ 35–45k</td></tr>
+          <tr><td>Crescimento</td><td>Mês 4–6</td><td>12–24</td><td>+1 dev +1 closer</td><td class="td-dim">R$ 25–35k</td><td class="td-green">R$ 40–50k</td></tr>
+          <tr><td>Escala</td><td>Mês 7–12</td><td>24–48</td><td>6–7 pessoas</td><td class="td-dim">R$ 35–50k</td><td class="td-green">R$ 50–60k</td></tr>
+          <tr><td>Consolidado</td><td>Ano 2+</td><td>48–96</td><td>10–12 pessoas</td><td class="td-dim">R$ 80–110k</td><td class="td-green">R$ 80–100k</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S6 — TECH ══════════════════ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">INFRAESTRUTURA</span>
+        <h2 class="section-title">Saindo da Genspark — <span class="acc">Stack Própria</span></h2>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px">
+      <div class="card card-green">
+        <div class="card-icon green"><i class="fas fa-trophy"></i></div>
+        <h4>O que a Genspark te deu</h4>
+        <p>Prova de conceito validada, 1 ano de dados reais, especificação funcional completa de todos os módulos, protótipo funcional para demos de venda — sem gastar R$150k em desenvolvimento.</p>
+      </div>
+      <div class="card card-red">
+        <div class="card-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+        <h4>Limites para produto comercial</h4>
+        <p>URL não é sua, banco de dados compartilhado entre clientes, sem domínio próprio, dependência da plataforma, sem white-label, sem controle de SLA e infraestrutura.</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:24px">
+      <div style="font-family:var(--font-h);font-size:13px;font-weight:700;letter-spacing:.15em;color:var(--text-sub);margin-bottom:16px">STACK RECOMENDADA</div>
+      <div class="stack-grid">
+        <div class="stack-item">
+          <i class="fas fa-desktop"></i>
+          <h5>Frontend</h5>
+          <p>Next.js + React + Tailwind CSS + TypeScript</p>
+          <div class="cost">Grátis (open source)</div>
+        </div>
+        <div class="stack-item">
+          <i class="fas fa-server"></i>
+          <h5>Backend</h5>
+          <p>Node.js ou FastAPI + API REST</p>
+          <div class="cost">Grátis (open source)</div>
+        </div>
+        <div class="stack-item">
+          <i class="fas fa-database"></i>
+          <h5>Banco de dados</h5>
+          <p>PostgreSQL via Supabase (auth + API inclusos)</p>
+          <div class="cost">Grátis–R$125/mês</div>
+        </div>
+        <div class="stack-item">
+          <i class="fas fa-cloud"></i>
+          <h5>Infraestrutura</h5>
+          <p>Vercel / Railway + Cloudflare CDN</p>
+          <div class="cost">Grátis–R$100/mês</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:24px">
+      <div style="font-family:var(--font-h);font-size:13px;font-weight:700;letter-spacing:.15em;color:var(--text-sub);margin-bottom:16px">FERRAMENTAS DE IA PARA DESENVOLVIMENTO</div>
+      <div class="stack-grid">
+        <div class="stack-item">
+          <i class="fas fa-brain"></i>
+          <h5>Claude (Anthropic)</h5>
+          <p>Código complexo, arquitetura e revisão</p>
+          <div class="cost">~R$100/mês</div>
+        </div>
+        <div class="stack-item">
+          <i class="fas fa-mouse-pointer"></i>
+          <h5>Cursor IDE</h5>
+          <p>Editor com IA integrada ao código</p>
+          <div class="cost">~R$100/mês</div>
+        </div>
+        <div class="stack-item">
+          <i class="fab fa-github"></i>
+          <h5>GitHub Copilot</h5>
+          <p>Autocomplete inteligente</p>
+          <div class="cost">~R$50/mês</div>
+        </div>
+        <div class="stack-item">
+          <i class="fas fa-bolt"></i>
+          <h5>Total ferramentas</h5>
+          <p>IA + infraestrutura completa</p>
+          <div class="cost" style="font-size:13px">R$ 400–600/mês</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p>1 dev sênior + Claude + Cursor reconstrói o AGE OPS em stack própria em 4 a 8 semanas. O mesmo sistema que uma agência tradicional levaria 6 meses e R$150k para entregar.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tarefa</th><th>Sem IA (só humano)</th><th>Com IA (humano + Claude/Cursor)</th><th>Ganho</th></tr></thead>
+        <tbody>
+          <tr><td>Criar módulo novo</td><td>2–3 semanas</td><td class="td-green">2–4 dias</td><td class="td-acc">70% mais rápido</td></tr>
+          <tr><td>Migrar banco de dados</td><td>1 semana</td><td class="td-green">1–2 dias</td><td class="td-acc">80% mais rápido</td></tr>
+          <tr><td>Escrever testes</td><td>3–5 dias</td><td class="td-green">Horas</td><td class="td-acc">90% mais rápido</td></tr>
+          <tr><td>Corrigir bugs</td><td>Horas/dias</td><td class="td-green">Minutos/horas</td><td class="td-acc">85% mais rápido</td></tr>
+          <tr><td>Sistema completo</td><td>6–12 meses</td><td class="td-green">6–10 semanas</td><td class="td-acc">75% mais rápido</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S7 — ROADMAP ══════════════════ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">EXECUÇÃO</span>
+        <h2 class="section-title">Roadmap <span class="acc">24 Meses</span></h2>
+      </div>
+    </div>
+
+    <div class="roadmap">
+      <div class="roadmap-item">
+        <div class="roadmap-period">
+          <div class="roadmap-period-label">MESES 1–3</div>
+          <div class="roadmap-period-sub">Validação</div>
+        </div>
+        <div class="roadmap-line">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>🚀 Validar o modelo com os primeiros clientes</h4>
+          <ul>
+            <li>Usar a Genspark como plataforma de demonstração ao vivo</li>
+            <li>Fechar os primeiros 3–5 clientes pagantes</li>
+            <li>Contratar 1 dev sênior + 1 dev pleno + 1 CS (todos PJ)</li>
+            <li>Mapear o que cada cliente realmente precisa vs. o que foi construído</li>
+            <li>Criar portfólio com case da Age Socials como referência</li>
+            <li>Montar pipeline de 15+ leads no funil comercial</li>
+          </ul>
+          <div class="roadmap-revenue"><i class="fas fa-dollar-sign"></i> Meta: R$ 90–120k/mês</div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-period">
+          <div class="roadmap-period-label">MESES 4–6</div>
+          <div class="roadmap-period-sub">Estrutura</div>
+        </div>
+        <div class="roadmap-line">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>🏗️ Construir infraestrutura própria</h4>
+          <ul>
+            <li>Iniciar desenvolvimento da stack própria (Next.js + Supabase + Vercel)</li>
+            <li>Contratar closer comercial para escalar as vendas</li>
+            <li>Lançar landing page da AGE OPS com proposta de valor clara</li>
+            <li>Domínio próprio para cada cliente entregue</li>
+            <li>Criar processo de onboarding documentado e replicável</li>
+            <li>Primeiros parceiros indicadores (contadores, consultores)</li>
+          </ul>
+          <div class="roadmap-revenue"><i class="fas fa-dollar-sign"></i> Meta: R$ 120–140k/mês</div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-period">
+          <div class="roadmap-period-label">MESES 7–12</div>
+          <div class="roadmap-period-sub">Escala</div>
+        </div>
+        <div class="roadmap-line">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>⚡ Escalar operação e receita recorrente</h4>
+          <ul>
+            <li>Migrar todos os clientes para a infraestrutura própria</li>
+            <li>Atingir R$ 60k de MRR garantido (48 clientes na base)</li>
+            <li>Contratar Tech Lead + Head de CS para delegar a operação</li>
+            <li>Lançar versão enterprise para clientes acima de R$ 1M/mês</li>
+            <li>Criar módulo de diagnóstico com IA como diferencial premium</li>
+            <li>Você sai do operacional e vai para estratégia e grandes contas</li>
+          </ul>
+          <div class="roadmap-revenue"><i class="fas fa-dollar-sign"></i> Meta: R$ 150k/mês · Lucro líquido R$ 57k+</div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-period">
+          <div class="roadmap-period-label">ANO 2</div>
+          <div class="roadmap-period-sub">SaaS</div>
+        </div>
+        <div class="roadmap-line">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>🎯 AGE OPS vira produto SaaS escalável</h4>
+          <ul>
+            <li>Arquitetura multi-tenant (1 sistema, N clientes isolados)</li>
+            <li>Painel admin para gerenciar todos os clientes em 1 lugar</li>
+            <li>Onboarding automatizado — menos trabalho manual por cliente</li>
+            <li>White-label com domínio do cliente e personalização visual</li>
+            <li>App mobile via PWA ou React Native</li>
+            <li>API pública para integrações com sistemas dos clientes</li>
+            <li>Time de 10–12 pessoas rodando a empresa</li>
+          </ul>
+          <div class="roadmap-revenue"><i class="fas fa-dollar-sign"></i> Meta: R$ 2,16M/ano · MRR R$ 120k</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ S8 — ENTERPRISE ══════════════════ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div class="section-title-wrap">
+        <span class="section-label-tag">CLIENTES ENTERPRISE</span>
+        <h2 class="section-title">Produtoras <span class="acc">R$1M–5M/mês</span></h2>
+      </div>
+    </div>
+
+    <div class="highlight-box" style="margin-bottom:32px">
+      <p>Um único cliente enterprise paga mais do que 8 clientes do plano Starter. Foque no cliente certo, não no volume.</p>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:24px">
+      <div class="kpi-card">
+        <div class="kpi-val">R$ 75k</div>
+        <div class="kpi-label">DESENVOLVIMENTO</div>
+        <div class="kpi-sub">Menos de 1 semana de faturamento deles</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--green)">R$ 5k/mês</div>
+        <div class="kpi-label">MENSALIDADE</div>
+        <div class="kpi-sub">ROI de até 2.400% para o cliente</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--blue)">R$ 387k</div>
+        <div class="kpi-label">COM 3 CLIENTES ASSIM</div>
+        <div class="kpi-sub">Só no primeiro ano</div>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom:24px">
+      <table>
+        <thead><tr><th>Problema do cliente</th><th>Custo real/mês para ele</th><th>Sua solução</th><th>ROI</th></tr></thead>
+        <tbody>
+          <tr><td>Perda de margem sem controle</td><td class="td-red">R$ 50–150k</td><td>Dashboard financeiro em tempo real</td><td class="td-green">30× o valor da mensalidade</td></tr>
+          <tr><td>Projetos mal precificados</td><td class="td-red">R$ 20–80k</td><td>Orçamentos com cálculo de viabilidade</td><td class="td-green">16× o valor</td></tr>
+          <tr><td>Dependência do dono</td><td class="td-red">R$ 30–80k em dias parados</td><td>Sistema com permissões por função</td><td class="td-green">16× o valor</td></tr>
+          <tr><td>Churn silencioso de clientes</td><td class="td-red">R$ 20–100k em clientes perdidos</td><td>NPS anônimo por etapa</td><td class="td-green">20× o valor</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-bottom:24px">
+      <h4 style="margin-bottom:16px;font-size:16px">🎙️ Script de venda — Como apresentar o preço sem medo</h4>
+      <div style="background:var(--bg3);border-radius:8px;padding:20px;border-left:3px solid var(--acc)">
+        <p style="font-style:italic;color:var(--text-sub);font-size:13px;line-height:1.8">
+          "Você me disse que perde visibilidade quando está viajando, que sua equipe não consegue fechar projeto sem você e que nunca sabe a margem real até o mês fechar. <strong style="color:var(--text)">Isso custa quanto por mês pra você?</strong>"
+          <br><br>
+          <span style="color:var(--text-dim)">[cliente responde: "uns R$50k, R$100k..."]</span>
+          <br><br>
+          "O sistema resolve tudo isso por <strong style="color:var(--acc)">R$5.000/mês</strong>. O desenvolvimento é <strong style="color:var(--acc)">R$75.000</strong> — menos do que você perde em um único mês com esses problemas."
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card card-accent">
+        <h4 style="margin-bottom:12px">Segmentos prioritários</h4>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-sub)"><i class="fas fa-video" style="color:var(--acc);width:16px"></i> Produtoras de vídeo e eventos</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-sub)"><i class="fas fa-bullhorn" style="color:var(--acc);width:16px"></i> Agências de marketing</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-sub)"><i class="fas fa-hard-hat" style="color:var(--acc);width:16px"></i> Construtoras pequenas/médias</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-sub)"><i class="fas fa-heartbeat" style="color:var(--acc);width:16px"></i> Clínicas e consultórios</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-sub)"><i class="fas fa-balance-scale" style="color:var(--acc);width:16px"></i> Escritórios jurídicos e arquitetura</div>
+        </div>
+      </div>
+      <div class="card card-green">
+        <h4 style="margin-bottom:12px">Próximos 3 passos concretos</h4>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text-sub)">
+            <div style="background:var(--green);color:#000;font-family:var(--font-h);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0">1</div>
+            <span>Listar 10 empresas conhecidas que têm o perfil ideal e agendar uma conversa de diagnóstico gratuito esta semana</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text-sub)">
+            <div style="background:var(--green);color:#000;font-family:var(--font-h);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0">2</div>
+            <span>Usar o sistema da Age Socials como case de demonstração ao vivo — é o portfólio mais poderoso que existe</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text-sub)">
+            <div style="background:var(--green);color:#000;font-family:var(--font-h);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0">3</div>
+            <span>Fechar o primeiro contrato usando a Genspark mesmo — valide o mercado antes de investir na infraestrutura própria</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ FOOTER ══════════════════ -->
+  <div class="doc-footer">
+    <div>
+      <div class="doc-footer-logo"><span>AGE</span><span>OPS</span></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Sistemas que liberam você para crescer.</div>
+    </div>
+    <div class="doc-footer-info">
+      <div>Plano de Negócio 2026 — v1.0</div>
+      <div style="margin-top:4px">Documento confidencial e proprietário</div>
+      <div style="margin-top:4px;color:var(--acc)">© 2026 AGE OPS</div>
+    </div>
+  </div>
+
+</div><!-- /doc -->
+
+</body>
+</html>

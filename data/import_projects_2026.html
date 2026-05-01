@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<title>AGE OPS — Importar Projetos 2026 → age_projects</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:monospace;background:#080c14;color:#adc;padding:20px;font-size:12px}
+h1{color:#ffcc00;margin-bottom:4px}p.sub{color:#667;font-size:11px;margin-bottom:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+button{background:#111;border:1px solid currentColor;padding:8px 16px;cursor:pointer;font-family:monospace;font-size:12px;border-radius:4px;font-weight:700;transition:.15s}
+.go{color:#00ff88;border-color:#00ff88}.go:hover{background:#00ff88;color:#000}
+.diag{color:#00aaff;border-color:#00aaff}.diag:hover{background:#00aaff;color:#000}
+.danger{color:#ff4444;border-color:#ff4444}.danger:hover{background:#ff4444;color:#000}
+#log{background:#050810;border:1px solid #1a2a3a;border-radius:6px;padding:12px;max-height:80vh;overflow-y:auto}
+pre{white-space:pre-wrap;word-break:break-all;font-size:11px;margin:1px 0}
+.ok{color:#00ff88}.err{color:#ff4444}.warn{color:#ffcc00}.info{color:#00aaff}.dim{color:#445566}.head{color:#fff;font-weight:700}
+</style>
+</head>
+<body>
+<h1>📥 AGE OPS — Importar Projetos 2026 → age_projects</h1>
+<p class="sub">Lê planilha 2026.xlsx e sincroniza com a tabela age_projects (base do Dashboard)</p>
+<div class="btn-row">
+  <button class="go"     onclick="runImport()">🚀 IMPORTAR (Limpar + Inserir 12 projetos)</button>
+  <button class="diag"   onclick="runDiag()">🔍 Só Diagnóstico (não altera banco)</button>
+  <button class="danger" onclick="clearOnly()">⚠ Só Limpar age_projects</button>
+</div>
+<div id="log"><pre class="dim">Aguardando...</pre></div>
+
+<script>
+'use strict';
+var logEl = document.getElementById('log');
+function L(m,c){var p=document.createElement('pre');p.className=c||'dim';p.textContent=typeof m==='object'?JSON.stringify(m,null,2):String(m);logEl.appendChild(p);logEl.scrollTop=logEl.scrollHeight;}
+
+/* ── helpers numérico/data ── */
+function getNum(rN,rS,i){
+  if(i<0)return 0;
+  var nv=rN[i];
+  if(typeof nv==='number'&&!isNaN(nv))return nv;
+  var sv=(rS[i]||'').toString().trim().replace(/R\$\s*/gi,'').replace(/[$\s]/g,'').replace(/,(?=\d{3})/g,'');
+  sv=sv.replace(/[^\d.\-]/g,'');
+  var n=parseFloat(sv);return isNaN(n)?0:n;
+}
+function fmtD(raw){
+  if(!raw)return'';
+  if(raw instanceof Date){var y=raw.getUTCFullYear(),m=raw.getUTCMonth()+1,d=raw.getUTCDate();if(y>1900)return y+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2);}
+  var s=raw.toString().trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.substring(0,10);
+  var mo={jan:1,fev:2,feb:2,mar:3,abr:4,apr:4,mai:5,may:5,jun:6,jul:7,ago:8,aug:8,set:9,sep:9,out:10,oct:10,nov:11,dez:12,dec:12};
+  var mx=s.match(/(\d{1,2})[-\/\s]([a-zA-Z]{3,})[-\/\s](\d{4})/);
+  if(mx){var k=mx[2].toLowerCase().substring(0,3);if(mo[k])return mx[3]+'-'+('0'+mo[k]).slice(-2)+'-'+('0'+mx[1]).slice(-2);}
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(s)){var pts=s.split(/[\/\-]/);return pts[2]+'-'+pts[1].padStart(2,'0')+'-'+pts[0].padStart(2,'0');}
+  return'';
+}
+function normCat(raw){
+  var c=(raw||'').toLowerCase().trim();
+  if(/v[ií]d/.test(c))return'producao';
+  if(/pub|comercial|propaganda/.test(c))return'publicidade';
+  if(/event/.test(c))return'evento';
+  if(/camp/.test(c))return'campanha';
+  if(/clipe|clip/.test(c))return'clipe';
+  return'producao';
+}
+function normSeg(raw){
+  var s=(raw||'').trim();
+  if(!s)return'';
+  // Capitalizar primeira letra de cada palavra
+  return s.replace(/\b\w/g,function(c){return c.toUpperCase();});
+}
+
+/* ── Parsear planilha 2026.xlsx ── */
+async function parse2026(){
+  L('[XLSX] Lendo 2026.xlsx...','info');
+  var resp=await fetch('2026.xlsx');
+  if(!resp.ok)throw new Error('2026.xlsx não encontrado (HTTP '+resp.status+')');
+  var buf=await resp.arrayBuffer();
+  var wb=XLSX.read(buf,{type:'array',cellDates:true});
+  L('[XLSX] Sheets: '+wb.SheetNames.join(', '),'dim');
+  var ws=wb.Sheets[wb.SheetNames[0]];
+  var S=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+  var N=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+  
+  // Encontrar header
+  var hr=0;
+  for(var i=0;i<Math.min(10,S.length);i++){if((S[i]||[]).join(' ').toLowerCase().indexOf('cliente')>=0){hr=i;break;}}
+  var hdr=(S[hr]||[]).map(function(h){return(h||'').trim();});
+  L('[XLSX] Header['+hr+']: '+hdr.join(' | '),'dim');
+  
+  // Mapear colunas
+  var ci={cl:-1,pj:-1,sd:-1,pd:-1,mn:-1,nc:-1,vl:-1,ct:-1,pr:-1,mg:-1,np:-1,cat:-1,seg:-1};
+  hdr.forEach(function(h,i){
+    var l=h.toLowerCase();
+    if(/^(cliente)$/.test(l)&&ci.cl<0)ci.cl=i;
+    if(/^projeto/.test(l)&&ci.pj<0)ci.pj=i;
+    if(/data.*venda|venda.*data/.test(l))ci.sd=i;
+    if(/data.*pag|pag.*data/.test(l))ci.pd=i;
+    if(/^m[eê]s$/.test(l))ci.mn=i;
+    if(/cliente.*novo/.test(l)&&ci.nc<0)ci.nc=i;
+    if(/^nps$/.test(l))ci.np=i;
+    if(/categ/.test(l)&&ci.cat<0)ci.cat=i;
+    if(/segmen/.test(l)&&ci.seg<0)ci.seg=i;
+    if(/^faturamento$|^or[cç]amento$|^receita$/.test(l)&&ci.vl<0)ci.vl=i;
+    if(l==='valor'&&ci.vl<0)ci.vl=i;
+    if(/valor.*total/i.test(l)&&ci.vl<0)ci.vl=i;
+    if(/^(custos?|despesas?|gastos?)$/.test(l)&&ci.ct<0)ci.ct=i;
+    if(/custo.*(prod|total|real)/i.test(l)&&ci.ct<0)ci.ct=i;
+    if(/^lucro$/.test(l)&&ci.pr<0)ci.pr=i;
+    if(/^(margem|margin)$/.test(l)&&ci.mg<0)ci.mg=i;
+  });
+  
+  var projs=[];
+  for(var ri=hr+1;ri<S.length;ri++){
+    var rS=S[ri]||[],rN=N[ri]||[];
+    if(rS.every(function(c){return!c||String(c).trim()===''}))continue;
+    var cl=ci.cl>=0?(rS[ci.cl]||'').trim():'';
+    var pj=ci.pj>=0?(rS[ci.pj]||'').trim():'';
+    if(!cl&&!pj)continue;
+    if(/^(total|soma|m[eê]dia|grand)/i.test(cl))continue;
+    var vl=getNum(rN,rS,ci.vl);
+    if(vl<=0)continue; // skip linhas sem valor
+    var ct=getNum(rN,rS,ci.ct);
+    var pr=getNum(rN,rS,ci.pr);
+    var mg=getNum(rN,rS,ci.mg);
+    var np=getNum(rN,rS,ci.np);
+    if(mg>0&&mg<=1.5)mg=parseFloat((mg*100).toFixed(1));
+    if(vl>0&&pr===0)pr=parseFloat((vl-ct).toFixed(2));
+    if(vl>0&&pr!==0&&mg===0)mg=parseFloat(((pr/vl)*100).toFixed(1));
+    var pd=fmtD(ci.pd>=0?(rN[ci.pd]||rS[ci.pd]||''):'');
+    var sd=fmtD(ci.sd>=0?(rN[ci.sd]||rS[ci.sd]||''):'');
+    var mn=ci.mn>=0?(parseInt(rN[ci.mn])||0):0;
+    if(!mn&&pd&&pd.length>=7)mn=parseInt(pd.substring(5,7));
+    if(!mn&&sd&&sd.length>=7)mn=parseInt(sd.substring(5,7));
+    var nc=ci.nc>=0?(rS[ci.nc]||'').trim():'';
+    var rawCat=ci.cat>=0?(rS[ci.cat]||'').trim():'';
+    var rawSeg=ci.seg>=0?(rS[ci.seg]||'').trim():'';
+    var profitPct=vl>0?parseFloat(((pr/vl)*100).toFixed(1)):0;
+    
+    projs.push({
+      year:2026, month:mn,
+      client_name:   cl,
+      project_name:  pj,
+      sale_date:     sd,
+      payment_date:  pd,
+      project_date:  sd||pd||('2026-'+('0'+mn).slice(-2)+'-01'),
+      is_new_client: /^(sim|yes|true|1)$/i.test(nc),
+      total_value:   Math.round(vl*100)/100,
+      cost:          Math.round(ct*100)/100,
+      profit_pct:    profitPct,
+      nps:           (np>10||np<0)?0:parseFloat(np.toFixed(1)),
+      category:      normCat(rawCat),
+      segment:       normSeg(rawSeg),
+      status:        'concluido',
+      created_by:    'import_2026'
+    });
+  }
+  
+  // Ordenar do mais RECENTE para o mais ANTIGO (por payment_date desc)
+  projs.sort(function(a,b){
+    var da=new Date(a.payment_date||a.project_date||'2026-01-01');
+    var db=new Date(b.payment_date||b.project_date||'2026-01-01');
+    return db-da;
+  });
+  
+  var totV=projs.reduce(function(s,p){return s+p.total_value;},0);
+  var totC=projs.reduce(function(s,p){return s+p.cost;},0);
+  L('[XLSX] ✓ '+projs.length+' projetos | Fat: R$'+Math.round(totV).toLocaleString('pt-BR')+' | Custo: R$'+Math.round(totC).toLocaleString('pt-BR'),'ok');
+  return projs;
+}
+
+/* ── Limpar tabela age_projects ── */
+async function clearAgeProjects(){
+  L('\n[DB] Limpando age_projects...','warn');
+  var total=0, page=1, hasMore=true;
+  while(hasMore){
+    var r=await fetch('../tables/age_projects?page='+page+'&limit=100');
+    var d=await r.json();
+    var items=(d.data||[]).filter(function(i){return!i.deleted;});
+    if(!items.length){if((d.data||[]).length<100)hasMore=false;else page++;continue;}
+    await Promise.all(items.map(function(item){
+      return fetch('../tables/age_projects/'+item.id,{method:'DELETE'}).then(function(){total++;});
+    }));
+    L('  Deletados: '+total+'...','dim');
+    if((d.data||[]).length<100)hasMore=false;else page++;
+  }
+  L('[DB] ✓ age_projects limpa: '+total+' registros removidos','ok');
+  return total;
+}
+
+/* ── Inserir em lotes ── */
+async function insertBatch(projs){
+  var ok=0,err=0;
+  for(var i=0;i<projs.length;i+=3){
+    var batch=projs.slice(i,i+3);
+    await Promise.all(batch.map(function(row){
+      return fetch('../tables/age_projects',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(row)
+      }).then(function(r){if(r.ok)ok++;else err++;}).catch(function(){err++;});
+    }));
+    L('  → '+(Math.min(i+3,projs.length))+'/'+projs.length+' (ok:'+ok+' err:'+err+')',err?'err':'dim');
+  }
+  L('[DB] ✓ Inseridos: '+ok+' | Erros: '+err, err?'err':'ok');
+  return{ok,err};
+}
+
+/* ── IMPORT COMPLETO ── */
+async function runImport(){
+  logEl.innerHTML='';
+  L('=== 🚀 IMPORT PROJETOS 2026 — '+new Date().toLocaleTimeString('pt-BR')+' ===','ok');
+  try{
+    var projs=await parse2026();
+    if(!projs.length){L('Nenhum projeto encontrado na planilha!','err');return;}
+    
+    L('\n[PRÉVIA] Projetos que serão importados (mais recentes primeiro):','info');
+    projs.forEach(function(p,i){
+      L('  '+(i+1)+'. [Mês '+p.month+'] '+p.client_name+' — "'+p.project_name+'" — R$'+p.total_value.toLocaleString('pt-BR')+' — '+p.segment+' — NPS:'+p.nps+' — '+p.payment_date+(p.is_new_client?' [NOVO]':''),'ok');
+    });
+    
+    L('\n[FASE 1] Limpando age_projects...','warn');
+    await clearAgeProjects();
+    
+    L('\n[FASE 2] Inserindo '+projs.length+' projetos...','info');
+    var res=await insertBatch(projs);
+    
+    // Verificar
+    var chk=await fetch('../tables/age_projects?limit=50');
+    var chkD=await chk.json();
+    L('\n[VERIFY] age_projects agora tem: '+(chkD.total||'?')+' registros','ok');
+    
+    L('\n=== ✅ IMPORTAÇÃO CONCLUÍDA! ===','ok');
+    L('Agora acesse o Dashboard para ver os KPIs 2026 atualizados.','info');
+    printSummary(projs);
+  }catch(e){L('ERRO FATAL: '+e.message,'err');console.error(e);}
+}
+
+/* ── SÓ DIAGNÓSTICO ── */
+async function runDiag(){
+  logEl.innerHTML='';
+  L('=== 🔍 DIAGNÓSTICO (não altera banco) ===','info');
+  try{
+    var projs=await parse2026();
+    L('\nProjetos da planilha (mais recentes primeiro):','info');
+    projs.forEach(function(p,i){
+      L('  '+(i+1)+'. ['+p.payment_date+'] '+p.client_name+' — "'+p.project_name+'" — R$'+p.total_value.toLocaleString('pt-BR')+' | Custo: R$'+p.cost.toLocaleString('pt-BR')+' | Mg: '+p.profit_pct.toFixed(1)+'% | Seg: '+p.segment+' | NPS: '+p.nps+(p.is_new_client?' ✦NOVO':''),'ok');
+    });
+    printSummary(projs);
+    
+    L('\n[DB] Estado atual de age_projects:','info');
+    var r=await fetch('../tables/age_projects?limit=200');
+    var d=await r.json();
+    var rows=(d.data||[]).filter(function(p){return!p.deleted;});
+    L('  '+rows.length+' projetos no banco','ok');
+    rows.sort(function(a,b){
+      var da=new Date(a.payment_date||a.project_date||'2000-01-01');
+      var db=new Date(b.payment_date||b.project_date||'2000-01-01');
+      return db-da;
+    });
+    rows.forEach(function(p,i){
+      L('  DB['+i+'] '+p.client_name+' — '+p.project_name+' — R$'+(parseFloat(p.total_value)||0).toLocaleString('pt-BR')+' — '+p.status+' — '+p.payment_date,'dim');
+    });
+  }catch(e){L('ERRO: '+e.message,'err');}
+}
+
+function printSummary(projs){
+  var totV=projs.reduce(function(s,p){return s+p.total_value;},0);
+  var totC=projs.reduce(function(s,p){return s+p.cost;},0);
+  var totP=projs.reduce(function(s,p){return s+p.total_value-p.cost;},0);
+  var npsProjs=projs.filter(function(p){return p.nps>0;});
+  var avgNps=npsProjs.length?npsProjs.reduce(function(s,p){return s+p.nps;},0)/npsProjs.length:0;
+  var novos=projs.filter(function(p){return p.is_new_client;}).length;
+  
+  L('\n── RESUMO 2026 ──','head');
+  L('  Projetos:    '+projs.length+' (esperado: 12)','ok');
+  L('  Fat. Total:  R$'+Math.round(totV).toLocaleString('pt-BR')+' (esperado: R$46.200)',Math.abs(totV-46200)<50?'ok':'warn');
+  L('  Custo Total: R$'+Math.round(totC).toLocaleString('pt-BR')+' (esperado: R$19.979)',Math.abs(totC-19979)<50?'ok':'warn');
+  L('  Lucro:       R$'+Math.round(totP).toLocaleString('pt-BR'),'ok');
+  L('  Margem:      '+totV>0?(totP/totV*100).toFixed(1)+'%':'N/A','ok');
+  L('  NPS Médio:   '+avgNps.toFixed(1),'ok');
+  L('  Novos Clientes: '+novos,'ok');
+  
+  var byMonth={};
+  projs.forEach(function(p){
+    var m=p.month||0;
+    if(!byMonth[m])byMonth[m]={n:0,v:0};
+    byMonth[m].n++;byMonth[m].v+=p.total_value;
+  });
+  var MN=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  L('\n  Por mês:','head');
+  Object.keys(byMonth).sort().forEach(function(m){
+    L('    '+MN[m]+': '+byMonth[m].n+' proj | R$'+Math.round(byMonth[m].v).toLocaleString('pt-BR'),'ok');
+  });
+}
+
+async function clearOnly(){
+  if(!confirm('Limpar TODOS os projetos de age_projects?'))return;
+  logEl.innerHTML='';
+  await clearAgeProjects();
+  L('Tabela limpa. Execute o import agora.','warn');
+}
+</script>
+</body>
+</html>
