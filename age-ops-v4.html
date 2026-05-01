@@ -2487,7 +2487,7 @@ async function purgeProjectsNotInSheet() {
     /* Indexar projetos do banco por chave cliente|projeto */
     const dbMap = {};
     allProj.forEach(p => {
-      const key = ((p.client_name||'')+'|'+(p.project_name||'')).toLowerCase();
+      const key = (_ageProjDbClient(p)+'|'+_ageProjDbTitle(p)).toLowerCase();
       /* Se houver duplicatas, manter o mais recente (maior updated_at) */
       if(!dbMap[key] || (p.updated_at||0) > (dbMap[key].updated_at||0)) dbMap[key] = p;
     });
@@ -2497,16 +2497,8 @@ async function purgeProjectsNotInSheet() {
       ((s.cliente||'')+'|'+(s.projeto||'')).toLowerCase()
     ));
 
-    /* DELETAR projetos do banco que não estão mais na planilha */
-    let deleted = 0;
-    for(const p of allProj) {
-      const key = ((p.client_name||'')+'|'+(p.project_name||'')).toLowerCase();
-      if(!sheetKeys.has(key)) {
-        await apiDel('age_projects', p.id).catch(()=>{});
-        deleted++;
-      }
-    }
-    if(deleted) console.log(`[sync] ${deleted} projeto(s) fora da planilha removido(s).`);
+    /* Não apagar projetos só no banco (ex.: "+ Novo Projeto" / Supabase).
+       A listagem mescla planilha + extras; remoção manual pelo usuário. */
 
     /* ATUALIZAR ou CRIAR projetos da planilha */
     let updated = 0, created = 0;
@@ -2535,6 +2527,7 @@ async function purgeProjectsNotInSheet() {
       const payload = {
         client_name:   s.cliente,
         project_name:  s.projeto,
+        title:         s.projeto,
         category,
         segment,
         project_date,
@@ -2567,7 +2560,7 @@ async function purgeProjectsNotInSheet() {
     const seenKeys = new Set();
     const dupDel = [];
     allProj.forEach(p => {
-      const key = ((p.client_name||'')+'|'+(p.project_name||'')).toLowerCase();
+      const key = (_ageProjDbClient(p)+'|'+_ageProjDbTitle(p)).toLowerCase();
       if(sheetKeys.has(key)) {
         if(seenKeys.has(key)) dupDel.push(p);
         else seenKeys.add(key);
@@ -2849,6 +2842,42 @@ function _sbNormalizeQuery(qs = '') {
   return q;
 }
 
+/* PostgREST: deleted como text "false" quebrava !r.deleted. null/undefined/false/"false" → linha visível. */
+function _sbIsRowVisible(r) {
+  if(!r || typeof r !== 'object') return false;
+  const d = r.deleted;
+  if(d === null || d === undefined) return true;
+  if(d === true || d === 1) return false;
+  if(typeof d === 'string') {
+    const t = d.trim().toLowerCase();
+    if(t === '' || t === 'false' || t === 'f' || t === '0' || t === 'no') return true;
+    if(t === 'true' || t === 't' || t === '1' || t === 'yes') return false;
+  }
+  return true;
+}
+
+/* age_projects: nomes de colunas variam no Supabase (client vs client_name; title vs project_name). */
+function _ageProjDbClient(p) {
+  if(!p) return '';
+  return String(p.client_name ?? p.client ?? '').trim();
+}
+function _ageProjDbTitle(p) {
+  if(!p) return '';
+  return String(p.project_name ?? p.title ?? p.name ?? '').trim();
+}
+
+/* Modal projeto: lê o primeiro campo preenchido (ids alternativos legados). */
+function _ageProjFormVal(primary, ...aliases) {
+  for(const id of [primary, ...aliases]) {
+    const el = document.getElementById(id);
+    if(!el) continue;
+    const v = String(el.value ?? '').trim();
+    if(v) return v;
+  }
+  const el = document.getElementById(primary);
+  return el ? String(el.value ?? '').trim() : '';
+}
+
 async function api(method, table, id='', body=null) {
   const sbUrl = String(SUPABASE_URL || '').trim();
   const sbKey = String(SUPABASE_ANON_KEY || '').trim();
@@ -2905,8 +2934,14 @@ async function apiPut(table, id, body)     { return api('PUT',    table, id, bod
 async function apiDel(table, id)           { return api('DELETE', table, id); }
 
 async function fetchAll(table, limit=500) {
-  const d = await apiGet(table, `?limit=${limit}`);
-  return (d?.data || []).filter(r=>!r.deleted);
+  try {
+    const d = await apiGet(table, `?limit=${limit}`);
+    const rows = Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []);
+    return rows.filter(_sbIsRowVisible);
+  } catch(e) {
+    console.warn('[fetchAll]', table, e?.message || e);
+    return [];
+  }
 }
 
 /* Busca registros pessoais do usuário logado — filtra por owner no servidor */
@@ -2915,7 +2950,7 @@ async function fetchOwn(table, limit=300) {
   /* Tenta buscar via search=owner:username; se a API não suportar, faz fetchAll e filtra */
   try {
     const d = await apiGet(table, `?limit=${limit}&search=${encodeURIComponent(u)}`);
-    const rows = (d?.data || []).filter(r => !r.deleted);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(r => _sbIsRowVisible(r));
     /* Se a busca retornou resultados com owner correto, usa direto */
     if(rows.length === 0 || rows.some(r => r.owner === u)) {
       return rows.filter(r => r.owner === u);
@@ -4846,16 +4881,18 @@ async function loadProjects() {
     /* FONTE DE VERDADE: planilha 2026
        Banco usado para enriquecer status, NPS e custo do fechamento */
     const [dbProjects, dbFechs] = await Promise.all([
-      fetchAll('age_projects', 300).catch(()=>[]),
-      fetchAll('age_fechamento', 300).catch(()=>[])
+      fetchAll('age_projects', 1000),
+      fetchAll('age_fechamento', 500)
     ]);
 
     /* Montar cache a partir da planilha, enriquecido com dados do banco */
+    const matchedDbIds = new Set();
     _projAllCache = PROJ_2026_SHEET.map((s, idx) => {
       const db = dbProjects.find(p =>
-        (p.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-        (p.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase()
+        _ageProjDbClient(p).toLowerCase() === (s.cliente||'').toLowerCase() &&
+        _ageProjDbTitle(p).toLowerCase() === (s.projeto||'').toLowerCase()
       );
+      if(db?.id) matchedDbIds.add(db.id);
       /* Custo: prioridade = fechamento vinculado > banco > planilha */
       const fech = db ? dbFechs.find(f=>f.project_id===db.id) : null;
       const costFromFech = fech ? (parseFloat(fech.custo_total)||0) : null;
@@ -4865,8 +4902,8 @@ async function loadProjects() {
       const margin = fat > 0 ? Math.round(lucro/fat*100) : 0;
       return {
         id:           db?.id || 'sheet_'+idx,
-        client_name:  db?.client_name  || s.cliente,
-        project_name: db?.project_name || s.projeto,
+        client_name:  (db ? (_ageProjDbClient(db) || s.cliente) : s.cliente),
+        project_name: (db ? (_ageProjDbTitle(db) || s.projeto) : s.projeto),
         category:     db?.category     || s.cat,
         segment:      db?.segment      || s.seg,
         project_date: db?.project_date || s.sale_date,
@@ -4879,9 +4916,44 @@ async function loadProjects() {
         status:       db?.status || 'concluido',
         _sheetIdx:    idx,
         _sheetMes:    s.mes,
-        _hasFech:     !!fech
+        _hasFech:     !!fech,
+        _dbOnly:      false
       };
     });
+
+    /* Projetos gravados no Supabase que não existem na planilha 2026 (ex.: criados pelo modal) */
+    let extraSheetIdx = 100000;
+    for(const p of dbProjects) {
+      if(!p?.id || matchedDbIds.has(p.id)) continue;
+      const fech = dbFechs.find(f=>f.project_id===p.id);
+      const costFromFech = fech ? (parseFloat(fech.custo_total)||0) : null;
+      const costFinal = costFromFech !== null ? costFromFech : (parseFloat(p.cost)||0);
+      const fat = parseFloat(p.total_value)||0;
+      const lucro = fat - costFinal;
+      const margin = fat > 0 ? Math.round(lucro/fat*100) : (parseFloat(p.profit_pct)||0);
+      const payD = p.payment_date ? String(p.payment_date).slice(0,10) : '';
+      const projD = p.project_date ? String(p.project_date).slice(0,10) : '';
+      const mesFromDate = payD ? parseInt(payD.substring(5,7),10) : (projD ? parseInt(projD.substring(5,7),10) : 1);
+      _projAllCache.push({
+        id:           p.id,
+        client_name:  _ageProjDbClient(p),
+        project_name: _ageProjDbTitle(p),
+        category:     p.category || 'Vídeo',
+        segment:      p.segment || '',
+        project_date: p.project_date || null,
+        payment_date: p.payment_date || null,
+        total_value:  fat,
+        cost:         costFinal,
+        profit_pct:   p.profit_pct != null ? parseFloat(p.profit_pct) : margin,
+        nps:          parseFloat(p.nps)||0,
+        is_new_client:p.is_new_client === true || p.is_new_client === 'true',
+        status:       p.status || 'pendente',
+        _sheetIdx:    extraSheetIdx++,
+        _sheetMes:    mesFromDate || 1,
+        _hasFech:     !!fech,
+        _dbOnly:      true
+      });
+    }
 
     /* Aplicar filtros */
     const cat    = document.getElementById('fCat')?.value    || '';
@@ -4892,7 +4964,12 @@ async function loadProjects() {
     let rows = [..._projAllCache];
     if(cat)    rows=rows.filter(p=>(p.category||'')===cat);
     if(status) rows=rows.filter(p=>(p.status||'')==status);
-    if(month)  rows=rows.filter(p=>{ const d=p.payment_date||p.project_date||''; return d&&parseInt(d.substring(5,7))===parseInt(month); });
+    if(month)  rows=rows.filter(p=>{
+      const raw = p.payment_date || p.project_date || '';
+      const d = String(raw).slice(0, 10);
+      if(!d) return true;
+      return parseInt(d.substring(5, 7), 10) === parseInt(month, 10);
+    });
     if(search) rows=rows.filter(p=>(p.client_name||'').toLowerCase().includes(search)||(p.project_name||'').toLowerCase().includes(search)||(p.segment||'').toLowerCase().includes(search));
 
     _projCache = rows;
@@ -4958,13 +5035,15 @@ function renderProjRow(p, rowNum) {
 
   /* data de pagamento atual (pay_date da planilha ou payment_date do banco) */
   const payDateVal = p.payment_date || p._sheetPayDate || '';
+  const dbOnly = p._dbOnly === true;
+  const dragTitle = dbOnly ? 'Só no banco — arraste desativado' : 'Arrastar para reordenar';
 
-  return `<tr class="proj-row" data-pid="${p.id}" data-sidx="${sid}" draggable="true" style="${cancelado?'opacity:.4':isFut?'background:rgba(37,99,235,.04);':''}" title="${isFut?'Projeto futuro — contrato assinado, ainda não realizado':''}">
+  return `<tr class="proj-row${dbOnly?' proj-row-dbonly':''}" data-pid="${p.id}" data-sidx="${sid}" data-db-only="${dbOnly?'1':''}" draggable="${dbOnly?'false':'true'}" style="${cancelado?'opacity:.4':isFut?'background:rgba(37,99,235,.04);':''}" title="${isFut?'Projeto futuro — contrato assinado, ainda não realizado':''}">
     <td style="width:28px;text-align:center;padding:0 2px">
-      <span class="drag-handle" title="Arrastar para reordenar"><i class="fas fa-grip-vertical"></i></span>
+      <span class="drag-handle" title="${dragTitle}" style="${dbOnly?'opacity:.25':''}"><i class="fas fa-grip-vertical"></i></span>
     </td>
     <td style="font-family:var(--font-h);font-size:10px;font-weight:700;color:var(--textsub);text-align:center;width:22px">
-      ${isFut ? '<span style="font-size:7px;font-weight:800;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 4px;letter-spacing:.5px">FUT</span>' : (rowNum||'')}
+      ${dbOnly ? '<span style="font-size:7px;font-weight:800;background:#e0e7ff;color:#4338ca;border-radius:3px;padding:1px 4px;letter-spacing:.5px">BD</span>' : (isFut ? '<span style="font-size:7px;font-weight:800;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 4px;letter-spacing:.5px">FUT</span>' : (rowNum||''))}
     </td>
     <td class="ie-cell" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" title="Clique para editar mês" style="width:70px">
       <select class="ie-input" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px;color:rgba(255,255,255,.6)">
@@ -5348,7 +5427,7 @@ function initProjDragDrop() {
 
   tbody.addEventListener('dragstart', e=>{
     const row = e.target.closest('.proj-row');
-    if(!row) return;
+    if(!row || row.dataset.dbOnly === '1') return;
     _dragSrcRow = row;
     row.classList.add('dragging');
     e.dataTransfer.effectAllowed='move';
@@ -5380,6 +5459,8 @@ function initProjDragDrop() {
     e.preventDefault();
     const targetRow = e.target.closest('.proj-row');
     if(!targetRow||!_dragSrcRow||targetRow===_dragSrcRow) return;
+
+    if(_dragSrcRow.dataset.dbOnly === '1' || targetRow.dataset.dbOnly === '1') return;
 
     const srcIdx = parseInt(_dragSrcRow.dataset.sidx);
     const tgtIdx = parseInt(targetRow.dataset.sidx);
@@ -5415,8 +5496,8 @@ function initProjDragDrop() {
 function openProjectModal(proj=null) {
   document.getElementById('modalProjTitle').textContent = proj?'EDITAR PROJETO':'NOVO PROJETO';
   document.getElementById('pId').value       = proj?.id||'';
-  document.getElementById('pClient').value   = proj?.client_name||'';
-  document.getElementById('pName').value     = proj?.project_name||'';
+  document.getElementById('pClient').value   = _ageProjDbClient(proj);
+  document.getElementById('pName').value     = _ageProjDbTitle(proj);
   document.getElementById('pCat').value      = proj?.category||'Vídeo';
   document.getElementById('pSeg').value      = proj?.segment||'';
   const _projDateStr = (d) => d ? String(d).slice(0, 10) : '';
@@ -5434,7 +5515,7 @@ function openProjectModal(proj=null) {
   if(pEnd) pEnd.value = _projDateStr(proj?.end_date);
   document.getElementById('pFat').value      = proj?.total_value||'';
   /* custo vem da planilha 2026 — não editável pelo usuário */
-  const sheetE = PROJ_2026_SHEET.find(s=>s.cliente===proj?.client_name&&s.projeto===proj?.project_name);
+  const sheetE = PROJ_2026_SHEET.find(s=>s.cliente===_ageProjDbClient(proj)&&s.projeto===_ageProjDbTitle(proj));
   const margin = sheetE ? sheetE.margin : (proj?.profit_pct||'');
   document.getElementById('pMargin').value   = margin;
   document.getElementById('pNps').value      = proj?.nps||'';
@@ -5446,8 +5527,8 @@ function openProjectModal(proj=null) {
 function calcProjMargin() {
   /* margem calculada a partir do custo fixo da planilha 2026 */
   const fat=parseFloat(document.getElementById('pFat').value)||0;
-  const client=document.getElementById('pClient')?.value||'';
-  const proj=document.getElementById('pName')?.value||'';
+  const client=_ageProjFormVal('pClient', 'client_name', 'pCliente', 'projectClient');
+  const proj=_ageProjFormVal('pName', 'projectName', 'project_name', 'pTitle', 'title');
   const sheetE=PROJ_2026_SHEET.find(s=>s.cliente===client&&s.projeto===proj);
   const cost=sheetE?sheetE.cost:0;
   const el=document.getElementById('pMargin');
@@ -5474,8 +5555,8 @@ async function editProject(id) {
 async function saveProject() {
   const id         = document.getElementById('pId').value.trim();
   const fat        = parseFloat(document.getElementById('pFat').value)||0;
-  const clientName = document.getElementById('pClient').value.trim();
-  const projName   = document.getElementById('pName').value.trim();
+  const clientName = _ageProjFormVal('pClient', 'client_name', 'pCliente', 'projectClient');
+  const projName   = _ageProjFormVal('pName', 'projectName', 'project_name', 'pTitle', 'title');
   const statusVal  = document.getElementById('pStatus').value;
   const npsVal     = parseFloat(document.getElementById('pNps').value)||0;
   const isNewVal   = document.getElementById('pNovo').value === 'true';
@@ -5501,6 +5582,7 @@ async function saveProject() {
   const payload = {
     client_name:   clientName,
     project_name:  projName,
+    title:         projName,
     category:      document.getElementById('pCat').value,
     segment:       document.getElementById('pSeg').value.trim(),
     project_date:  dateOrNull('pSaleDate'),
@@ -5533,6 +5615,7 @@ async function saveProject() {
       : await apiPost('age_projects', payload);
     closeModal('modalProject');
     toast(realId ? 'Projeto atualizado!' : 'Projeto criado!');
+    _fechAllProjects = [];
     await loadProjects();
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
   } catch(e) {
@@ -6429,7 +6512,7 @@ async function _ensureKanbanRecords() {
   for(let i = 0; i < PROJ_2026_SHEET.length; i++) {
     const s = PROJ_2026_SHEET[i];
     const existing = _kbStages.find(r =>
-      !r.deleted && (
+      _sbIsRowVisible(r) && (
         (r.sheet_idx === i) ||
         ((r.client||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
          (r.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase())
@@ -6481,7 +6564,7 @@ function renderKanban() {
   /* Montar lista de projetos enriquecidos */
   const projCards = PROJ_2026_SHEET.map((s, i) => {
     const stageRec = _kbStages.find(r =>
-      !r.deleted && (
+      _sbIsRowVisible(r) && (
         r.sheet_idx === i ||
         ((r.client||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
          (r.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase())
@@ -6622,7 +6705,7 @@ async function kbDrop(e, newStage) {
 function openKanbanDetail(idx) {
   const s = PROJ_2026_SHEET[idx];
   if(!s) return;
-  const stageRec = _kbStages.find(r => !r.deleted && (r.sheet_idx === idx ||
+  const stageRec = _kbStages.find(r => _sbIsRowVisible(r) && (r.sheet_idx === idx ||
     ((r.client||'').toLowerCase()===(s.cliente||'').toLowerCase() &&
      (r.project_name||'').toLowerCase()===(s.projeto||'').toLowerCase())));
 
@@ -9865,7 +9948,7 @@ function getFollowupStatus(lead) {
 async function loadPipeline() {
   try {
     const json = await apiGet('age_leads', '?limit=300&sort=created_at');
-    _leadsCache = (json?.data || []).filter(l => !l.deleted);
+    _leadsCache = (json?.data || []).filter(l => _sbIsRowVisible(l));
     renderPipeline();
   } catch(e) {
     console.error('loadPipeline:', e);
