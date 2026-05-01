@@ -2818,11 +2818,12 @@ function confirm2(msg, cb) {
 const SUPABASE_URL      = 'https://wiiewucszdbbcxzivnyo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
 
-function _sbHeaders(extra = {}) {
+function _sbHeaders(extra = {}, anonKey = null) {
+  const key = String(anonKey || SUPABASE_ANON_KEY || '').trim();
   return {
     'Content-Type': 'application/json',
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'apikey': key,
+    'Authorization': 'Bearer ' + key,
     ...extra
   };
 }
@@ -2844,10 +2845,15 @@ function _sbNormalizeQuery(qs = '') {
 }
 
 async function api(method, table, id='', body=null) {
-  if(!SUPABASE_URL || SUPABASE_URL === 'COLE_AQUI_SUA_SUPABASE_URL') throw new Error('Supabase não configurado (SUPABASE_URL).');
-  if(!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY === 'COLE_AQUI_SUA_SUPABASE_ANON_KEY') throw new Error('Supabase não configurado (SUPABASE_ANON_KEY).');
+  const sbUrl = String(SUPABASE_URL || '').trim();
+  const sbKey = String(SUPABASE_ANON_KEY || '').trim();
+  if(!sbUrl || sbUrl === 'COLE_AQUI_SUA_SUPABASE_URL') throw new Error('Supabase não configurado (SUPABASE_URL).');
+  if(!sbKey || sbKey === 'COLE_AQUI_SUA_SUPABASE_ANON_KEY') throw new Error('Supabase não configurado (SUPABASE_ANON_KEY).');
 
-  const base = SUPABASE_URL.replace(/\/+$/,'') + '/rest/v1/' + table;
+  /* PostgREST (Supabase): atualização de linha é PATCH com filtro ?id=eq.<uuid>. PUT costuma falhar ou exigir upsert diferente. */
+  if(method === 'PUT') method = 'PATCH';
+
+  const base = sbUrl.replace(/\/+$/,'') + '/rest/v1/' + table;
   let wantSingleObject = false;
   let q = new URLSearchParams();
 
@@ -2870,7 +2876,7 @@ async function api(method, table, id='', body=null) {
   if(method === 'GET' && wantSingleObject) headers['Accept'] = 'application/vnd.pgrst.object+json';
 
   const url = q.toString() ? `${base}?${q.toString()}` : base;
-  const opts = { method, headers: _sbHeaders(headers) };
+  const opts = { method, headers: _sbHeaders(headers, sbKey) };
   if(body) opts.body = JSON.stringify(body);
 
   const r = await fetch(url, opts);
