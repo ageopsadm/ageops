@@ -719,6 +719,23 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   font-family:var(--font-m);font-size:9px;color:#cc4444;
   text-align:center;margin-top:10px;min-height:16px;letter-spacing:.04em;
 }
+.login-tabs{
+  display:flex;gap:0;margin-bottom:22px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.12);
+}
+.login-tab{
+  flex:1;padding:10px 12px;font-family:var(--font-h);font-size:9px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;background:#f3f3f3;color:#888;
+  transition:background .15s,color .15s;border:none;
+}
+.login-tab:hover{background:#eaeaea;color:#333}
+.login-tab.active{background:#111;color:#fff}
+.login-panel{display:none}
+.login-panel.active{display:block}
+.login-box-wide{max-width:420px}
+.invite-link-box{
+  font-family:var(--font-m);font-size:10px;background:#f8fafc;border:1px dashed rgba(0,0,0,.15);
+  border-radius:6px;padding:10px 12px;word-break:break-all;margin-top:10px;color:#334155;
+}
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
 <script>
@@ -730,21 +747,98 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
      LOGIN
 ══════════════════════════════════════════ -->
 <div id="loginPage">
-  <div class="login-box">
+  <!-- Fluxo convite (?invite=TOKEN): aceitar cadastro -->
+  <div id="loginInviteFlow" class="login-box login-box-wide" style="display:none">
+    <div class="login-logo">CONVITE</div>
+    <div class="login-sub" id="inviteFlowSubtitle">COMPLETE SEU CADASTRO</div>
+    <div id="inviteFlowErr" class="login-error" style="min-height:20px"></div>
+    <form id="inviteAcceptForm" autocomplete="off" onsubmit="return false">
+      <div class="login-group">
+        <label class="login-label">NOME COMPLETO *</label>
+        <input class="login-input" id="invName" type="text" placeholder="Seu nome" autocomplete="name">
+      </div>
+      <div class="login-group">
+        <label class="login-label">EMAIL</label>
+        <input class="login-input" id="invEmail" type="email" readonly style="opacity:.75">
+      </div>
+      <div class="login-group">
+        <label class="login-label">SENHA *</label>
+        <input class="login-input" id="invPass" type="password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="login-group">
+        <label class="login-label">CONFIRMAR SENHA *</label>
+        <input class="login-input" id="invPass2" type="password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="login-group">
+        <label class="login-label">FOTO DE PERFIL (opcional)</label>
+        <input class="login-input" id="invPhoto" type="file" accept="image/*" style="padding:8px">
+      </div>
+      <button type="button" class="btn btn-primary login-btn" id="inviteSubmitBtn" onclick="submitInviteAccept()"><i class="fas fa-check"></i> <span>CRIAR CONTA E ENTRAR</span></button>
+    </form>
+    <div style="text-align:center;margin-top:14px">
+      <button type="button" onclick="cancelInviteFlow()" style="background:none;border:none;font-size:10px;color:#94a3b8;cursor:pointer;font-family:var(--font-m);text-decoration:underline">Voltar ao login</button>
+    </div>
+  </div>
+
+  <div id="loginMainFlow" class="login-box login-box-wide">
     <div class="login-logo">AGE OPS</div>
     <div class="login-sub">SISTEMA OPERACIONAL v4.0</div>
-    <form id="loginForm" autocomplete="on">
-    <div class="login-group">
-      <label class="login-label">USUÁRIO</label>
-      <input class="login-input" id="loginUser" type="text" placeholder="usuário" autocomplete="username">
-    </div>
-    <div class="login-group">
-      <label class="login-label">SENHA</label>
-      <input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+
+    <div class="login-tabs" role="tablist">
+      <button type="button" class="login-tab active" id="tabLogin" onclick="setLoginTab('login')">Entrar</button>
+      <button type="button" class="login-tab" id="tabRegister" onclick="setLoginTab('register')">Criar conta</button>
     </div>
 
-    <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt" id="loginBtnIcon"></i> <span id="loginBtnText">ENTRAR</span></button>
-    </form>
+    <div id="panelLogin" class="login-panel active">
+      <form id="loginForm" autocomplete="on" onsubmit="return false">
+        <div class="login-group">
+          <label class="login-label">EMAIL OU USUÁRIO</label>
+          <input class="login-input" id="loginUser" type="text" placeholder="email ou usuário" autocomplete="username">
+        </div>
+        <div class="login-group">
+          <label class="login-label">SENHA</label>
+          <input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt" id="loginBtnIcon"></i> <span id="loginBtnText">ENTRAR</span></button>
+      </form>
+    </div>
+
+    <div id="panelRegister" class="login-panel">
+      <form id="registerForm" autocomplete="off" onsubmit="return false">
+        <div class="login-group">
+          <label class="login-label">NOME COMPLETO *</label>
+          <input class="login-input" id="regName" type="text" placeholder="Seu nome">
+        </div>
+        <div class="login-group">
+          <label class="login-label">NOME DA EMPRESA *</label>
+          <input class="login-input" id="regCompany" type="text" placeholder="Nome fantasia ou razão social">
+        </div>
+        <div class="login-group">
+          <label class="login-label">EMAIL *</label>
+          <input class="login-input" id="regEmail" type="email" placeholder="voce@empresa.com" autocomplete="email">
+        </div>
+        <div class="login-group">
+          <label class="login-label">SENHA *</label>
+          <input class="login-input" id="regPass" type="password" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="login-group">
+          <label class="login-label">CONFIRMAR SENHA *</label>
+          <input class="login-input" id="regPass2" type="password" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="login-group">
+          <label class="login-label">SEGMENTO *</label>
+          <select class="login-input" id="regSegment" style="width:100%">
+            <option value="">Selecione…</option>
+            <option value="Produtora de Vídeo">Produtora de Vídeo</option>
+            <option value="Agência">Agência</option>
+            <option value="Fotografia">Fotografia</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-primary login-btn" id="regBtn" onclick="submitAdminRegister()"><i class="fas fa-rocket" id="regBtnIcon"></i> <span id="regBtnText">CRIAR EMPRESA E ENTRAR</span></button>
+      </form>
+    </div>
+
     <div class="login-error" id="loginErr"></div>
     <div style="text-align:center;margin-top:14px">
       <button type="button" onclick="emergencyReset()"
@@ -786,17 +880,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <button class="nav-item" data-page="projects" onclick="navigate('projects')">
         <i class="fas fa-folder-open"></i><span>PROJETOS</span>
       </button>
-      <button class="nav-item" data-page="fechamento" onclick="navigate('fechamento')">
-        <i class="fas fa-file-invoice-dollar"></i><span>FECHAMENTO</span>
-      </button>
-      <button class="nav-item" data-page="historico" onclick="navigate('historico')">
-        <i class="fas fa-archive"></i><span>HISTÓRICO</span>
-      </button>
-      <button class="nav-item" data-page="clientes" onclick="navigate('clientes')">
-        <i class="fas fa-users"></i><span>CLIENTES</span>
-      </button>
-      <button class="nav-item" data-page="gestao" onclick="navigate('gestao')">
-        <i class="fas fa-project-diagram"></i><span>GESTÃO</span>
+      <button class="nav-item" data-page="pipeline" onclick="navigate('pipeline')">
+        <i class="fas fa-filter"></i><span>PIPELINE</span>
       </button>
       <button class="nav-item" data-page="orcamentos" onclick="navigate('orcamentos')">
         <i class="fas fa-file-alt"></i><span>ORÇAMENTOS</span>
@@ -804,18 +889,11 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <button class="nav-item" data-page="contratos" onclick="navigate('contratos')">
         <i class="fas fa-file-contract"></i><span>CONTRATOS</span>
       </button>
-
-      <button class="nav-item" data-page="relatorios" onclick="navigate('relatorios')">
-        <i class="fas fa-clipboard-list"></i><span>RELATÓRIOS</span>
-      </button>
-      <button class="nav-item" data-page="pipeline" onclick="navigate('pipeline')">
-        <i class="fas fa-filter"></i><span>PIPELINE</span>
-      </button>
-      <button class="nav-item" data-page="nps" onclick="navigate('nps')">
-        <i class="fas fa-star"></i><span>NPS</span>
-      </button>
       <button class="nav-item" data-page="pagamentos" onclick="navigate('pagamentos')">
         <i class="fas fa-money-check-alt"></i><span>PAGAMENTOS</span>
+      </button>
+      <button class="nav-item" data-page="clientes" onclick="navigate('clientes')">
+        <i class="fas fa-users"></i><span>CLIENTES</span>
       </button>
       </div>
 
@@ -829,11 +907,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       </button>
       </div>
 
-      <div id="sidebarPersonal">
+      <div id="sidebarPersonalStaff">
       <div class="nav-group-label">PESSOAL</div>
-      <button type="button" class="nav-item nav-colab-only" style="display:none" data-page="cronograma" onclick="navigate('cronograma')">
-        <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
-      </button>
       <button class="nav-item" data-page="myday" onclick="navigate('myday')">
         <i class="fas fa-crosshairs"></i><span>MEU DIA</span>
       </button>
@@ -842,6 +917,25 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       </button>
       <button class="nav-item" data-page="myfinance" onclick="navigate('myfinance')">
         <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
+      </button>
+      <button class="nav-item" data-page="profile" onclick="navigate('profile')">
+        <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
+      </button>
+      </div>
+
+      <div id="sidebarColaborador" style="display:none">
+      <div class="nav-group-label">MINHA ÁREA</div>
+      <button class="nav-item" data-page="mytasks" onclick="navigate('mytasks')">
+        <i class="fas fa-tasks"></i><span>MINHAS TAREFAS</span>
+      </button>
+      <button class="nav-item" data-page="cronograma" onclick="navigate('cronograma')">
+        <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
+      </button>
+      <button class="nav-item" data-page="myfinance" onclick="navigate('myfinance')">
+        <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
+      </button>
+      <button class="nav-item" data-page="profile" onclick="navigate('profile')">
+        <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
       </button>
       </div>
     </nav>
@@ -1669,6 +1763,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
               <option value="1">Disponíveis</option>
               <option value="0">Indisponíveis</option>
             </select>
+            <button class="btn btn-secondary btn-sm" onclick="openInviteColaboradorModal()" title="Convite por link"><i class="fas fa-envelope-open-text"></i> Convidar</button>
             <button class="btn btn-primary btn-sm" onclick="openColabModal()"><i class="fas fa-plus"></i> Colaborador</button>
           </div>
         </div>
@@ -1803,6 +1898,52 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
           <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 10px">Valores e status informados pelo financeiro / gestão.</p>
           <div id="finMyPayments"></div>
         </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           MEU PERFIL
+      ══════════════════════════════════ -->
+      <div id="page-profile" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-user-circle"></i> MEU PERFIL</div>
+          <div class="page-actions">
+            <button class="btn btn-primary btn-sm" onclick="saveProfile()"><i class="fas fa-save"></i> Salvar</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:160px 1fr;gap:24px;max-width:720px;align-items:start" class="responsive-2col">
+          <div style="text-align:center">
+            <div id="profAvatarBig" style="width:120px;height:120px;border-radius:12px;background:#111;color:#fff;font-family:var(--font-h);font-size:42px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:1px solid var(--bd)">?</div>
+            <label class="login-label" style="display:block;margin-bottom:6px">FOTO</label>
+            <input type="file" id="profPhotoFile" accept="image/*" style="font-size:10px;width:100%" onchange="onProfilePhotoPick(event)">
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Nome</label>
+              <input id="profName" type="text" style="width:100%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Usuário</label>
+              <input id="profUsername" type="text" readonly style="width:100%;opacity:.75">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input id="profEmail" type="email" style="width:100%">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Cargo / função</label>
+              <input id="profJob" type="text" placeholder="Ex.: Editor" style="width:100%">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Empresa</label>
+              <input id="profCompany" type="text" readonly style="width:100%;opacity:.75">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Nova senha (opcional)</label>
+              <input id="profNewPass" type="password" placeholder="Deixe em branco para não alterar" style="width:100%" autocomplete="new-password">
+            </div>
+          </div>
+        </div>
+        <p id="profSaveHint" style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:16px"></p>
       </div>
 
       <!-- ══════════════════════════════════
@@ -2434,6 +2575,54 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   </div>
 </div>
 
+<!-- Modal: convite colaborador / gestor -->
+<div class="modal" id="modalInviteColab">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-title">
+      <span>CONVIDAR COLABORADOR</span>
+      <button type="button" onclick="closeModal('modalInviteColab')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 12px">Gera um link único. Envie por WhatsApp ou e-mail.</p>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Email do colaborador *</label>
+        <input id="invColabEmail" type="email" placeholder="nome@email.com" style="width:100%">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Cargo / função</label>
+        <input id="invColabJob" type="text" placeholder="Ex.: Editor" style="width:100%">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Nível de acesso *</label>
+        <select id="invColabRole" style="width:100%">
+          <option value="colaborador">Colaborador</option>
+          <option value="gestor">Gestor</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modalInviteColab')">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="submitInviteColaborador()"><i class="fas fa-paper-plane"></i> Gerar link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: link de convite gerado -->
+<div class="modal" id="modalInviteLinkReady">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">
+      <span>LINK DE CONVITE</span>
+      <button type="button" onclick="closeModal('modalInviteLinkReady')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin-bottom:10px">Copie e envie ao convidado. O link expira conforme configurado no banco.</p>
+    <div class="invite-link-box" id="inviteLinkText"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+      <button type="button" class="btn btn-secondary" onclick="copyInviteLink()"><i class="fas fa-copy"></i> Copiar link</button>
+      <button type="button" class="btn btn-primary" onclick="closeModal('modalInviteLinkReady')">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Finance -->
 <div class="modal" id="modalFinance">
   <div class="modal-box" style="max-width:400px">
@@ -2729,9 +2918,8 @@ async function purgeProjectsNotInSheet() {
 }
 
 /* ═══════════════════════════════════════════
-   AUTH
+   AUTH — Supabase age_users + convites + empresas
 ═══════════════════════════════════════════ */
-/* Senhas locais (MVP). Perfil e role vêm de age_users no Supabase quando disponível. */
 const USERS = {
   gustavowng:   { pass:'15Darth@123', name:'Gustavo' },
   vraulin:      { pass:'ownage2026', name:'Admin' },
@@ -2743,16 +2931,90 @@ const USERS = {
 };
 let currentUser = null;
 let _ageUsersCache = [];
+let _pendingInviteToken = null;
+let _pendingInviteRow = null;
+let _inviteLinkBuf = '';
 
 async function fetchAgeUserRow(username) {
   try {
-    const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(username)}&limit=1`);
+    const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(String(username||'').trim().toLowerCase())}&limit=1`);
     const rows = Array.isArray(d?.data) ? d.data : [];
     return rows[0] || null;
   } catch(e) {
     console.warn('[fetchAgeUserRow]', e);
     return null;
   }
+}
+
+async function fetchAgeUserByEmail(email) {
+  try {
+    const e = String(email || '').trim().toLowerCase();
+    if(!e) return null;
+    const d = await apiGet('age_users', `?email=eq.${encodeURIComponent(e)}&limit=5`);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    return rows[0] || null;
+  } catch(e) {
+    return null;
+  }
+}
+
+function generateUsernameFromEmail(email) {
+  const local = String(email || '').split('@')[0] || 'user';
+  let s = local.toLowerCase().replace(/[^a-z0-9._-]/g, '').replace(/^[._-]+/, '');
+  return s.slice(0, 48) || 'user';
+}
+
+async function ensureUniqueUsername(base) {
+  let candidate = String(base || 'user').slice(0, 48);
+  for(let n = 0; n < 60; n++) {
+    const tryU = n ? `${candidate}${n}` : candidate;
+    const ex = await fetchAgeUserRow(tryU);
+    if(!ex) return tryU;
+  }
+  return candidate + Date.now();
+}
+
+async function authenticateDatabase(loginInput, password) {
+  const raw = String(loginInput || '').trim();
+  const lower = raw.toLowerCase();
+  const pass = String(password || '');
+  let rows = [];
+  try {
+    if(raw.includes('@')) {
+      const d = await apiGet('age_users', `?email=eq.${encodeURIComponent(lower)}&limit=15`);
+      rows = Array.isArray(d?.data) ? d.data : [];
+    } else {
+      const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(lower)}&limit=15`);
+      rows = Array.isArray(d?.data) ? d.data : [];
+    }
+  } catch(e) { console.warn('[auth]', e); }
+  rows = rows.filter(_sbIsRowVisible);
+  const row = rows[0];
+  if(row) {
+    const ph = row.password_hash ?? row.password ?? row.pass;
+    if(String(ph || '') !== pass) return { ok: false, msg: 'Usuário ou senha incorretos.' };
+    if(row.active === false || row.active === 'false') return { ok: false, msg: 'Usuário inativo. Contate o administrador.' };
+    return { ok: true, row };
+  }
+  if(USERS[lower] && USERS[lower].pass === pass) {
+    const dbRow = await fetchAgeUserRow(lower);
+    if(dbRow && _sbIsRowVisible(dbRow)) {
+      const ph = dbRow.password_hash ?? dbRow.password ?? dbRow.pass;
+      if(ph != null && String(ph) !== '' && String(ph) !== pass) {
+        return { ok: false, msg: 'Usuário ou senha incorretos.' };
+      }
+      return { ok: true, row: dbRow };
+    }
+    return {
+      ok: true,
+      row: {
+        username: lower,
+        name: USERS[lower].name,
+        role: lower === 'gustavowng' || lower === 'vraulin' ? 'admin' : 'colaborador'
+      }
+    };
+  }
+  return { ok: false, msg: 'Usuário ou senha incorretos.' };
 }
 
 function _normalizeRole(r) {
@@ -2778,61 +3040,80 @@ function _roleDisplayLabel(roleNorm) {
   return roleNorm || '—';
 }
 
-/** Colaborador: só Meu Dia, Tarefas, Cronograma pessoal, Financeiro pessoal */
-const _COLAB_PAGES = new Set(['myday', 'mytasks', 'cronograma', 'myfinance']);
+/** Colaborador: Minhas Tarefas, Cronograma (atribuído), Financeiro pessoal, Perfil */
+const _COLAB_PAGES = new Set(['mytasks', 'cronograma', 'myfinance', 'profile']);
 
 function _refreshSidebarForRole() {
   const corp = document.getElementById('sidebarCorp');
   const eq = document.getElementById('sidebarEquipe');
-  const per = document.getElementById('sidebarPersonal');
-  document.querySelectorAll('.nav-colab-only').forEach(btn => {
-    btn.style.display = _userIsColaborador() ? '' : 'none';
-  });
+  const staff = document.getElementById('sidebarPersonalStaff');
+  const colab = document.getElementById('sidebarColaborador');
   if(_userIsColaborador()) {
     if(corp) corp.style.display = 'none';
     if(eq) eq.style.display = 'none';
-    if(per) per.style.display = 'block';
+    if(staff) staff.style.display = 'none';
+    if(colab) colab.style.display = 'block';
   } else {
     if(corp) corp.style.display = 'block';
     if(eq) eq.style.display = 'block';
-    if(per) per.style.display = 'block';
+    if(staff) staff.style.display = 'block';
+    if(colab) colab.style.display = 'none';
   }
 }
 
-async function applyLoginSessionAsync(u) {
-  const base = USERS[u];
-  currentUser = { username: u, name: base.name, role: 'colaborador' };
-  try {
-    const row = await fetchAgeUserRow(u);
-    _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
-    if(row) {
-      if(row.active === false || row.active === 'false') {
-        currentUser = null;
-        return { ok: false, msg: 'Usuário inativo. Contate o administrador.' };
-      }
-      const nr = _normalizeRole(row.role);
-      currentUser.role = nr || 'colaborador';
-      currentUser.name = row.name || currentUser.name;
-    } else {
-      currentUser.role = u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador';
-    }
-  } catch(e) {
-    console.warn('[login] age_users:', e);
-    currentUser.role = u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador';
+function _updateUserBadgeAvatar() {
+  const av = document.getElementById('userAvatar');
+  if(!av) return;
+  const url = currentUser?.avatar_url;
+  if(url && String(url).startsWith('data:image')) {
+    av.textContent = '';
+    av.style.backgroundImage = `url(${url})`;
+    av.style.backgroundSize = 'cover';
+    av.style.backgroundPosition = 'center';
+    av.style.color = 'transparent';
+  } else {
+    av.style.backgroundImage = '';
+    av.style.color = '#ffffff';
+    av.textContent = (currentUser?.name || '?')[0].toUpperCase();
   }
+}
+
+async function applyLoginSessionFromRow(row) {
+  if(!row || !row.username) {
+    currentUser = null;
+    return { ok: false, msg: 'Dados de usuário inválidos.' };
+  }
+  const u = String(row.username).toLowerCase();
+  if(row.active === false || row.active === 'false') {
+    currentUser = null;
+    return { ok: false, msg: 'Usuário inativo.' };
+  }
+  currentUser = {
+    id: row.id,
+    username: u,
+    name: row.name || row.full_name || u,
+    email: row.email || '',
+    role: _normalizeRole(row.role) || 'colaborador',
+    company_id: row.company_id ?? null,
+    company_name: row.company_name || '',
+    avatar_url: row.avatar_url || row.photo_url || '',
+    job_title: row.job_title || row.cargo || ''
+  };
+  try {
+    _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
+  } catch(e) {}
 
   const lp = document.getElementById('loginPage');
   const sh = document.getElementById('shell');
   if(lp) { lp.classList.add('hidden'); lp.style.display = 'none'; }
   if(sh) { sh.classList.add('visible'); sh.style.display = 'flex'; }
-  const av = document.getElementById('userAvatar');
   const nm = document.getElementById('userNameLabel');
   const rl = document.getElementById('userRoleLabel');
-  if(av) av.textContent = (currentUser.name || '?')[0].toUpperCase();
+  _updateUserBadgeAvatar();
   if(nm) nm.textContent = currentUser.name || u;
   if(rl) rl.textContent = _roleDisplayLabel(currentUser.role);
   _refreshSidebarForRole();
-  navigate(_userIsColaborador() ? 'myday' : 'dashboard');
+  navigate(_userIsColaborador() ? 'mytasks' : 'dashboard');
   startClock();
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
   return { ok: true };
@@ -2840,7 +3121,18 @@ async function applyLoginSessionAsync(u) {
 
 async function refreshAgeUsersCache() {
   try {
-    const all = await fetchAll('age_users', 500);
+    const cid = currentUser?.company_id;
+    if(cid) {
+      try {
+        const d = await apiGet('age_users', `?company_id=eq.${encodeURIComponent(cid)}&limit=800`);
+        const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+        if(rows.length) {
+          _ageUsersCache = rows;
+          return _ageUsersCache;
+        }
+      } catch(e) {}
+    }
+    const all = await fetchAll('age_users', 800);
     _ageUsersCache = all || [];
     return _ageUsersCache;
   } catch(e) {
@@ -2854,6 +3146,262 @@ function displayNameForUsername(un) {
   return (r && r.name) ? r.name : (un || '—');
 }
 
+function setLoginTab(tab) {
+  document.getElementById('tabLogin')?.classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister')?.classList.toggle('active', tab === 'register');
+  document.getElementById('panelLogin')?.classList.toggle('active', tab === 'login');
+  document.getElementById('panelRegister')?.classList.toggle('active', tab === 'register');
+}
+
+async function submitAdminRegister() {
+  const errEl = document.getElementById('loginErr');
+  const name = document.getElementById('regName')?.value?.trim() || '';
+  const company = document.getElementById('regCompany')?.value?.trim() || '';
+  const email = document.getElementById('regEmail')?.value?.trim().toLowerCase() || '';
+  const p1 = document.getElementById('regPass')?.value || '';
+  const p2 = document.getElementById('regPass2')?.value || '';
+  const segment = document.getElementById('regSegment')?.value || '';
+  const btn = document.getElementById('regBtn');
+  const icon = document.getElementById('regBtnIcon');
+  const txt = document.getElementById('regBtnText');
+
+  function show(m, ok) {
+    if(errEl) { errEl.style.color = ok ? '#16a34a' : '#cc4444'; errEl.textContent = m; }
+  }
+  if(!name || !company || !email || !segment) { show('Preencha todos os campos obrigatórios.', false); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('Email inválido.', false); return; }
+  if(p1.length < 6) { show('Senha mínimo 6 caracteres.', false); return; }
+  if(p1 !== p2) { show('Senhas não conferem.', false); return; }
+
+  if(btn) btn.disabled = true;
+  if(icon) icon.className = 'fas fa-spinner fa-spin';
+  if(txt) txt.textContent = 'CRIANDO...';
+
+  try {
+    const exists = await fetchAgeUserByEmail(email);
+    if(exists) { show('Este email já está cadastrado.', false); return; }
+
+    const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
+    const compPayload = {
+      name: company,
+      segment: segment || 'Outro',
+      plan: 'trial',
+      owner_username: username
+    };
+    const companyRow = await apiPost('age_companies', compPayload);
+    const companyId = companyRow?.id ?? companyRow?.[0]?.id;
+    if(!companyId) throw new Error('Empresa não retornou ID');
+
+    const userPayload = {
+      username,
+      email,
+      name,
+      role: 'admin',
+      company_id: companyId,
+      company_name: company,
+      password_hash: p1,
+      active: true,
+      deleted: false
+    };
+    await apiPost('age_users', userPayload);
+    const row = await fetchAgeUserRow(username);
+    await applyLoginSessionFromRow(row || { ...userPayload, id: null });
+    show('Conta criada!', true);
+  } catch(e) {
+    console.error('[signup]', e);
+    show(String(e?.message || e || 'Erro ao criar conta. Verifique o Supabase.'), false);
+  } finally {
+    if(btn) btn.disabled = false;
+    if(icon) icon.className = 'fas fa-rocket';
+    if(txt) txt.textContent = 'CRIAR EMPRESA E ENTRAR';
+  }
+}
+
+function openInviteColaboradorModal() {
+  if(!_userIsAdminLike()) {
+    toast('Apenas administradores ou gestores.', 'warn');
+    return;
+  }
+  if(!currentUser?.company_id) {
+    toast('Associe sua conta a uma empresa (cadastro admin) para convidar.', 'warn');
+    return;
+  }
+  document.getElementById('invColabEmail').value = '';
+  document.getElementById('invColabJob').value = '';
+  document.getElementById('invColabRole').value = 'colaborador';
+  openModal('modalInviteColab');
+}
+
+async function submitInviteColaborador() {
+  const email = document.getElementById('invColabEmail')?.value?.trim().toLowerCase() || '';
+  const job = document.getElementById('invColabJob')?.value?.trim() || '';
+  const role = document.getElementById('invColabRole')?.value || 'colaborador';
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    toast('Informe um email válido.', 'warn');
+    return;
+  }
+  const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : ('inv_' + Math.random().toString(36).slice(2) + Date.now());
+  const exp = new Date();
+  exp.setDate(exp.getDate() + 14);
+  const basePayload = {
+    token,
+    company_id: currentUser.company_id,
+    email,
+    role,
+    used: false,
+    expires_at: exp.toISOString()
+  };
+  try {
+    if(job) {
+      try {
+        await apiPost('age_invites', { ...basePayload, job_title: job });
+      } catch(e0) {
+        await apiPost('age_invites', basePayload);
+      }
+    } else {
+      await apiPost('age_invites', basePayload);
+    }
+  } catch(e2) {
+    console.error(e2);
+    toast('Erro ao salvar convite. Verifique a tabela age_invites.', 'err');
+    return;
+  }
+  const baseUrl = `${location.origin}${location.pathname}`;
+  _inviteLinkBuf = `${baseUrl}?invite=${encodeURIComponent(token)}`;
+  document.getElementById('inviteLinkText').textContent = _inviteLinkBuf;
+  closeModal('modalInviteColab');
+  openModal('modalInviteLinkReady');
+  toast('Link gerado!');
+}
+
+function copyInviteLink() {
+  const t = _inviteLinkBuf || document.getElementById('inviteLinkText')?.textContent;
+  if(!t) return;
+  navigator.clipboard.writeText(t).then(()=>toast('Link copiado!')).catch(()=>toast('Copie manualmente.', 'warn'));
+}
+
+async function loadInviteByToken(token) {
+  const errBox = document.getElementById('inviteFlowErr');
+  try {
+    const d = await apiGet('age_invites', `?token=eq.${encodeURIComponent(token)}&limit=5`);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    const inv = rows[0];
+    if(!inv) {
+      if(errBox) errBox.textContent = 'Convite não encontrado.';
+      return;
+    }
+    if(inv.used === true || inv.used === 'true') {
+      if(errBox) errBox.textContent = 'Este convite já foi utilizado.';
+      return;
+    }
+    if(inv.expires_at && new Date(inv.expires_at) < new Date()) {
+      if(errBox) errBox.textContent = 'Este convite expirou.';
+      return;
+    }
+    _pendingInviteToken = token;
+    _pendingInviteRow = inv;
+    document.getElementById('loginMainFlow').style.display = 'none';
+    document.getElementById('loginInviteFlow').style.display = 'block';
+    document.getElementById('invEmail').value = inv.email || '';
+    document.getElementById('invName').value = '';
+    document.getElementById('invPass').value = '';
+    document.getElementById('invPass2').value = '';
+    document.getElementById('invPhoto').value = '';
+    if(errBox) errBox.textContent = '';
+  } catch(e) {
+    if(errBox) errBox.textContent = 'Erro ao validar convite.';
+  }
+}
+
+function cancelInviteFlow() {
+  _pendingInviteRow = null;
+  _pendingInviteToken = null;
+  try { history.replaceState({}, '', location.pathname); } catch(e) {}
+  document.getElementById('loginInviteFlow').style.display = 'none';
+  document.getElementById('loginMainFlow').style.display = 'block';
+}
+
+async function submitInviteAccept() {
+  const errBox = document.getElementById('inviteFlowErr');
+  const inv = _pendingInviteRow;
+  const token = _pendingInviteToken;
+  if(!inv || !token) {
+    if(errBox) errBox.textContent = 'Sessão de convite inválida.';
+    return;
+  }
+  const name = document.getElementById('invName')?.value?.trim() || '';
+  const p1 = document.getElementById('invPass')?.value || '';
+  const p2 = document.getElementById('invPass2')?.value || '';
+  const fileEl = document.getElementById('invPhoto');
+
+  function show(m) { if(errBox) errBox.textContent = m; }
+
+  if(!name) { show('Informe seu nome.'); return; }
+  if(p1.length < 6) { show('Senha mínimo 6 caracteres.'); return; }
+  if(p1 !== p2) { show('Senhas não conferem.'); return; }
+
+  const btn = document.getElementById('inviteSubmitBtn');
+  if(btn) btn.disabled = true;
+
+  let avatarData = '';
+  if(fileEl?.files?.[0]) {
+    try {
+      avatarData = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result || '');
+        fr.onerror = rej;
+        fr.readAsDataURL(fileEl.files[0]);
+      });
+      if(avatarData.length > 400000) avatarData = '';
+    } catch(e) { avatarData = ''; }
+  }
+
+  try {
+    const email = String(inv.email || '').trim().toLowerCase();
+    const dup = await fetchAgeUserByEmail(email);
+    if(dup) { show('Já existe conta com este email.'); return; }
+
+    const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
+    const roleInv = _normalizeRole(inv.role) || 'colaborador';
+    const payload = {
+      username,
+      email,
+      name,
+      role: roleInv === 'gestor' ? 'gestor' : 'colaborador',
+      company_id: inv.company_id,
+      password_hash: p1,
+      active: true,
+      deleted: false
+    };
+    if(avatarData) payload.avatar_url = avatarData;
+
+    await apiPost('age_users', payload);
+    await apiPatch('age_invites', inv.id, { used: true, used_at: new Date().toISOString() }).catch(() =>
+      apiPatch('age_invites', inv.id, { used: true })
+    );
+
+    cancelInviteFlow();
+    const row = await fetchAgeUserRow(username);
+    await applyLoginSessionFromRow(row || payload);
+    toast('Bem-vindo!');
+  } catch(e) {
+    console.error('[inviteAccept]', e);
+    show(String(e?.message || 'Erro ao criar conta.'));
+  } finally {
+    if(btn) btn.disabled = false;
+  }
+}
+
+function initInviteFromUrl() {
+  try {
+    const p = new URLSearchParams(location.search);
+    const tok = p.get('invite');
+    if(tok) loadInviteByToken(tok);
+  } catch(e) {}
+}
+
 function doLogin() {
   const uEl  = document.getElementById('loginUser');
   const pEl  = document.getElementById('loginPass');
@@ -2862,17 +3410,17 @@ function doLogin() {
   const txt  = document.getElementById('loginBtnText');
   const err  = document.getElementById('loginErr');
 
-  const u = (uEl?.value || '').trim().toLowerCase();
+  const u = (uEl?.value || '').trim();
   const p = (pEl?.value || '');
 
   function showErr(msg) {
     if(btn)  { btn.disabled = false; }
     if(icon) { icon.className = 'fas fa-sign-in-alt'; }
     if(txt)  { txt.textContent = 'ENTRAR'; }
-    if(err)  { err.textContent = msg; setTimeout(()=>{ if(err) err.textContent=''; }, 4000); }
+    if(err)  { err.textContent = msg; setTimeout(()=>{ if(err) err.textContent=''; }, 5000); }
   }
 
-  if(!u || !p) { showErr('Preencha usuário e senha.'); return; }
+  if(!u || !p) { showErr('Preencha email/usuário e senha.'); return; }
 
   if(btn)  btn.disabled = true;
   if(icon) icon.className = 'fas fa-spinner fa-spin';
@@ -2880,18 +3428,16 @@ function doLogin() {
 
   setTimeout(async () => {
     try {
-      if(!USERS[u] || USERS[u].pass !== p) {
-        showErr('Usuário ou senha incorretos.');
+      const auth = await authenticateDatabase(u, p);
+      if(!auth.ok) {
+        showErr(auth.msg || 'Falha no login.');
         return;
       }
-      const res = await applyLoginSessionAsync(u);
-      if(!res.ok) {
-        showErr(res.msg || 'Acesso negado.');
-        return;
-      }
+      const res = await applyLoginSessionFromRow(auth.row);
+      if(!res.ok) showErr(res.msg || 'Acesso negado.');
     } catch(e) {
       console.error('[AGE] Erro no login:', e);
-      showErr('Erro interno. Recarregue a página e tente novamente.');
+      showErr('Erro ao conectar. Tente novamente.');
     } finally {
       if(btn)  btn.disabled = false;
       if(icon) icon.className = 'fas fa-sign-in-alt';
@@ -2901,17 +3447,14 @@ function doLogin() {
 }
 
 function emergencyReset() {
-  /* Limpa qualquer sessão salva e recarrega a página */
   try { localStorage.removeItem('age_ops_remember'); } catch(e){}
   try { sessionStorage.clear(); } catch(e){}
   const err = document.getElementById('loginErr');
   if(err) { err.style.color='#16a34a'; err.textContent = '✓ Cache limpo! Tente logar agora.'; }
-  /* Limpa os campos */
   const u = document.getElementById('loginUser');
   const p = document.getElementById('loginPass');
   if(u) u.value = '';
   if(p) p.value = '';
-  /* Restaura botão caso estivesse travado */
   const btn = document.getElementById('loginBtn');
   const icon = document.getElementById('loginBtnIcon');
   const txt  = document.getElementById('loginBtnText');
@@ -2922,6 +3465,8 @@ function emergencyReset() {
 
 function doLogout() {
   currentUser = null;
+  _pendingInviteRow = null;
+  _pendingInviteToken = null;
   const lp = document.getElementById('loginPage');
   const sh = document.getElementById('shell');
   if(sh) { sh.classList.remove('visible'); sh.style.display = 'none'; }
@@ -2930,11 +3475,15 @@ function doLogout() {
   const lps = document.getElementById('loginPass');
   if(lu) lu.value = '';
   if(lps) lps.value = '';
+  try {
+    document.getElementById('loginInviteFlow').style.display = 'none';
+    document.getElementById('loginMainFlow').style.display = 'block';
+  } catch(e) {}
 }
 
 document.getElementById('loginForm')?.addEventListener('submit', function(e){ e.preventDefault(); doLogin(); });
-document.getElementById('loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } });
-document.getElementById('loginUser').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } });
+document.getElementById('loginPass')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } });
+document.getElementById('loginUser')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } });
 
 /* Limpar qualquer lembrar-me salvo anteriormente */
 try { localStorage.removeItem('age_ops_remember'); } catch(e){}
@@ -2962,6 +3511,7 @@ const PAGE_TITLES = {
   pagamentos:'PAGAMENTOS',
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA',
   myday:'MEU DIA', mytasks:'TAREFAS', myfinance:'FINANCEIRO',
+  profile:'MEU PERFIL',
   relatorios:'RELATÓRIOS DE PROJETOS',
   pipeline:'PIPELINE COMERCIAL',
   nps:'NPS — AVALIAÇÃO DE CLIENTES'
@@ -2970,14 +3520,18 @@ const PAGE_TITLES = {
 function navigate(page) {
   if(typeof page !== 'string') page = 'dashboard';
   if(_userIsColaborador() && !_COLAB_PAGES.has(page)) {
-    toast('Esta área é restrita a gestores. Redirecionando para Meu Dia.', 'warn');
-    page = 'myday';
+    toast('Área restrita a gestão. Redirecionando…', 'warn');
+    page = 'mytasks';
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById(`page-${page}`);
   if(pg) pg.classList.add('active');
-  const nav = document.querySelector(`[data-page="${page}"]`);
+  let nav = null;
+  if(_userIsColaborador()) {
+    nav = document.getElementById('sidebarColaborador')?.querySelector(`[data-page="${page}"]`);
+  }
+  if(!nav) nav = document.querySelector(`#sidebar .nav-item[data-page="${page}"]`);
   if(nav) nav.classList.add('active');
   const ttl = document.getElementById('topbarTitle');
   if(ttl) ttl.textContent = PAGE_TITLES[page] || page.toUpperCase();
@@ -2996,6 +3550,7 @@ function navigate(page) {
   if(page==='myday')        loadMyDay();
   if(page==='mytasks')      loadTasks();
   if(page==='myfinance')    loadFinance();
+  if(page==='profile')     loadProfile();
   if(page==='relatorios')   loadRelatorios();
   if(page==='pipeline')     loadPipeline();
   if(page==='nps')          loadNps();
@@ -9482,8 +10037,10 @@ async function populateSchedAssignSelect() {
   const sel = document.getElementById('seAssignTo');
   if(!sel) return;
   if(!_ageUsersCache.length) await refreshAgeUsersCache();
+  const cid = currentUser?.company_id;
   const cols = _ageUsersCache.filter(u =>
-    _normalizeRole(u.role) === 'colaborador' && u.active !== false && u.active !== 'false'
+    _normalizeRole(u.role) === 'colaborador' && u.active !== false && u.active !== 'false' &&
+    (!cid || !u.company_id || String(u.company_id) === String(cid))
   );
   sel.innerHTML = '<option value="">— Ninguém (sem tarefa atribuída) —</option>' +
     cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('');
@@ -9515,8 +10072,27 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
 
 async function loadCronograma() {
   try {
-    _schedEvents = await fetchAll('age_team_calendar',500);
+    let evts = await fetchAll('age_team_calendar',500);
+    if(_userIsColaborador()) {
+      const uid = encodeURIComponent(currentUser.username);
+      const asg = await apiGet('age_assigned_tasks', `?assigned_to=eq.${uid}&limit=600`);
+      const rows = (Array.isArray(asg?.data) ? asg.data : []).filter(_sbIsRowVisible);
+      const allowed = new Set();
+      rows.forEach(r => {
+        if(r.calendar_event_id) allowed.add(String(r.calendar_event_id));
+      });
+      evts = evts.filter(e => allowed.has(String(e.id)));
+    }
+    _schedEvents = evts;
   } catch(e){ _schedEvents=[]; }
+  const titleEl = document.querySelector('#page-cronograma .page-title');
+  if(titleEl) {
+    titleEl.innerHTML = _userIsColaborador()
+      ? '<i class="fas fa-calendar-alt"></i> MEU CRONOGRAMA'
+      : '<i class="fas fa-calendar-alt"></i> CRONOGRAMA DA EMPRESA';
+  }
+  const actions = document.querySelector('#page-cronograma .page-actions');
+  if(actions) actions.style.display = _userIsColaborador() ? 'none' : '';
   renderSched();
 }
 
@@ -9526,6 +10102,7 @@ function renderSched() {
   if(!el) return;
   const days=getWeekDates(_schedWeekOffset);
   const today=new Date().toISOString().slice(0,10);
+  const colab = _userIsColaborador();
   if(lbl) lbl.textContent=`${days[0].toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} — ${days[6].toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})}`;
 
   el.innerHTML=days.map(d=>{
@@ -9533,6 +10110,7 @@ function renderSched() {
     const isToday=ds===today;
     const dayEvents=_schedEvents.filter(e=>(e.event_date||e.date||'').slice(0,10)===ds);
     const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const addBtn = colab ? '' : `<button onclick="openSchedEventModal('${ds}')" style="width:100%;margin-top:4px;padding:3px;font-size:8px;font-family:var(--font-m);color:var(--textsub);background:transparent;border:1px dashed var(--bd);border-radius:3px;cursor:pointer" onmouseover="this.style.borderColor='var(--bdm)'" onmouseout="this.style.borderColor='var(--bd)'">+</button>`;
     return `<div class="sched-day${isToday?' today':''}">
       <div class="sched-day-header" style="${isToday?'color:rgba(255,255,255,.9);font-weight:600':''}">
         ${DOW[d.getDay()]} <span style="font-family:var(--font-h);font-size:10px">${d.getDate()}</span>
@@ -9542,7 +10120,8 @@ function renderSched() {
           ${escHtml(ev.title||'')}
           ${ev.owner?`<div style="font-size:7px;opacity:.7;margin-top:1px">${escHtml(ev.owner)}</div>`:''}
         </div>`).join('')}
-      <button onclick="openSchedEventModal('${ds}')" style="width:100%;margin-top:4px;padding:3px;font-size:8px;font-family:var(--font-m);color:var(--textsub);background:transparent;border:1px dashed var(--bd);border-radius:3px;cursor:pointer" onmouseover="this.style.borderColor='var(--bdm)'" onmouseout="this.style.borderColor='var(--bd)'">+</button>
+      ${colab && !dayEvents.length ? `<div style="font-size:8px;color:var(--textsub);padding:6px 2px;font-family:var(--font-m)">Sem eventos atribuídos</div>` : ''}
+      ${addBtn}
     </div>`;
   }).join('');
 }
@@ -9584,6 +10163,10 @@ async function viewSchedEvent(id) {
 }
 
 async function saveSchedEvent() {
+  if(_userIsColaborador()) {
+    toast('Apenas gestores editam o cronograma corporativo.', 'warn');
+    return;
+  }
   const id=document.getElementById('seId').value;
   const payload={
     title:      document.getElementById('seTitle').value.trim(),
@@ -9895,6 +10478,94 @@ async function deleteFinance(id) {
 }
 
 /* ═══════════════════════════════════════════
+   MEU PERFIL
+═══════════════════════════════════════════ */
+let _profPhotoPending = '';
+
+async function loadProfile() {
+  const hint = document.getElementById('profSaveHint');
+  if(hint) hint.textContent = '';
+  _profPhotoPending = '';
+  let row = null;
+  if(currentUser?.id) row = await apiGet('age_users', `/${currentUser.id}`).catch(()=>null);
+  if(!row && currentUser?.username) row = await fetchAgeUserRow(currentUser.username);
+  const src = row || currentUser;
+  if(!src) return;
+  document.getElementById('profName').value = src.name || '';
+  document.getElementById('profUsername').value = src.username || currentUser.username || '';
+  document.getElementById('profEmail').value = src.email || '';
+  document.getElementById('profJob').value = src.job_title || src.cargo || currentUser.job_title || '';
+  document.getElementById('profCompany').value = src.company_name || currentUser.company_name || '—';
+  document.getElementById('profNewPass').value = '';
+  const big = document.getElementById('profAvatarBig');
+  const avUrl = src.avatar_url || currentUser.avatar_url;
+  if(big) {
+    if(avUrl && String(avUrl).startsWith('data:image')) {
+      big.style.backgroundImage = `url(${avUrl})`;
+      big.style.backgroundSize = 'cover';
+      big.textContent = '';
+    } else {
+      big.style.backgroundImage = '';
+      big.textContent = (src.name || '?')[0].toUpperCase();
+    }
+  }
+}
+
+function onProfilePhotoPick(ev) {
+  const f = ev.target?.files?.[0];
+  if(!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    _profPhotoPending = fr.result || '';
+    const big = document.getElementById('profAvatarBig');
+    if(big && _profPhotoPending.startsWith('data:image')) {
+      big.style.backgroundImage = `url(${_profPhotoPending})`;
+      big.style.backgroundSize = 'cover';
+      big.textContent = '';
+    }
+  };
+  fr.readAsDataURL(f);
+}
+
+async function saveProfile() {
+  if(!currentUser?.id) {
+    toast('Perfil local — salve após vincular ao Supabase.', 'warn');
+    return;
+  }
+  const name = document.getElementById('profName')?.value?.trim() || '';
+  const email = document.getElementById('profEmail')?.value?.trim() || '';
+  const job = document.getElementById('profJob')?.value?.trim() || '';
+  const np = document.getElementById('profNewPass')?.value || '';
+  const payload = { name, email, job_title: job };
+  if(np.length && np.length < 6) {
+    toast('Nova senha deve ter ao menos 6 caracteres.', 'warn');
+    return;
+  }
+  if(np.length) payload.password_hash = np;
+  if(_profPhotoPending && _profPhotoPending.length < 450000) payload.avatar_url = _profPhotoPending;
+
+  try {
+    await apiPatch('age_users', currentUser.id, payload);
+    currentUser.name = name;
+    currentUser.email = email;
+    currentUser.job_title = job;
+    if(payload.avatar_url) currentUser.avatar_url = payload.avatar_url;
+    _updateUserBadgeAvatar();
+    document.getElementById('userNameLabel').textContent = name;
+    document.getElementById('profNewPass').value = '';
+    _profPhotoPending = '';
+    document.getElementById('profPhotoFile').value = '';
+    const h = document.getElementById('profSaveHint');
+    if(h) h.textContent = 'Alterações salvas.';
+    toast('Perfil atualizado.');
+    await refreshAgeUsersCache();
+  } catch(e) {
+    console.error(e);
+    toast('Erro ao salvar perfil.', 'err');
+  }
+}
+
+/* ═══════════════════════════════════════════
    PAGAMENTOS CORPORATIVOS (age_payments)
 ═══════════════════════════════════════════ */
 let _pagamentosRows = [];
@@ -9994,8 +10665,10 @@ async function openPagamentoModal(editId) {
 
   if(!_ageUsersCache.length) await refreshAgeUsersCache();
   const colSel = document.getElementById('payColab');
+  const cid = currentUser?.company_id;
   const cols = _ageUsersCache.filter(u =>
-    _normalizeRole(u.role) === 'colaborador' && _sbIsRowVisible(u)
+    _normalizeRole(u.role) === 'colaborador' && _sbIsRowVisible(u) &&
+    (!cid || !u.company_id || String(u.company_id) === String(cid))
   );
   colSel.innerHTML = cols.length
     ? cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('')
@@ -11379,7 +12052,7 @@ function _ageInit() {
   document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
   });
-
+  initInviteFromUrl();
 }
 
 if(document.readyState === 'loading') {
