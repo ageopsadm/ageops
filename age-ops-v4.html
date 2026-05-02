@@ -991,7 +991,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
           <p style="font-family:var(--font-m);font-size:11px;color:var(--textsub);line-height:1.6;margin-bottom:20px">
             Você não tem acesso a este módulo.<br>Solicite permissão ao administrador.
           </p>
-          <button type="button" class="btn btn-primary btn-sm" onclick="navigate(_defaultHomePage())">Voltar ao início</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="navigate(_defaultLandingPage())">Voltar ao início</button>
         </div>
       </div>
 
@@ -1957,39 +1957,83 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
         <div class="page-header">
           <div class="page-title"><i class="fas fa-user-circle"></i> MEU PERFIL</div>
           <div class="page-actions">
-            <button class="btn btn-primary btn-sm" onclick="saveProfile()"><i class="fas fa-save"></i> Salvar</button>
+            <button class="btn btn-primary btn-sm" onclick="saveProfile()"><i class="fas fa-save"></i> Salvar alterações</button>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:160px 1fr;gap:24px;max-width:720px;align-items:start" class="responsive-2col">
+
+        <div id="profCompanyAdminPanel" style="display:none;max-width:920px;margin-bottom:20px;padding:18px 20px;border:1px solid var(--bd);border-radius:10px;background:var(--bg2)">
+          <div style="font-family:var(--font-h);font-size:13px;font-weight:800;margin-bottom:14px;color:var(--text)"><i class="fas fa-building" style="opacity:.85"></i> MINHA EMPRESA</div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px 16px">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Nome da empresa</label>
+              <input id="profCoName" type="text" placeholder="Nome fantasia ou razão social" style="width:100%">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Segmento</label>
+              <select id="profCoSegment" style="width:100%;height:36px;border:1px solid var(--bd);border-radius:6px;padding:0 10px;font-family:var(--font-m);font-size:11px;background:var(--bg);color:var(--text)">
+                <option value="Produtora de Vídeo">Produtora de Vídeo</option>
+                <option value="Agência de Conteúdo">Agência de Conteúdo</option>
+                <option value="Fotografia">Fotografia</option>
+                <option value="Eventos">Eventos</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email comercial</label>
+              <input id="profCoEmail" type="email" placeholder="contato@empresa.com" style="width:100%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefone</label>
+              <input id="profCoPhone" type="text" placeholder="(00) 00000-0000" style="width:100%">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Site <span style="opacity:.6">(opcional)</span></label>
+              <input id="profCoSite" type="url" placeholder="https://" style="width:100%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Plano atual</label>
+              <input id="profCoPlan" type="text" readonly style="width:100%;opacity:.8">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Expiração do trial</label>
+              <input id="profCoTrial" type="text" readonly style="width:100%;opacity:.8">
+            </div>
+          </div>
+        </div>
+
+        <p id="profCompanyColabStrip" style="display:none;max-width:920px;font-family:var(--font-m);font-size:11px;color:var(--textsub);margin:0 0 16px;padding:12px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--bg2)">
+          <i class="fas fa-building" style="opacity:.5"></i> Empresa: <strong id="profCompanyColabName">—</strong>
+        </p>
+
+        <div style="display:grid;grid-template-columns:160px 1fr;gap:24px;max-width:920px;align-items:start" class="responsive-2col">
           <div style="text-align:center">
             <div id="profAvatarBig" style="width:120px;height:120px;border-radius:12px;background:#111;color:#fff;font-family:var(--font-h);font-size:42px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:1px solid var(--bd)">?</div>
-            <label class="login-label" style="display:block;margin-bottom:6px">FOTO</label>
+            <label class="login-label" style="display:block;margin-bottom:6px">FOTO DE PERFIL</label>
             <input type="file" id="profPhotoFile" accept="image/*" style="font-size:10px;width:100%" onchange="onProfilePhotoPick(event)">
           </div>
-          <div class="form-grid" style="grid-template-columns:1fr 1fr">
-            <div class="form-group" style="grid-column:1/-1">
-              <label class="form-label">Nome</label>
-              <input id="profName" type="text" style="width:100%">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Usuário</label>
-              <input id="profUsername" type="text" readonly style="width:100%;opacity:.75">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input id="profEmail" type="email" style="width:100%">
-            </div>
-            <div class="form-group" style="grid-column:1/-1">
-              <label class="form-label">Cargo / função</label>
-              <input id="profJob" type="text" placeholder="Ex.: Editor" style="width:100%">
-            </div>
-            <div class="form-group" style="grid-column:1/-1">
-              <label class="form-label">Empresa</label>
-              <input id="profCompany" type="text" readonly style="width:100%;opacity:.75">
-            </div>
-            <div class="form-group" style="grid-column:1/-1">
-              <label class="form-label">Nova senha (opcional)</label>
-              <input id="profNewPass" type="password" placeholder="Deixe em branco para não alterar" style="width:100%" autocomplete="new-password">
+          <div>
+            <div style="font-family:var(--font-h);font-size:13px;font-weight:800;margin-bottom:14px;color:var(--text)"><i class="fas fa-id-card" style="opacity:.85"></i> MEU PERFIL</div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr">
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Nome completo</label>
+                <input id="profName" type="text" style="width:100%">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input id="profUsername" type="text" readonly style="width:100%;opacity:.75">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input id="profEmail" type="email" style="width:100%">
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Cargo / função</label>
+                <input id="profJob" type="text" placeholder="Ex.: Editor" style="width:100%">
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Nova senha <span style="opacity:.6">(opcional)</span></label>
+                <input id="profNewPass" type="password" placeholder="Deixe em branco para não alterar" style="width:100%" autocomplete="new-password">
+              </div>
             </div>
           </div>
         </div>
@@ -3486,6 +3530,81 @@ function _updateUserBadgeAvatar() {
   }
 }
 
+async function mergeCurrentUserFromSupabase() {
+  const un = String(currentUser?.username || '').trim().toLowerCase();
+  if(!un) return;
+  try {
+    const fresh = await fetchAgeUserRow(un);
+    if(!fresh) return;
+    currentUser.id = fresh.id;
+    currentUser.email = fresh.email ?? currentUser.email;
+    currentUser.company_id = fresh.company_id ?? currentUser.company_id;
+    currentUser.company_name = fresh.company_name ?? currentUser.company_name;
+    currentUser.name = fresh.name ?? fresh.full_name ?? currentUser.name;
+    currentUser.role = _normalizeRole(fresh.role) || currentUser.role;
+    currentUser.avatar_url = fresh.avatar_url ?? fresh.photo_url ?? currentUser.avatar_url;
+    currentUser.job_title = fresh.job_title ?? fresh.cargo ?? currentUser.job_title;
+  } catch(e) {
+    console.warn('[mergeCurrentUserFromSupabase]', e);
+  }
+}
+
+async function ensureDefaultCompanyForPrivilegedUser() {
+  if(!currentUser) return;
+  if(currentUser.company_id) return;
+  if(!(_userPermFullBypass() || _userGestorUnrestricted())) return;
+  if(!currentUser.id) return;
+  try {
+    const compPayload = {
+      name: 'Minha Empresa',
+      segment: 'Outro',
+      plan: 'trial',
+      owner_username: currentUser.username
+    };
+    const companyRow = await apiPost('age_companies', compPayload);
+    const companyId = companyRow?.id ?? companyRow?.[0]?.id;
+    if(!companyId) throw new Error('Empresa não retornou ID');
+    const nm = 'Minha Empresa';
+    await apiPatch('age_users', currentUser.id, {
+      company_id: companyId,
+      company_name: nm
+    });
+    currentUser.company_id = companyId;
+    currentUser.company_name = nm;
+    await hydrateUserPermissions();
+    await refreshAgeUsersCache();
+  } catch(e) {
+    console.error('[ensureDefaultCompanyForPrivilegedUser]', e);
+    try { toast('Não foi possível criar a empresa automaticamente no banco.', 'warn'); } catch(_) {}
+  }
+}
+
+async function persistBootstrapAccountIfNeeded(row, plainPassword) {
+  if(!row || !row.username) return row;
+  if(row.id) return row;
+  const u = String(row.username).toLowerCase();
+  if(!USERS[u]) return row;
+  try {
+    let ex = await fetchAgeUserRow(u);
+    if(ex) return ex;
+    const payload = {
+      username: u,
+      email: row.email || `${u}@bootstrap.ageops.local`,
+      name: row.name || USERS[u].name,
+      role: u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador',
+      password_hash: plainPassword,
+      active: true,
+      deleted: false
+    };
+    await apiPost('age_users', payload);
+    ex = await fetchAgeUserRow(u);
+    return ex || row;
+  } catch(e) {
+    console.warn('[persistBootstrapAccountIfNeeded]', e);
+    return row;
+  }
+}
+
 async function applyLoginSessionFromRow(row) {
   if(!row || !row.username) {
     currentUser = null;
@@ -3508,6 +3627,8 @@ async function applyLoginSessionFromRow(row) {
     job_title: row.job_title || row.cargo || '',
     permissions: {}
   };
+  await mergeCurrentUserFromSupabase();
+  await ensureDefaultCompanyForPrivilegedUser();
   try {
     _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
     await hydrateUserPermissions();
@@ -3843,7 +3964,9 @@ function doLogin() {
         showErr(auth.msg || 'Falha no login.');
         return;
       }
-      const res = await applyLoginSessionFromRow(auth.row);
+      let sessionRow = auth.row;
+      sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, p);
+      const res = await applyLoginSessionFromRow(sessionRow);
       if(!res.ok) showErr(res.msg || 'Acesso negado.');
     } catch(e) {
       console.error('[AGE] Erro no login:', e);
@@ -10907,12 +11030,70 @@ async function loadProfile() {
   if(!row && currentUser?.username) row = await fetchAgeUserRow(currentUser.username);
   const src = row || currentUser;
   if(!src) return;
+
   document.getElementById('profName').value = src.name || '';
   document.getElementById('profUsername').value = src.username || currentUser.username || '';
   document.getElementById('profEmail').value = src.email || '';
   document.getElementById('profJob').value = src.job_title || src.cargo || currentUser.job_title || '';
-  document.getElementById('profCompany').value = src.company_name || currentUser.company_name || '—';
   document.getElementById('profNewPass').value = '';
+
+  const admPanel = document.getElementById('profCompanyAdminPanel');
+  const colStrip = document.getElementById('profCompanyColabStrip');
+  const adminLike = _userIsAdminLike();
+  const cid = currentUser?.company_id;
+  const canEditCo = adminLike && !!cid;
+
+  if(admPanel) admPanel.style.display = canEditCo ? '' : 'none';
+  if(colStrip) {
+    colStrip.style.display = (!adminLike && (currentUser?.company_name || src.company_name)) ? '' : 'none';
+    const nmEl = document.getElementById('profCompanyColabName');
+    if(nmEl) nmEl.textContent = currentUser.company_name || src.company_name || '—';
+  }
+
+  if(canEditCo) {
+    let co = null;
+    try {
+      co = await apiGet('age_companies', `/${cid}`).catch(()=>null);
+    } catch(e) { co = null; }
+    const nmEl = document.getElementById('profCoName');
+    const segEl = document.getElementById('profCoSegment');
+    if(co) {
+      if(nmEl) nmEl.value = co.name || '';
+      if(segEl) {
+        const seg = co.segment || 'Outro';
+        const opts = [...segEl.options].map(o => o.value);
+        segEl.value = opts.includes(seg) ? seg : 'Outro';
+      }
+      const mail = co.commercial_email ?? co.contact_email ?? co.email ?? '';
+      const phone = co.phone ?? co.telefone ?? '';
+      const site = co.website ?? co.site ?? '';
+      const pe = document.getElementById('profCoEmail');
+      const pp = document.getElementById('profCoPhone');
+      const ps = document.getElementById('profCoSite');
+      if(pe) pe.value = mail;
+      if(pp) pp.value = phone;
+      if(ps) ps.value = site;
+      const planRaw = (co.plan || 'trial').toString().toLowerCase();
+      const planDisp = planRaw === 'trial' ? 'Trial'
+        : planRaw === 'solo' ? 'Solo'
+        : planRaw === 'produtora' ? 'Produtora'
+        : planRaw === 'agência' || planRaw === 'agencia' ? 'Agência'
+        : planRaw.charAt(0).toUpperCase() + planRaw.slice(1);
+      const plEl = document.getElementById('profCoPlan');
+      const trEl = document.getElementById('profCoTrial');
+      if(plEl) plEl.value = planDisp;
+      const te = co.trial_expires_at || co.trial_ends_at || co.trial_end;
+      if(trEl) {
+        if(te && typeof fmtDate === 'function') trEl.value = fmtDate(te);
+        else if(planRaw === 'trial') trEl.value = 'Em avaliação';
+        else trEl.value = '—';
+      }
+    } else {
+      if(nmEl) nmEl.value = currentUser.company_name || '';
+      if(segEl) segEl.value = 'Outro';
+    }
+  }
+
   const big = document.getElementById('profAvatarBig');
   const avUrl = src.avatar_url || currentUser.avatar_url;
   if(big) {
@@ -10945,7 +11126,7 @@ function onProfilePhotoPick(ev) {
 
 async function saveProfile() {
   if(!currentUser?.id) {
-    toast('Perfil local — salve após vincular ao Supabase.', 'warn');
+    toast('Faça logout e login novamente para sincronizar sua conta com o banco.', 'warn');
     return;
   }
   const name = document.getElementById('profName')?.value?.trim() || '';
@@ -10966,6 +11147,37 @@ async function saveProfile() {
     currentUser.email = email;
     currentUser.job_title = job;
     if(payload.avatar_url) currentUser.avatar_url = payload.avatar_url;
+
+    if(_userIsAdminLike() && currentUser.company_id) {
+      const coName = document.getElementById('profCoName')?.value?.trim() || '';
+      const coSeg = document.getElementById('profCoSegment')?.value || 'Outro';
+      const coEm = document.getElementById('profCoEmail')?.value?.trim() || '';
+      const coPh = document.getElementById('profCoPhone')?.value?.trim() || '';
+      const coSt = document.getElementById('profCoSite')?.value?.trim() || '';
+      const basePatch = {
+        name: coName || currentUser.company_name || 'Minha Empresa',
+        segment: coSeg
+      };
+      let extPatch = { ...basePatch };
+      if(coEm) extPatch.commercial_email = coEm;
+      if(coPh) extPatch.phone = coPh;
+      if(coSt) extPatch.website = coSt;
+      try {
+        await apiPatch('age_companies', currentUser.company_id, extPatch);
+      } catch(e1) {
+        try {
+          extPatch = { ...basePatch };
+          if(coEm) extPatch.email = coEm;
+          if(coPh) extPatch.telefone = coPh;
+          if(coSt) extPatch.site = coSt;
+          await apiPatch('age_companies', currentUser.company_id, extPatch);
+        } catch(e2) {
+          await apiPatch('age_companies', currentUser.company_id, basePatch);
+        }
+      }
+      currentUser.company_name = basePatch.name;
+    }
+
     _updateUserBadgeAvatar();
     document.getElementById('userNameLabel').textContent = name;
     document.getElementById('profNewPass').value = '';
