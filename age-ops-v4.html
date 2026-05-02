@@ -778,6 +778,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
     </div>
 
     <nav>
+      <div id="sidebarCorp">
       <div class="nav-group-label">CORPORATIVO</div>
       <button class="nav-item" data-page="dashboard" onclick="navigate('dashboard')">
         <i class="fas fa-chart-line"></i><span>DASHBOARD</span>
@@ -813,7 +814,12 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <button class="nav-item" data-page="nps" onclick="navigate('nps')">
         <i class="fas fa-star"></i><span>NPS</span>
       </button>
+      <button class="nav-item" data-page="pagamentos" onclick="navigate('pagamentos')">
+        <i class="fas fa-money-check-alt"></i><span>PAGAMENTOS</span>
+      </button>
+      </div>
 
+      <div id="sidebarEquipe">
       <div class="nav-group-label">EQUIPE</div>
       <button class="nav-item" data-page="colaboradores" onclick="navigate('colaboradores')">
         <i class="fas fa-user-friends"></i><span>COLABORADORES</span>
@@ -821,8 +827,13 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <button class="nav-item" data-page="cronograma" onclick="navigate('cronograma')">
         <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
       </button>
+      </div>
 
+      <div id="sidebarPersonal">
       <div class="nav-group-label">PESSOAL</div>
+      <button type="button" class="nav-item nav-colab-only" style="display:none" data-page="cronograma" onclick="navigate('cronograma')">
+        <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
+      </button>
       <button class="nav-item" data-page="myday" onclick="navigate('myday')">
         <i class="fas fa-crosshairs"></i><span>MEU DIA</span>
       </button>
@@ -832,6 +843,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <button class="nav-item" data-page="myfinance" onclick="navigate('myfinance')">
         <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
       </button>
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -1786,6 +1798,41 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
           <div class="kpi-card"><div class="kpi-label">SALDO</div><div class="kpi-val" id="finBal">—</div></div>
         </div>
         <div id="finList"></div>
+        <div class="panel" style="margin-top:18px;padding:14px 16px">
+          <div class="page-title" style="font-size:12px;margin-bottom:10px"><i class="fas fa-money-bill-wave" style="color:#16a34a"></i> MEUS PAGAMENTOS (EMPRESA)</div>
+          <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 10px">Valores e status informados pelo financeiro / gestão.</p>
+          <div id="finMyPayments"></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGAMENTOS CORPORATIVO
+      ══════════════════════════════════ -->
+      <div id="page-pagamentos" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-money-check-alt"></i> PAGAMENTOS</div>
+          <div class="page-actions">
+            <button class="btn btn-primary btn-sm" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button>
+            <button class="btn btn-ghost btn-sm" onclick="loadPagamentosPage()"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="kpi-grid" style="margin-bottom:16px">
+          <div class="kpi-card" style="border-left:3px solid #f59e0b">
+            <div class="kpi-label">TOTAL PENDENTE</div>
+            <div class="kpi-val" style="color:#f59e0b" id="payKpiPendente">—</div>
+          </div>
+          <div class="kpi-card" style="border-left:3px solid #16a34a">
+            <div class="kpi-label">PAGO NO MÊS</div>
+            <div class="kpi-val green" id="payKpiMes">—</div>
+          </div>
+          <div class="kpi-card" style="border-left:3px solid #dc2626">
+            <div class="kpi-label">ATRASADOS</div>
+            <div class="kpi-val" style="color:#dc2626" id="payKpiAtraso">—</div>
+          </div>
+        </div>
+        <div id="pagamentosList" style="display:flex;flex-direction:column;gap:8px">
+          <div style="text-align:center;padding:40px;color:#bbb;font-family:var(--font-m);font-size:11px">Carregando…</div>
+        </div>
       </div>
 
       <!-- ══════════════════════════════════
@@ -2329,9 +2376,60 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <div class="form-group"><label class="form-label">RESPONSÁVEL</label><input id="seOwner" type="text" placeholder="Nome ou todos"></div>
     </div>
     <div class="form-group" style="margin-top:10px"><label class="form-label">NOTAS</label><textarea id="seNotes" rows="2" style="width:100%"></textarea></div>
+    <div class="form-group" style="margin-top:4px">
+      <label class="form-label">Atribuir para</label>
+      <select id="seAssignTo" style="width:100%;padding:8px;border-radius:5px;border:1px solid var(--bd);font-family:var(--font-m);font-size:11px">
+        <option value="">— Ninguém (sem tarefa atribuída) —</option>
+      </select>
+      <div style="font-size:8px;color:var(--textsub);margin-top:4px">Cria uma tarefa em <b>age_assigned_tasks</b> para o colaborador (aparece em Minhas Tarefas).</div>
+    </div>
     <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('modalSchedEvent')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSchedEvent()"><i class="fas fa-save"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pagamento corporativo -->
+<div class="modal" id="modalPagamento">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">
+      <span id="modalPagTitle">NOVO PAGAMENTO</span>
+      <button onclick="closeModal('modalPagamento')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="payEditId" value="">
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Colaborador *</label>
+        <select id="payColab" style="width:100%"></select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Projeto *</label>
+        <select id="payProject" style="width:100%"></select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Descrição</label>
+        <input id="payDesc" type="text" placeholder="Ex.: honorários diária">
+      </div>
+      <div class="form-group"><label class="form-label">Valor (R$) *</label><input id="payAmount" type="number" step="0.01" min="0"></div>
+      <div class="form-group"><label class="form-label">Vencimento *</label><input id="payDue" type="date"></div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Método</label>
+        <select id="payMethod" style="width:100%">
+          <option value="PIX">PIX</option>
+          <option value="TED">TED</option>
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Notas</label>
+        <textarea id="payNotes" rows="2" style="width:100%"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalPagamento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePagamento()"><i class="fas fa-save"></i> Salvar</button>
     </div>
   </div>
 </div>
@@ -2633,31 +2731,127 @@ async function purgeProjectsNotInSheet() {
 /* ═══════════════════════════════════════════
    AUTH
 ═══════════════════════════════════════════ */
+/* Senhas locais (MVP). Perfil e role vêm de age_users no Supabase quando disponível. */
 const USERS = {
-  gustavowng:   { pass:'15Darth@123',  role:'Admin',  name:'Gustavo' },
-  pedrobarreto: { pass:'ownage2026',   role:'Equipe', name:'Pedro'   },
-  paulomunir:   { pass:'ownage2026',   role:'Equipe', name:'Paulo'   },
+  gustavowng:   { pass:'15Darth@123', name:'Gustavo' },
+  vraulin:      { pass:'ownage2026', name:'Admin' },
+  paulin:       { pass:'ownage2026', name:'Paulin' },
+  ken:          { pass:'ownage2026', name:'Ken' },
+  vic:          { pass:'ownage2026', name:'Vic' },
+  pedrobarreto:{ pass:'ownage2026', name:'Pedro' },
+  paulomunir:   { pass:'ownage2026', name:'Paulo' },
 };
 let currentUser = null;
+let _ageUsersCache = [];
 
+async function fetchAgeUserRow(username) {
+  try {
+    const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(username)}&limit=1`);
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    return rows[0] || null;
+  } catch(e) {
+    console.warn('[fetchAgeUserRow]', e);
+    return null;
+  }
+}
 
-function _applyLoginSession(u) {
-  currentUser = { username: u, ...USERS[u] };
-  /* Esconder login e mostrar shell com classes + style para máxima compatibilidade */
+function _normalizeRole(r) {
+  const x = String(r || '').trim().toLowerCase();
+  if(['admin','gestor','colaborador'].includes(x)) return x;
+  return '';
+}
+
+function _userIsColaborador() {
+  return _normalizeRole(currentUser?.role) === 'colaborador';
+}
+
+function _userIsAdminLike() {
+  const r = _normalizeRole(currentUser?.role);
+  return r === 'admin' || r === 'gestor';
+}
+
+function _roleDisplayLabel(roleNorm) {
+  const r = _normalizeRole(roleNorm);
+  if(r === 'admin') return 'Admin';
+  if(r === 'gestor') return 'Gestor';
+  if(r === 'colaborador') return 'Colaborador';
+  return roleNorm || '—';
+}
+
+/** Colaborador: só Meu Dia, Tarefas, Cronograma pessoal, Financeiro pessoal */
+const _COLAB_PAGES = new Set(['myday', 'mytasks', 'cronograma', 'myfinance']);
+
+function _refreshSidebarForRole() {
+  const corp = document.getElementById('sidebarCorp');
+  const eq = document.getElementById('sidebarEquipe');
+  const per = document.getElementById('sidebarPersonal');
+  document.querySelectorAll('.nav-colab-only').forEach(btn => {
+    btn.style.display = _userIsColaborador() ? '' : 'none';
+  });
+  if(_userIsColaborador()) {
+    if(corp) corp.style.display = 'none';
+    if(eq) eq.style.display = 'none';
+    if(per) per.style.display = 'block';
+  } else {
+    if(corp) corp.style.display = 'block';
+    if(eq) eq.style.display = 'block';
+    if(per) per.style.display = 'block';
+  }
+}
+
+async function applyLoginSessionAsync(u) {
+  const base = USERS[u];
+  currentUser = { username: u, name: base.name, role: 'colaborador' };
+  try {
+    const row = await fetchAgeUserRow(u);
+    _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
+    if(row) {
+      if(row.active === false || row.active === 'false') {
+        currentUser = null;
+        return { ok: false, msg: 'Usuário inativo. Contate o administrador.' };
+      }
+      const nr = _normalizeRole(row.role);
+      currentUser.role = nr || 'colaborador';
+      currentUser.name = row.name || currentUser.name;
+    } else {
+      currentUser.role = u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador';
+    }
+  } catch(e) {
+    console.warn('[login] age_users:', e);
+    currentUser.role = u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador';
+  }
+
   const lp = document.getElementById('loginPage');
   const sh = document.getElementById('shell');
-  if(lp) { lp.classList.add('hidden');    lp.style.display = 'none'; }
-  if(sh) { sh.classList.add('visible');   sh.style.display = 'flex'; }
+  if(lp) { lp.classList.add('hidden'); lp.style.display = 'none'; }
+  if(sh) { sh.classList.add('visible'); sh.style.display = 'flex'; }
   const av = document.getElementById('userAvatar');
   const nm = document.getElementById('userNameLabel');
   const rl = document.getElementById('userRoleLabel');
-  if(av) av.textContent = currentUser.name[0].toUpperCase();
-  if(nm) nm.textContent = currentUser.name;
-  if(rl) rl.textContent = currentUser.role;
-  navigate('dashboard');
+  if(av) av.textContent = (currentUser.name || '?')[0].toUpperCase();
+  if(nm) nm.textContent = currentUser.name || u;
+  if(rl) rl.textContent = _roleDisplayLabel(currentUser.role);
+  _refreshSidebarForRole();
+  navigate(_userIsColaborador() ? 'myday' : 'dashboard');
   startClock();
-  // Pós-login: validar conexão com Supabase e surfacing de RLS
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
+  return { ok: true };
+}
+
+async function refreshAgeUsersCache() {
+  try {
+    const all = await fetchAll('age_users', 500);
+    _ageUsersCache = all || [];
+    return _ageUsersCache;
+  } catch(e) {
+    return [];
+  }
+}
+
+function displayNameForUsername(un) {
+  const x = String(un || '').toLowerCase();
+  const r = _ageUsersCache.find(u => String(u.username || '').toLowerCase() === x);
+  return (r && r.name) ? r.name : (un || '—');
 }
 
 function doLogin() {
@@ -2675,27 +2869,33 @@ function doLogin() {
     if(btn)  { btn.disabled = false; }
     if(icon) { icon.className = 'fas fa-sign-in-alt'; }
     if(txt)  { txt.textContent = 'ENTRAR'; }
-    if(err)  { err.textContent = msg; setTimeout(()=>{ if(err) err.textContent=''; }, 3000); }
+    if(err)  { err.textContent = msg; setTimeout(()=>{ if(err) err.textContent=''; }, 4000); }
   }
 
   if(!u || !p) { showErr('Preencha usuário e senha.'); return; }
 
-  /* Feedback visual */
   if(btn)  btn.disabled = true;
   if(icon) icon.className = 'fas fa-spinner fa-spin';
   if(txt)  txt.textContent = 'ENTRANDO...';
 
-  /* Pequeno delay para o browser renderizar o spinner antes de processar */
-  setTimeout(function() {
+  setTimeout(async () => {
     try {
-      if (USERS[u] && USERS[u].pass === p) {
-        _applyLoginSession(u);
-      } else {
+      if(!USERS[u] || USERS[u].pass !== p) {
         showErr('Usuário ou senha incorretos.');
+        return;
+      }
+      const res = await applyLoginSessionAsync(u);
+      if(!res.ok) {
+        showErr(res.msg || 'Acesso negado.');
+        return;
       }
     } catch(e) {
       console.error('[AGE] Erro no login:', e);
       showErr('Erro interno. Recarregue a página e tente novamente.');
+    } finally {
+      if(btn)  btn.disabled = false;
+      if(icon) icon.className = 'fas fa-sign-in-alt';
+      if(txt)  txt.textContent = 'ENTRAR';
     }
   }, 80);
 }
@@ -2759,6 +2959,7 @@ const PAGE_TITLES = {
   dashboard:'DASHBOARD 2026', projects:'PROJETOS', fechamento:'FECHAMENTO',
   historico:'HISTÓRICO', clientes:'CLIENTES', gestao:'GESTÃO DE PROJETOS', orcamentos:'ORÇAMENTOS',
   contratos:'CONTRATOS',
+  pagamentos:'PAGAMENTOS',
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA',
   myday:'MEU DIA', mytasks:'TAREFAS', myfinance:'FINANCEIRO',
   relatorios:'RELATÓRIOS DE PROJETOS',
@@ -2767,6 +2968,11 @@ const PAGE_TITLES = {
 };
 
 function navigate(page) {
+  if(typeof page !== 'string') page = 'dashboard';
+  if(_userIsColaborador() && !_COLAB_PAGES.has(page)) {
+    toast('Esta área é restrita a gestores. Redirecionando para Meu Dia.', 'warn');
+    page = 'myday';
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById(`page-${page}`);
@@ -2784,6 +2990,7 @@ function navigate(page) {
   if(page==='gestao')       loadKanban();
   if(page==='orcamentos')   loadOrcamentos();
   if(page==='contratos')    loadContratosPage();
+  if(page==='pagamentos')   loadPagamentosPage();
   if(page==='colaboradores') loadColaboradores();
   if(page==='cronograma')   loadCronograma();
   if(page==='myday')        loadMyDay();
@@ -9271,6 +9478,41 @@ function getWeekDates(offset=0) {
 function schedPrev() { _schedWeekOffset--; renderSched(); }
 function schedNext() { _schedWeekOffset++; renderSched(); }
 
+async function populateSchedAssignSelect() {
+  const sel = document.getElementById('seAssignTo');
+  if(!sel) return;
+  if(!_ageUsersCache.length) await refreshAgeUsersCache();
+  const cols = _ageUsersCache.filter(u =>
+    _normalizeRole(u.role) === 'colaborador' && u.active !== false && u.active !== 'false'
+  );
+  sel.innerHTML = '<option value="">— Ninguém (sem tarefa atribuída) —</option>' +
+    cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('');
+}
+
+async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, notes) {
+  if(!saved?.id) return;
+  try {
+    const prev = await apiGet('age_assigned_tasks', `?calendar_event_id=eq.${saved.id}&limit=40`);
+    const rows = Array.isArray(prev?.data) ? prev.data : [];
+    for(const r of rows) {
+      if(r.id) await apiPatch('age_assigned_tasks', r.id, { deleted: true }).catch(()=>{});
+    }
+    if(!assignTo) return;
+    await apiPost('age_assigned_tasks', {
+      assigned_to: assignTo,
+      assigned_by: currentUser.username,
+      title: title || saved.title || '',
+      due_date: (dueDate || (saved.event_date || saved.date || '')).toString().slice(0, 10),
+      status: 'pendente',
+      notes: notes || '',
+      calendar_event_id: saved.id,
+      deleted: false
+    });
+  } catch(e) {
+    console.warn('[syncAssignedTaskFromCalendar]', e);
+  }
+}
+
 async function loadCronograma() {
   try {
     _schedEvents = await fetchAll('age_team_calendar',500);
@@ -9305,7 +9547,8 @@ function renderSched() {
   }).join('');
 }
 
-function openSchedEventModal(date='') {
+async function openSchedEventModal(date='') {
+  document.getElementById('modalSchedTitle').textContent = 'NOVO EVENTO';
   document.getElementById('seId').value     = '';
   document.getElementById('seTitle').value  = '';
   document.getElementById('seDate').value   = date||new Date().toISOString().slice(0,10);
@@ -9313,9 +9556,12 @@ function openSchedEventModal(date='') {
   document.getElementById('seOwner').value  = currentUser?.name||'';
   document.getElementById('seNotes').value  = '';
   openModal('modalSchedEvent');
+  await populateSchedAssignSelect();
+  const as = document.getElementById('seAssignTo');
+  if(as) as.value = '';
 }
 
-function viewSchedEvent(id) {
+async function viewSchedEvent(id) {
   const ev=_schedEvents.find(e=>e.id===id);
   if(!ev) return;
   document.getElementById('seId').value    = ev.id;
@@ -9326,6 +9572,15 @@ function viewSchedEvent(id) {
   document.getElementById('seNotes').value = ev.notes||'';
   document.getElementById('modalSchedTitle').textContent = 'EDITAR EVENTO';
   openModal('modalSchedEvent');
+  await populateSchedAssignSelect();
+  let pre = '';
+  try {
+    const d = await apiGet('age_assigned_tasks', `?calendar_event_id=eq.${ev.id}&limit=15`);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    if(rows.length) pre = rows[0].assigned_to || '';
+  } catch(e) {}
+  const as = document.getElementById('seAssignTo');
+  if(as) as.value = pre;
 }
 
 async function saveSchedEvent() {
@@ -9338,17 +9593,19 @@ async function saveSchedEvent() {
     notes:      document.getElementById('seNotes').value,
     created_by: currentUser?.username||'unknown'
   };
+  const assignTo = document.getElementById('seAssignTo')?.value?.trim() || '';
   if(!payload.title){ toast('Preencha o título','warn'); return; }
   try {
     const saved=id?await apiPut('age_team_calendar',id,payload):await apiPost('age_team_calendar',payload);
+    await syncAssignedTaskFromCalendar(saved, assignTo, payload.title, payload.event_date, payload.notes);
     closeModal('modalSchedEvent');
     toast(id?'Evento atualizado!':'Evento criado!');
     await loadCronograma();
-    /* ── INTEGRAÇÃO BIDIRECIONAL: evento de empresa aparece no Meu Dia ── */
     SYNC.emit('schedule:saved', saved);
-    /* Recarregar Meu Dia se ativo */
     const mp=document.getElementById('page-myday');
     if(mp?.classList.contains('active')) loadMyDay();
+    const tk=document.getElementById('page-mytasks');
+    if(tk?.classList.contains('active')) loadTasks();
   } catch(e){ toast('Erro ao salvar evento','err'); }
 }
 
@@ -9403,19 +9660,74 @@ async function loadTasks() {
   const el=document.getElementById('tasksList');
   if(!el) return;
   try {
-    /* Apenas tarefas do usuário logado */
     const myTasks=(await fetchOwn('age_tasks')).sort((a,b)=>(b.created_at||0)-(a.created_at||0));
-    if(!myTasks.length){ el.innerHTML=`<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:20px;text-align:center">Nenhuma tarefa. Clique em "+ Tarefa" para adicionar.</div>`; return; }
-    el.innerHTML=myTasks.map(t=>`
-      <div class="task-item${t.done===true||t.done==='true'?' done':''}">
-        <div class="task-check${t.done===true||t.done==='true'?' checked':''}" onclick="toggleTask('${t.id}','${t.done}')">${t.done===true||t.done==='true'?'✓':''}</div>
+    let assigned=[];
+    if(_userIsColaborador()) {
+      try {
+        const u = encodeURIComponent(currentUser.username);
+        const d = await apiGet('age_assigned_tasks', `?assigned_to=eq.${u}&limit=300`);
+        assigned = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+      } catch(e) { assigned=[]; }
+    }
+    const assignedRows = assigned.map(a => {
+      const st = String(a.status || '').toLowerCase();
+      const done = st === 'concluida' || st === 'concluído' || st === 'concluido' || a.done === true || a.done === 'true';
+      return {
+        _kind: 'assigned',
+        id: a.id,
+        task_text: a.title || a.task_text || a.text || '',
+        day_date: a.due_date,
+        priority: 'atribuída',
+        done,
+        assigned_by: a.assigned_by,
+        created_at: a.created_at || 0
+      };
+    });
+    const ownRows = myTasks.map(t => ({ _kind: 'own', ...t }));
+    const merged = [...assignedRows, ...ownRows].sort((a,b)=>(b.created_at||0)-(a.created_at||0));
+    if(!merged.length){
+      el.innerHTML=`<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:20px;text-align:center">Nenhuma tarefa. Clique em "+ Tarefa" para adicionar.</div>`;
+      return;
+    }
+    el.innerHTML=merged.map(item=>{
+      if(item._kind==='assigned') {
+        const byName = displayNameForUsername(item.assigned_by);
+        const chk = item.done===true||item.done==='true';
+        return `
+      <div class="task-item${chk?' done':''}">
+        <div class="task-check${chk?' checked':''}" onclick="toggleAssignedTask('${item.id}',${chk})">${chk?'✓':''}</div>
+        <div style="flex:1">
+          <div class="task-text" style="${chk?'text-decoration:line-through':''}">${escHtml(item.task_text||'')}</div>
+          ${item.day_date?`<div class="task-meta">${fmtDate(item.day_date)}</div>`:''}
+          <div style="margin-top:4px"><span style="font-family:var(--font-m);font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35)">Atribuída por ${escHtml(byName)}</span></div>
+        </div>
+      </div>`;
+      }
+      const t=item;
+      const td=t.done===true||t.done==='true';
+      return `
+      <div class="task-item${td?' done':''}">
+        <div class="task-check${td?' checked':''}" onclick="toggleTask('${t.id}','${t.done}')">${td?'✓':''}</div>
         <div style="flex:1">
           <div class="task-text">${escHtml(t.task_text||t.text||'')}</div>
           ${t.day_date?`<div class="task-meta">${fmtDate(t.day_date)} · ${t.priority||'normal'}</div>`:''}
         </div>
         <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')"><i class="fas fa-trash"></i></button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch(e){ el.innerHTML=`<div style="color:var(--textsub);padding:20px">Erro.</div>`; }
+}
+
+async function toggleAssignedTask(id, currentDone) {
+  const done = !currentDone;
+  const status = done ? 'concluida' : 'pendente';
+  try {
+    await apiPatch('age_assigned_tasks', id, { status });
+    await loadTasks();
+    const my=document.getElementById('page-myday');
+    if(my?.classList.contains('active')) loadMyDay();
+    toast(done ? 'Tarefa concluída!' : 'Tarefa reaberta.');
+  } catch(e){ toast('Erro ao atualizar tarefa','err'); }
 }
 
 function openDayTaskModal(type='personal') {
@@ -9482,6 +9794,18 @@ async function deleteTask(id) {
 /* ═══════════════════════════════════════════
    FINANCEIRO PESSOAL
 ═══════════════════════════════════════════ */
+function _payStatusMeta(row) {
+  if(!row || typeof row !== 'object') return { label:'—', emoji:'⚪', kind:'unknown' };
+  const today = new Date().toISOString().slice(0, 10);
+  const due = String(row.due_date || row.vencimento || '').slice(0, 10);
+  const st = String(row.status || '').toLowerCase();
+  const paidAt = row.paid_at;
+  const isPaid = st === 'pago' || paidAt;
+  if(isPaid) return { label: 'Pago', emoji: '🟢', kind: 'pago' };
+  if(due && due < today) return { label: 'Atrasado', emoji: '🔴', kind: 'atrasado' };
+  return { label: 'Pendente', emoji: '🟡', kind: 'pendente' };
+}
+
 async function loadFinance() {
   try {
     /* Apenas lançamentos do usuário logado — sem fallback para registros sem owner */
@@ -9501,6 +9825,34 @@ async function loadFinance() {
         <span style="font-family:var(--font-h);font-size:12px;font-weight:700;color:${i.type==='entrada'?'var(--green)':'var(--red)'}">${fmtBRL(i.amount||i.valor||0)}</span>
         <button class="btn btn-danger btn-sm" onclick="deleteFinance('${i.id}')"><i class="fas fa-trash"></i></button>
       </div>`).join('')||`<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:20px;text-align:center">Nenhum lançamento.</div>`;
+
+    const fmp = document.getElementById('finMyPayments');
+    if(fmp) {
+      try {
+        const u = encodeURIComponent(currentUser.username);
+        const d = await apiGet('age_payments', `?colaborador_username=eq.${u}&limit=120`);
+        const pays = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible)
+          .sort((a,b)=> String(b.due_date||'').localeCompare(String(a.due_date||'')));
+        fmp.innerHTML = pays.length ? pays.map(p=>{
+          const meta = _payStatusMeta(p);
+          const proj = escHtml(p.project_name || p.projeto || '—');
+          const badge = meta.kind === 'pago'
+            ? `<span style="font-family:var(--font-m);font-size:9px;padding:3px 10px;border-radius:4px;background:rgba(22,163,74,.2);color:#4ade80;border:1px solid rgba(34,197,94,.4)">Pago em ${fmtDate(p.paid_at)}</span>`
+            : `<span style="font-family:var(--font-m);font-size:9px;padding:3px 10px;border-radius:4px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35)">Pendente</span>`;
+          return `<div class="task-item" style="align-items:flex-start">
+            <div style="font-size:16px;line-height:1;margin-right:8px">${meta.emoji}</div>
+            <div style="flex:1">
+              <div class="task-text">${proj}</div>
+              <div class="task-meta">${escHtml(p.description||p.desc||'—')} · Venc. ${fmtDate(p.due_date)} · ${escHtml(p.payment_method||'—')}</div>
+              <div style="margin-top:6px">${badge}</div>
+            </div>
+            <span style="font-family:var(--font-h);font-size:13px;font-weight:700;white-space:nowrap">${fmtBRL(p.amount||p.valor||0)}</span>
+          </div>`;
+        }).join('') : `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:12px;text-align:center">Nenhum pagamento corporativo registrado para você.</div>`;
+      } catch(e2) {
+        fmp.innerHTML = `<div style="color:var(--textsub);font-size:11px">Não foi possível carregar pagamentos.</div>`;
+      }
+    }
   } catch(e){ console.error('loadFinance:',e); }
 }
 
@@ -9540,6 +9892,205 @@ async function deleteFinance(id) {
     loadFinance();
     toast('Removido');
   } catch(e){ toast('Erro','err'); }
+}
+
+/* ═══════════════════════════════════════════
+   PAGAMENTOS CORPORATIVOS (age_payments)
+═══════════════════════════════════════════ */
+let _pagamentosRows = [];
+
+async function loadPagamentosPage() {
+  const listEl = document.getElementById('pagamentosList');
+  const k1 = document.getElementById('payKpiPendente');
+  const k2 = document.getElementById('payKpiMes');
+  const k3 = document.getElementById('payKpiAtraso');
+  if(!listEl) return;
+  if(!_userIsAdminLike()) {
+    listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Sem permissão para esta área.</div>`;
+    if(k1) k1.textContent = '—';
+    if(k2) k2.textContent = '—';
+    if(k3) k3.textContent = '—';
+    return;
+  }
+  listEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</div>`;
+  try {
+    _pagamentosRows = await fetchAll('age_payments', 600);
+    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const msStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const msEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+    let totalPendente = 0;
+    let totalMes = 0;
+    const atrasadosUsers = new Set();
+
+    for(const p of _pagamentosRows) {
+      const meta = _payStatusMeta(p);
+      const amt = parseFloat(p.amount ?? p.valor ?? 0) || 0;
+      if(meta.kind === 'pago') {
+        const pd = String(p.paid_at || '').slice(0, 10);
+        if(pd >= msStart && pd <= msEnd) totalMes += amt;
+      } else {
+        totalPendente += amt;
+        if(meta.kind === 'atrasado') {
+          const cu = String(p.colaborador_username || '').trim();
+          if(cu) atrasadosUsers.add(cu);
+        }
+      }
+    }
+
+    if(k1) k1.textContent = fmtBRL(totalPendente);
+    if(k2) k2.textContent = fmtBRL(totalMes);
+    if(k3) k3.textContent = String(atrasadosUsers.size);
+
+    if(!_pagamentosRows.length) {
+      listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum pagamento cadastrado.<br><br><button class="btn btn-primary btn-sm" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button></div>`;
+      return;
+    }
+
+    const sorted = [..._pagamentosRows].sort((a, b) => String(b.due_date || '').localeCompare(String(a.due_date || '')));
+    listEl.innerHTML = sorted.map(p => {
+      const meta = _payStatusMeta(p);
+      const nome = escHtml(displayNameForUsername(p.colaborador_username));
+      const proj = escHtml(p.project_name || p.projeto || '—');
+      const amt = fmtBRL(p.amount ?? p.valor ?? 0);
+      const due = fmtDate(p.due_date);
+      const canPay = meta.kind !== 'pago';
+      const payBtn = canPay
+        ? `<button class="btn btn-primary btn-sm" onclick="markPaymentPaid('${String(p.id).replace(/'/g, "\\'")}')"><i class="fas fa-check"></i> Marcar como Pago</button>`
+        : `<span style="font-family:var(--font-m);font-size:9px;color:var(--textsub)">${fmtDate(p.paid_at)}</span>`;
+      return `<div class="task-item" style="flex-wrap:wrap;gap:8px">
+        <div style="font-size:18px;line-height:1">${meta.emoji}</div>
+        <div style="flex:1;min-width:200px">
+          <div class="task-text">${nome}</div>
+          <div class="task-meta">${proj}</div>
+          <div class="task-meta">${escHtml(p.description || p.desc || '')}</div>
+          <div style="margin-top:6px;font-family:var(--font-m);font-size:9px;color:var(--textsub)">
+            ${meta.emoji} <strong>${meta.label}</strong> · Venc. ${due} · ${escHtml(p.payment_method || '—')}
+          </div>
+        </div>
+        <div style="font-family:var(--font-h);font-size:14px;font-weight:700;align-self:center">${amt}</div>
+        <div style="display:flex;gap:6px;align-items:center">${payBtn}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('[loadPagamentosPage]', e);
+    listEl.innerHTML = `<div style="color:var(--textsub);padding:20px;text-align:center">Erro ao carregar pagamentos.</div>`;
+  }
+}
+
+async function openPagamentoModal(editId) {
+  if(!_userIsAdminLike()) {
+    toast('Sem permissão.', 'warn');
+    return;
+  }
+  document.getElementById('modalPagTitle').textContent = editId ? 'EDITAR PAGAMENTO' : 'NOVO PAGAMENTO';
+  document.getElementById('payEditId').value = editId || '';
+  document.getElementById('payDesc').value = '';
+  document.getElementById('payAmount').value = '';
+  document.getElementById('payDue').value = '';
+  document.getElementById('payNotes').value = '';
+  document.getElementById('payMethod').value = 'PIX';
+
+  if(!_ageUsersCache.length) await refreshAgeUsersCache();
+  const colSel = document.getElementById('payColab');
+  const cols = _ageUsersCache.filter(u =>
+    _normalizeRole(u.role) === 'colaborador' && _sbIsRowVisible(u)
+  );
+  colSel.innerHTML = cols.length
+    ? cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('')
+    : '<option value="">— Nenhum colaborador —</option>';
+
+  const projSel = document.getElementById('payProject');
+  const projects = await fetchAll('age_projects', 800);
+  projSel.innerHTML = '<option value="">— Selecione o projeto —</option>' +
+    projects.map(p => {
+      const tid = escAttr(String(p.id));
+      const title = escHtml(_ageProjDbTitle(p) || '(sem nome)');
+      return `<option value="${tid}">${title}</option>`;
+    }).join('');
+
+  if(editId) {
+    const row = _pagamentosRows.find(r => String(r.id) === String(editId));
+    if(row) {
+      colSel.value = row.colaborador_username || '';
+      const pid = row.project_id ? String(row.project_id) : '';
+      if(pid) projSel.value = pid;
+      document.getElementById('payDesc').value = row.description || row.desc || '';
+      document.getElementById('payAmount').value = row.amount ?? row.valor ?? '';
+      document.getElementById('payDue').value = String(row.due_date || '').slice(0, 10);
+      document.getElementById('payMethod').value = row.payment_method || 'PIX';
+      document.getElementById('payNotes').value = row.notes || '';
+    }
+  } else {
+    document.getElementById('payDue').value = new Date().toISOString().slice(0, 10);
+  }
+
+  openModal('modalPagamento');
+}
+
+async function savePagamento() {
+  if(!_userIsAdminLike()) {
+    toast('Sem permissão.', 'warn');
+    return;
+  }
+  const editId = document.getElementById('payEditId').value.trim();
+  const colab = document.getElementById('payColab').value.trim();
+  const projEl = document.getElementById('payProject');
+  const project_id = (projEl && projEl.value) ? projEl.value.trim() : '';
+  const opt = projEl?.selectedOptions?.[0];
+  const project_name = opt ? String(opt.textContent || '').trim() : '';
+  const description = document.getElementById('payDesc').value.trim();
+  const amount = parseFloat(document.getElementById('payAmount').value);
+  const due_date = document.getElementById('payDue').value;
+  const payment_method = document.getElementById('payMethod').value;
+  const notes = document.getElementById('payNotes').value.trim();
+
+  if(!colab) { toast('Selecione o colaborador.', 'warn'); return; }
+  if(!project_id) { toast('Selecione o projeto.', 'warn'); return; }
+  if(!amount || amount <= 0) { toast('Informe o valor.', 'warn'); return; }
+  if(!due_date) { toast('Informe o vencimento.', 'warn'); return; }
+
+  const payload = {
+    colaborador_username: colab,
+    project_id,
+    project_name: project_name || '',
+    description,
+    amount,
+    due_date,
+    payment_method,
+    notes,
+    status: 'pendente',
+    deleted: false
+  };
+
+  try {
+    if(editId) await apiPatch('age_payments', editId, payload);
+    else await apiPost('age_payments', payload);
+    closeModal('modalPagamento');
+    toast(editId ? 'Pagamento atualizado.' : 'Pagamento criado.');
+    await loadPagamentosPage();
+    const fin = document.getElementById('page-myfinance');
+    if(fin?.classList.contains('active')) loadFinance();
+  } catch(e) {
+    console.error('[savePagamento]', e);
+    toast('Erro ao salvar pagamento.', 'err');
+  }
+}
+
+async function markPaymentPaid(id) {
+  if(!_userIsAdminLike()) return;
+  confirm2('Marcar este pagamento como pago agora?', async () => {
+    try {
+      await apiPatch('age_payments', id, { status: 'pago', paid_at: new Date().toISOString() });
+      toast('Pagamento marcado como pago.');
+      await loadPagamentosPage();
+      const fin = document.getElementById('page-myfinance');
+      if(fin?.classList.contains('active')) loadFinance();
+    } catch(e) {
+      toast('Erro ao atualizar.', 'err');
+    }
+  });
 }
 
 /* ═══════════════════════════════════════════
