@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGE SOCIALS — Sistema Operacional</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
@@ -142,6 +142,51 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
   color:#aaaaaa;font-size:12px;transition:all .12s;
 }
 .btn-icon-top:hover{color:#111;border-color:rgba(0,0,0,.3)}
+
+/* ── Notificações (header + dropdown) ── */
+.notif-bell-root{position:relative;margin-left:auto;margin-right:4px}
+.notif-bell-btn{
+  width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid rgba(0,0,0,.1);font-size:18px;line-height:1;
+  color:#475569;transition:background .12s,border-color .12s;
+}
+.notif-bell-btn:hover{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.18);color:#0f172a}
+.notif-badge{
+  position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;
+  background:#dc2626;color:#fff;font-family:var(--font-m);font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2);
+}
+.notif-dropdown{
+  position:absolute;right:0;top:calc(100% + 8px);width:min(380px,calc(100vw - 24px));max-height:min(420px,70vh);
+  background:#1e293b;border:1px solid #334155;border-radius:12px;
+  box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:5000;display:flex;flex-direction:column;overflow:hidden;
+}
+.notif-dropdown.hidden{display:none!important}
+.notif-dd-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;
+  border-bottom:1px solid #334155;font-family:var(--font-h);font-size:11px;font-weight:700;color:#f1f5f9;letter-spacing:.06em;
+}
+.notif-dd-head button{background:none;border:none;color:#94a3b8;font-family:var(--font-m);font-size:10px;cursor:pointer;text-decoration:underline;padding:0}
+.notif-dd-head button:hover{color:#22c55e}
+.notif-dd-body{flex:1;overflow-y:auto;min-height:120px}
+.notif-item{
+  display:flex;gap:10px;padding:12px 14px;cursor:pointer;border-bottom:1px solid rgba(51,65,85,.5);
+  transition:background .12s;font-family:var(--font-m);font-size:11px;color:#cbd5e1;text-align:left;width:100%;
+  border-left:3px solid transparent;background:transparent;
+}
+.notif-item:hover{background:#334155}
+.notif-item.unread{background:#0f172a}
+.notif-item .nic{font-size:18px;line-height:1;flex-shrink:0;width:26px;text-align:center}
+.notif-item .nttl{font-weight:700;color:#f1f5f9;margin-bottom:4px;font-size:11px}
+.notif-item .nmsg{color:#94a3b8;line-height:1.45;font-size:10px}
+.notif-item .nwhen{color:#64748b;font-size:9px;margin-top:6px}
+.notif-dd-empty{padding:28px 16px;text-align:center;color:#64748b;font-family:var(--font-m);font-size:11px}
+.notif-dd-foot{padding:10px;border-top:1px solid #334155;text-align:center}
+.notif-dd-foot button{background:none;border:none;color:#22c55e;font-family:var(--font-m);font-size:10px;cursor:pointer;text-decoration:underline}
+#page-notificacoes .notif-full-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+#page-notificacoes .notif-filter-btn{font-family:var(--font-m);font-size:10px;padding:6px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#334155}
+#page-notificacoes .notif-filter-btn.active{background:#0f172a;color:#f1f5f9;border-color:#334155}
+#page-notificacoes .notif-page-bar{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:16px;font-family:var(--font-m);font-size:11px;color:#64748b}
 
 /* ── CONTENT ── */
 #content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px}
@@ -774,6 +819,68 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   outline:none;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);
 }
 select.login-input{cursor:pointer}
+
+/* ── PLANOS / PAGAR.ME / TRIAL / REF — UI (#0f172a theme) ── */
+.plans-overlay,.plans-overlay *{box-sizing:border-box}
+.plans-overlay{
+  position:fixed;inset:0;z-index:9100;display:none;flex-direction:column;
+  background:#0f172a;color:#f1f5f9;font-family:'Inter',system-ui,sans-serif;
+  overflow:auto;padding:24px 16px 40px;
+}
+.plans-overlay.open{display:flex}
+.plans-overlay-inner{max-width:1180px;margin:0 auto;width:100%}
+.plans-header{text-align:center;margin-bottom:28px}
+.plans-header h1{font-size:clamp(22px,4vw,28px);font-weight:800;margin:0 0 8px;letter-spacing:-.02em}
+.plans-header p{font-size:14px;color:#94a3b8;margin:0}
+.plans-toggle{display:flex;justify-content:center;gap:0;margin:20px auto;border-radius:999px;background:#1e293b;padding:4px;border:1px solid #334155;width:fit-content}
+.plans-toggle button{padding:10px 28px;border-radius:999px;font-size:13px;font-weight:600;border:none;background:transparent;color:#94a3b8;cursor:pointer;font-family:inherit}
+.plans-toggle button.active{background:#22c55e;color:#fff}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:28px}
+.plan-card{
+  background:#1e293b;border:1px solid #334155;border-radius:12px;padding:22px 18px;
+  display:flex;flex-direction:column;min-height:100%;position:relative;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);transition:border-color .2s,transform .15s;
+}
+.plan-card:hover{transform:translateY(-2px)}
+.plan-card.featured{border-color:#22c55e;box-shadow:0 0 0 1px #22c55e,0 12px 40px rgba(34,197,94,.15)}
+.plan-badge{position:absolute;top:-10px;right:14px;background:#fbbf24;color:#0f172a;font-size:10px;font-weight:800;padding:4px 10px;border-radius:999px}
+.plan-card-title{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.plan-price{font-size:22px;font-weight:800;margin:8px 0 14px;line-height:1.2}
+.plan-price small{display:block;font-size:12px;font-weight:500;color:#94a3b8;margin-top:4px}
+.plan-features{list-style:none;font-size:12px;color:#cbd5e1;line-height:1.65;margin:0 0 18px;padding:0;flex:1}
+.plan-features li{margin-bottom:5px}
+.plan-features .no{opacity:.35}
+.plan-cta{margin-top:auto;width:100%;padding:12px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;transition:filter .15s}
+.plan-cta:hover{filter:brightness(1.08)}
+.plans-footer{display:flex;flex-wrap:wrap;justify-content:center;gap:16px 28px;font-size:12px;color:#64748b;margin-top:8px}
+.plans-footer span{display:flex;align-items:center;gap:6px}
+.plan-solo{border-top:3px solid #3b82f6}
+.plan-prod{border-top:3px solid #22c55e}
+.plan-ag{border-top:3px solid #8b5cf6}
+.plan-ent{border-top:3px solid #f59e0b}
+.modal-plans-pagarme .modal-body{font-family:'Inter',system-ui,sans-serif;background:#1e293b;color:#f1f5f9;border-radius:12px;padding:22px;max-width:440px}
+.modal-plans-pagarme .login-input{background:#0f172a;border-color:#334155;color:#f1f5f9}
+.pg-field{margin-bottom:12px}
+.pg-field label{display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;font-weight:600}
+#trialBanner{
+  display:none;background:#14532d;color:#dcfce7;font-family:'Inter',system-ui,sans-serif;
+  font-size:12px;padding:8px 16px;text-align:center;border-bottom:1px solid #166534;
+  align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+}
+#trialBanner.warn{background:#422006;color:#ffedd5;border-color:#9a3412}
+#trialBanner.danger{background:#450a0a;color:#fecaca;border-color:#991b1b}
+#main.has-trial-banner #content{padding-top:0}
+.ref-card-dash{
+  font-family:'Inter',system-ui,sans-serif;background:linear-gradient(135deg,#1e293b,#0f172a);
+  border:1px solid #334155;border-radius:12px;padding:16px 18px;margin-bottom:18px;color:#f1f5f9;
+}
+.ref-card-dash h3{font-size:14px;font-weight:700;margin:0 0 8px}
+.ref-card-dash .ref-link{font-size:11px;word-break:break-all;color:#22c55e;background:#0f172a;padding:8px;border-radius:8px;border:1px dashed #334155}
+.ref-progress{display:flex;gap:4px;margin-top:10px}
+.ref-progress i{font-size:10px;color:#22c55e;opacity:.35}
+.ref-progress i.on{opacity:1}
+#page-plan-upgrade.page{font-family:'Inter',system-ui,sans-serif}
+.plan-gate-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .login-logo{
   font-family:var(--font-h);font-size:26px;font-weight:800;
   color:#111111;letter-spacing:.06em;
@@ -1064,8 +1171,8 @@ select.login-input{cursor:pointer}
         <h2 class="reg-step-title">Conta criada com sucesso! 🎉</h2>
         <p class="reg-step-sub">Suas informações foram registradas com segurança.</p>
         <div class="reg-summary" id="regSummaryBox"></div>
-        <div class="reg-trial-note"><strong>Seu período de teste de 14 dias começou.</strong><br>Aproveite todos os recursos do sistema neste período.</div>
-        <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="regWizardFinishEnter()">Entrar no sistema <i class="fas fa-arrow-right"></i></button>
+        <div class="reg-trial-note"><strong>Próximo passo:</strong> escolha seu plano com <strong>7 dias grátis</strong>. Sem cobrança no cadastro.</div>
+        <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="showPostSignupPlans()">Escolher meu plano <i class="fas fa-arrow-right"></i></button>
       </div>
     </div>
 
@@ -1077,6 +1184,93 @@ select.login-input{cursor:pointer}
                text-underline-offset:2px">
         Problemas para entrar? Clique aqui para resetar
       </button>
+    </div>
+
+    <!-- Camada planos (login / mesmo fluxo visual) -->
+    <div id="plansPostSignupLayer" class="plans-overlay" aria-hidden="true">
+      <div class="plans-overlay-inner">
+        <div class="plans-header">
+          <h1 id="plansWelcomeTitle">🎉 Bem-vindo!</h1>
+          <p>Escolha seu plano — <strong>7 dias grátis</strong>, sem cobrança agora</p>
+          <div class="plans-toggle" role="tablist">
+            <button type="button" id="planBillMonthly" class="active" onclick="setPlanBillingToggle('monthly')">Mensal</button>
+            <button type="button" id="planBillYearly" onclick="setPlanBillingToggle('yearly')">Anual — 20% off</button>
+          </div>
+        </div>
+        <div class="plans-grid" id="plansCardsGrid">
+          <!-- preenchido por refreshPlanCardsPricing() -->
+        </div>
+        <div class="plans-footer">
+          <span>✅ 7 dias grátis — sem cobrança agora</span>
+          <span>✅ Cancele quando quiser</span>
+          <span>✅ Dados seguros — LGPD compliant</span>
+          <span>✅ Suporte em português</span>
+        </div>
+        <div style="text-align:center;margin-top:20px">
+          <button type="button" onclick="closePlansOverlay()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit">Deixar para depois</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay planos (upgrade no app — mesmo markup via clone ou reuse) -->
+<div id="plansOverlayGlobal" class="plans-overlay" aria-hidden="true">
+  <div class="plans-overlay-inner">
+    <div class="plans-header">
+      <h1>Upgrade de plano</h1>
+      <p>Escolha seu plano — <strong>7 dias grátis</strong> ao migrar de trial</p>
+      <div class="plans-toggle" role="tablist">
+        <button type="button" id="planBillMonthlyG" class="active" onclick="setPlanBillingToggleGlobal('monthly')">Mensal</button>
+        <button type="button" id="planBillYearlyG" onclick="setPlanBillingToggleGlobal('yearly')">Anual — 20% off</button>
+      </div>
+    </div>
+    <div class="plans-grid" id="plansCardsGridGlobal"></div>
+    <div class="plans-footer">
+      <span>✅ 7 dias grátis — sem cobrança agora</span>
+      <span>✅ Cancele quando quiser</span>
+      <span>✅ Dados seguros — LGPD compliant</span>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <button type="button" onclick="closePlansOverlayGlobal()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal cartão Pagar.me -->
+<div id="modalPagarmePlan" class="modal">
+  <div class="modal-dialog modal-plans-pagarme">
+    <div class="modal-body">
+      <button type="button" class="modal-close" onclick="closeModal('modalPagarmePlan')" style="float:right;background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer">&times;</button>
+      <h2 style="font-size:18px;font-weight:800;margin:0 0 6px;color:#fff">Adicione seu cartão</h2>
+      <p style="font-size:12px;color:#94a3b8;margin:0 0 18px;line-height:1.5">Você só será cobrado após 7 dias. Cancele antes e não paga nada.</p>
+      <div class="pg-field">
+        <label>Número do cartão</label>
+        <input class="login-input" id="pgCardNum" type="text" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" oninput="maskPgCardNum(this)">
+      </div>
+      <div class="pg-field">
+        <label>Nome no cartão</label>
+        <input class="login-input" id="pgCardName" type="text" placeholder="Como impresso no cartão" autocomplete="cc-name">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="pg-field">
+          <label>Validade</label>
+          <input class="login-input" id="pgCardExp" type="text" placeholder="MM/AA" maxlength="5" autocomplete="cc-exp" oninput="maskPgExp(this)">
+        </div>
+        <div class="pg-field">
+          <label>CVV</label>
+          <input class="login-input" id="pgCardCvv" type="password" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+        </div>
+      </div>
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin:14px 0;font-size:12px;color:#cbd5e1" id="pgPlanSummary">—</div>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#e2e8f0;margin-bottom:14px;cursor:pointer">
+        <input type="checkbox" id="pgAcceptTerms" style="margin-top:3px;accent-color:#22c55e">
+        <span>Li e aceito os <a href="/terms.html" target="_blank" style="color:#22c55e">Termos de Uso</a></span>
+      </label>
+      <button type="button" class="btn btn-reg-green login-btn" id="pgConfirmBtn" onclick="confirmPagarmeTrial()" style="width:100%;margin-top:4px">
+        <i class="fas fa-lock" id="pgConfirmIcon"></i> <span id="pgConfirmText">Confirmar e começar trial</span>
+      </button>
+      <p style="font-size:10px;color:#64748b;margin-top:12px;text-align:center">Pagamentos processados com segurança via Pagar.me</p>
     </div>
   </div>
 </div>
@@ -1205,10 +1399,43 @@ select.login-input{cursor:pointer}
       <button class="btn-icon-top" onclick="toggleSidebar()" id="menuBtn"><i class="fas fa-bars"></i></button>
       <div id="topbarTitle">DASHBOARD</div>
       <div class="topbar-clock" id="topbarClock"></div>
+      <div class="notif-bell-root" id="notifBellRoot">
+        <button type="button" class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown(event)" title="Notificações" aria-expanded="false" aria-haspopup="true">
+          🔔
+          <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+        </button>
+        <div id="notifDropdown" class="notif-dropdown hidden" aria-hidden="true">
+          <div class="notif-dd-head">
+            <span>NOTIFICAÇÕES</span>
+            <button type="button" onclick="markAllNotificationsRead(); event.stopPropagation();">Marcar todas lidas</button>
+          </div>
+          <div class="notif-dd-body" id="notifDdBody">
+            <div class="notif-dd-empty" id="notifDdEmpty">Carregando…</div>
+          </div>
+          <div class="notif-dd-foot">
+            <button type="button" onclick="navigate('notificacoes'); closeNotifDropdown();">Ver todas</button>
+          </div>
+        </div>
+      </div>
       <button class="btn-icon-top" onclick="doLogout()" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
     </header>
+    <div id="trialBanner" role="status"></div>
 
     <div id="content">
+
+      <!-- Upgrade plano (bloqueio) -->
+      <div id="page-plan-upgrade" class="page">
+        <div style="max-width:440px;margin:48px auto;text-align:center;padding:36px;border:1px solid var(--bd);border-radius:12px;background:var(--bg2)">
+          <div style="font-size:42px;margin-bottom:12px">🔒</div>
+          <div style="font-family:var(--font-h);font-size:18px;font-weight:800;margin-bottom:10px;color:#94a3b8" id="planGateTitle">Disponível em outro plano</div>
+          <p style="font-family:var(--font-m);font-size:11px;color:var(--textsub);line-height:1.6;margin-bottom:20px" id="planGateDesc">Faça upgrade para desbloquear este módulo.</p>
+          <div class="plan-gate-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openPlansFromGate()">Ver planos</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openPlansFromGate()">Fazer upgrade</button>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:16px" onclick="navigate(_defaultLandingPage())">Voltar ao início</button>
+        </div>
+      </div>
 
       <!-- Sem permissão -->
       <div id="page-no-access" class="page">
@@ -1239,9 +1466,52 @@ select.login-input{cursor:pointer}
       </div>
 
       <!-- ══════════════════════════════════
+           NOTIFICAÇÕES (lista completa)
+      ══════════════════════════════════ -->
+      <div id="page-notificacoes" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-bell"></i> NOTIFICAÇÕES</div>
+          <div class="page-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="markAllNotificationsRead()"><i class="fas fa-check-double"></i> Marcar todas como lidas</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="clearReadNotifications()"><i class="fas fa-broom"></i> Limpar lidas</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadNotificationsFullPage()"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="notif-full-toolbar">
+          <button type="button" class="notif-filter-btn active" data-nfilt="all" onclick="setNotifPageFilter('all')">Todas</button>
+          <button type="button" class="notif-filter-btn" data-nfilt="unread" onclick="setNotifPageFilter('unread')">Não lidas</button>
+          <select id="notifTypeFilter" class="login-input" style="max-width:220px;font-size:11px;padding:6px 10px" onchange="setNotifTypeFilterUi()">
+            <option value="">Todos os tipos</option>
+            <option value="tarefa_atribuida">Tarefa atribuída</option>
+            <option value="prazo_proximo">Prazo próximo</option>
+            <option value="pagamento_pendente">Pagamento pendente</option>
+            <option value="trial_expirando">Trial expirando</option>
+            <option value="indicacao_convertida">Indicação</option>
+            <option value="novo_colaborador">Novo colaborador</option>
+            <option value="projeto_criado">Projeto criado</option>
+            <option value="orcamento_aprovado">Orçamento aprovado</option>
+          </select>
+        </div>
+        <div id="notifFullList" style="display:flex;flex-direction:column;border:1px solid rgba(0,0,0,.09);border-radius:12px;overflow:hidden;background:var(--bg2)"></div>
+        <div class="notif-page-bar" id="notifPageBar"></div>
+      </div>
+
+      <!-- ══════════════════════════════════
            DASHBOARD PAGE
       ══════════════════════════════════ -->
       <div id="page-dashboard" class="page active">
+        <div id="dashboardReferralCard" class="ref-card-dash" style="display:none">
+          <h3>🎁 Ganhe 30 dias grátis!</h3>
+          <p style="font-size:12px;color:#94a3b8;margin:0 0 10px;line-height:1.5">Convide 5 amigos para o Age Ops e ganhe <strong>1 mês extra</strong> sem pagar nada.</p>
+          <div style="font-size:10px;color:#64748b;margin-bottom:6px">Seu link de indicação:</div>
+          <div class="ref-link" id="refLinkText">—</div>
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary btn-sm" onclick="copyReferralLink()"><i class="fas fa-copy"></i> Copiar link</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="shareRefWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:#cbd5e1">Indicações: <strong id="refCountLabel">0</strong>/5</div>
+          <div class="ref-progress" id="refDots" aria-hidden="true"></div>
+        </div>
         <div class="page-header">
           <div class="page-title"><i class="fas fa-chart-line"></i> DASHBOARD 2026</div>
           <div class="page-actions" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -3429,6 +3699,9 @@ function _userCanManagePermissionsUi() {
 function canViewPage(page) {
   if(page === 'no-access') return true;
   if(page === 'profile') return true;
+  if(page === 'notificacoes') return true;
+  if(page === 'plan-upgrade') return true;
+  if(!_planAllowsPage(page)) return false;
   if(page === 'equipe-permissoes') return _userCanManagePermissionsUi();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
@@ -3770,6 +4043,15 @@ async function mergeCurrentUserFromSupabase() {
     currentUser.role = _normalizeRole(fresh.role) || currentUser.role;
     currentUser.avatar_url = fresh.avatar_url ?? fresh.photo_url ?? currentUser.avatar_url;
     currentUser.job_title = fresh.job_title ?? fresh.cargo ?? currentUser.job_title;
+    currentUser.plan = fresh.plan ?? currentUser.plan;
+    currentUser.plan_billing = fresh.plan_billing ?? currentUser.plan_billing;
+    currentUser.trial_ends_at = fresh.trial_ends_at ?? currentUser.trial_ends_at;
+    currentUser.subscription_status = fresh.subscription_status ?? currentUser.subscription_status;
+    currentUser.pagarme_customer_id = fresh.pagarme_customer_id ?? currentUser.pagarme_customer_id;
+    currentUser.pagarme_subscription_id = fresh.pagarme_subscription_id ?? currentUser.pagarme_subscription_id;
+    currentUser.referral_token = fresh.referral_token ?? currentUser.referral_token;
+    currentUser.referral_count = fresh.referral_count != null ? fresh.referral_count : currentUser.referral_count;
+    currentUser.referred_by = fresh.referred_by ?? currentUser.referred_by;
   } catch(e) {
     console.warn('[mergeCurrentUserFromSupabase]', e);
   }
@@ -3945,6 +4227,15 @@ async function applyLoginSessionFromRow(row) {
     company_name: row.company_name || '',
     avatar_url: row.avatar_url || row.photo_url || '',
     job_title: row.job_title || row.cargo || '',
+    plan: row.plan || null,
+    plan_billing: row.plan_billing || null,
+    trial_ends_at: row.trial_ends_at || null,
+    subscription_status: row.subscription_status || null,
+    pagarme_customer_id: row.pagarme_customer_id || null,
+    pagarme_subscription_id: row.pagarme_subscription_id || null,
+    referral_token: row.referral_token || null,
+    referral_count: row.referral_count != null ? row.referral_count : 0,
+    referred_by: row.referred_by || null,
     permissions: {}
   };
   await mergeCurrentUserFromSupabase();
@@ -3970,6 +4261,8 @@ async function applyLoginSessionFromRow(row) {
   navigate(_defaultLandingPage());
   startClock();
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
+  setTimeout(()=>{ try { updateTrialBanner(); } catch(e) {} }, 0);
+  setTimeout(()=>{ try { bootstrapNotificationsUi(); } catch(e) {} }, 0);
   return { ok: true };
 }
 
@@ -4443,6 +4736,13 @@ async function submitAdminRegister() {
     const row = await fetchAgeUserRow(username);
     if(!row || !row.id) throw new Error('Usuário criado mas não foi possível ler o registro.');
 
+    let pendingRef = '';
+    try { pendingRef = sessionStorage.getItem('age_pending_ref') || ''; } catch(e) {}
+    if(pendingRef) {
+      await processReferralOnSignup(username, pendingRef);
+      try { sessionStorage.removeItem('age_pending_ref'); } catch(e) {}
+    }
+
     _regPendingSessionRow = row;
 
     const cpfFmt = cpfDigits.length === 11
@@ -4468,6 +4768,9 @@ async function submitAdminRegister() {
 
     regWizardGoStep(3);
     showGlobal('', false);
+    setTimeout(() => {
+      try { showPostSignupPlans(); } catch(e2) { console.warn(e2); }
+    }, 200);
   } catch(e) {
     console.error('[signup]', e);
     showGlobal(String(e?.message || e || 'Erro ao criar conta. Verifique o Supabase.'), false);
@@ -4666,6 +4969,22 @@ async function submitInviteAccept() {
       apiPatch('age_invites', inv.id, { used: true })
     );
 
+    try {
+      const admins = await _fetchCompanyAdminUsernames(inv.company_id);
+      for(const a of admins) {
+        if(String(a).toLowerCase() === String(username).toLowerCase()) continue;
+        await createNotification({
+          username: a,
+          company_id: inv.company_id,
+          type: 'novo_colaborador',
+          title: 'Novo colaborador',
+          message: `${name} aceitou o convite e entrou na equipe`,
+          link: 'colaboradores',
+          dedupe_key: `colab_inv_${inv.id}_${a}`
+        });
+      }
+    } catch(eN) { console.warn('[notif invite]', eN); }
+
     cancelInviteFlow();
     const row = await fetchAgeUserRow(username);
     await applyLoginSessionFromRow(row || payload);
@@ -4750,6 +5069,10 @@ function emergencyReset() {
 }
 
 function doLogout() {
+  stopNotificationsPolling();
+  _notifCache = [];
+  updateNotifBadge();
+  closeNotifDropdown();
   currentUser = null;
   _pendingInviteRow = null;
   _pendingInviteToken = null;
@@ -4788,10 +5111,449 @@ function startClock() {
 }
 
 /* ═══════════════════════════════════════════
+   PLANOS · PAGAR.ME · TRIAL · REFERRAL
+═══════════════════════════════════════════ */
+const PAGARME_API_KEY = 'COLE SUA API KEY AQUI';
+const WHATSAPP_ENTERPRISE_NUM = '5511999999999';
+
+function _pagarmeIsDemoMode() {
+  const key = String(PAGARME_API_KEY || '').trim();
+  return !key || key.includes('COLE');
+}
+
+let _planBillSignup = 'monthly';
+let _planBillGlobal = 'monthly';
+let _planCheckoutCtx = 'signup';
+let _pendingPlanKey = null;
+
+function _effectiveUserPlan() {
+  const p = String(currentUser?.plan || 'produtora').toLowerCase().trim();
+  if(['solo','produtora','agencia','enterprise'].includes(p)) return p;
+  return 'produtora';
+}
+
+function _planAllowsPage(page) {
+  if(_userIsBootstrapAdmin()) return true;
+  const pl = _effectiveUserPlan();
+  if(pl === 'enterprise' || pl === 'agencia') return true;
+  if(pl === 'produtora') {
+    if(page === 'relatorios') return false;
+    return true;
+  }
+  const soloBlocked = new Set(['dashboard','fechamento','contratos','nps','pagamentos','colaboradores','equipe-permissoes','historico','relatorios']);
+  return !soloBlocked.has(page);
+}
+
+function _planRequiredLabel(forPage) {
+  if(!forPage) return 'superior';
+  if(forPage === 'relatorios') return 'Agência';
+  return 'Produtora';
+}
+
+function _fmtMoney(n) {
+  try {
+    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
+  } catch(e) {
+    return 'R$' + n;
+  }
+}
+
+function buildPlanCardsHtml(ctx) {
+  const bill = ctx === 'global' ? _planBillGlobal : _planBillSignup;
+  const m = bill === 'yearly';
+  const pSolo = m ? 97 : 147;
+  const pProd = m ? 197 : 297;
+  const pAg = m ? 397 : 597;
+  const soloFeat = [
+    ['✅','Orçamentos ilimitados + PDF'],['✅','Projetos ilimitados'],['✅','Clientes ilimitados'],['✅','Pipeline/Kanban'],
+    ['✅','Tarefas pessoais'],['✅','Financeiro pessoal'],['✅','Cronograma pessoal'],['❌','Dashboard analytics','no'],
+    ['❌','Módulo de equipe','no'],['❌','Fechamento financeiro','no'],['❌','Contratos e NPS','no'],['❌','Colaboradores','no']
+  ];
+  const prodFeat = [
+    ['✅','Tudo do Solo'],['✅','Dashboard com KPIs e gráficos'],['✅','Módulo de equipe completo'],['✅','Fechamento financeiro'],
+    ['✅','Contratos e documentos'],['✅','NPS de clientes'],['✅','Calculadora de viabilidade'],['✅','Pagamentos de equipe'],
+    ['✅','Tarefas atribuídas'],['✅','Cronograma corporativo'],['✅','Histórico financeiro'],['✅','Até 8 colaboradores']
+  ];
+  const agFeat = [
+    ['✅','Tudo da Produtora'],['✅','Colaboradores ilimitados'],['✅','PDF White-label (sem logo Age Ops)'],['✅','Permissões granulares avançadas'],
+    ['✅','Relatórios exportáveis CSV/PDF']
+  ];
+  function featList(rows) {
+    return rows.map(([ic,t,no]) => `<li class="${no||''}">${ic} ${t}</li>`).join('');
+  }
+  return `
+    <div class="plan-card plan-solo">
+      <div class="plan-card-title" style="color:#3b82f6">SOLO</div>
+      <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pSolo)}/mês</small></div>
+      <ul class="plan-features">${featList(soloFeat)}</ul>
+      <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: E-mail 48h</div>
+      <button type="button" class="plan-cta" style="background:#3b82f6;color:#fff" onclick="selectPlanOffer('solo')">Começar grátis por 7 dias</button>
+    </div>
+    <div class="plan-card plan-prod featured">
+      <span class="plan-badge">⭐ Mais Popular</span>
+      <div class="plan-card-title" style="color:#22c55e">PRODUTORA</div>
+      <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pProd)}/mês</small></div>
+      <ul class="plan-features">${featList(prodFeat)}</ul>
+      <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: WhatsApp 24h</div>
+      <button type="button" class="plan-cta" style="background:#22c55e;color:#fff" onclick="selectPlanOffer('produtora')">Começar grátis por 7 dias</button>
+    </div>
+    <div class="plan-card plan-ag">
+      <span class="plan-badge" style="background:#8b5cf6;color:#fff">Premium</span>
+      <div class="plan-card-title" style="color:#a78bfa">AGÊNCIA</div>
+      <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pAg)}/mês</small></div>
+      <ul class="plan-features">${featList(agFeat)}</ul>
+      <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: WhatsApp 4h</div>
+      <button type="button" class="plan-cta" style="background:#8b5cf6;color:#fff" onclick="selectPlanOffer('agencia')">Começar grátis por 7 dias</button>
+    </div>
+    <div class="plan-card plan-ent">
+      <span class="plan-badge" style="background:#f59e0b;color:#0f172a">Personalizado</span>
+      <div class="plan-card-title" style="color:#fbbf24">ENTERPRISE</div>
+      <div class="plan-price" style="font-size:16px">Plataforma personalizada<br><small style="font-weight:500">para sua empresa</small></div>
+      <ul class="plan-features">
+        <li>✅ Tudo da Agência</li><li>✅ Implementação assistida</li><li>✅ Treinamento da equipe</li><li>✅ Customizações sob medida</li><li>✅ SLA personalizado</li><li>✅ Gerente de conta dedicado</li>
+      </ul>
+      <button type="button" class="plan-cta" style="background:#f59e0b;color:#0f172a" onclick="openEnterpriseWhatsApp()">Falar com especialista</button>
+    </div>`;
+}
+
+function refreshPlanCardsPricing() {
+  const el = document.getElementById('plansCardsGrid');
+  const elG = document.getElementById('plansCardsGridGlobal');
+  if(el) el.innerHTML = buildPlanCardsHtml('signup');
+  if(elG) elG.innerHTML = buildPlanCardsHtml('global');
+}
+
+function setPlanBillingToggle(mode) {
+  _planBillSignup = mode === 'yearly' ? 'yearly' : 'monthly';
+  document.getElementById('planBillMonthly')?.classList.toggle('active', _planBillSignup === 'monthly');
+  document.getElementById('planBillYearly')?.classList.toggle('active', _planBillSignup === 'yearly');
+  refreshPlanCardsPricing();
+}
+
+function setPlanBillingToggleGlobal(mode) {
+  _planBillGlobal = mode === 'yearly' ? 'yearly' : 'monthly';
+  document.getElementById('planBillMonthlyG')?.classList.toggle('active', _planBillGlobal === 'monthly');
+  document.getElementById('planBillYearlyG')?.classList.toggle('active', _planBillGlobal === 'yearly');
+  refreshPlanCardsPricing();
+}
+
+function openEnterpriseWhatsApp() {
+  const url = `https://wa.me/${WHATSAPP_ENTERPRISE_NUM}?text=${encodeURIComponent('Olá! Quero saber sobre o plano Enterprise do Age Ops.')}`;
+  window.open(url, '_blank');
+}
+
+function selectPlanOffer(key) {
+  _pendingPlanKey = key;
+  if(key === 'enterprise') {
+    openEnterpriseWhatsApp();
+    return;
+  }
+  _planCheckoutCtx = document.getElementById('plansOverlayGlobal')?.classList.contains('open') ? 'app' : 'signup';
+  const bill = _planCheckoutCtx === 'app' ? _planBillGlobal : _planBillSignup;
+  const m = bill === 'yearly';
+  let after = 297;
+  if(key === 'solo') after = m ? 97 : 147;
+  else if(key === 'produtora') after = m ? 197 : 297;
+  else if(key === 'agencia') after = m ? 397 : 597;
+  const planNames = { solo: 'Solo', produtora: 'Produtora', agencia: 'Agência' };
+  document.getElementById('pgPlanSummary').innerHTML =
+    `<strong>Plano ${planNames[key]}</strong> — ${_fmtMoney(0)} hoje<br>Após 7 dias: ${_fmtMoney(after)}/mês`;
+  openModal('modalPagarmePlan');
+}
+
+function showPostSignupPlans() {
+  if(!_regPendingSessionRow) {
+    toast('Sessão expirada. Faça login.', 'warn');
+    return;
+  }
+  const nm = _regPendingSessionRow.name || _regPendingSessionRow.full_name || '—';
+  const t = document.getElementById('plansWelcomeTitle');
+  if(t) t.textContent = '🎉 Bem-vindo, ' + nm + '!';
+  document.getElementById('plansPostSignupLayer')?.classList.add('open');
+  document.getElementById('plansPostSignupLayer')?.setAttribute('aria-hidden', 'false');
+  refreshPlanCardsPricing();
+}
+
+function closePlansOverlay() {
+  document.getElementById('plansPostSignupLayer')?.classList.remove('open');
+  document.getElementById('plansPostSignupLayer')?.setAttribute('aria-hidden', 'true');
+  skipPlanDefaultEnter();
+}
+
+async function skipPlanDefaultEnter() {
+  if(!_regPendingSessionRow?.id) return;
+  const trialEnd = new Date();
+  trialEnd.setDate(trialEnd.getDate() + 7);
+  try {
+    await apiPatch('age_users', _regPendingSessionRow.id, {
+      plan: 'produtora',
+      plan_billing: 'monthly',
+      subscription_status: 'trial',
+      trial_ends_at: trialEnd.toISOString()
+    });
+  } catch(e) { console.warn(e); }
+  const row = await fetchAgeUserRow(_regPendingSessionRow.username);
+  _regPendingSessionRow = null;
+  await applyLoginSessionFromRow(row);
+}
+
+function openPlansOverlayGlobal() {
+  document.getElementById('plansOverlayGlobal')?.classList.add('open');
+  document.getElementById('plansOverlayGlobal')?.setAttribute('aria-hidden', 'false');
+  _planBillGlobal = 'monthly';
+  document.getElementById('planBillMonthlyG')?.classList.add('active');
+  document.getElementById('planBillYearlyG')?.classList.remove('active');
+  refreshPlanCardsPricing();
+}
+
+function closePlansOverlayGlobal() {
+  document.getElementById('plansOverlayGlobal')?.classList.remove('open');
+  document.getElementById('plansOverlayGlobal')?.setAttribute('aria-hidden', 'true');
+}
+
+function openPlansFromGate() {
+  openPlansOverlayGlobal();
+}
+
+function maskPgCardNum(el) {
+  const v = String(el.value || '').replace(/\D/g, '').slice(0, 16);
+  el.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+}
+
+function maskPgExp(el) {
+  let v = String(el.value || '').replace(/\D/g, '').slice(0, 4);
+  if(v.length >= 2) v = v.slice(0,2) + '/' + v.slice(2);
+  el.value = v;
+}
+
+async function pagarmeOrDemoCreateSubscription(planKey, billing) {
+  const key = String(PAGARME_API_KEY || '').trim();
+  if(!key || key.includes('COLE')) {
+    await new Promise(r => setTimeout(r, 2000));
+    const sid = 'demo_' + Date.now();
+    return {
+      ok: true,
+      demo: true,
+      customer_id: 'demo_customer_' + sid,
+      subscription_id: 'demo_subscription_' + sid
+    };
+  }
+  try {
+    const auth = 'Basic ' + btoa(key + ':');
+    const headers = { 'Content-Type': 'application/json', Authorization: auth };
+    return { ok: true, demo: true, customer_id: null, subscription_id: null };
+  } catch(e) {
+    return { ok: true, demo: true, customer_id: null, subscription_id: null };
+  }
+}
+
+async function confirmPagarmeTrial() {
+  if(!document.getElementById('pgAcceptTerms')?.checked) {
+    toast('Aceite os termos para continuar.', 'warn');
+    return;
+  }
+  const num = document.getElementById('pgCardNum')?.value?.trim() || '';
+  const nam = document.getElementById('pgCardName')?.value?.trim() || '';
+  const exp = document.getElementById('pgCardExp')?.value?.trim() || '';
+  const cvv = document.getElementById('pgCardCvv')?.value?.trim() || '';
+  const digits = num.replace(/\D/g, '');
+  const demo = _pagarmeIsDemoMode();
+  if(demo) {
+    if(digits.length < 4 || !nam || exp.replace(/\D/g, '').length < 4 || cvv.length < 3) {
+      toast('Preencha os dados do cartão (modo demo aceita qualquer número).', 'warn');
+      return;
+    }
+  } else if(digits.length < 13 || !nam || exp.length < 5 || cvv.length < 3) {
+    toast('Preencha os dados do cartão.', 'warn');
+    return;
+  }
+  const pk = _pendingPlanKey || 'produtora';
+  const bill = _planCheckoutCtx === 'app' ? _planBillGlobal : _planBillSignup;
+  const btn = document.getElementById('pgConfirmBtn');
+  const ic = document.getElementById('pgConfirmIcon');
+  const tx = document.getElementById('pgConfirmText');
+  if(btn) btn.disabled = true;
+  if(ic) ic.className = 'fas fa-spinner fa-spin';
+  if(tx) tx.textContent = 'Processando...';
+  try {
+    const pg = await pagarmeOrDemoCreateSubscription(pk, bill);
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 7);
+    const payload = {
+      plan: pk,
+      plan_billing: bill,
+      trial_ends_at: trialEnd.toISOString(),
+      subscription_status: 'trial',
+      pagarme_customer_id: pg.customer_id || null,
+      pagarme_subscription_id: pg.subscription_id || null
+    };
+    if(_planCheckoutCtx === 'signup' && _regPendingSessionRow?.id) {
+      const pendingUser = _regPendingSessionRow.username;
+      await apiPatch('age_users', _regPendingSessionRow.id, payload);
+      closeModal('modalPagarmePlan');
+      document.getElementById('plansPostSignupLayer')?.classList.remove('open');
+      _regPendingSessionRow = null;
+      const row = await fetchAgeUserRow(pendingUser);
+      await applyLoginSessionFromRow(row);
+      if(_pagarmeIsDemoMode()) {
+        toast('Modo demo: trial de 7 dias ativado (sem cobrança real).', 'ok');
+      }
+    } else if(currentUser?.id) {
+      await apiPatch('age_users', currentUser.id, payload);
+      Object.assign(currentUser, payload);
+      closeModal('modalPagarmePlan');
+      closePlansOverlayGlobal();
+      toast(_pagarmeIsDemoMode() ? 'Modo demo: trial de 7 dias ativado (sem cobrança real).' : 'Plano ativado! Trial de 7 dias.', 'ok');
+      updateTrialBanner();
+    }
+  } catch(e) {
+    console.error(e);
+    toast('Não foi possível concluir. Tente novamente.', 'err');
+  } finally {
+    if(btn) btn.disabled = false;
+    if(ic) ic.className = 'fas fa-lock';
+    if(tx) tx.textContent = 'Confirmar e começar trial';
+  }
+}
+
+function updateTrialBanner() {
+  const bar = document.getElementById('trialBanner');
+  const main = document.getElementById('main');
+  if(!bar || !main) return;
+  if(_userIsBootstrapAdmin()) {
+    bar.style.display = 'none';
+    main.classList.remove('has-trial-banner');
+    return;
+  }
+  const st = String(currentUser?.subscription_status || '').toLowerCase();
+  const ends = currentUser?.trial_ends_at ? new Date(currentUser.trial_ends_at) : null;
+  const now = new Date();
+  if(st !== 'trial' && st !== 'trialing') {
+    bar.style.display = 'none';
+    main.classList.remove('has-trial-banner');
+    return;
+  }
+  if(!ends || isNaN(ends.getTime())) {
+    bar.style.display = 'none';
+    return;
+  }
+  const ms = ends - now;
+  const days = Math.ceil(ms / 86400000);
+  bar.style.display = 'flex';
+  main.classList.add('has-trial-banner');
+  bar.classList.remove('warn','danger');
+  const refHint = ' 🎁 Indique 5 amigos e ganhe 30 dias grátis';
+  const pl = _effectiveUserPlan();
+  const after = pl === 'solo' ? 147 : pl === 'agencia' ? 597 : pl === 'produtora' ? 297 : 297;
+  if(days > 3) {
+    bar.className = '';
+    bar.innerHTML = `✅ Trial ativo — <strong>${days}</strong> dias restantes |${refHint}`;
+  } else if(days > 0) {
+    bar.classList.add('warn');
+    bar.innerHTML = `⚠️ Trial expira em <strong>${days}</strong> dia(s) — Seu cartão será cobrado ${_fmtMoney(after)} em ${ends.toLocaleDateString('pt-BR')}`;
+  } else {
+    bar.classList.add('danger');
+    bar.innerHTML = '🔴 Trial encerrado — Aguardando cobrança do cartão';
+  }
+}
+
+async function ensureReferralTokenAndUi() {
+  const card = document.getElementById('dashboardReferralCard');
+  if(!card || !currentUser?.id) return;
+  if(_userIsBootstrapAdmin()) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  let tok = currentUser.referral_token;
+  if(!tok) {
+    tok = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('ref_' + Math.random().toString(36).slice(2) + Date.now());
+    try {
+      await apiPatch('age_users', currentUser.id, { referral_token: tok });
+      currentUser.referral_token = tok;
+    } catch(e) { console.warn(e); }
+  }
+  const base = `${location.origin}${location.pathname}`;
+  const link = `${base}?ref=${encodeURIComponent(tok)}`;
+  const el = document.getElementById('refLinkText');
+  if(el) el.textContent = link;
+  const cnt = parseInt(currentUser.referral_count, 10) || 0;
+  const lb = document.getElementById('refCountLabel');
+  if(lb) lb.textContent = String(Math.min(cnt, 5));
+  const dots = document.getElementById('refDots');
+  if(dots) {
+    dots.innerHTML = [0,1,2,3,4].map(i => `<i class="fas fa-circle ${i < cnt ? 'on' : ''}"></i>`).join('');
+  }
+}
+
+function copyReferralLink() {
+  const t = document.getElementById('refLinkText')?.textContent;
+  if(!t) return;
+  navigator.clipboard.writeText(t).then(()=>toast('Link copiado!')).catch(()=>toast('Copie manualmente.','warn'));
+}
+
+function shareRefWhatsApp() {
+  const t = document.getElementById('refLinkText')?.textContent;
+  if(!t) return;
+  window.open('https://wa.me/?text=' + encodeURIComponent('Experimente o Age Ops: ' + t), '_blank');
+}
+
+async function processReferralOnSignup(newUsername, refToken) {
+  if(!refToken || !newUsername) return;
+  try {
+    const newRow = await fetchAgeUserRow(newUsername);
+    if(!newRow?.id) return;
+    const d = await apiGet('age_users', `?referral_token=eq.${encodeURIComponent(refToken)}&limit=3`);
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    const refUser = rows[0];
+    if(!refUser || String(refUser.username).toLowerCase() === String(newUsername).toLowerCase()) return;
+    const refU = String(refUser.username).toLowerCase();
+    await apiPatch('age_users', newRow.id, { referred_by: refU }).catch(()=>{});
+    try {
+      await apiPost('age_referrals', {
+        referrer_username: refU,
+        referred_username: newUsername,
+        converted: true,
+        created_at: new Date().toISOString()
+      });
+    } catch(e1) {
+      await apiPost('age_referrals', { referrer_username: refU, referred_username: newUsername }).catch(()=>{});
+    }
+    const prev = parseInt(refUser.referral_count, 10) || 0;
+    const next = prev + 1;
+    await apiPatch('age_users', refUser.id, { referral_count: next }).catch(()=>{});
+    if(next >= 5) {
+      const te = refUser.trial_ends_at ? new Date(refUser.trial_ends_at) : new Date();
+      te.setDate(te.getDate() + 30);
+      await apiPatch('age_users', refUser.id, { trial_ends_at: te.toISOString() }).catch(()=>{});
+    }
+    const refNm = displayNameForUsername(newUsername) || newUsername;
+    await createNotification({
+      username: refU,
+      company_id: refUser.company_id,
+      type: 'indicacao_convertida',
+      title: 'Indicação convertida!',
+      message: `${refNm} se cadastrou pelo seu link — ${Math.min(next, 5)}/5 completos`,
+      link: 'profile',
+      dedupe_key: `ref_${newUsername}_${refU}`
+    }).catch(()=>{});
+  } catch(e) {
+    console.warn('[referral]', e);
+  }
+}
+
+function initRefFromUrl() {
+  try {
+    const r = new URLSearchParams(location.search).get('ref');
+    if(r) sessionStorage.setItem('age_pending_ref', r);
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════ */
 const PAGE_TITLES = {
-  dashboard:'DASHBOARD 2026', projects:'PROJETOS', fechamento:'FECHAMENTO',
+  'plan-upgrade':'PLANOS', notificacoes:'NOTIFICAÇÕES', dashboard:'DASHBOARD 2026', projects:'PROJETOS', fechamento:'FECHAMENTO',
   historico:'HISTÓRICO', clientes:'CLIENTES', gestao:'GESTÃO DE PROJETOS', orcamentos:'ORÇAMENTOS',
   contratos:'CONTRATOS',
   pagamentos:'PAGAMENTOS',
@@ -4807,8 +5569,32 @@ const PAGE_TITLES = {
 
 function navigate(page) {
   if(typeof page !== 'string') page = 'dashboard';
+  if(page !== 'plan-upgrade' && page !== 'profile' && page !== 'no-access') {
+    if(!_planAllowsPage(page)) {
+      try { sessionStorage.setItem('age_blocked_module', page); } catch(e) {}
+      page = 'plan-upgrade';
+    }
+  }
   if(!canViewPage(page)) {
     page = 'no-access';
+  }
+  if(page === 'plan-upgrade') {
+    const mod = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('age_blocked_module')) || '';
+    const ttl = document.getElementById('planGateTitle');
+    const desc = document.getElementById('planGateDesc');
+    if(ttl) {
+      ttl.textContent = mod
+        ? ('🔒 Disponível no plano ' + _planRequiredLabel(mod))
+        : 'Planos Age Ops';
+    }
+    if(desc) {
+      if(mod) {
+        const nice = PAGE_TITLES[mod] || mod || 'este módulo';
+        desc.textContent = 'Faça upgrade para acessar: ' + nice + '.';
+      } else {
+        desc.textContent = 'Escolha um plano ou faça upgrade para liberar recursos avançados.';
+      }
+    }
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -4824,6 +5610,7 @@ function navigate(page) {
   if(ttl) ttl.textContent = PAGE_TITLES[page] || page.toUpperCase();
 
   if(page==='dashboard')    loadDashboard();
+  if(page==='notificacoes')  loadNotificationsFullPage();
   if(page==='projects')     _loadProjectsWithAutoSync();
   if(page==='fechamento')   loadFechamento();
   if(page==='historico')    loadHistorico();
@@ -4903,7 +5690,7 @@ const TENANT_SCOPED_TABLES = new Set([
   'age_projects','age_fechamento','age_hist_projects','age_contracts','age_project_stages',
   'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
   'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
-  'age_relatorios','age_leads','age_permissions'
+  'age_relatorios','age_leads','age_permissions','age_notifications'
 ]);
 
 function _tenantCidForScope() {
@@ -5076,6 +5863,440 @@ async function apiPost(table, body)        { return api('POST',   table, '', bod
 async function apiPatch(table, id, body)   { return api('PATCH',  table, id, body); }
 async function apiPut(table, id, body)     { return api('PUT',    table, id, body); }
 async function apiDel(table, id)           { return api('DELETE', table, id); }
+
+/* ═══════════════════════════════════════════
+   NOTIFICAÇÕES INTERNAS (age_notifications)
+═══════════════════════════════════════════ */
+const NOTIF_TYPE_META = {
+  tarefa_atribuida:    { icon: '📋', color: '#3b82f6' },
+  prazo_proximo:       { icon: '⏰', color: '#f59e0b' },
+  pagamento_pendente:  { icon: '💰', color: '#22c55e' },
+  trial_expirando:     { icon: '⚠️', color: '#f97316' },
+  indicacao_convertida:{ icon: '🎁', color: '#8b5cf6' },
+  novo_colaborador:    { icon: '👤', color: '#06b6d4' },
+  projeto_criado:      { icon: '🚀', color: '#22c55e' },
+  orcamento_aprovado:  { icon: '✅', color: '#22c55e' }
+};
+let _notifCache = [];
+let _notifPollTimer = null;
+let _notifFullRows = [];
+let _notifFullPage = 1;
+let _notifFullFilter = 'all';
+let _notifFullType = '';
+const NOTIF_PAGE_SIZE = 20;
+
+async function _fetchCompanyAdminUsernames(companyId) {
+  if(!companyId) return [];
+  try {
+    const d = await apiGet('age_users', `?company_id=eq.${encodeURIComponent(companyId)}&limit=500`);
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    return rows.filter(u => _sbIsRowVisible(u) && ['admin','gestor'].includes(_normalizeRole(u.role)))
+      .map(u => String(u.username || '').toLowerCase());
+  } catch(e) {
+    return [];
+  }
+}
+
+function _notifIsRead(row) {
+  return row.read === true || row.read === 'true' || row.read === 1;
+}
+
+function notifRelativeTime(iso) {
+  if(!iso) return '';
+  const t = new Date(iso);
+  if(isNaN(t.getTime())) return '';
+  const now = new Date();
+  const diffMs = now - t;
+  const mins = Math.floor(diffMs / 60000);
+  if(mins < 1) return 'agora';
+  if(mins < 60) return `há ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if(hours < 24) return `há ${hours}h`;
+  const days = Math.floor(hours / 24);
+  if(days === 1) return 'ontem';
+  return `há ${days} dias`;
+}
+
+async function createNotification(data) {
+  const meta = NOTIF_TYPE_META[data.type] || { icon: '🔔', color: '#64748b' };
+  const payload = {
+    username: String(data.username || '').trim().toLowerCase(),
+    company_id: data.company_id != null ? data.company_id : (currentUser?.company_id ?? null),
+    type: data.type,
+    title: data.title || '',
+    message: data.message || '',
+    link: data.link || '',
+    icon: data.icon || meta.icon,
+    color: data.color || meta.color,
+    read: false,
+    deleted: false
+  };
+  if(data.dedupe_key) payload.dedupe_key = data.dedupe_key;
+  if(!payload.username || !payload.type) return null;
+  if(payload.company_id === undefined) delete payload.company_id;
+  if(payload.dedupe_key) {
+    try {
+      const q = `?username=eq.${encodeURIComponent(payload.username)}&dedupe_key=eq.${encodeURIComponent(payload.dedupe_key)}&deleted=eq.false&limit=1`;
+      const check = await apiGet('age_notifications', q);
+      const rows = Array.isArray(check?.data) ? check.data : [];
+      if(rows.length) return rows[0];
+    } catch(e) { /* dedupe opcional */ }
+  }
+  try {
+    return await apiPost('age_notifications', payload);
+  } catch(e) {
+    console.warn('[createNotification]', e?.message || e);
+    try {
+      const p2 = { ...payload };
+      delete p2.dedupe_key;
+      return await apiPost('age_notifications', p2);
+    } catch(e2) {
+      console.warn('[createNotification] retry', e2?.message || e2);
+      return null;
+    }
+  }
+}
+
+async function loadNotifications(limit = 20) {
+  const u = currentUser?.username;
+  if(!u) {
+    _notifCache = [];
+    return [];
+  }
+  try {
+    const d = await apiGet('age_notifications',
+      `?username=eq.${encodeURIComponent(u)}&deleted=eq.false&order=created_at.desc&limit=${limit}`);
+    _notifCache = Array.isArray(d?.data) ? d.data : [];
+    return _notifCache;
+  } catch(e) {
+    console.warn('[loadNotifications]', e);
+    _notifCache = [];
+    return [];
+  }
+}
+
+async function markAsReadNotification(id) {
+  if(!id) return;
+  try {
+    await apiPatch('age_notifications', id, {
+      read: true,
+      read_at: new Date().toISOString()
+    });
+  } catch(e) { console.warn('[markAsRead]', e); }
+}
+
+async function markAllNotificationsRead() {
+  const u = currentUser?.username;
+  if(!u) return;
+  try {
+    await apiPatch('age_notifications', `?username=eq.${encodeURIComponent(u)}&read=eq.false`, {
+      read: true,
+      read_at: new Date().toISOString()
+    });
+  } catch(e1) {
+    try {
+      const rows = await loadNotifications(200);
+      for(const r of rows.filter(x => !_notifIsRead(x))) {
+        if(r.id) await markAsReadNotification(r.id);
+      }
+    } catch(e2) { console.warn(e2); }
+  }
+  await loadNotifications(20);
+  updateNotifBadge();
+  renderNotifDropdown();
+  if(document.getElementById('page-notificacoes')?.classList.contains('active')) await loadNotificationsFullPage();
+}
+
+async function clearReadNotifications() {
+  const u = currentUser?.username;
+  if(!u) return;
+  if(!confirm('Remover todas as notificações já lidas desta lista?')) return;
+  try {
+    await apiPatch('age_notifications', `?username=eq.${encodeURIComponent(u)}&read=eq.true`, {
+      deleted: true
+    });
+  } catch(e) {
+    console.warn('[clearReadNotifications]', e);
+  }
+  await loadNotificationsFullPage();
+  await loadNotifications(20);
+  updateNotifBadge();
+}
+
+function getUnreadCount() {
+  return _notifCache.filter(r => !_notifIsRead(r)).length;
+}
+
+function updateNotifBadge() {
+  const badge = document.getElementById('notifBadge');
+  const n = getUnreadCount();
+  if(!badge) return;
+  if(n > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = n > 99 ? '99+' : String(n);
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function navigateFromNotificationLink(link) {
+  const raw = String(link || '').replace(/^#/, '').trim().toLowerCase();
+  if(!raw) {
+    navigate(_defaultLandingPage());
+    return;
+  }
+  if(raw === 'planos') {
+    openPlansOverlayGlobal();
+    navigate('plan-upgrade');
+    return;
+  }
+  const map = {
+    mytasks: 'mytasks', projetos: 'projects', projects: 'projects', myfinance: 'myfinance',
+    perfil: 'profile', profile: 'profile', equipe: 'colaboradores', colaboradores: 'colaboradores',
+    orcamentos: 'orcamentos', plan_upgrade: 'plan-upgrade', 'plan-upgrade': 'plan-upgrade'
+  };
+  const page = map[raw] || raw;
+  try {
+    if(canViewPage(page)) navigate(page);
+    else navigate(_defaultLandingPage());
+  } catch(e) {
+    navigate(_defaultLandingPage());
+  }
+}
+
+function renderNotifDropdown() {
+  const body = document.getElementById('notifDdBody');
+  const emptyEl = document.getElementById('notifDdEmpty');
+  if(!body) return;
+  const rows = _notifCache.slice(0, 10);
+  if(!rows.length) {
+    body.innerHTML = '<div class="notif-dd-empty" id="notifDdEmpty">Nenhuma notificação 🎉</div>';
+    return;
+  }
+  body.innerHTML = rows.map(r => {
+    const ic = r.icon || (NOTIF_TYPE_META[r.type]?.icon) || '🔔';
+    const border = r.color || (NOTIF_TYPE_META[r.type]?.color) || '#64748b';
+    const unread = !_notifIsRead(r);
+    const sum = (r.message || '').length > 120 ? (r.message || '').slice(0, 117) + '…' : (r.message || '');
+    return `<button type="button" class="notif-item${unread ? ' unread' : ''}" style="border-left-color:${border}" onclick="onNotifItemClick('${String(r.id).replace(/'/g, "\\'")}')">
+      <span class="nic">${ic}</span>
+      <span style="flex:1;min-width:0">
+        <div class="nttl">${escHtml(r.title || 'Notificação')}</div>
+        <div class="nmsg">${escHtml(sum)}</div>
+        <div class="nwhen">${notifRelativeTime(r.created_at)}</div>
+      </span>
+    </button>`;
+  }).join('');
+}
+
+async function onNotifItemClick(id) {
+  const row = _notifCache.find(x => String(x.id) === String(id));
+  if(!row) return;
+  if(!_notifIsRead(row)) await markAsReadNotification(id);
+  closeNotifDropdown();
+  await loadNotifications(20);
+  updateNotifBadge();
+  navigateFromNotificationLink(row.link);
+}
+
+async function toggleNotifDropdown(ev) {
+  if(ev) ev.stopPropagation();
+  const dd = document.getElementById('notifDropdown');
+  const btn = document.getElementById('notifBellBtn');
+  if(!dd) return;
+  const nowHidden = dd.classList.toggle('hidden');
+  if(btn) btn.setAttribute('aria-expanded', nowHidden ? 'false' : 'true');
+  dd.setAttribute('aria-hidden', nowHidden ? 'true' : 'false');
+  if(!nowHidden) {
+    await loadNotifications(20);
+    updateNotifBadge();
+    renderNotifDropdown();
+  }
+}
+
+function closeNotifDropdown() {
+  const dd = document.getElementById('notifDropdown');
+  const btn = document.getElementById('notifBellBtn');
+  if(dd && !dd.classList.contains('hidden')) {
+    dd.classList.add('hidden');
+    dd.setAttribute('aria-hidden', 'true');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+async function loadNotificationsFullPage() {
+  const u = currentUser?.username;
+  const el = document.getElementById('notifFullList');
+  const bar = document.getElementById('notifPageBar');
+  if(!u || !el) return;
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:#888;font-family:var(--font-m);font-size:11px">Carregando…</div>';
+  try {
+    const d = await apiGet('age_notifications',
+      `?username=eq.${encodeURIComponent(u)}&deleted=eq.false&order=created_at.desc&limit=200`);
+    _notifFullRows = Array.isArray(d?.data) ? d.data : [];
+  } catch(e) {
+    _notifFullRows = [];
+  }
+  renderNotifFullList();
+}
+
+function setNotifPageFilter(mode) {
+  _notifFullFilter = mode || 'all';
+  document.querySelectorAll('#page-notificacoes .notif-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-nfilt') === _notifFullFilter);
+  });
+  _notifFullPage = 1;
+  renderNotifFullList();
+}
+
+function setNotifTypeFilterUi() {
+  _notifFullType = document.getElementById('notifTypeFilter')?.value || '';
+  _notifFullPage = 1;
+  renderNotifFullList();
+}
+
+function renderNotifFullList() {
+  const el = document.getElementById('notifFullList');
+  const bar = document.getElementById('notifPageBar');
+  if(!el) return;
+  let rows = [..._notifFullRows];
+  if(_notifFullFilter === 'unread') rows = rows.filter(r => !_notifIsRead(r));
+  if(_notifFullType) rows = rows.filter(r => r.type === _notifFullType);
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total / NOTIF_PAGE_SIZE));
+  if(_notifFullPage > pages) _notifFullPage = pages;
+  if(_notifFullPage < 1) _notifFullPage = 1;
+  const start = (_notifFullPage - 1) * NOTIF_PAGE_SIZE;
+  const slice = rows.slice(start, start + NOTIF_PAGE_SIZE);
+  if(!slice.length) {
+    el.innerHTML = '<div style="padding:48px;text-align:center;color:#888;font-family:var(--font-m);font-size:11px">Nenhuma notificação 🎉</div>';
+    if(bar) bar.innerHTML = '';
+    return;
+  }
+  el.innerHTML = slice.map(r => {
+    const ic = r.icon || (NOTIF_TYPE_META[r.type]?.icon) || '🔔';
+    const border = r.color || (NOTIF_TYPE_META[r.type]?.color) || '#64748b';
+    const unread = !_notifIsRead(r);
+    return `<button type="button" class="notif-item${unread ? ' unread' : ''}" style="border-left-color:${border};width:100%;text-align:left;border-right:none;border-top:none"
+      onclick="onNotifFullItemClick('${String(r.id).replace(/'/g, "\\'")}')">
+      <span class="nic">${ic}</span>
+      <span style="flex:1;min-width:0">
+        <div class="nttl">${escHtml(r.title || '')}</div>
+        <div class="nmsg">${escHtml(r.message || '')}</div>
+        <div class="nwhen">${notifRelativeTime(r.created_at)} · ${escHtml(r.type || '')}</div>
+      </span>
+    </button>`;
+  }).join('');
+  if(bar) {
+    bar.innerHTML = `<button type="button" class="btn btn-ghost btn-sm" ${ _notifFullPage<=1?'disabled style="opacity:.4"':''} onclick="notifFullPrev()">« Anterior</button>
+      <span>Página ${_notifFullPage} / ${pages} (${total})</span>
+      <button type="button" class="btn btn-ghost btn-sm" ${_notifFullPage>=pages?'disabled style="opacity:.4"':''} onclick="notifFullNext()">Próxima »</button>`;
+  }
+}
+
+function notifFullPrev() {
+  if(_notifFullPage > 1) { _notifFullPage--; renderNotifFullList(); }
+}
+function notifFullNext() {
+  _notifFullPage++;
+  renderNotifFullList();
+}
+
+async function onNotifFullItemClick(id) {
+  const row = _notifFullRows.find(x => String(x.id) === String(id));
+  if(!row) return;
+  if(!_notifIsRead(row)) await markAsReadNotification(id);
+  await loadNotificationsFullPage();
+  await loadNotifications(20);
+  updateNotifBadge();
+  navigateFromNotificationLink(row.link);
+}
+
+async function maybeNotifyTrialExpiring() {
+  if(!currentUser?.username || _userIsBootstrapAdmin()) return;
+  const st = String(currentUser.subscription_status || '').toLowerCase();
+  if(st !== 'trial' && st !== 'trialing') return;
+  const ends = currentUser.trial_ends_at ? new Date(currentUser.trial_ends_at) : null;
+  if(!ends || isNaN(ends.getTime())) return;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endDay = new Date(ends);
+  endDay.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((endDay - today) / 86400000);
+  if(diffDays !== 3) return;
+  const dk = `trial3_${currentUser.username}_${endDay.toISOString().slice(0, 10)}`;
+  await createNotification({
+    username: currentUser.username,
+    type: 'trial_expirando',
+    title: 'Trial expirando em breve',
+    message: `Seu trial expira em ${diffDays} dias — assine para continuar`,
+    link: 'planos',
+    dedupe_key: dk
+  });
+}
+
+async function maybeNotifyProjectDeadlines(projects) {
+  const cid = currentUser?.company_id;
+  if(!cid || !Array.isArray(projects)) return;
+  try {
+    const admins = await _fetchCompanyAdminUsernames(cid);
+    if(!admins.length) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for(const p of projects) {
+      const raw = p.due_date || p.delivery_date || p.end_date;
+      if(!raw) continue;
+      const due = new Date(String(raw).slice(0, 10));
+      if(isNaN(due.getTime())) continue;
+      due.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((due - today) / 86400000);
+      if(diffDays !== 3) continue;
+      const nome = _ageProjDbTitle(p) || 'Projeto';
+      const pid = p.id || nome;
+      for(const adm of admins) {
+        await createNotification({
+          username: adm,
+          type: 'prazo_proximo',
+          title: 'Prazo se aproximando',
+          message: `Projeto '${nome}' vence em 3 dias`,
+          link: 'projects',
+          dedupe_key: `prazo_${pid}_${due.toISOString().slice(0, 10)}_${adm}`
+        });
+      }
+    }
+  } catch(e) { console.warn('[maybeNotifyProjectDeadlines]', e); }
+}
+
+function startNotificationsPolling() {
+  stopNotificationsPolling();
+  _notifPollTimer = setInterval(() => { notificationPollTick(); }, 30000);
+}
+
+function stopNotificationsPolling() {
+  if(_notifPollTimer) clearInterval(_notifPollTimer);
+  _notifPollTimer = null;
+}
+
+async function notificationPollTick() {
+  if(!currentUser?.username) return;
+  const before = new Set(_notifCache.map(r => r.id));
+  await loadNotifications(20);
+  const fresh = _notifCache.filter(r => !before.has(r.id) && !_notifIsRead(r));
+  if(fresh.length && before.size > 0) {
+    try { toast('🔔 Nova notificação', 'ok'); } catch(e) {}
+  }
+  updateNotifBadge();
+  const dd = document.getElementById('notifDropdown');
+  if(dd && !dd.classList.contains('hidden')) renderNotifDropdown();
+}
+
+async function bootstrapNotificationsUi() {
+  await loadNotifications(20);
+  updateNotifBadge();
+  renderNotifDropdown();
+  await maybeNotifyTrialExpiring();
+  startNotificationsPolling();
+}
 
 async function fetchAll(table, limit=500) {
   try {
@@ -5499,12 +6720,14 @@ function _dashPeriodLabel() {
 
 async function loadDashboard() {
   try {
+    try { updateTrialBanner(); ensureReferralTokenAndUi(); } catch(e) {}
     /* FONTE DE VERDADE: planilha 2026
        Banco usado para status, NPS e custo do fechamento */
     const [dbProjects, dbFechs] = await Promise.all([
       fetchAll('age_projects', 300).catch(()=>[]),
       fetchAll('age_fechamento', 300).catch(()=>[])
     ]);
+    maybeNotifyProjectDeadlines(dbProjects).catch(()=>{});
 
     /* Enriquecer planilha com status/NPS/custo do banco */
     const sheetWithStatus = PROJ_2026_SHEET.map(s => {
@@ -7951,6 +9174,25 @@ async function saveProject() {
     const saved = realId
       ? await apiPut('age_projects', realId, payload)
       : await apiPost('age_projects', payload);
+    if(!realId && saved) {
+      const sid = Array.isArray(saved) ? saved[0] : saved;
+      if(sid?.id) {
+        try {
+          const admins = await _fetchCompanyAdminUsernames(currentUser.company_id);
+          const who = displayNameForUsername(currentUser.username);
+          for(const a of admins) {
+            await createNotification({
+              username: a,
+              type: 'projeto_criado',
+              title: 'Novo projeto criado',
+              message: `Projeto '${projName}' foi criado por ${who}`,
+              link: 'projects',
+              dedupe_key: `proj_${sid.id}_${a}`
+            });
+          }
+        } catch(eN) { console.warn('[notif projeto]', eN); }
+      }
+    }
     closeModal('modalProject');
     toast(realId ? 'Projeto atualizado!' : 'Projeto criado!');
     _fechAllProjects = [];
@@ -10169,9 +11411,42 @@ async function saveOrcamento(status='rascunho') {
     if(_orcEditId) {
       await apiPut('age_orcamentos', _orcEditId, payload);
       toast('Orçamento atualizado!');
+      if(status === 'aprovado' && currentUser?.company_id) {
+        try {
+          const admins = await _fetchCompanyAdminUsernames(currentUser.company_id);
+          const num = payload.numero || '';
+          for(const a of admins) {
+            await createNotification({
+              username: a,
+              type: 'orcamento_aprovado',
+              title: 'Orçamento aprovado',
+              message: `Orçamento #${num} de ${client} foi aprovado`,
+              link: 'orcamentos',
+              dedupe_key: `orc_apr_save_${_orcEditId}_${a}`
+            });
+          }
+        } catch(eN) { console.warn('[notif orc save]', eN); }
+      }
     } else {
-      await apiPost('age_orcamentos', payload);
+      const ins = await apiPost('age_orcamentos', payload);
+      const newId = Array.isArray(ins) ? ins[0]?.id : ins?.id;
       toast('Orçamento salvo!');
+      if(status === 'aprovado' && newId && currentUser?.company_id) {
+        try {
+          const admins = await _fetchCompanyAdminUsernames(currentUser.company_id);
+          const num = (ins && (ins.numero || ins[0]?.numero)) || payload.numero || '';
+          for(const a of admins) {
+            await createNotification({
+              username: a,
+              type: 'orcamento_aprovado',
+              title: 'Orçamento aprovado',
+              message: `Orçamento #${num} de ${client} foi aprovado`,
+              link: 'orcamentos',
+              dedupe_key: `orc_apr_save_${newId}_${a}`
+            });
+          }
+        } catch(eN) { console.warn('[notif orc save]', eN); }
+      }
     }
     closeOrcModal();
     loadOrcamentos();
@@ -10275,7 +11550,28 @@ async function orcChangeStatus(id, current) {
   const opts = ['rascunho','enviado','aprovado','recusado','expirado'];
   const cur  = opts.indexOf(current);
   const next = opts[(cur+1)%opts.length];
+  let rowSnap = null;
+  if(next === 'aprovado') {
+    rowSnap = await apiGet('age_orcamentos', `/${id}`).catch(()=>null);
+  }
   await apiPatch('age_orcamentos', id, { status: next }).catch(()=>{});
+  if(next === 'aprovado' && rowSnap && currentUser?.company_id) {
+    try {
+      const admins = await _fetchCompanyAdminUsernames(currentUser.company_id);
+      const num = rowSnap.numero || '';
+      const cli = rowSnap.client_name || '';
+      for(const a of admins) {
+        await createNotification({
+          username: a,
+          type: 'orcamento_aprovado',
+          title: 'Orçamento aprovado',
+          message: `Orçamento #${num} de ${cli} foi aprovado`,
+          link: 'orcamentos',
+          dedupe_key: `orc_apr_${id}_${a}`
+        });
+      }
+    } catch(eN) { console.warn('[notif orc]', eN); }
+  }
   toast('Status: '+next.toUpperCase());
   loadOrcamentos();
 }
@@ -11389,7 +12685,7 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
       if(r.id) await apiPatch('age_assigned_tasks', r.id, { deleted: true }).catch(()=>{});
     }
     if(!assignTo) return;
-    await apiPost('age_assigned_tasks', {
+    const posted = await apiPost('age_assigned_tasks', {
       assigned_to: assignTo,
       assigned_by: currentUser.username,
       title: title || saved.title || '',
@@ -11399,6 +12695,22 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
       calendar_event_id: saved.id,
       deleted: false
     });
+    try {
+      if(assignTo && String(assignTo).toLowerCase() !== String(currentUser.username || '').toLowerCase()) {
+        const dueStr = (dueDate || (saved.event_date || saved.date || '')).toString().slice(0, 10);
+        const niceDue = dueStr ? new Date(dueStr + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+        const byL = displayNameForUsername(currentUser.username);
+        const tid = posted?.id || saved?.id || '';
+        await createNotification({
+          username: assignTo,
+          type: 'tarefa_atribuida',
+          title: 'Nova tarefa atribuída',
+          message: `${byL} atribuiu '${(title || saved.title || '').replace(/'/g, '′')}' para você — vence em ${niceDue}`,
+          link: 'mytasks',
+          dedupe_key: tid ? `asgt_${tid}_${assignTo}` : undefined
+        });
+      }
+    } catch(e2) { console.warn('[notif task]', e2); }
   } catch(e) {
     console.warn('[syncAssignedTaskFromCalendar]', e);
   }
@@ -12164,8 +13476,22 @@ async function savePagamento() {
   };
 
   try {
+    let createdRow = null;
     if(editId) await apiPatch('age_payments', editId, payload);
-    else await apiPost('age_payments', payload);
+    else {
+      createdRow = await apiPost('age_payments', payload);
+      const payId = Array.isArray(createdRow) ? createdRow[0]?.id : createdRow?.id;
+      if(payId) {
+        await createNotification({
+          username: colab,
+          type: 'pagamento_pendente',
+          title: 'Pagamento pendente',
+          message: `Você tem ${fmtBRL(amount)} a receber de '${project_name || 'projeto'}'`,
+          link: 'myfinance',
+          dedupe_key: `pay_${payId}`
+        });
+      }
+    }
     closeModal('modalPagamento');
     toast(editId ? 'Pagamento atualizado.' : 'Pagamento criado.');
     await loadPagamentosPage();
@@ -13478,7 +14804,15 @@ function _ageInit() {
   document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
   });
+  document.addEventListener('click', e => {
+    const root = document.getElementById('notifBellRoot');
+    const dd = document.getElementById('notifDropdown');
+    if(!root || !dd || dd.classList.contains('hidden')) return;
+    if(root.contains(e.target)) return;
+    closeNotifDropdown();
+  });
   initInviteFromUrl();
+  initRefFromUrl();
 }
 
 if(document.readyState === 'loading') {
