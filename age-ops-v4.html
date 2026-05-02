@@ -685,8 +685,10 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 
 /* ── LOGIN PAGE ── */
 #loginPage{
-  position:fixed;inset:0;background:#f0f0f0;z-index:9000;
+  position:fixed;inset:0;background:linear-gradient(165deg,#0f172a 0%,#1e293b 45%,#0f172a 100%);z-index:9000;
   display:flex;align-items:center;justify-content:center;
+  padding:24px 16px;
+  overflow:auto;
 }
 #loginPage.hidden { display:none !important; }
 #shell.visible    { display:flex !important; }
@@ -696,6 +698,82 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   width:100%;max-width:360px;
   box-shadow:0 16px 48px rgba(0,0,0,.1);
 }
+.login-main-card{
+  background:#ffffff;border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;padding:36px 32px;
+  width:100%;max-width:420px;
+  box-shadow:0 24px 64px rgba(0,0,0,.35);
+}
+.login-main-card.reg-mode-wide{max-width:560px}
+.reg-progress{
+  display:flex;align-items:center;gap:8px;margin-bottom:28px;
+}
+.reg-progress-step{
+  flex:1;height:4px;border-radius:4px;background:rgba(0,0,0,.08);
+  transition:background .25s;
+}
+.reg-progress-step.done{background:#22c55e}
+.reg-progress-step.active{background:#86efac}
+.reg-progress-label{
+  font-family:var(--font-m);font-size:9px;color:#94a3b8;letter-spacing:.12em;
+  text-align:center;margin-bottom:10px;text-transform:uppercase;
+}
+.reg-step-title{
+  font-family:var(--font-h);font-size:17px;font-weight:800;color:#0f172a;
+  margin:0 0 6px;text-align:center;
+}
+.reg-step-sub{
+  font-family:var(--font-m);font-size:10px;color:#64748b;text-align:center;margin:0 0 22px;line-height:1.45;
+}
+.reg-step-panel{display:none}
+.reg-step-panel.active{display:block}
+.reg-field{margin-bottom:14px}
+.reg-field-label{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-m);font-size:8px;color:#64748b;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;
+}
+.reg-field-label i{width:14px;text-align:center;color:#22c55e;font-size:11px}
+.reg-input-wrap{position:relative;display:flex;align-items:center}
+.reg-input-wrap .login-input{padding-right:42px}
+.reg-toggle-pass{
+  position:absolute;right:10px;background:none;border:none;color:#94a3b8;cursor:pointer;padding:6px;
+  font-size:14px;line-height:1;
+}
+.reg-toggle-pass:hover{color:#22c55e}
+.reg-inline-err{
+  font-family:var(--font-m);font-size:9px;color:#dc2626;margin-top:4px;min-height:14px;display:none;
+}
+.reg-inline-err.show{display:block}
+.reg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.reg-grid-2{grid-template-columns:1fr}}
+.reg-address-title{
+  font-family:var(--font-h);font-size:10px;font-weight:700;color:#0f172a;letter-spacing:.1em;
+  margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(0,0,0,.08);
+}
+.reg-btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.reg-btn-row .btn{flex:1;min-width:120px}
+.btn-reg-green{
+  background:#22c55e!important;border-color:#22c55e!important;color:#fff!important;
+}
+.btn-reg-green:hover{filter:brightness(1.06)}
+.reg-success-icon{
+  width:64px;height:64px;margin:0 auto 16px;border-radius:50%;
+  background:linear-gradient(145deg,#dcfce7,#bbf7d0);color:#15803d;
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+}
+.reg-summary{
+  text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin:18px 0;
+  font-family:var(--font-m);font-size:11px;color:#334155;line-height:1.65;
+}
+.reg-summary strong{color:#0f172a}
+.reg-trial-note{
+  font-family:var(--font-m);font-size:11px;color:#15803d;text-align:center;margin:12px 0 20px;padding:12px;
+  background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;
+}
+.login-input:focus{
+  outline:none;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);
+}
+select.login-input{cursor:pointer}
 .login-logo{
   font-family:var(--font-h);font-size:26px;font-weight:800;
   color:#111111;letter-spacing:.06em;
@@ -752,7 +830,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 ══════════════════════════════════════════ -->
 <div id="loginPage">
   <!-- Fluxo convite (?invite=TOKEN): aceitar cadastro -->
-  <div id="loginInviteFlow" class="login-box login-box-wide" style="display:none">
+  <div id="loginInviteFlow" class="login-main-card reg-mode-wide" style="display:none">
     <div class="login-logo">CONVITE</div>
     <div class="login-sub" id="inviteFlowSubtitle">COMPLETE SEU CADASTRO</div>
     <div id="inviteFlowErr" class="login-error" style="min-height:20px"></div>
@@ -784,7 +862,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
     </div>
   </div>
 
-  <div id="loginMainFlow" class="login-box login-box-wide">
+  <div id="loginMainFlow" class="login-main-card">
     <div class="login-logo">AGE OPS</div>
     <div class="login-sub">SISTEMA OPERACIONAL v4.0</div>
 
@@ -803,44 +881,178 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
           <label class="login-label">SENHA</label>
           <input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
         </div>
-        <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt" id="loginBtnIcon"></i> <span id="loginBtnText">ENTRAR</span></button>
+        <button type="button" class="btn btn-reg-green login-btn" id="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt" id="loginBtnIcon"></i> <span id="loginBtnText">ENTRAR</span></button>
       </form>
     </div>
 
     <div id="panelRegister" class="login-panel">
+      <div id="regWizardProgressWrap">
+        <div class="reg-progress-label" id="regProgressLabel">Etapa 1 de 3 — Seus dados</div>
+        <div class="reg-progress" id="regProgressBar">
+          <div class="reg-progress-step" data-i="0"></div>
+          <div class="reg-progress-step" data-i="1"></div>
+          <div class="reg-progress-step" data-i="2"></div>
+        </div>
+      </div>
+
       <form id="registerForm" autocomplete="off" onsubmit="return false">
-        <div class="login-group">
-          <label class="login-label">NOME COMPLETO *</label>
-          <input class="login-input" id="regName" type="text" placeholder="Seu nome">
+        <!-- ETAPA 1 -->
+        <div id="regStep1" class="reg-step-panel active">
+          <h2 class="reg-step-title">Seus dados pessoais</h2>
+          <p class="reg-step-sub">Preencha seus dados para criar sua conta de administrador.</p>
+
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-user"></i> Nome completo *</label>
+            <input class="login-input" id="regFullName" type="text" placeholder="João Silva" autocomplete="name">
+            <div class="reg-inline-err" id="regErr-fullName"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-id-card"></i> CPF *</label>
+            <input class="login-input" id="regCpf" type="text" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off">
+            <div class="reg-inline-err" id="regErr-cpf"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-birthday-cake"></i> Data de nascimento *</label>
+            <input class="login-input" id="regBirth" type="date" autocomplete="bday">
+            <div class="reg-inline-err" id="regErr-birth"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-envelope"></i> Email *</label>
+            <input class="login-input" id="regEmail" type="email" placeholder="joao@empresa.com" autocomplete="email">
+            <div class="reg-inline-err" id="regErr-email"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fab fa-whatsapp"></i> Telefone / WhatsApp *</label>
+            <input class="login-input" id="regPhone" type="text" placeholder="(11) 99999-9999" maxlength="15" inputmode="numeric" autocomplete="tel">
+            <div class="reg-inline-err" id="regErr-phone"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-lock"></i> Senha *</label>
+            <div class="reg-input-wrap">
+              <input class="login-input" id="regPass" style="width:100%" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="reg-toggle-pass" id="regTogglePass1" onclick="toggleRegPassword('regPass',this)" tabindex="-1" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+            </div>
+            <div class="reg-inline-err" id="regErr-pass"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-lock"></i> Confirmar senha *</label>
+            <div class="reg-input-wrap">
+              <input class="login-input" id="regPass2" style="width:100%" type="password" placeholder="Repita a senha" autocomplete="new-password">
+              <button type="button" class="reg-toggle-pass" id="regTogglePass2" onclick="toggleRegPassword('regPass2',this)" tabindex="-1" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+            </div>
+            <div class="reg-inline-err" id="regErr-pass2"></div>
+          </div>
+
+          <button type="button" class="btn btn-reg-green login-btn" id="regBtnNext1" onclick="regWizardNextFromStep1()"><span id="regBtnNext1Text">Próximo</span> <i class="fas fa-arrow-right"></i></button>
         </div>
-        <div class="login-group">
-          <label class="login-label">NOME DA EMPRESA *</label>
-          <input class="login-input" id="regCompany" type="text" placeholder="Nome fantasia ou razão social">
+
+        <!-- ETAPA 2 -->
+        <div id="regStep2" class="reg-step-panel">
+          <h2 class="reg-step-title">Dados da sua empresa</h2>
+          <p class="reg-step-sub">Informações da empresa e endereço para o cadastro.</p>
+
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-store"></i> Nome fantasia *</label>
+            <input class="login-input" id="regFantasy" type="text" placeholder="OWNAGE Films">
+            <div class="reg-inline-err" id="regErr-fantasy"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-file-invoice"></i> Razão social</label>
+            <input class="login-input" id="regLegalName" type="text" placeholder="OWNAGE Films LTDA">
+            <div class="reg-inline-err" id="regErr-legal"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-building"></i> CNPJ <span style="opacity:.6">(opcional)</span></label>
+            <input class="login-input" id="regCnpj" type="text" placeholder="00.000.000/0000-00" maxlength="18" inputmode="numeric" autocomplete="off">
+            <div class="reg-inline-err" id="regErr-cnpj"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-tags"></i> Segmento *</label>
+            <select class="login-input" id="regSegment" style="width:100%">
+              <option value="">Selecione…</option>
+              <option value="Produtora de Vídeo">Produtora de Vídeo</option>
+              <option value="Agência de Conteúdo">Agência de Conteúdo</option>
+              <option value="Agência de Marketing">Agência de Marketing</option>
+              <option value="Fotografia">Fotografia</option>
+              <option value="Eventos">Eventos</option>
+              <option value="Podcast">Podcast</option>
+              <option value="Streaming">Streaming</option>
+              <option value="Outro">Outro</option>
+            </select>
+            <div class="reg-inline-err" id="regErr-segment"></div>
+          </div>
+          <div class="reg-grid-2">
+            <div class="reg-field">
+              <label class="reg-field-label"><i class="fas fa-phone-alt"></i> Telefone comercial</label>
+              <input class="login-input" id="regCoPhone" type="text" placeholder="(11) 3333-3333" maxlength="15" inputmode="numeric">
+              <div class="reg-inline-err" id="regErr-cophone"></div>
+            </div>
+            <div class="reg-field">
+              <label class="reg-field-label"><i class="fas fa-globe"></i> Site</label>
+              <input class="login-input" id="regSite" type="text" placeholder="www.suaempresa.com.br">
+              <div class="reg-inline-err" id="regErr-site"></div>
+            </div>
+          </div>
+
+          <div class="reg-address-title"><i class="fas fa-map-marker-alt" style="color:#22c55e"></i> ENDEREÇO</div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-mail-bulk"></i> CEP *</label>
+            <input class="login-input" id="regCep" type="text" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code">
+            <div class="reg-inline-err" id="regErr-cep"></div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-road"></i> Rua / Avenida *</label>
+            <input class="login-input" id="regStreet" type="text" placeholder="Preenchido pelo CEP">
+            <div class="reg-inline-err" id="regErr-street"></div>
+          </div>
+          <div class="reg-grid-2">
+            <div class="reg-field">
+              <label class="reg-field-label"><i class="fas fa-hashtag"></i> Número *</label>
+              <input class="login-input" id="regNum" type="text" placeholder="Nº" inputmode="numeric">
+              <div class="reg-inline-err" id="regErr-num"></div>
+            </div>
+            <div class="reg-field">
+              <label class="reg-field-label"><i class="fas fa-door-open"></i> Complemento</label>
+              <input class="login-input" id="regComp" type="text" placeholder="Sala 42, Apto 3...">
+            </div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-field-label"><i class="fas fa-map"></i> Bairro *</label>
+            <input class="login-input" id="regBairro" type="text" placeholder="Bairro">
+            <div class="reg-inline-err" id="regErr-bairro"></div>
+          </div>
+          <div class="reg-grid-2">
+            <div class="reg-field">
+              <label class="reg-field-label"><i class="fas fa-city"></i> Cidade *</label>
+              <input class="login-input" id="regCity" type="text" placeholder="Cidade">
+              <div class="reg-inline-err" id="regErr-city"></div>
+            </div>
+            <div class="reg-field">
+              <label class="reg-field-label"><i class="fas fa-flag"></i> Estado *</label>
+              <select class="login-input" id="regUf" style="width:100%">
+                <option value="">UF</option>
+                <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+              </select>
+              <div class="reg-inline-err" id="regErr-uf"></div>
+            </div>
+          </div>
+
+          <div class="reg-btn-row">
+            <button type="button" class="btn btn-secondary login-btn" id="regBtnBack2" onclick="regWizardGoStep(1)"><i class="fas fa-arrow-left"></i> Voltar</button>
+            <button type="button" class="btn btn-reg-green login-btn" id="regBtnSubmit" onclick="submitAdminRegister()"><i class="fas fa-rocket" id="regBtnIcon"></i> <span id="regBtnText">Criar minha conta</span></button>
+          </div>
         </div>
-        <div class="login-group">
-          <label class="login-label">EMAIL *</label>
-          <input class="login-input" id="regEmail" type="email" placeholder="voce@empresa.com" autocomplete="email">
-        </div>
-        <div class="login-group">
-          <label class="login-label">SENHA *</label>
-          <input class="login-input" id="regPass" type="password" placeholder="••••••••" autocomplete="new-password">
-        </div>
-        <div class="login-group">
-          <label class="login-label">CONFIRMAR SENHA *</label>
-          <input class="login-input" id="regPass2" type="password" placeholder="••••••••" autocomplete="new-password">
-        </div>
-        <div class="login-group">
-          <label class="login-label">SEGMENTO *</label>
-          <select class="login-input" id="regSegment" style="width:100%">
-            <option value="">Selecione…</option>
-            <option value="Produtora de Vídeo">Produtora de Vídeo</option>
-            <option value="Agência">Agência</option>
-            <option value="Fotografia">Fotografia</option>
-            <option value="Outro">Outro</option>
-          </select>
-        </div>
-        <button type="button" class="btn btn-primary login-btn" id="regBtn" onclick="submitAdminRegister()"><i class="fas fa-rocket" id="regBtnIcon"></i> <span id="regBtnText">CRIAR EMPRESA E ENTRAR</span></button>
       </form>
+
+      <!-- ETAPA 3 — sucesso -->
+      <div id="regStep3" class="reg-step-panel">
+        <div class="reg-success-icon"><i class="fas fa-check"></i></div>
+        <h2 class="reg-step-title">Conta criada com sucesso! 🎉</h2>
+        <p class="reg-step-sub">Suas informações foram registradas com segurança.</p>
+        <div class="reg-summary" id="regSummaryBox"></div>
+        <div class="reg-trial-note"><strong>Seu período de teste de 14 dias começou.</strong><br>Aproveite todos os recursos do sistema neste período.</div>
+        <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="regWizardFinishEnter()">Entrar no sistema <i class="fas fa-arrow-right"></i></button>
+      </div>
     </div>
 
     <div class="login-error" id="loginErr"></div>
@@ -3677,74 +3889,460 @@ function displayNameForUsername(un) {
   return (r && r.name) ? r.name : (un || '—');
 }
 
+let _regWizardStep = 1;
+let _regPendingSessionRow = null;
+
+function _regDigits(s) { return String(s || '').replace(/\D/g, ''); }
+
+function validateCPFBr(cpf) {
+  const c = _regDigits(cpf);
+  if(c.length !== 11) return false;
+  if(/^(\d)\1{10}$/.test(c)) return false;
+  let s = 0;
+  for(let i = 0; i < 9; i++) s += parseInt(c[i], 10) * (10 - i);
+  let d1 = (s * 10) % 11;
+  if(d1 === 10) d1 = 0;
+  if(d1 !== parseInt(c[9], 10)) return false;
+  s = 0;
+  for(let i = 0; i < 10; i++) s += parseInt(c[i], 10) * (11 - i);
+  let d2 = (s * 10) % 11;
+  if(d2 === 10) d2 = 0;
+  return d2 === parseInt(c[10], 10);
+}
+
+function validateCNPJBr(cnpj) {
+  const c = _regDigits(cnpj);
+  if(c.length !== 14) return false;
+  if(/^(\d)\1{13}$/.test(c)) return false;
+  const w1 = [5,4,3,2,9,8,7,6,5,4,3,2];
+  const w2 = [6,5,4,3,2,9,8,7,6,5,4,3,2];
+  let s = 0;
+  for(let i = 0; i < 12; i++) s += parseInt(c[i], 10) * w1[i];
+  let d1 = s % 11;
+  d1 = d1 < 2 ? 0 : 11 - d1;
+  if(d1 !== parseInt(c[12], 10)) return false;
+  s = 0;
+  for(let i = 0; i < 13; i++) s += parseInt(c[i], 10) * w2[i];
+  let d2 = s % 11;
+  d2 = d2 < 2 ? 0 : 11 - d2;
+  return d2 === parseInt(c[13], 10);
+}
+
+function maskCpfInput(el) {
+  const v = _regDigits(el.value).slice(0, 11);
+  let out = v;
+  if(v.length > 9) out = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2}).*/, '$1.$2.$3-$4');
+  else if(v.length > 6) out = v.replace(/^(\d{3})(\d{3})(\d{0,3}).*/, '$1.$2.$3');
+  else if(v.length > 3) out = v.replace(/^(\d{3})(\d{0,3}).*/, '$1.$2');
+  el.value = out;
+}
+
+function maskCnpjInput(el) {
+  const v = _regDigits(el.value).slice(0, 14);
+  let out = v;
+  if(v.length > 12) out = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2}).*/, '$1.$2.$3/$4-$5');
+  else if(v.length > 8) out = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4}).*/, '$1.$2.$3/$4');
+  else if(v.length > 5) out = v.replace(/^(\d{2})(\d{3})(\d{0,3}).*/, '$1.$2.$3');
+  else if(v.length > 2) out = v.replace(/^(\d{2})(\d{0,3}).*/, '$1.$2');
+  el.value = out;
+}
+
+function maskPhoneBrInput(el) {
+  const v = _regDigits(el.value).slice(0, 11);
+  if(!v.length) { el.value = ''; return; }
+  if(v.length <= 2) el.value = '(' + v;
+  else if(v.length <= 6) el.value = '(' + v.slice(0, 2) + ') ' + v.slice(2);
+  else if(v.length <= 10) el.value = '(' + v.slice(0, 2) + ') ' + v.slice(2, 6) + '-' + v.slice(6);
+  else el.value = '(' + v.slice(0, 2) + ') ' + v.slice(2, 7) + '-' + v.slice(7);
+}
+
+function maskCepInput(el) {
+  const v = _regDigits(el.value).slice(0, 8);
+  el.value = v.length > 5 ? v.replace(/^(\d{5})(\d{0,3}).*/, '$1-$2') : v;
+}
+
+function toggleRegPassword(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  const eye = btn.querySelector('i');
+  if(inp.type === 'password') {
+    inp.type = 'text';
+    if(eye) { eye.classList.remove('fa-eye'); eye.classList.add('fa-eye-slash'); }
+  } else {
+    inp.type = 'password';
+    if(eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
+  }
+}
+
+function regClearInlineErrors() {
+  document.querySelectorAll('#panelRegister .reg-inline-err').forEach(el => {
+    el.textContent = '';
+    el.classList.remove('show');
+  });
+}
+
+function regSetFieldErr(idSuffix, msg) {
+  const el = document.getElementById('regErr-' + idSuffix);
+  if(el) {
+    el.textContent = msg || '';
+    el.classList.toggle('show', !!msg);
+  }
+}
+
+function updateRegProgressVisual(step) {
+  const label = document.getElementById('regProgressLabel');
+  const bars = document.querySelectorAll('#regProgressBar .reg-progress-step');
+  const texts = [
+    'Etapa 1 de 3 — Seus dados pessoais',
+    'Etapa 2 de 3 — Dados da empresa',
+    'Etapa 3 de 3 — Confirmação'
+  ];
+  if(label) label.textContent = texts[Math.min(step - 1, 2)] || '';
+  bars.forEach((b, i) => {
+    b.classList.remove('done', 'active');
+    if(step >= 3) b.classList.add('done');
+    else {
+      if(i < step - 1) b.classList.add('done');
+      else if(i === step - 1) b.classList.add('active');
+    }
+  });
+}
+
+function regWizardGoStep(n) {
+  _regWizardStep = n;
+  const s1 = document.getElementById('regStep1');
+  const s2 = document.getElementById('regStep2');
+  const s3 = document.getElementById('regStep3');
+  const pw = document.getElementById('regWizardProgressWrap');
+  const form = document.getElementById('registerForm');
+  if(s1) s1.classList.toggle('active', n === 1);
+  if(s2) s2.classList.toggle('active', n === 2);
+  if(s3) s3.classList.toggle('active', n === 3);
+  if(pw) pw.style.display = n >= 3 ? 'none' : '';
+  if(form) form.style.display = n >= 3 ? 'none' : '';
+  updateRegProgressVisual(Math.min(n, 3));
+}
+
+async function regFetchViaCep(d8) {
+  const errEl = document.getElementById('regErr-cep');
+  try {
+    const r = await fetch('https://viacep.com.br/ws/' + d8 + '/json/');
+    const j = await r.json();
+    if(j.erro) {
+      if(errEl) { errEl.textContent = 'CEP não encontrado.'; errEl.classList.add('show'); }
+      return;
+    }
+    document.getElementById('regStreet').value = j.logradouro || '';
+    document.getElementById('regBairro').value = j.bairro || '';
+    document.getElementById('regCity').value = j.localidade || '';
+    const uf = (j.uf || '').toUpperCase();
+    const sel = document.getElementById('regUf');
+    if(sel && uf) sel.value = uf;
+    if(errEl) { errEl.textContent = ''; errEl.classList.remove('show'); }
+  } catch(e) {
+    if(errEl) { errEl.textContent = 'Não foi possível buscar o CEP.'; errEl.classList.add('show'); }
+  }
+}
+
+function initRegisterWizardMasksOnce() {
+  if(window._regMasksInited) return;
+  window._regMasksInited = true;
+  const cep = document.getElementById('regCep');
+  let cepT;
+  if(cep) {
+    cep.addEventListener('input', function() {
+      maskCepInput(this);
+      clearTimeout(cepT);
+      const d = _regDigits(this.value);
+      if(d.length === 8) cepT = setTimeout(() => regFetchViaCep(d), 350);
+    });
+  }
+  document.getElementById('regCpf')?.addEventListener('input', function() { maskCpfInput(this); });
+  document.getElementById('regCnpj')?.addEventListener('input', function() { maskCnpjInput(this); });
+  document.getElementById('regPhone')?.addEventListener('input', function() { maskPhoneBrInput(this); });
+  document.getElementById('regCoPhone')?.addEventListener('input', function() { maskPhoneBrInput(this); });
+}
+
+function validateRegStep1() {
+  regClearInlineErrors();
+  let ok = true;
+  const fullName = document.getElementById('regFullName')?.value?.trim() || '';
+  const cpf = document.getElementById('regCpf')?.value || '';
+  const birth = document.getElementById('regBirth')?.value || '';
+  const email = document.getElementById('regEmail')?.value?.trim().toLowerCase() || '';
+  const phone = document.getElementById('regPhone')?.value || '';
+  const p1 = document.getElementById('regPass')?.value || '';
+  const p2 = document.getElementById('regPass2')?.value || '';
+
+  if(!fullName || fullName.length < 3) { regSetFieldErr('fullName', 'Informe o nome completo.'); ok = false; }
+  if(!validateCPFBr(cpf)) { regSetFieldErr('cpf', 'CPF inválido.'); ok = false; }
+  if(!birth) { regSetFieldErr('birth', 'Informe a data de nascimento.'); ok = false; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { regSetFieldErr('email', 'Email inválido.'); ok = false; }
+  const ph = _regDigits(phone);
+  if(ph.length < 10 || ph.length > 11) { regSetFieldErr('phone', 'Telefone inválido (DDD + número).'); ok = false; }
+  if(p1.length < 6) { regSetFieldErr('pass', 'Senha mínimo 6 caracteres.'); ok = false; }
+  if(p1 !== p2) { regSetFieldErr('pass2', 'As senhas não conferem.'); ok = false; }
+  return ok;
+}
+
+function validateRegStep2() {
+  regClearInlineErrors();
+  let ok = true;
+  const fantasy = document.getElementById('regFantasy')?.value?.trim() || '';
+  const cnpj = document.getElementById('regCnpj')?.value || '';
+  const segment = document.getElementById('regSegment')?.value || '';
+  const cep = _regDigits(document.getElementById('regCep')?.value || '');
+  const street = document.getElementById('regStreet')?.value?.trim() || '';
+  const num = document.getElementById('regNum')?.value?.trim() || '';
+  const bairro = document.getElementById('regBairro')?.value?.trim() || '';
+  const city = document.getElementById('regCity')?.value?.trim() || '';
+  const uf = document.getElementById('regUf')?.value || '';
+
+  if(!fantasy) { regSetFieldErr('fantasy', 'Informe o nome fantasia.'); ok = false; }
+  const cnpjD = _regDigits(cnpj);
+  if(cnpjD.length > 0 && cnpjD.length !== 14) { regSetFieldErr('cnpj', 'CNPJ incompleto.'); ok = false; }
+  if(cnpjD.length === 14 && !validateCNPJBr(cnpj)) { regSetFieldErr('cnpj', 'CNPJ inválido.'); ok = false; }
+  if(!segment) { regSetFieldErr('segment', 'Selecione o segmento.'); ok = false; }
+  if(cep.length !== 8) { regSetFieldErr('cep', 'CEP inválido (8 dígitos).'); ok = false; }
+  if(!street) { regSetFieldErr('street', 'Informe a rua ou busque pelo CEP.'); ok = false; }
+  if(!num) { regSetFieldErr('num', 'Informe o número.'); ok = false; }
+  if(!bairro) { regSetFieldErr('bairro', 'Informe o bairro.'); ok = false; }
+  if(!city) { regSetFieldErr('city', 'Informe a cidade.'); ok = false; }
+  if(!uf || uf.length !== 2) { regSetFieldErr('uf', 'Selecione o estado.'); ok = false; }
+  return ok;
+}
+
+function regWizardNextFromStep1() {
+  if(!validateRegStep1()) return;
+  regWizardGoStep(2);
+}
+
+function normalizeRegWebsite(s) {
+  let t = String(s || '').trim();
+  if(!t) return '';
+  if(!/^https?:\/\//i.test(t)) t = 'https://' + t.replace(/^\/+/, '');
+  return t.slice(0, 500);
+}
+
+function resetRegisterWizard() {
+  _regWizardStep = 1;
+  _regPendingSessionRow = null;
+  document.getElementById('registerForm')?.reset();
+  regClearInlineErrors();
+  const loginErr = document.getElementById('loginErr');
+  if(loginErr) loginErr.textContent = '';
+  regWizardGoStep(1);
+}
+
+async function regWizardFinishEnter() {
+  if(!_regPendingSessionRow) {
+    try { toast('Sessão expirada. Faça login.', 'warn'); } catch(e) {}
+    return;
+  }
+  await applyLoginSessionFromRow(_regPendingSessionRow);
+  _regPendingSessionRow = null;
+}
+
 function setLoginTab(tab) {
   document.getElementById('tabLogin')?.classList.toggle('active', tab === 'login');
   document.getElementById('tabRegister')?.classList.toggle('active', tab === 'register');
   document.getElementById('panelLogin')?.classList.toggle('active', tab === 'login');
   document.getElementById('panelRegister')?.classList.toggle('active', tab === 'register');
+  const card = document.getElementById('loginMainFlow');
+  if(card) card.classList.toggle('reg-mode-wide', tab === 'register');
+  if(tab === 'register') {
+    resetRegisterWizard();
+    initRegisterWizardMasksOnce();
+  }
 }
 
 async function submitAdminRegister() {
   const errEl = document.getElementById('loginErr');
-  const name = document.getElementById('regName')?.value?.trim() || '';
-  const company = document.getElementById('regCompany')?.value?.trim() || '';
-  const email = document.getElementById('regEmail')?.value?.trim().toLowerCase() || '';
-  const p1 = document.getElementById('regPass')?.value || '';
-  const p2 = document.getElementById('regPass2')?.value || '';
-  const segment = document.getElementById('regSegment')?.value || '';
-  const btn = document.getElementById('regBtn');
+  const btn = document.getElementById('regBtnSubmit');
   const icon = document.getElementById('regBtnIcon');
   const txt = document.getElementById('regBtnText');
 
-  function show(m, ok) {
-    if(errEl) { errEl.style.color = ok ? '#16a34a' : '#cc4444'; errEl.textContent = m; }
+  function showGlobal(m, ok) {
+    if(errEl) {
+      errEl.style.color = ok ? '#16a34a' : '#dc2626';
+      errEl.textContent = m || '';
+    }
   }
-  if(!name || !company || !email || !segment) { show('Preencha todos os campos obrigatórios.', false); return; }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('Email inválido.', false); return; }
-  if(p1.length < 6) { show('Senha mínimo 6 caracteres.', false); return; }
-  if(p1 !== p2) { show('Senhas não conferem.', false); return; }
+
+  if(!validateRegStep2()) {
+    showGlobal('', false);
+    return;
+  }
+
+  const fullName = document.getElementById('regFullName')?.value?.trim() || '';
+  const cpfDigits = _regDigits(document.getElementById('regCpf')?.value || '');
+  const birth = document.getElementById('regBirth')?.value || '';
+  const email = document.getElementById('regEmail')?.value?.trim().toLowerCase() || '';
+  const phoneDigits = _regDigits(document.getElementById('regPhone')?.value || '');
+  const p1 = document.getElementById('regPass')?.value || '';
+
+  const fantasy = document.getElementById('regFantasy')?.value?.trim() || '';
+  const legalName = document.getElementById('regLegalName')?.value?.trim() || '';
+  const cnpjDigits = _regDigits(document.getElementById('regCnpj')?.value || '');
+  const segment = document.getElementById('regSegment')?.value || '';
+  const coPhone = _regDigits(document.getElementById('regCoPhone')?.value || '');
+  const siteRaw = document.getElementById('regSite')?.value?.trim() || '';
+  const cepDigits = _regDigits(document.getElementById('regCep')?.value || '');
+  const street = document.getElementById('regStreet')?.value?.trim() || '';
+  const num = document.getElementById('regNum')?.value?.trim() || '';
+  const comp = document.getElementById('regComp')?.value?.trim() || '';
+  const bairro = document.getElementById('regBairro')?.value?.trim() || '';
+  const city = document.getElementById('regCity')?.value?.trim() || '';
+  const uf = document.getElementById('regUf')?.value || '';
+
+  if(!validateRegStep1()) {
+    regWizardGoStep(1);
+    showGlobal('Corrija os dados pessoais na etapa 1.', false);
+    return;
+  }
 
   if(btn) btn.disabled = true;
   if(icon) icon.className = 'fas fa-spinner fa-spin';
-  if(txt) txt.textContent = 'CRIANDO...';
+  if(txt) txt.textContent = 'Criando...';
+  showGlobal('', false);
 
   try {
     const exists = await fetchAgeUserByEmail(email);
-    if(exists) { show('Este email já está cadastrado.', false); return; }
+    if(exists) {
+      regWizardGoStep(1);
+      regSetFieldErr('email', 'Este email já está cadastrado.');
+      document.getElementById('regErr-email')?.classList.add('show');
+      showGlobal('Este email já está cadastrado.', false);
+      return;
+    }
 
     const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
-    const compPayload = {
-      name: company,
+    const trialEnds = new Date();
+    trialEnds.setDate(trialEnds.getDate() + 14);
+
+    const companyFull = {
+      name: fantasy,
+      legal_name: legalName || null,
+      cnpj: cnpjDigits || null,
       segment: segment || 'Outro',
+      phone: coPhone || null,
+      website: normalizeRegWebsite(siteRaw) || null,
+      address_street: street,
+      number: num,
+      complement: comp || null,
+      neighborhood: bairro,
+      city,
+      state: uf,
+      zip: cepDigits,
+      owner_username: username,
       plan: 'trial',
-      owner_username: username
+      trial_ends_at: trialEnds.toISOString()
     };
-    const companyRow = await apiPost('age_companies', compPayload);
+
+    let companyRow;
+    try {
+      companyRow = await apiPost('age_companies', companyFull);
+    } catch(e1) {
+      try {
+        const medium = {
+          name: fantasy,
+          legal_name: legalName || undefined,
+          segment: segment || 'Outro',
+          phone: coPhone || undefined,
+          website: companyFull.website || undefined,
+          address_street: street,
+          number: num,
+          complement: comp || undefined,
+          neighborhood: bairro,
+          city,
+          state: uf,
+          zip: cepDigits,
+          owner_username: username,
+          plan: 'trial',
+          trial_ends_at: trialEnds.toISOString()
+        };
+        Object.keys(medium).forEach(k => { if(medium[k] === undefined) delete medium[k]; });
+        companyRow = await apiPost('age_companies', medium);
+      } catch(e2) {
+        companyRow = await apiPost('age_companies', {
+          name: fantasy,
+          segment: segment || 'Outro',
+          plan: 'trial',
+          owner_username: username
+        });
+      }
+    }
+
     const companyId = companyRow?.id ?? companyRow?.[0]?.id;
     if(!companyId) throw new Error('Empresa não retornou ID');
 
-    const userPayload = {
+    const userFull = {
       username,
       email,
-      name,
+      name: fullName,
+      full_name: fullName,
+      cpf: cpfDigits,
+      birth_date: birth,
+      phone: phoneDigits,
       role: 'admin',
       company_id: companyId,
-      company_name: company,
+      company_name: fantasy,
       password_hash: p1,
       active: true,
       deleted: false
     };
-    await apiPost('age_users', userPayload);
+
+    try {
+      await apiPost('age_users', userFull);
+    } catch(eu) {
+      await apiPost('age_users', {
+        username,
+        email,
+        name: fullName,
+        role: 'admin',
+        company_id: companyId,
+        company_name: fantasy,
+        password_hash: p1,
+        active: true,
+        deleted: false
+      });
+    }
+
     const row = await fetchAgeUserRow(username);
-    await applyLoginSessionFromRow(row || { ...userPayload, id: null });
-    show('Conta criada!', true);
+    if(!row || !row.id) throw new Error('Usuário criado mas não foi possível ler o registro.');
+
+    _regPendingSessionRow = row;
+
+    const cpfFmt = cpfDigits.length === 11
+      ? cpfDigits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
+      : cpfDigits;
+    const cepFmt = cepDigits.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+
+    const sum = document.getElementById('regSummaryBox');
+    if(sum) {
+      sum.innerHTML =
+        '<strong>Pessoal</strong><br>' +
+        escHtml(fullName) + '<br>CPF: ' + escHtml(cpfFmt) +
+        '<br>' + escHtml(email) + '<br>Tel: ' + escHtml(phoneDigits) +
+        '<br><br><strong>Empresa</strong><br>' +
+        escHtml(fantasy) +
+        (legalName ? '<br>Razão social: ' + escHtml(legalName) : '') +
+        '<br>' + escHtml(segment) +
+        '<br>' + escHtml(street) + ', ' + escHtml(num) +
+        (comp ? ' — ' + escHtml(comp) : '') +
+        '<br>' + escHtml(bairro) + ' — ' + escHtml(city) + '/' + escHtml(uf) +
+        '<br>CEP ' + escHtml(cepFmt);
+    }
+
+    regWizardGoStep(3);
+    showGlobal('', false);
   } catch(e) {
     console.error('[signup]', e);
-    show(String(e?.message || e || 'Erro ao criar conta. Verifique o Supabase.'), false);
+    showGlobal(String(e?.message || e || 'Erro ao criar conta. Verifique o Supabase.'), false);
   } finally {
     if(btn) btn.disabled = false;
     if(icon) icon.className = 'fas fa-rocket';
-    if(txt) txt.textContent = 'CRIAR EMPRESA E ENTRAR';
+    if(txt) txt.textContent = 'Criar minha conta';
   }
 }
 
