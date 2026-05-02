@@ -943,6 +943,20 @@ select.login-input{cursor:pointer}
             <div class="reg-inline-err" id="regErr-pass2"></div>
           </div>
 
+          <div class="reg-field" style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(0,0,0,.08)">
+            <label style="display:flex;gap:10px;align-items:flex-start;font-family:var(--font-m);font-size:11px;color:#334155;line-height:1.5;cursor:pointer">
+              <input type="checkbox" id="regAcceptTerms" style="margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:#22c55e">
+              <span>Li e aceito os <a href="/terms.html" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:#15803d;font-weight:700;text-decoration:underline">Termos de Uso</a> e a <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:#15803d;font-weight:700;text-decoration:underline">Política de Privacidade</a> da Age Ops *</span>
+            </label>
+            <div class="reg-inline-err" id="regErr-terms"></div>
+          </div>
+          <div class="reg-field">
+            <label style="display:flex;gap:10px;align-items:flex-start;font-family:var(--font-m);font-size:11px;color:#64748b;line-height:1.5;cursor:pointer">
+              <input type="checkbox" id="regAcceptMarketing" style="margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:#22c55e">
+              <span>Autorizo o uso dos meus dados para melhorias do produto (análises anônimas)</span>
+            </label>
+          </div>
+
           <button type="button" class="btn btn-reg-green login-btn" id="regBtnNext1" onclick="regWizardNextFromStep1()"><span id="regBtnNext1Text">Próximo</span> <i class="fas fa-arrow-right"></i></button>
         </div>
 
@@ -3791,6 +3805,100 @@ async function ensureDefaultCompanyForPrivilegedUser() {
   }
 }
 
+async function migrateOwnageTenantForBootstrapAdmin() {
+  const u = String(currentUser?.username || '').toLowerCase();
+  if(u !== 'gustavowng' || !currentUser?.id) return;
+  try {
+    if(sessionStorage.getItem('age_ownage_migrate_v1')) return;
+  } catch(e) {}
+
+  window.__tenantScopeSuspended = true;
+  try {
+    let companyId = null;
+    let companyName = 'OWNAGE';
+    try {
+      const d = await apiGet('age_companies', '?limit=120');
+      const rows = Array.isArray(d?.data) ? d.data : [];
+      const prefer = rows.find(r =>
+        String(r.owner_username || '').toLowerCase() === 'gustavowng' &&
+        String(r.name || '').toUpperCase().includes('OWNAGE')
+      );
+      const fallback = rows.find(r => String(r.owner_username || '').toLowerCase() === 'gustavowng');
+      const pick = prefer || fallback;
+      if(pick?.id) {
+        companyId = pick.id;
+        companyName = pick.name || 'OWNAGE';
+      }
+    } catch(e) {}
+
+    if(!companyId) {
+      try {
+        const cr = await apiPost('age_companies', {
+          name: 'OWNAGE',
+          owner_username: 'gustavowng',
+          plan: 'trial',
+          segment: 'Outro'
+        });
+        companyId = cr?.id ?? cr?.[0]?.id;
+      } catch(e2) {
+        console.warn('[migrateOwnage]', e2);
+        return;
+      }
+    }
+    if(!companyId) return;
+
+    await apiPatch('age_users', currentUser.id, {
+      company_id: companyId,
+      company_name: companyName
+    }).catch(()=>{});
+    currentUser.company_id = companyId;
+    currentUser.company_name = companyName;
+
+    const migrateTables = [
+      'age_projects','age_fechamento','age_hist_projects','age_contracts','age_project_stages',
+      'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
+      'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
+      'age_relatorios','age_leads'
+    ];
+    const byCreated = new Set(['gustavowng','system']);
+
+    function rowMatchesMigrate(tbl, r) {
+      const cb = String(r.created_by ?? '').toLowerCase();
+      if(byCreated.has(cb)) return true;
+      if(r.created_by != null && r.created_by !== '') return false;
+      const ow = String(r.owner ?? '').toLowerCase();
+      if(['age_tasks','age_finance','age_team_calendar','age_assigned_tasks'].includes(tbl)) {
+        return ow === 'gustavowng' || ow === 'system';
+      }
+      return false;
+    }
+
+    for(const tbl of migrateTables) {
+      let rows = [];
+      try {
+        const d = await apiGet(tbl, '?limit=5000');
+        rows = Array.isArray(d?.data) ? d.data : [];
+      } catch(e) {
+        continue;
+      }
+      for(const r of rows) {
+        if(!r?.id) continue;
+        if(!rowMatchesMigrate(tbl, r)) continue;
+        if(String(r.company_id || '') === String(companyId)) continue;
+        try {
+          await apiPatch(tbl, r.id, { company_id: companyId });
+        } catch(pe) {}
+      }
+    }
+
+    try { sessionStorage.setItem('age_ownage_migrate_v1', '1'); } catch(e) {}
+    await hydrateUserPermissions();
+    await refreshAgeUsersCache();
+  } finally {
+    window.__tenantScopeSuspended = false;
+  }
+}
+
 async function persistBootstrapAccountIfNeeded(row, plainPassword) {
   if(!row || !row.username) return row;
   if(row.id) return row;
@@ -3841,6 +3949,9 @@ async function applyLoginSessionFromRow(row) {
   };
   await mergeCurrentUserFromSupabase();
   await ensureDefaultCompanyForPrivilegedUser();
+  if(String(currentUser.username || '').toLowerCase() === 'gustavowng') {
+    await migrateOwnageTenantForBootstrapAdmin().catch(()=>{});
+  }
   try {
     _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
     await hydrateUserPermissions();
@@ -3865,18 +3976,13 @@ async function applyLoginSessionFromRow(row) {
 async function refreshAgeUsersCache() {
   try {
     const cid = currentUser?.company_id;
-    if(cid) {
-      try {
-        const d = await apiGet('age_users', `?company_id=eq.${encodeURIComponent(cid)}&limit=800`);
-        const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
-        if(rows.length) {
-          _ageUsersCache = rows;
-          return _ageUsersCache;
-        }
-      } catch(e) {}
+    if(!cid) {
+      _ageUsersCache = [];
+      return [];
     }
-    const all = await fetchAll('age_users', 800);
-    _ageUsersCache = all || [];
+    const d = await apiGet('age_users', `?company_id=eq.${encodeURIComponent(cid)}&limit=800`);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    _ageUsersCache = rows;
     return _ageUsersCache;
   } catch(e) {
     return [];
@@ -4082,6 +4188,10 @@ function validateRegStep1() {
   if(ph.length < 10 || ph.length > 11) { regSetFieldErr('phone', 'Telefone inválido (DDD + número).'); ok = false; }
   if(p1.length < 6) { regSetFieldErr('pass', 'Senha mínimo 6 caracteres.'); ok = false; }
   if(p1 !== p2) { regSetFieldErr('pass2', 'As senhas não conferem.'); ok = false; }
+  if(!document.getElementById('regAcceptTerms')?.checked) {
+    regSetFieldErr('terms', 'Você precisa aceitar os Termos de Uso e a Política de Privacidade.');
+    ok = false;
+  }
   return ok;
 }
 
@@ -4276,6 +4386,8 @@ async function submitAdminRegister() {
     const companyId = companyRow?.id ?? companyRow?.[0]?.id;
     if(!companyId) throw new Error('Empresa não retornou ID');
 
+    const nowIso = new Date().toISOString();
+    const acceptMkt = !!document.getElementById('regAcceptMarketing')?.checked;
     const userFull = {
       username,
       email,
@@ -4288,6 +4400,9 @@ async function submitAdminRegister() {
       company_id: companyId,
       company_name: fantasy,
       password_hash: p1,
+      accepted_terms: true,
+      accepted_terms_at: nowIso,
+      accepted_marketing: acceptMkt,
       active: true,
       deleted: false
     };
@@ -4295,17 +4410,34 @@ async function submitAdminRegister() {
     try {
       await apiPost('age_users', userFull);
     } catch(eu) {
-      await apiPost('age_users', {
-        username,
-        email,
-        name: fullName,
-        role: 'admin',
-        company_id: companyId,
-        company_name: fantasy,
-        password_hash: p1,
-        active: true,
-        deleted: false
-      });
+      try {
+        await apiPost('age_users', {
+          username,
+          email,
+          name: fullName,
+          role: 'admin',
+          company_id: companyId,
+          company_name: fantasy,
+          password_hash: p1,
+          accepted_terms: true,
+          accepted_terms_at: nowIso,
+          accepted_marketing: acceptMkt,
+          active: true,
+          deleted: false
+        });
+      } catch(eu2) {
+        await apiPost('age_users', {
+          username,
+          email,
+          name: fullName,
+          role: 'admin',
+          company_id: companyId,
+          company_name: fantasy,
+          password_hash: p1,
+          active: true,
+          deleted: false
+        });
+      }
     }
 
     const row = await fetchAgeUserRow(username);
@@ -4377,6 +4509,8 @@ async function submitInviteColaborador() {
   const basePayload = {
     token,
     company_id: currentUser.company_id,
+    company_name: currentUser.company_name || '',
+    invited_by: currentUser.username,
     email,
     role,
     used: false,
@@ -4387,10 +4521,30 @@ async function submitInviteColaborador() {
       try {
         await apiPost('age_invites', { ...basePayload, job_title: job });
       } catch(e0) {
-        await apiPost('age_invites', basePayload);
+        try {
+          await apiPost('age_invites', {
+            ...basePayload,
+            job_title: job,
+            company_name: basePayload.company_name,
+            invited_by: basePayload.invited_by
+          });
+        } catch(e0b) {
+          await apiPost('age_invites', basePayload);
+        }
       }
     } else {
-      await apiPost('age_invites', basePayload);
+      try {
+        await apiPost('age_invites', basePayload);
+      } catch(eInv) {
+        await apiPost('age_invites', {
+          token: basePayload.token,
+          company_id: basePayload.company_id,
+          email: basePayload.email,
+          role: basePayload.role,
+          used: false,
+          expires_at: basePayload.expires_at
+        });
+      }
     }
   } catch(e2) {
     console.error(e2);
@@ -4500,6 +4654,7 @@ async function submitInviteAccept() {
       name,
       role: roleInv === 'gestor' ? 'gestor' : 'colaborador',
       company_id: inv.company_id,
+      company_name: inv.company_name || '',
       password_hash: p1,
       active: true,
       deleted: false
@@ -4743,6 +4898,36 @@ function confirm2(msg, cb) {
 const SUPABASE_URL      = 'https://wiiewucszdbbcxzivnyo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
 
+/* Multi-tenant: estas tabelas exigem company_id em leituras e escritas (exceto migração com __tenantScopeSuspended) */
+const TENANT_SCOPED_TABLES = new Set([
+  'age_projects','age_fechamento','age_hist_projects','age_contracts','age_project_stages',
+  'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
+  'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
+  'age_relatorios','age_leads','age_permissions'
+]);
+
+function _tenantCidForScope() {
+  try {
+    if(typeof window !== 'undefined' && window.__tenantScopeSuspended) return '';
+  } catch(e) {}
+  const cid = currentUser?.company_id;
+  return cid ? String(cid) : '';
+}
+
+function _tenantShouldFilterTable(table) {
+  return TENANT_SCOPED_TABLES.has(table);
+}
+
+function _tenantMergeWriteBody(table, method, body, cid) {
+  if(!cid || !body || typeof body !== 'object' || Array.isArray(body)) return body;
+  if(table === 'age_companies' || table === 'age_users' || table === 'age_invites' || table === 'age_permissions') return body;
+  if(!_tenantShouldFilterTable(table)) return body;
+  if(method !== 'POST' && method !== 'PATCH' && method !== 'PUT') return body;
+  const o = { ...body };
+  o.company_id = cid;
+  return o;
+}
+
 function _sbHeaders(extra = {}, anonKey = null) {
   const key = String(anonKey || SUPABASE_ANON_KEY || '').trim();
   return {
@@ -4830,6 +5015,17 @@ async function api(method, table, id='', body=null) {
     wantSingleObject = true;
   }
 
+  /* ── Multi-tenant: filtro company_id em GET/PATCH/DELETE nas tabelas escopadas ── */
+  const _tcid = _tenantCidForScope();
+  if(_tcid && _tenantShouldFilterTable(table)) {
+    if((method === 'GET' || method === 'PATCH' || method === 'DELETE') && !q.has('company_id')) {
+      q.set('company_id', `eq.${_tcid}`);
+    }
+  }
+  if(method === 'GET' && table === 'age_companies' && _tcid && !q.has('company_id')) {
+    q.set('company_id', `eq.${_tcid}`);
+  }
+
   if(method === 'GET' && !q.has('select')) q.set('select','*');
 
   const headers = {};
@@ -4838,7 +5034,9 @@ async function api(method, table, id='', body=null) {
 
   const url = q.toString() ? `${base}?${q.toString()}` : base;
   const opts = { method, headers: _sbHeaders(headers, sbKey) };
-  if(body) opts.body = JSON.stringify(body);
+  let payloadBody = body;
+  payloadBody = _tenantMergeWriteBody(table, method, payloadBody, _tcid);
+  if(payloadBody) opts.body = JSON.stringify(payloadBody);
 
   const r = await fetch(url, opts);
   if(method === 'GET' && wantSingleObject && (r.status === 406 || r.status === 404)) return null;
