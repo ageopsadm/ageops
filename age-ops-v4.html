@@ -800,6 +800,9 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
       <button class="nav-item" data-page="orcamentos" onclick="navigate('orcamentos')">
         <i class="fas fa-file-alt"></i><span>ORÇAMENTOS</span>
       </button>
+      <button class="nav-item" data-page="contratos" onclick="navigate('contratos')">
+        <i class="fas fa-file-contract"></i><span>CONTRATOS</span>
+      </button>
 
       <button class="nav-item" data-page="relatorios" onclick="navigate('relatorios')">
         <i class="fas fa-clipboard-list"></i><span>RELATÓRIOS</span>
@@ -1282,6 +1285,28 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
         <div id="orcList" style="display:flex;flex-direction:column;gap:8px">
           <div style="text-align:center;padding:40px;color:#bbb;font-family:var(--font-m);font-size:11px">
             <i class="fas fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block"></i>Carregando...
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           CONTRATOS — Storage + age_contracts
+      ══════════════════════════════════ -->
+      <div id="page-contratos" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-file-contract"></i> CONTRATOS</div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadContratosPage()"><i class="fas fa-sync-alt"></i> Atualizar</button>
+          </div>
+        </div>
+        <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin:-6px 0 14px;line-height:1.45">
+          Envie e organize contratos por projeto. Arquivos ficam no bucket <b>contracts</b> em Supabase Storage (<code style="font-size:9px">project_id/nome_arquivo</code>).
+        </p>
+        <input type="file" id="contractFileInput" style="display:none" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="onContractFileSelected(event)">
+        <div id="contratosProjectList" style="display:flex;flex-direction:column;gap:0">
+          <div style="text-align:center;padding:48px 20px;color:#bbb;font-family:var(--font-m);font-size:11px">
+            <i class="fas fa-spinner fa-spin" style="font-size:22px;margin-bottom:10px;display:block;opacity:.5"></i>
+            Abra esta aba para carregar os projetos e contratos.
           </div>
         </div>
       </div>
@@ -2733,6 +2758,7 @@ function startClock() {
 const PAGE_TITLES = {
   dashboard:'DASHBOARD 2026', projects:'PROJETOS', fechamento:'FECHAMENTO',
   historico:'HISTÓRICO', clientes:'CLIENTES', gestao:'GESTÃO DE PROJETOS', orcamentos:'ORÇAMENTOS',
+  contratos:'CONTRATOS',
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA',
   myday:'MEU DIA', mytasks:'TAREFAS', myfinance:'FINANCEIRO',
   relatorios:'RELATÓRIOS DE PROJETOS',
@@ -2757,6 +2783,7 @@ function navigate(page) {
   if(page==='clientes')     loadClientes();
   if(page==='gestao')       loadKanban();
   if(page==='orcamentos')   loadOrcamentos();
+  if(page==='contratos')    loadContratosPage();
   if(page==='colaboradores') loadColaboradores();
   if(page==='cronograma')   loadCronograma();
   if(page==='myday')        loadMyDay();
@@ -3027,6 +3054,200 @@ function getMarginColor(pct) {
 }
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtBytes(n) {
+  const b = parseInt(n, 10) || 0;
+  if(b < 1024) return b + ' B';
+  if(b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(1) + ' MB';
+}
+
+/* ═══════════════════════════════════════════
+   CONTRATOS — Storage (bucket contracts) + age_contracts
+═══════════════════════════════════════════ */
+let _contratosProjects = [];
+let _contratosRows = [];
+let _contractPickPid = null;
+
+async function storageUploadContract(projectId, file) {
+  const sbUrl = String(SUPABASE_URL || '').replace(/\/+$/, '');
+  const sbKey = String(SUPABASE_ANON_KEY || '').trim();
+  if(!sbUrl || !sbKey) throw new Error('Supabase não configurado.');
+  const safeBase = (file.name || 'arquivo').replace(/[^\w.\-\s\u00C0-\u024F]/g, '_').replace(/\s+/g, ' ').trim() || 'arquivo';
+  const storageName = `${Date.now()}_${safeBase}`;
+  const url = `${sbUrl}/storage/v1/object/contracts/${encodeURIComponent(projectId)}/${encodeURIComponent(storageName)}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      apikey: sbKey,
+      Authorization: 'Bearer ' + sbKey,
+      'Content-Type': file.type || 'application/octet-stream'
+    },
+    body: file
+  });
+  if(!r.ok) {
+    let msg = '';
+    try { msg = await r.text(); } catch(e) {}
+    if(r.status === 401 || r.status === 403) {
+      toast('Erro de permissão no banco — contate o administrador', 'err');
+      throw new Error('permission');
+    }
+    throw new Error(msg || `Upload falhou (${r.status})`);
+  }
+  const pathSeg = [projectId, storageName].map(encodeURIComponent).join('/');
+  const file_url = `${sbUrl}/storage/v1/object/public/contracts/${pathSeg}`;
+  return {
+    storageName,
+    displayName: file.name || storageName,
+    file_url,
+    mime_type: file.type || 'application/octet-stream',
+    size_bytes: file.size
+  };
+}
+
+async function loadContratosPage() {
+  const el = document.getElementById('contratosProjectList');
+  if(el) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:#bbb;font-family:var(--font-m);font-size:11px">
+      <i class="fas fa-spinner fa-spin" style="font-size:22px;margin-bottom:10px;display:block"></i>Carregando projetos e contratos…</div>`;
+  }
+  try {
+    const [projs, contracts] = await Promise.all([
+      fetchAll('age_projects', 4000),
+      fetchAll('age_contracts', 8000)
+    ]);
+    _contratosProjects = (projs || []).slice().sort((a, b) => {
+      const ca = _ageProjDbClient(a).localeCompare(_ageProjDbClient(b), 'pt');
+      if(ca !== 0) return ca;
+      return _ageProjDbTitle(a).localeCompare(_ageProjDbTitle(b), 'pt');
+    });
+    _contratosRows = contracts || [];
+    renderContratosPage();
+  } catch(e) {
+    console.error('[loadContratosPage]', e);
+    if(el) el.innerHTML = `<div style="color:#ef4444;padding:20px;font-family:var(--font-m);font-size:11px">Erro ao carregar dados.</div>`;
+    toast('Erro ao carregar contratos', 'err');
+  }
+}
+
+function renderContratosPage() {
+  const el = document.getElementById('contratosProjectList');
+  if(!el) return;
+  const byPid = {};
+  (_contratosRows || []).forEach(c => {
+    const pid = c.project_id;
+    if(pid == null || pid === '') return;
+    const k = String(pid);
+    if(!byPid[k]) byPid[k] = [];
+    byPid[k].push(c);
+  });
+  if(!_contratosProjects.length) {
+    el.innerHTML = `<div style="color:var(--textsub);padding:24px;text-align:center;font-family:var(--font-m);font-size:11px">
+      Nenhum projeto encontrado em <b>age_projects</b>.</div>`;
+    return;
+  }
+  el.innerHTML = _contratosProjects.map(p => {
+    const pid = p.id;
+    const pidStr = String(pid == null ? '' : pid).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const cli = escHtml(_ageProjDbClient(p));
+    const tit = escHtml(_ageProjDbTitle(p));
+    const list = (byPid[String(pid)] || []).slice().sort((a, b) =>
+      new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    );
+    const n = list.length;
+    const rows = n
+      ? list.map(c => {
+          const cid = String(c.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          const href = escHtml(c.file_url || '#');
+          const fn = escHtml(c.file_name || '—');
+          const dt = fmtDate((c.created_at || '').toString().slice(0, 10));
+          const sz = fmtBytes(c.size_bytes);
+          return `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(0,0,0,.04);border-radius:8px;margin-bottom:6px;font-family:var(--font-m);font-size:10px;border:1px solid rgba(0,0,0,.06)">
+        <i class="fas fa-file-alt" style="color:#64748b;width:20px;text-align:center;flex-shrink:0"></i>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fn}</div>
+          <div style="color:var(--textsub);font-size:9px">${dt} · ${sz}${c.uploaded_by ? ` · ${escHtml(c.uploaded_by)}` : ''}</div>
+        </div>
+        <a href="${href}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="padding:5px 9px;flex-shrink:0" title="Abrir / baixar"><i class="fas fa-external-link-alt"></i></a>
+        <button type="button" class="btn btn-danger btn-sm" style="padding:5px 9px;flex-shrink:0" title="Remover" onclick="softDeleteContract('${cid}')"><i class="fas fa-trash"></i></button>
+      </div>`;
+        }).join('')
+      : `<div style="font-size:10px;color:#94a3b8;font-family:var(--font-m);padding:8px 4px">Nenhum contrato anexado.</div>`;
+    return `
+    <div class="panel" style="margin-bottom:14px;border-radius:10px;padding:14px 16px;border:1px solid var(--bd);background:var(--bg2)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="min-width:0;flex:1">
+          <div style="font-family:var(--font-b);font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px">${cli}</div>
+          <div style="font-family:var(--font-m);font-size:11px;color:var(--textsub)">${tit}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-family:var(--font-m);font-size:9px;font-weight:700;background:rgba(37,99,235,.15);color:#2563eb;border:1px solid rgba(37,99,235,.28);border-radius:999px;padding:3px 10px">${n} contrato${n !== 1 ? 's' : ''}</span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="triggerContractUpload('${pidStr}')"><i class="fas fa-upload"></i> Upload Contrato</button>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(0,0,0,.07);padding-top:10px;margin-top:4px">
+        ${rows}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function triggerContractUpload(projectId) {
+  if(!projectId) {
+    toast('Projeto sem ID válido no banco.', 'warn');
+    return;
+  }
+  _contractPickPid = projectId;
+  const inp = document.getElementById('contractFileInput');
+  if(inp) inp.click();
+}
+
+async function onContractFileSelected(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  const pid = _contractPickPid;
+  _contractPickPid = null;
+  if(!file || !pid) return;
+  const proj = _contratosProjects.find(p => String(p.id) === String(pid));
+  const client = proj ? _ageProjDbClient(proj) : '';
+  const project_name = proj ? _ageProjDbTitle(proj) : '';
+  toast('Enviando arquivo…', 'ok');
+  try {
+    const up = await storageUploadContract(pid, file);
+    await apiPost('age_contracts', {
+      project_id: pid,
+      project_name,
+      client,
+      file_name: up.displayName,
+      file_url: up.file_url,
+      mime_type: up.mime_type,
+      size_bytes: up.size_bytes,
+      uploaded_by: currentUser?.username || 'unknown',
+      deleted: false
+    });
+    toast('Contrato salvo!', 'ok');
+    await loadContratosPage();
+  } catch(e) {
+    if(String(e && e.message) !== 'permission') {
+      console.error('[onContractFileSelected]', e);
+      toast(String(e.message || e || 'Erro no upload').slice(0, 140), 'err');
+    }
+  }
+}
+
+async function softDeleteContract(id) {
+  if(!id) return;
+  if(!confirm('Remover este contrato da lista? (o arquivo permanece no storage até remoção manual no bucket, se desejado.)')) return;
+  try {
+    await apiPatch('age_contracts', id, { deleted: true });
+    toast('Contrato removido.', 'ok');
+    await loadContratosPage();
+  } catch(e) {
+    console.error('[softDeleteContract]', e);
+    toast('Erro ao remover contrato', 'err');
+  }
 }
 
 /* ═══════════════════════════════════════════
