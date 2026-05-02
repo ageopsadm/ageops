@@ -5804,10 +5804,18 @@ async function api(method, table, id='', body=null) {
 
   /* ── Multi-tenant: filtro company_id em GET/PATCH/DELETE nas tabelas escopadas ── */
   const _tcid = _tenantCidForScope();
+  const _qHasId = q.has('id');
   if(_tcid && _tenantShouldFilterTable(table)) {
     if((method === 'GET' || method === 'PATCH' || method === 'DELETE') && !q.has('company_id')) {
-      /* GET com or=(...) já define o escopo (ex.: empresa OU criador com company_id nulo) — não ANDar company_id */
-      const skipAutoCompany = method === 'GET' && q.has('or');
+      /* GET com or=(...) já define o escopo — não ANDar company_id */
+      /* GET/PATCH/DELETE por id=eq.<uuid>: não ANDar company_id — senão linhas com company_id null no BD não batem e PATCH atualiza 0 linhas */
+      const skipAutoCompany =
+        (method === 'GET' && q.has('or')) ||
+        (_qHasId && (
+          method === 'PATCH' ||
+          method === 'DELETE' ||
+          (method === 'GET' && wantSingleObject)
+        ));
       if(!skipAutoCompany) q.set('company_id', `eq.${_tcid}`);
     }
   }
@@ -9204,10 +9212,14 @@ async function saveProject() {
   /* Verificar se é um ID fictício (sheet_N): nesse caso cria novo registro */
   const realId = id && !id.startsWith('sheet_') ? id : '';
 
+  console.log('[saveProject] pId no formulário:', id || '(vazio)', '→', realId ? `PATCH id=${realId}` : 'POST (novo registro)');
+  console.log('[saveProject] payload (sem segredos):', { ...payload, cost: payload.cost, total_value: payload.total_value });
+
   try {
     const saved = realId
       ? await apiPut('age_projects', realId, payload)
       : await apiPost('age_projects', payload);
+    console.log('[saveProject] resposta Supabase:', saved);
     if(!realId && saved) {
       const sid = Array.isArray(saved) ? saved[0] : saved;
       if(sid?.id) {
@@ -9228,8 +9240,9 @@ async function saveProject() {
       }
     }
     closeModal('modalProject');
-    toast(realId ? 'Projeto atualizado!' : 'Projeto criado!');
+    toast(realId ? 'Projeto salvo ✓' : 'Projeto criado ✓');
     _fechAllProjects = [];
+    _projAllCache = [];
     await loadProjects();
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
   } catch(e) {
