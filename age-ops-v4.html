@@ -3399,7 +3399,7 @@ async function purgeProjectsNotInSheet() {
        Projetos que não estão na planilha são DELETADOS.
        IDs existentes são PRESERVADOS — evita quebrar vínculos com fechamentos.
     ═══════════════════════════════════════════════════════════ */
-    const allProj  = await fetchAll('age_projects', 500).catch(()=>[]);
+    const allProj  = await fetchAgeProjectsScoped(500).catch(()=>[]);
     const allFechs = await fetchAll('age_fechamento', 300).catch(()=>[]);
 
     /* Indexar projetos do banco por chave cliente|projeto */
@@ -5806,7 +5806,9 @@ async function api(method, table, id='', body=null) {
   const _tcid = _tenantCidForScope();
   if(_tcid && _tenantShouldFilterTable(table)) {
     if((method === 'GET' || method === 'PATCH' || method === 'DELETE') && !q.has('company_id')) {
-      q.set('company_id', `eq.${_tcid}`);
+      /* GET com or=(...) já define o escopo (ex.: empresa OU criador com company_id nulo) — não ANDar company_id */
+      const skipAutoCompany = method === 'GET' && q.has('or');
+      if(!skipAutoCompany) q.set('company_id', `eq.${_tcid}`);
     }
   }
   if(method === 'GET' && table === 'age_companies' && _tcid && !q.has('company_id')) {
@@ -6309,6 +6311,38 @@ async function fetchAll(table, limit=500) {
   }
 }
 
+/**
+ * age_projects: inclui linhas da empresa OU criadas pelo usuário com company_id nulo
+ * (evita lista vazia quando POST não gravou company_id ou legado sem tenant).
+ * Tenta deleted=neq.true para alinhar com soft-delete sem excluir deleted=null.
+ */
+async function fetchAgeProjectsScoped(limit = 1000) {
+  const cid = _tenantCidForScope();
+  const uname = String(currentUser?.username || '').trim();
+  let qs = `?limit=${encodeURIComponent(limit)}`;
+  if(cid && uname) {
+    qs += `&or=(company_id.eq.${cid},and(company_id.is.null,created_by.eq.${uname}))`;
+  } else if(cid) {
+    qs += `&company_id=eq.${cid}`;
+  }
+  const attempts = [`${qs}&deleted=neq.true`, qs];
+  for(const qtry of attempts) {
+    try {
+      const d = await apiGet('age_projects', qtry);
+      const rows = Array.isArray(d?.data) ? d.data : [];
+      return rows.filter(_sbIsRowVisible);
+    } catch(e) {
+      if(String(e?.message||e).includes('deleted')) continue;
+      console.warn('[fetchAgeProjectsScoped]', qtry, e?.message || e);
+    }
+  }
+  try {
+    return await fetchAll('age_projects', limit);
+  } catch(e2) {
+    return [];
+  }
+}
+
 /* Busca registros pessoais do usuário logado — filtra por owner no servidor */
 async function fetchOwn(table, limit=300) {
   const u = currentUser?.username || '';
@@ -6431,7 +6465,7 @@ async function loadContratosPage() {
   }
   try {
     const [projs, contracts] = await Promise.all([
-      fetchAll('age_projects', 4000),
+      fetchAgeProjectsScoped(4000),
       fetchAll('age_contracts', 8000)
     ]);
     _contratosProjects = (projs || []).slice().sort((a, b) => {
@@ -6632,7 +6666,7 @@ const SYNC = {
     } else {
       /* Tentar achar o projeto no banco pelo nome para salvar custo */
       if(!_fechAllProjects.length) {
-        _fechAllProjects = await fetchAll('age_projects', 300).catch(()=>[]);
+        _fechAllProjects = await fetchAgeProjectsScoped(300).catch(()=>[]);
       }
       const dbProj = _fechAllProjects.find(p =>
         (p.client_name||'').toLowerCase() === (fech.client_name||'').toLowerCase() &&
@@ -6724,7 +6758,7 @@ async function loadDashboard() {
     /* FONTE DE VERDADE: planilha 2026
        Banco usado para status, NPS e custo do fechamento */
     const [dbProjects, dbFechs] = await Promise.all([
-      fetchAll('age_projects', 300).catch(()=>[]),
+      fetchAgeProjectsScoped(300).catch(()=>[]),
       fetchAll('age_fechamento', 300).catch(()=>[])
     ]);
     maybeNotifyProjectDeadlines(dbProjects).catch(()=>{});
@@ -8442,7 +8476,7 @@ async function loadProjects() {
     /* FONTE DE VERDADE: planilha 2026
        Banco usado para enriquecer status, NPS e custo do fechamento */
     const [dbProjects, dbFechs] = await Promise.all([
-      fetchAll('age_projects', 1000),
+      fetchAgeProjectsScoped(1000),
       fetchAll('age_fechamento', 500)
     ]);
 
@@ -9256,7 +9290,7 @@ async function _populateFechProjSelect() {
   const sel = document.getElementById('fProjId');
   if(!sel) return;
   if(!_fechAllProjects.length) {
-    _fechAllProjects = await fetchAll('age_projects', 300).catch(()=>[]);
+    _fechAllProjects = await fetchAgeProjectsScoped(300).catch(()=>[]);
   }
   sel.innerHTML = '<option value="">— Selecionar projeto —</option>' +
     PROJ_2026_SHEET.map((s, i) => {
@@ -9276,7 +9310,7 @@ async function loadFechamento() {
   try {
     const [fechamentos, projects] = await Promise.all([
       fetchAll('age_fechamento', 300).catch(()=>[]),
-      fetchAll('age_projects',   300).catch(()=>[])
+      fetchAgeProjectsScoped(300).catch(()=>[])
     ]);
     _fechAllFechs    = fechamentos;
     _fechAllProjects = projects;
@@ -9580,7 +9614,7 @@ async function saveFechPanel(idx) {
 
   /* Se ainda não tem ID do banco, buscar ao vivo */
   if(!dbProjId) {
-    const fresh = await fetchAll('age_projects', 300).catch(()=>[]);
+    const fresh = await fetchAgeProjectsScoped(300).catch(()=>[]);
     _fechAllProjects = fresh;
     const db = fresh.find(p =>
       (p.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
@@ -9814,7 +9848,7 @@ async function saveFech() {
     );
     if(!dbProj && nomeCliente && nomeProjeto) {
       /* Recarregar projetos do banco (podem ter sido recriados pelo purge) */
-      const fresh = await fetchAll('age_projects', 300).catch(()=>[]);
+      const fresh = await fetchAgeProjectsScoped(300).catch(()=>[]);
       _fechAllProjects = fresh;
       dbProj = fresh.find(p =>
         (p.client_name||'').toLowerCase() === nomeCliente.toLowerCase() &&
@@ -10069,7 +10103,7 @@ async function loadKanban() {
   try {
     const [stagesDb, projectsDb] = await Promise.all([
       fetchAll('age_project_stages', 500).catch(()=>[]),
-      fetchAll('age_projects', 300).catch(()=>[])
+      fetchAgeProjectsScoped(300).catch(()=>[])
     ]);
     _kbStages   = stagesDb;
     _kbProjects = projectsDb;
@@ -13413,7 +13447,7 @@ async function openPagamentoModal(editId) {
     : '<option value="">— Nenhum colaborador —</option>';
 
   const projSel = document.getElementById('payProject');
-  const projects = await fetchAll('age_projects', 800);
+  const projects = await fetchAgeProjectsScoped(800);
   projSel.innerHTML = '<option value="">— Selecione o projeto —</option>' +
     projects.map(p => {
       const tid = escAttr(String(p.id));
