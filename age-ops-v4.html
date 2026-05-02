@@ -198,6 +198,10 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
 }
 .btn-green:hover{background:#f5f5f5;color:#111}
 .btn-sm{padding:4px 10px;font-size:10px}
+button.perm-disabled,.btn.perm-disabled{
+  opacity:.45!important;cursor:not-allowed!important;pointer-events:none!important;
+}
+.perm-tooltip-host[title]{cursor:not-allowed}
 
 /* ── KPI CARDS ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px}
@@ -874,67 +878,85 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
     <nav>
       <div id="sidebarCorp">
       <div class="nav-group-label">CORPORATIVO</div>
-      <button class="nav-item" data-page="dashboard" onclick="navigate('dashboard')">
+      <button type="button" class="nav-item" data-page="dashboard" data-perm-module="dashboard" onclick="navigate('dashboard')">
         <i class="fas fa-chart-line"></i><span>DASHBOARD</span>
       </button>
-      <button class="nav-item" data-page="projects" onclick="navigate('projects')">
+      <button type="button" class="nav-item" data-page="projects" data-perm-module="projetos" onclick="navigate('projects')">
         <i class="fas fa-folder-open"></i><span>PROJETOS</span>
       </button>
-      <button class="nav-item" data-page="pipeline" onclick="navigate('pipeline')">
+      <button type="button" class="nav-item" data-page="pipeline" data-perm-module="pipeline" onclick="navigate('pipeline')">
         <i class="fas fa-filter"></i><span>PIPELINE</span>
       </button>
-      <button class="nav-item" data-page="orcamentos" onclick="navigate('orcamentos')">
+      <button type="button" class="nav-item" data-page="gestao" data-perm-module="gestao" onclick="navigate('gestao')">
+        <i class="fas fa-project-diagram"></i><span>GESTÃO</span>
+      </button>
+      <button type="button" class="nav-item" data-page="orcamentos" data-perm-module="orcamentos" onclick="navigate('orcamentos')">
         <i class="fas fa-file-alt"></i><span>ORÇAMENTOS</span>
       </button>
-      <button class="nav-item" data-page="contratos" onclick="navigate('contratos')">
+      <button type="button" class="nav-item" data-page="contratos" data-perm-module="contratos" onclick="navigate('contratos')">
         <i class="fas fa-file-contract"></i><span>CONTRATOS</span>
       </button>
-      <button class="nav-item" data-page="pagamentos" onclick="navigate('pagamentos')">
+      <button type="button" class="nav-item" data-page="pagamentos" data-perm-module="pagamentos" onclick="navigate('pagamentos')">
         <i class="fas fa-money-check-alt"></i><span>PAGAMENTOS</span>
       </button>
-      <button class="nav-item" data-page="clientes" onclick="navigate('clientes')">
+      <button type="button" class="nav-item" data-page="clientes" data-perm-module="clientes" onclick="navigate('clientes')">
         <i class="fas fa-users"></i><span>CLIENTES</span>
+      </button>
+      <button type="button" class="nav-item" data-page="fechamento" data-perm-module="fechamento" onclick="navigate('fechamento')">
+        <i class="fas fa-file-invoice-dollar"></i><span>FECHAMENTO</span>
+      </button>
+      <button type="button" class="nav-item" data-page="historico" data-perm-module="historico" onclick="navigate('historico')">
+        <i class="fas fa-archive"></i><span>HISTÓRICO</span>
+      </button>
+      <button type="button" class="nav-item" data-page="nps" data-perm-module="nps" onclick="navigate('nps')">
+        <i class="fas fa-star"></i><span>NPS</span>
+      </button>
+      <button type="button" class="nav-item" data-page="relatorios" data-perm-module="relatorios" onclick="navigate('relatorios')">
+        <i class="fas fa-clipboard-list"></i><span>RELATÓRIOS</span>
+      </button>
+      <button type="button" class="nav-item nav-admin-perm-page" data-page="equipe-permissoes" onclick="navigate('equipe-permissoes')" style="display:none">
+        <i class="fas fa-shield-alt"></i><span>EQUIPE &amp; PERMISSÕES</span>
       </button>
       </div>
 
       <div id="sidebarEquipe">
       <div class="nav-group-label">EQUIPE</div>
-      <button class="nav-item" data-page="colaboradores" onclick="navigate('colaboradores')">
+      <button type="button" class="nav-item" data-page="colaboradores" data-perm-module="equipe" onclick="navigate('colaboradores')">
         <i class="fas fa-user-friends"></i><span>COLABORADORES</span>
       </button>
-      <button class="nav-item" data-page="cronograma" onclick="navigate('cronograma')">
+      <button type="button" class="nav-item" data-page="cronograma" data-perm-module="cronograma" onclick="navigate('cronograma')">
         <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
       </button>
       </div>
 
       <div id="sidebarPersonalStaff">
       <div class="nav-group-label">PESSOAL</div>
-      <button class="nav-item" data-page="myday" onclick="navigate('myday')">
+      <button type="button" class="nav-item" data-page="myday" data-perm-module="myday" onclick="navigate('myday')">
         <i class="fas fa-crosshairs"></i><span>MEU DIA</span>
       </button>
-      <button class="nav-item" data-page="mytasks" onclick="navigate('mytasks')">
+      <button type="button" class="nav-item" data-page="mytasks" data-perm-module="mytasks" onclick="navigate('mytasks')">
         <i class="fas fa-tasks"></i><span>TAREFAS</span>
       </button>
-      <button class="nav-item" data-page="myfinance" onclick="navigate('myfinance')">
+      <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')">
         <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
       </button>
-      <button class="nav-item" data-page="profile" onclick="navigate('profile')">
+      <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
         <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
       </button>
       </div>
 
       <div id="sidebarColaborador" style="display:none">
       <div class="nav-group-label">MINHA ÁREA</div>
-      <button class="nav-item" data-page="mytasks" onclick="navigate('mytasks')">
+      <button type="button" class="nav-item" data-page="mytasks" data-perm-module="mytasks" onclick="navigate('mytasks')">
         <i class="fas fa-tasks"></i><span>MINHAS TAREFAS</span>
       </button>
-      <button class="nav-item" data-page="cronograma" onclick="navigate('cronograma')">
+      <button type="button" class="nav-item" data-page="cronograma" data-perm-module="cronograma" onclick="navigate('cronograma')">
         <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
       </button>
-      <button class="nav-item" data-page="myfinance" onclick="navigate('myfinance')">
+      <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')">
         <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
       </button>
-      <button class="nav-item" data-page="profile" onclick="navigate('profile')">
+      <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
         <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
       </button>
       </div>
@@ -961,6 +983,34 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
     </header>
 
     <div id="content">
+
+      <!-- Sem permissão -->
+      <div id="page-no-access" class="page">
+        <div style="max-width:420px;margin:60px auto;text-align:center;padding:32px;border:1px solid var(--bd);border-radius:10px;background:var(--bg2)">
+          <div style="font-family:var(--font-h);font-size:18px;font-weight:800;margin-bottom:12px;color:#94a3b8"><i class="fas fa-lock"></i> ACESSO NEGADO</div>
+          <p style="font-family:var(--font-m);font-size:11px;color:var(--textsub);line-height:1.6;margin-bottom:20px">
+            Você não tem acesso a este módulo.<br>Solicite permissão ao administrador.
+          </p>
+          <button type="button" class="btn btn-primary btn-sm" onclick="navigate(_defaultHomePage())">Voltar ao início</button>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           EQUIPE & PERMISSÕES (admin)
+      ══════════════════════════════════ -->
+      <div id="page-equipe-permissoes" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-shield-alt"></i> EQUIPE &amp; PERMISSÕES</div>
+          <div class="page-actions">
+            <button type="button" class="btn btn-secondary btn-sm perm-guard-edit" onclick="openInviteColaboradorModal()"><i class="fas fa-envelope-open-text"></i> Convidar Colaborador</button>
+            <button type="button" class="btn btn-ghost btn-sm perm-always" onclick="loadEquipePermissoesPage()"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin:-8px 0 16px">
+          Gerencie o acesso por módulo para cada colaborador da empresa. Administradores globais ignoram estas regras.
+        </p>
+        <div id="permTeamCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
+      </div>
 
       <!-- ══════════════════════════════════
            DASHBOARD PAGE
@@ -1763,8 +1813,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
               <option value="1">Disponíveis</option>
               <option value="0">Indisponíveis</option>
             </select>
-            <button class="btn btn-secondary btn-sm" onclick="openInviteColaboradorModal()" title="Convite por link"><i class="fas fa-envelope-open-text"></i> Convidar</button>
-            <button class="btn btn-primary btn-sm" onclick="openColabModal()"><i class="fas fa-plus"></i> Colaborador</button>
+            <button type="button" class="btn btn-secondary btn-sm perm-guard-edit" onclick="openInviteColaboradorModal()" title="Convite por link"><i class="fas fa-envelope-open-text"></i> Convidar</button>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openColabModal()"><i class="fas fa-plus"></i> Colaborador</button>
           </div>
         </div>
         <!-- KPIs rápidos -->
@@ -1953,8 +2003,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
         <div class="page-header">
           <div class="page-title"><i class="fas fa-money-check-alt"></i> PAGAMENTOS</div>
           <div class="page-actions">
-            <button class="btn btn-primary btn-sm" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button>
-            <button class="btn btn-ghost btn-sm" onclick="loadPagamentosPage()"><i class="fas fa-sync-alt"></i></button>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button>
+            <button type="button" class="btn btn-ghost btn-sm perm-always" onclick="loadPagamentosPage()"><i class="fas fa-sync-alt"></i></button>
           </div>
         </div>
         <div class="kpi-grid" style="margin-bottom:16px">
@@ -2623,6 +2673,22 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   </div>
 </div>
 
+<!-- Modal matriz de permissões -->
+<div class="modal" id="modalPermissoes">
+  <div class="modal-box" style="max-width:620px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+    <div class="modal-title">
+      <span id="permModalTitle">PERMISSÕES</span>
+      <button type="button" onclick="closeModal('modalPermissoes')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="permModalUsername" value="">
+    <div id="permModalBody" style="overflow-y:auto;flex:1;font-family:var(--font-m);font-size:10px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-shrink:0">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modalPermissoes')">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="savePermissoesModal()"><i class="fas fa-save"></i> Salvar Permissões</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Finance -->
 <div class="modal" id="modalFinance">
   <div class="modal-box" style="max-width:400px">
@@ -3040,8 +3106,141 @@ function _roleDisplayLabel(roleNorm) {
   return roleNorm || '—';
 }
 
-/** Colaborador: Minhas Tarefas, Cronograma (atribuído), Financeiro pessoal, Perfil */
-const _COLAB_PAGES = new Set(['mytasks', 'cronograma', 'myfinance', 'profile']);
+const READONLY_TOOLTIP = 'Você tem acesso somente leitura';
+
+const PERM_ALL_MODULES = [
+  'dashboard','projetos','pipeline','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma','myday','mytasks','myfinance'
+];
+
+const PAGE_PERM_KEYS = {
+  dashboard: ['dashboard'],
+  projects: ['projetos'],
+  pipeline: ['pipeline'],
+  gestao: ['gestao'],
+  orcamentos: ['orcamentos'],
+  clientes: ['clientes'],
+  contratos: ['contratos'],
+  pagamentos: ['pagamentos', 'financeiro'],
+  colaboradores: ['equipe'],
+  cronograma: ['cronograma'],
+  fechamento: ['fechamento'],
+  historico: ['historico'],
+  nps: ['nps'],
+  relatorios: ['relatorios'],
+  myday: ['myday'],
+  mytasks: ['mytasks'],
+  myfinance: ['myfinance'],
+  'equipe-permissoes': []
+};
+
+function _permKeysForPage(page) {
+  return PAGE_PERM_KEYS[page] || [];
+}
+
+function _userIsBootstrapAdmin() {
+  const u = String(currentUser?.username || '').toLowerCase();
+  return u === 'gustavowng' || u === 'vraulin';
+}
+
+function _userPermFullBypass() {
+  if(_userIsBootstrapAdmin()) return true;
+  if(_normalizeRole(currentUser?.role) === 'admin') return true;
+  return false;
+}
+
+function _userGestorUnrestricted() {
+  return _normalizeRole(currentUser?.role) === 'gestor';
+}
+
+function _userCanManagePermissionsUi() {
+  return _userPermFullBypass();
+}
+
+function canViewPage(page) {
+  if(page === 'no-access') return true;
+  if(page === 'profile') return true;
+  if(page === 'equipe-permissoes') return _userCanManagePermissionsUi();
+  if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
+  if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
+  if(page === 'mytasks' || page === 'myfinance') return true;
+  const keys = _permKeysForPage(page);
+  if(!keys.length) return false;
+  return keys.some(k => currentUser.permissions?.[k]?.view === true);
+}
+
+function hasModuleEditForPage(page) {
+  if(page === 'profile') return true;
+  if(page === 'equipe-permissoes') return _userCanManagePermissionsUi();
+  if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
+  if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
+  if(page === 'mytasks' || page === 'myfinance') return true;
+  const keys = _permKeysForPage(page);
+  if(!keys.length) return false;
+  return keys.some(k => currentUser.permissions?.[k]?.edit === true);
+}
+
+async function hydrateUserPermissions() {
+  currentUser.permissions = {};
+  if(_userPermFullBypass() || _userGestorUnrestricted()) {
+    PERM_ALL_MODULES.forEach(k => {
+      currentUser.permissions[k] = { view: true, edit: true };
+    });
+    return;
+  }
+  const cid = currentUser.company_id;
+  const un = String(currentUser.username || '').trim();
+  if(!cid || !un) return;
+  try {
+    const d = await apiGet('age_permissions',
+      `?username=eq.${encodeURIComponent(un)}&company_id=eq.${encodeURIComponent(cid)}&limit=500`);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    rows.forEach(r => {
+      const k = String(r.module || '').toLowerCase().trim();
+      if(!k) return;
+      currentUser.permissions[k] = {
+        view: r.can_view === true || r.can_view === 'true',
+        edit: r.can_edit === true || r.can_edit === 'true'
+      };
+    });
+  } catch(e) {
+    console.warn('[hydrateUserPermissions]', e);
+  }
+  currentUser.permissions.mytasks = { view: true, edit: true };
+  currentUser.permissions.myfinance = { view: true, edit: true };
+}
+
+function _canShowNavModule(mod) {
+  if(!mod) return true;
+  if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
+  if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
+  if(mod === 'mytasks' || mod === 'myfinance') return true;
+  return currentUser.permissions?.[mod]?.view === true;
+}
+
+function _syncPermissionNav() {
+  document.querySelectorAll('.nav-admin-perm-page').forEach(btn => {
+    btn.style.display = _userCanManagePermissionsUi() ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-item[data-perm-module]').forEach(btn => {
+    const mod = btn.getAttribute('data-perm-module');
+    btn.style.display = _canShowNavModule(mod) ? '' : 'none';
+  });
+  ['sidebarCorp', 'sidebarEquipe', 'sidebarPersonalStaff'].forEach(sid => {
+    const el = document.getElementById(sid);
+    if(!el) return;
+    const any = [...el.querySelectorAll('.nav-item')].some(b => b.style.display !== 'none');
+    el.style.display = any ? 'block' : 'none';
+  });
+}
+
+function _defaultLandingPage() {
+  if(_userPermFullBypass() || _userGestorUnrestricted()) return 'dashboard';
+  const tryPages = ['dashboard', 'projects', 'pipeline', 'pagamentos', 'colaboradores', 'mytasks', 'myfinance', 'profile'];
+  for(const p of tryPages) {
+    if(canViewPage(p)) return p;
+  }
+  return 'mytasks';
+}
 
 function _refreshSidebarForRole() {
   const corp = document.getElementById('sidebarCorp');
@@ -3049,16 +3248,225 @@ function _refreshSidebarForRole() {
   const staff = document.getElementById('sidebarPersonalStaff');
   const colab = document.getElementById('sidebarColaborador');
   if(_userIsColaborador()) {
-    if(corp) corp.style.display = 'none';
-    if(eq) eq.style.display = 'none';
-    if(staff) staff.style.display = 'none';
-    if(colab) colab.style.display = 'block';
+    if(corp) corp.style.display = 'block';
+    if(eq) eq.style.display = 'block';
+    if(staff) staff.style.display = 'block';
+    if(colab) colab.style.display = 'none';
   } else {
     if(corp) corp.style.display = 'block';
     if(eq) eq.style.display = 'block';
     if(staff) staff.style.display = 'block';
     if(colab) colab.style.display = 'none';
   }
+  _syncPermissionNav();
+}
+
+function applyActivePageEditGuards(page) {
+  /* Admin, gestor e contas bootstrap: nunca desabilitar ações */
+  if(_userPermFullBypass() || _userGestorUnrestricted()) {
+    document.querySelectorAll('.perm-guard-edit').forEach(el => {
+      el.disabled = false;
+      el.classList.remove('perm-disabled');
+      if(el.getAttribute('title') === READONLY_TOOLTIP) el.removeAttribute('title');
+    });
+    return;
+  }
+  const ro = page !== 'equipe-permissoes' && !hasModuleEditForPage(page);
+  document.querySelectorAll('.perm-guard-edit').forEach(el => {
+    if(ro) {
+      el.disabled = true;
+      el.classList.add('perm-disabled');
+      el.setAttribute('title', READONLY_TOOLTIP);
+    } else {
+      el.disabled = false;
+      el.classList.remove('perm-disabled');
+      if(el.getAttribute('title') === READONLY_TOOLTIP) el.removeAttribute('title');
+    }
+  });
+}
+
+let _permModalMatrix = [];
+
+function _permRowHtml(key, label, alwaysOn) {
+  const v = `perm_cb_v_${key}`;
+  const e = `perm_cb_e_${key}`;
+  if(alwaysOn) {
+    return `<tr><td style="padding:8px 6px;border-bottom:1px solid var(--bd)">${escHtml(label)}</td>
+      <td style="text-align:center;border-bottom:1px solid var(--bd)"><span style="color:#16a34a">✓</span></td>
+      <td style="text-align:center;border-bottom:1px solid var(--bd)"><span style="color:#16a34a">✓</span></td></tr>`;
+  }
+  return `<tr><td style="padding:8px 6px;border-bottom:1px solid var(--bd)">${escHtml(label)}</td>
+    <td style="text-align:center;border-bottom:1px solid var(--bd)"><input type="checkbox" id="${v}" data-mod="${escAttr(key)}" data-bit="view"></td>
+    <td style="text-align:center;border-bottom:1px solid var(--bd)"><input type="checkbox" id="${e}" data-mod="${escAttr(key)}" data-bit="edit"></td></tr>`;
+}
+
+async function openPermissoesModalFor(username) {
+  if(!_userCanManagePermissionsUi()) return;
+  const cid = currentUser.company_id;
+  if(!cid) {
+    toast('Empresa não identificada.', 'warn');
+    return;
+  }
+  const u = String(username || '').toLowerCase();
+  document.getElementById('permModalUsername').value = u;
+  document.getElementById('permModalTitle').textContent = 'Permissões — ' + (displayNameForUsername(u) || u);
+
+  let existing = {};
+  try {
+    const d = await apiGet('age_permissions',
+      `?username=eq.${encodeURIComponent(u)}&company_id=eq.${encodeURIComponent(cid)}&limit=500`);
+    (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible).forEach(r => {
+      existing[String(r.module || '').toLowerCase()] = r;
+    });
+  } catch(e) {}
+
+  const corpRows = [
+    ['dashboard', 'Dashboard'],
+    ['projetos', 'Projetos'],
+    ['pipeline', 'Pipeline / Kanban'],
+    ['gestao', 'Gestão de Projetos'],
+    ['orcamentos', 'Orçamentos'],
+    ['clientes', 'Clientes'],
+    ['contratos', 'Contratos'],
+    ['pagamentos', 'Pagamentos'],
+    ['financeiro', 'Financeiro'],
+    ['equipe', 'Equipe'],
+    ['fechamento', 'Fechamento'],
+    ['historico', 'Histórico'],
+    ['nps', 'NPS'],
+    ['relatorios', 'Relatórios']
+  ];
+  const persRows = [
+    ['mytasks', 'Minhas Tarefas', true],
+    ['cronograma', 'Cronograma', false],
+    ['myfinance', 'Fin. Pessoal', true],
+    ['myday', 'Meu Dia', false]
+  ];
+
+  let html = `<div style="font-family:var(--font-b);font-size:10px;font-weight:700;color:#94a3b8;margin:10px 0 6px">ÁREA CORPORATIVA</div>
+    <table style="width:100%;border-collapse:collapse"><thead><tr>
+    <th style="text-align:left;padding:6px;border-bottom:2px solid var(--bd)">Módulo</th>
+    <th style="text-align:center;padding:6px;border-bottom:2px solid var(--bd);width:90px">Visualizar</th>
+    <th style="text-align:center;padding:6px;border-bottom:2px solid var(--bd);width:90px">Editar</th>
+    </tr></thead><tbody>`;
+  corpRows.forEach(([k, lab]) => {
+    html += _permRowHtml(k, lab, false);
+  });
+  html += `</tbody></table>`;
+
+  html += `<div style="font-family:var(--font-b);font-size:10px;font-weight:700;color:#94a3b8;margin:16px 0 6px">ÁREA PESSOAL</div>
+    <table style="width:100%;border-collapse:collapse"><thead><tr>
+    <th style="text-align:left;padding:6px;border-bottom:2px solid var(--bd)">Módulo</th>
+    <th style="text-align:center;padding:6px;border-bottom:2px solid var(--bd)">Visualizar</th>
+    <th style="text-align:center;padding:6px;border-bottom:2px solid var(--bd)">Editar</th>
+    </tr></thead><tbody>`;
+  persRows.forEach(([k, lab, al]) => {
+    html += _permRowHtml(k, lab, al);
+  });
+  html += `</tbody></table>`;
+
+  document.getElementById('permModalBody').innerHTML = html;
+
+  corpRows.forEach(([k]) => {
+    const ex = existing[k];
+    const vEl = document.getElementById(`perm_cb_v_${k}`);
+    const eEl = document.getElementById(`perm_cb_e_${k}`);
+    if(vEl) vEl.checked = ex ? (ex.can_view === true || ex.can_view === 'true') : false;
+    if(eEl) eEl.checked = ex ? (ex.can_edit === true || ex.can_edit === 'true') : false;
+  });
+  persRows.forEach(([k, _, al]) => {
+    if(al) return;
+    const ex = existing[k];
+    const vEl = document.getElementById(`perm_cb_v_${k}`);
+    const eEl = document.getElementById(`perm_cb_e_${k}`);
+    if(vEl) vEl.checked = ex ? (ex.can_view === true || ex.can_view === 'true') : false;
+    if(eEl) eEl.checked = ex ? (ex.can_edit === true || ex.can_edit === 'true') : false;
+  });
+
+  _permModalMatrix = [...corpRows.map(([k])=>k), ...persRows.filter(x=>!x[2]).map(x=>x[0])];
+  openModal('modalPermissoes');
+}
+
+async function savePermissoesModal() {
+  const u = document.getElementById('permModalUsername')?.value?.trim().toLowerCase();
+  const cid = currentUser.company_id;
+  if(!u || !cid || !_userCanManagePermissionsUi()) return;
+
+  const mods = [...new Set(_permModalMatrix)];
+  const payloadRows = [];
+  mods.forEach(key => {
+    const vEl = document.getElementById(`perm_cb_v_${key}`);
+    const eEl = document.getElementById(`perm_cb_e_${key}`);
+    if(!vEl && !eEl) return;
+    const can_view = vEl ? !!vEl.checked : true;
+    const can_edit = eEl ? !!eEl.checked : true;
+    payloadRows.push({ module: key, can_view, can_edit });
+  });
+
+  try {
+    for(const row of payloadRows) {
+      const q = await apiGet('age_permissions',
+        `?username=eq.${encodeURIComponent(u)}&company_id=eq.${encodeURIComponent(cid)}&module=eq.${encodeURIComponent(row.module)}&limit=5`);
+      const found = (Array.isArray(q?.data) ? q.data : [])[0];
+      const body = {
+        username: u,
+        company_id: cid,
+        module: row.module,
+        can_view: row.can_view,
+        can_edit: row.can_edit,
+        deleted: false
+      };
+      if(found?.id) await apiPatch('age_permissions', found.id, body);
+      else await apiPost('age_permissions', body);
+    }
+    closeModal('modalPermissoes');
+    toast('Permissões salvas.');
+    if(String(currentUser.username).toLowerCase() === u) await hydrateUserPermissions();
+    loadEquipePermissoesPage();
+  } catch(e) {
+    console.error(e);
+    toast('Erro ao salvar permissões.', 'err');
+  }
+}
+
+async function loadEquipePermissoesPage() {
+  const host = document.getElementById('permTeamCards');
+  if(!host || !_userCanManagePermissionsUi()) return;
+  await refreshAgeUsersCache();
+  const cid = currentUser.company_id;
+  let users = _ageUsersCache.filter(x => _sbIsRowVisible(x));
+  if(cid) users = users.filter(x => String(x.company_id || '') === String(cid));
+
+  if(!users.length) {
+    host.innerHTML = `<div style="padding:40px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum usuário na empresa.</div>`;
+    return;
+  }
+
+  host.innerHTML = users.map(r => {
+    const un = escAttr(r.username);
+    const nm = escHtml(r.name || r.username);
+    const em = escHtml(r.email || '—');
+    const active = r.active !== false && r.active !== 'false';
+    const badge = _normalizeRole(r.role);
+    const badgeColor = badge === 'admin' ? '#7c3aed' : badge === 'gestor' ? '#2563eb' : '#64748b';
+    const ini = (r.name || r.username || '?')[0].toUpperCase();
+    return `<div class="panel" style="padding:14px;margin:0">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:44px;height:44px;border-radius:10px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-weight:800;flex-shrink:0">${ini}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:13px">${nm}</div>
+          <div style="font-size:10px;color:var(--textsub);word-break:break-all">${em}</div>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:${badgeColor}22;color:${badgeColor};font-weight:700">${escHtml(badge || '—')}</span>
+            <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:${active?'#dcfce7':'#fee2e2'};color:${active?'#16a34a':'#dc2626'}">${active?'Ativo':'Inativo'}</span>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openPermissoesModalFor('${un}')"><i class="fas fa-sliders-h"></i> Gerenciar Permissões</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function _updateUserBadgeAvatar() {
@@ -3097,10 +3505,12 @@ async function applyLoginSessionFromRow(row) {
     company_id: row.company_id ?? null,
     company_name: row.company_name || '',
     avatar_url: row.avatar_url || row.photo_url || '',
-    job_title: row.job_title || row.cargo || ''
+    job_title: row.job_title || row.cargo || '',
+    permissions: {}
   };
   try {
     _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
+    await hydrateUserPermissions();
   } catch(e) {}
 
   const lp = document.getElementById('loginPage');
@@ -3113,7 +3523,7 @@ async function applyLoginSessionFromRow(row) {
   if(nm) nm.textContent = currentUser.name || u;
   if(rl) rl.textContent = _roleDisplayLabel(currentUser.role);
   _refreshSidebarForRole();
-  navigate(_userIsColaborador() ? 'mytasks' : 'dashboard');
+  navigate(_defaultLandingPage());
   startClock();
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
   return { ok: true };
@@ -3512,6 +3922,8 @@ const PAGE_TITLES = {
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA',
   myday:'MEU DIA', mytasks:'TAREFAS', myfinance:'FINANCEIRO',
   profile:'MEU PERFIL',
+  'equipe-permissoes':'EQUIPE & PERMISSÕES',
+  'no-access':'ACESSO NEGADO',
   relatorios:'RELATÓRIOS DE PROJETOS',
   pipeline:'PIPELINE COMERCIAL',
   nps:'NPS — AVALIAÇÃO DE CLIENTES'
@@ -3519,9 +3931,8 @@ const PAGE_TITLES = {
 
 function navigate(page) {
   if(typeof page !== 'string') page = 'dashboard';
-  if(_userIsColaborador() && !_COLAB_PAGES.has(page)) {
-    toast('Área restrita a gestão. Redirecionando…', 'warn');
-    page = 'mytasks';
+  if(!canViewPage(page)) {
+    page = 'no-access';
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -3551,10 +3962,14 @@ function navigate(page) {
   if(page==='mytasks')      loadTasks();
   if(page==='myfinance')    loadFinance();
   if(page==='profile')     loadProfile();
+  if(page==='equipe-permissoes') loadEquipePermissoesPage();
   if(page==='relatorios')   loadRelatorios();
   if(page==='pipeline')     loadPipeline();
   if(page==='nps')          loadNps();
-  // fecha sidebar mobile
+
+  if(page !== 'no-access') {
+    setTimeout(() => applyActivePageEditGuards(page), 0);
+  }
   if(window.innerWidth <= 768) {
     document.getElementById('sidebar')?.classList.remove('open');
     document.getElementById('sidebar-overlay')?.classList.remove('show');
@@ -10092,7 +10507,7 @@ async function loadCronograma() {
       : '<i class="fas fa-calendar-alt"></i> CRONOGRAMA DA EMPRESA';
   }
   const actions = document.querySelector('#page-cronograma .page-actions');
-  if(actions) actions.style.display = _userIsColaborador() ? 'none' : '';
+  if(actions) actions.style.display = hasModuleEditForPage('cronograma') ? '' : 'none';
   renderSched();
 }
 
@@ -10103,6 +10518,7 @@ function renderSched() {
   const days=getWeekDates(_schedWeekOffset);
   const today=new Date().toISOString().slice(0,10);
   const colab = _userIsColaborador();
+  const showAdd = hasModuleEditForPage('cronograma');
   if(lbl) lbl.textContent=`${days[0].toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} — ${days[6].toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})}`;
 
   el.innerHTML=days.map(d=>{
@@ -10110,7 +10526,7 @@ function renderSched() {
     const isToday=ds===today;
     const dayEvents=_schedEvents.filter(e=>(e.event_date||e.date||'').slice(0,10)===ds);
     const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-    const addBtn = colab ? '' : `<button onclick="openSchedEventModal('${ds}')" style="width:100%;margin-top:4px;padding:3px;font-size:8px;font-family:var(--font-m);color:var(--textsub);background:transparent;border:1px dashed var(--bd);border-radius:3px;cursor:pointer" onmouseover="this.style.borderColor='var(--bdm)'" onmouseout="this.style.borderColor='var(--bd)'">+</button>`;
+    const addBtn = showAdd ? `<button onclick="openSchedEventModal('${ds}')" style="width:100%;margin-top:4px;padding:3px;font-size:8px;font-family:var(--font-m);color:var(--textsub);background:transparent;border:1px dashed var(--bd);border-radius:3px;cursor:pointer" onmouseover="this.style.borderColor='var(--bdm)'" onmouseout="this.style.borderColor='var(--bd)'">+</button>` : '';
     return `<div class="sched-day${isToday?' today':''}">
       <div class="sched-day-header" style="${isToday?'color:rgba(255,255,255,.9);font-weight:600':''}">
         ${DOW[d.getDay()]} <span style="font-family:var(--font-h);font-size:10px">${d.getDate()}</span>
@@ -10163,8 +10579,8 @@ async function viewSchedEvent(id) {
 }
 
 async function saveSchedEvent() {
-  if(_userIsColaborador()) {
-    toast('Apenas gestores editam o cronograma corporativo.', 'warn');
+  if(!hasModuleEditForPage('cronograma')) {
+    toast('Sem permissão para editar o cronograma.', 'warn');
     return;
   }
   const id=document.getElementById('seId').value;
@@ -10576,7 +10992,7 @@ async function loadPagamentosPage() {
   const k2 = document.getElementById('payKpiMes');
   const k3 = document.getElementById('payKpiAtraso');
   if(!listEl) return;
-  if(!_userIsAdminLike()) {
+  if(!canViewPage('pagamentos')) {
     listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Sem permissão para esta área.</div>`;
     if(k1) k1.textContent = '—';
     if(k2) k2.textContent = '—';
@@ -10615,7 +11031,8 @@ async function loadPagamentosPage() {
     if(k3) k3.textContent = String(atrasadosUsers.size);
 
     if(!_pagamentosRows.length) {
-      listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum pagamento cadastrado.<br><br><button class="btn btn-primary btn-sm" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button></div>`;
+      listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum pagamento cadastrado.<br><br><button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button></div>`;
+      setTimeout(() => applyActivePageEditGuards('pagamentos'), 0);
       return;
     }
 
@@ -10628,7 +11045,7 @@ async function loadPagamentosPage() {
       const due = fmtDate(p.due_date);
       const canPay = meta.kind !== 'pago';
       const payBtn = canPay
-        ? `<button class="btn btn-primary btn-sm" onclick="markPaymentPaid('${String(p.id).replace(/'/g, "\\'")}')"><i class="fas fa-check"></i> Marcar como Pago</button>`
+        ? `<button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="markPaymentPaid('${String(p.id).replace(/'/g, "\\'")}')"><i class="fas fa-check"></i> Marcar como Pago</button>`
         : `<span style="font-family:var(--font-m);font-size:9px;color:var(--textsub)">${fmtDate(p.paid_at)}</span>`;
       return `<div class="task-item" style="flex-wrap:wrap;gap:8px">
         <div style="font-size:18px;line-height:1">${meta.emoji}</div>
@@ -10644,6 +11061,7 @@ async function loadPagamentosPage() {
         <div style="display:flex;gap:6px;align-items:center">${payBtn}</div>
       </div>`;
     }).join('');
+    setTimeout(() => applyActivePageEditGuards('pagamentos'), 0);
   } catch(e) {
     console.error('[loadPagamentosPage]', e);
     listEl.innerHTML = `<div style="color:var(--textsub);padding:20px;text-align:center">Erro ao carregar pagamentos.</div>`;
@@ -10651,8 +11069,8 @@ async function loadPagamentosPage() {
 }
 
 async function openPagamentoModal(editId) {
-  if(!_userIsAdminLike()) {
-    toast('Sem permissão.', 'warn');
+  if(!hasModuleEditForPage('pagamentos')) {
+    toast('Sem permissão de edição.', 'warn');
     return;
   }
   document.getElementById('modalPagTitle').textContent = editId ? 'EDITAR PAGAMENTO' : 'NOVO PAGAMENTO';
@@ -10703,8 +11121,8 @@ async function openPagamentoModal(editId) {
 }
 
 async function savePagamento() {
-  if(!_userIsAdminLike()) {
-    toast('Sem permissão.', 'warn');
+  if(!hasModuleEditForPage('pagamentos')) {
+    toast('Sem permissão de edição.', 'warn');
     return;
   }
   const editId = document.getElementById('payEditId').value.trim();
@@ -10752,7 +11170,7 @@ async function savePagamento() {
 }
 
 async function markPaymentPaid(id) {
-  if(!_userIsAdminLike()) return;
+  if(!hasModuleEditForPage('pagamentos')) return;
   confirm2('Marcar este pagamento como pago agora?', async () => {
     try {
       await apiPatch('age_payments', id, { status: 'pago', paid_at: new Date().toISOString() });
