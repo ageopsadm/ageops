@@ -1648,7 +1648,7 @@ select.login-input{cursor:pointer}
               <option value="1" selected>1º Semestre — Jan a Jun</option>
               <option value="2">2º Semestre — Jul a Dez</option>
             </select>
-            <button class="btn btn-ghost btn-sm" onclick="loadDashboard()"><i class="fas fa-sync-alt"></i></button>
+            <button type="button" id="dashRefreshBtn" class="btn btn-ghost btn-sm" onclick="refreshDashboardManual()"><i class="fas fa-sync-alt" id="dashRefreshIcon"></i></button>
           </div>
         </div>
 
@@ -7523,42 +7523,96 @@ function _dashPeriodLabel() {
   return '2026';
 }
 
+/** KPIs do dashboard: estado de carregamento (não altera IDs) */
+function _dashSetKpisLoading(loading) {
+  const ids = ['dFat','dLucro','dMargem','dCusto','dProj','dNps','dTicket','dMedMes','dBestMes','dGrowth'];
+  const subs = ['dFatSub','dLucroSub','dMargemSub','dCustoSub','dProjSub','dNpsSub','dMedMesSub','dBestMesSub','dGrowthSub'];
+  if(!loading) return;
+  ids.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = 'Carregando...'; });
+  subs.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = ''; });
+  const novosEl = document.getElementById('dNovos');
+  if(novosEl) novosEl.textContent = '';
+}
+
+/**
+ * Mapeia age_projects + age_fechamento → formato usado pelos gráficos/tabelas do dashboard.
+ * Ano/mês derivados de created_at (dashboard 2026 = projetos com ano 2026).
+ */
+function _dashRowFromSupabase(p, fechByProjectId) {
+  const fech = (p && p.id != null) ? fechByProjectId.get(p.id) : null;
+  const rawDate = p.created_at || p.updated_at || null;
+  const d = rawDate ? new Date(rawDate) : null;
+  const ok = d && !isNaN(d.getTime());
+  const mes = ok ? d.getMonth() + 1 : 1;
+  const ano = ok ? d.getFullYear() : new Date().getFullYear();
+  const fat = parseFloat(p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+  let cost = 0;
+  if(fech && fech.custo_total != null && fech.custo_total !== '') {
+    cost = parseFloat(fech.custo_total) || 0;
+  } else {
+    cost = parseFloat(p.cost) || 0;
+  }
+  const lucro = fat - cost;
+  const margin = fat > 0 ? Math.round((lucro / fat) * 100) : 0;
+  const cliente = String(p.client_name || p.client || '').trim();
+  const projeto = String(p.project_name || p.title || '').trim();
+  const seg = String(p.segment || p.seg || '').trim();
+  const cat = String(p.category || p.cat || '').trim();
+  const nps = parseFloat(p.nps) || 0;
+  let status = String(p.status || 'concluido').trim().toLowerCase().replace(/\s+/g, '_');
+  if(!['concluido','em_andamento','pendente','cancelado'].includes(status)) status = 'concluido';
+  const novo = !!(p.novo || p.is_new_client);
+  return {
+    cliente, projeto, fat, cost, lucro, margin, mes, ano,
+    cat, seg,
+    nps, _nps: nps,
+    novo,
+    status, _status: status,
+    pay_date: p.pay_date || p.payment_date || null,
+    sale_date: p.sale_date || null,
+    id: p.id
+  };
+}
+
+function refreshDashboardManual() {
+  const icon = document.getElementById('dashRefreshIcon') || document.querySelector('#dashRefreshBtn i');
+  if(icon) icon.classList.add('fa-spin');
+  const p = loadDashboard();
+  Promise.resolve(p).finally(() => {
+    setTimeout(() => { if(icon) icon.classList.remove('fa-spin'); }, 1000);
+  });
+}
+
+function _dashStatusLabel(status) {
+  const s = String(status || 'concluido').toLowerCase().replace(/\s+/g, '_');
+  const map = { concluido:'Concluído', em_andamento:'Em andamento', pendente:'Pendente', cancelado:'Cancelado' };
+  return map[s] || s.replace(/_/g, ' ');
+}
+
 async function loadDashboard() {
+  _dashSetKpisLoading(true);
   try {
     try { updateTrialBanner(); ensureReferralTokenAndUi(); } catch(e) {}
-    /* FONTE DE VERDADE: planilha 2026
-       Banco usado para status, NPS e custo do fechamento */
+    /* Dashboard: 100% Supabase (sem PROJ_2026_SHEET) */
     const [dbProjects, dbFechs] = await Promise.all([
-      fetchAgeProjectsScoped(300).catch(()=>[]),
+      fetchAll('age_projects', 500).catch(()=>[]),
       fetchAll('age_fechamento', 300).catch(()=>[])
     ]);
     maybeNotifyProjectDeadlines(dbProjects).catch(()=>{});
 
-    /* Enriquecer planilha com status/NPS/custo do banco */
-    const sheetWithStatus = PROJ_2026_SHEET.map(s => {
-      const db = dbProjects.find(p=>
-        (p.client_name||'').toLowerCase()===(s.cliente||'').toLowerCase() &&
-        (p.project_name||'').toLowerCase()===(s.projeto||'').toLowerCase()
-      );
-      const fech = db ? dbFechs.find(f=>f.project_id===db.id) : null;
-      const costFromFech = fech ? (parseFloat(fech.custo_total)||0) : null;
-      const costFinal = costFromFech !== null ? costFromFech : (db?.cost ?? s.cost ?? 0);
-      return {
-        ...s,
-        cat:          db?.category     || s.cat,
-        seg:          db?.segment      || s.seg,
-        fat:          db?.total_value  || s.fat,
-        _status:      db?.status       || 'concluido',
-        _nps:         db?.nps          || s.nps,
-        cost:         costFinal
-      };
+    const fechByProjectId = new Map();
+    (dbFechs || []).forEach(f => {
+      if(f && f.project_id != null) fechByProjectId.set(f.project_id, f);
     });
+
+    const mappedAll = (dbProjects || []).map(p => _dashRowFromSupabase(p, fechByProjectId))
+      .filter(r => r.ano === 2026);
 
     /* Filtrar pelo período selecionado */
     const mesesFiltro = _dashMesesFiltro();
     const filtered = mesesFiltro
-      ? sheetWithStatus.filter(p => mesesFiltro.includes(p.mes))
-      : sheetWithStatus;
+      ? mappedAll.filter(p => mesesFiltro.includes(p.mes))
+      : mappedAll;
 
     /* KPIs do período filtrado */
     const fat    = filtered.reduce((s,p)=>s+p.fat,0);
@@ -7574,14 +7628,17 @@ async function loadDashboard() {
     const custoTotal = cost;
 
     const periodLabel = _dashPeriodLabel();
+    const updatedClock = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     /* Atualizar KPIs */
     const set = (id,v,cls)=>{ const el=document.getElementById(id); if(!el)return; el.textContent=v; if(cls){el.className='kpi-val '+cls;} };
     const setSub = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
 
-    /* Título do dashboard */
+    /* Título do dashboard + última atualização */
     const titleEl = document.querySelector('#page-dashboard .page-title');
-    if(titleEl) titleEl.innerHTML = `<i class="fas fa-chart-line"></i> DASHBOARD — <span style="color:rgba(255,255,255,.5);font-size:11px">${periodLabel}</span>`;
+    if(titleEl) {
+      titleEl.innerHTML = `<i class="fas fa-chart-line"></i> DASHBOARD — <span style="color:rgba(255,255,255,.5);font-size:11px">${periodLabel}</span> <span style="color:rgba(255,255,255,.35);font-size:10px;font-weight:500">· Atualizado às ${updatedClock}</span>`;
+    }
 
     set('dFat',   fmtBRL(fat));
     setSub('dFatSub', nTotal+' proj · '+periodLabel);
@@ -7659,11 +7716,33 @@ async function loadDashboard() {
     /* Charts — passar dados filtrados */
     renderDashCharts(filtered);
 
-    /* Análise corporativa profunda — sempre com dados completos 2021-2026 */
-    renderDeepAnalysis(filtered, { fat, cost: custoTotal, lucro, margem, avgNps, nTotal, nNovos, ticket, medMes, bestM, bestV });
+    /* Totais do ano 2026 (Supabase, todos os meses) — série histórica na análise profunda */
+    let supa2026 = null;
+    try {
+      const fatY = mappedAll.reduce((s, p) => s + (p.fat || 0), 0);
+      const costY = mappedAll.reduce((s, p) => s + (p.cost || 0), 0);
+      const nY = mappedAll.length;
+      const novosY = mappedAll.filter(p => p.novo).length;
+      const cliSet = new Set(mappedAll.map(p => (p.cliente || '').toLowerCase()).filter(Boolean));
+      supa2026 = { fat: fatY, cost: costY, n: nY, novos: novosY, clientes: cliSet.size };
+    } catch(_) { supa2026 = null; }
+
+    /* Análise corporativa profunda — 2021-2025 via HIST_SUMMARY; 2026 via Supabase */
+    renderDeepAnalysis(filtered, { fat, cost: custoTotal, lucro, margem, avgNps, nTotal, nNovos, ticket, medMes, bestM, bestV, supa2026 });
+
+    if(window._dashRefreshTimer) clearInterval(window._dashRefreshTimer);
+    window._dashRefreshTimer = setInterval(() => {
+      const pd = document.getElementById('page-dashboard');
+      if(!pd) return;
+      const vis = window.getComputedStyle(pd).display !== 'none' && pd.classList.contains('active');
+      if(vis) loadDashboard();
+    }, 60000);
 
   } catch(e) {
     console.error('Dashboard error:', e);
+    ['dFat','dLucro','dMargem','dCusto','dProj','dNps','dTicket','dMedMes','dBestMes','dGrowth'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.textContent = '—';
+    });
   }
 }
 
@@ -7704,13 +7783,19 @@ function renderDeepAnalysis(filtered2026, kpis) {
     { prob:'sobrecarga_equipe',   freq:2, projetos:'Escola de Planejados, Thadeu Meneghini (Ao Vivo)' },
   ];
 
-  /* ── 1. SÉRIE HISTÓRICA 2021-2026 ── */
+  /* ── 1. SÉRIE HISTÓRICA 2021-2026 ── (2026 pode vir do dashboard Supabase via kpis.supa2026) */
   const years  = [2021,2022,2023,2024,2025,2026];
   const hFats  = years.map(y => HIST_SUMMARY[y]?.fat  || 0);
   const hCosts = years.map(y => HIST_SUMMARY[y]?.cost || 0);
-  const hLucro = years.map(y => (HIST_SUMMARY[y]?.fat||0) - (HIST_SUMMARY[y]?.cost||0));
   const hN     = years.map(y => HIST_SUMMARY[y]?.n   || 0);
   const hClts  = years.map(y => HIST_SUMMARY[y]?.clientes || 0);
+  if(kpis && kpis.supa2026) {
+    hFats[5]  = kpis.supa2026.fat      ?? hFats[5];
+    hCosts[5] = kpis.supa2026.cost     ?? hCosts[5];
+    hN[5]     = kpis.supa2026.n        ?? hN[5];
+    hClts[5]  = kpis.supa2026.clientes ?? hClts[5];
+  }
+  const hLucro = years.map((y, i) => (hFats[i] || 0) - (hCosts[i] || 0));
   const hMargem= years.map((y,i) => hFats[i]>0 ? (hLucro[i]/hFats[i]*100) : 0);
   const hTicket= years.map((y,i) => hN[i]>0 ? hFats[i]/hN[i] : 0);
 
@@ -8895,7 +8980,7 @@ function renderDashProjTable(filtered) {
   const count = document.getElementById('dashProjCount');
   if(!tbody) return;
 
-  const allProj = filtered || [...PROJ_2026_SHEET];
+  const allProj = Array.isArray(filtered) ? filtered : [];
   if(count) count.textContent = allProj.length + ' projetos';
 
   if(!allProj.length) {
@@ -8915,7 +9000,7 @@ function renderDashProjTable(filtered) {
       <td><span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:var(--green)">${fmtBRL(p.fat)}</span></td>
       <td><span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:${mCol}">${p.margin>0?p.margin+'%':'—'}</span></td>
       <td><span style="font-family:var(--font-m);font-size:10px;color:var(--yellow)">${p.nps>0?p.nps+'★':'—'}</span></td>
-      <td><span class="badge badge-concluido">CONCLUÍDO</span></td>
+      <td><span class="badge badge-concluido">${escHtml(_dashStatusLabel(p.status || p._status))}</span></td>
     </tr>`;
   }).join('');
 }
@@ -8923,11 +9008,11 @@ function renderDashProjTable(filtered) {
 function renderDashClientRank(filtered) {
   const el = document.getElementById('dashClientRank');
   if(!el) return;
-  const source = filtered || PROJ_2026_SHEET;
+  const source = Array.isArray(filtered) ? filtered : [];
   const cMap = {};
   source.forEach(p=>{
-    const k = p.cliente.toLowerCase();
-    if(!cMap[k]) cMap[k]={ name:p.cliente, fat:0, n:0 };
+    const k = (p.cliente || '').toLowerCase() || '(sem nome)';
+    if(!cMap[k]) cMap[k]={ name: p.cliente || '(sem nome)', fat:0, n:0 };
     cMap[k].fat += p.fat;
     cMap[k].n++;
   });
@@ -9021,7 +9106,7 @@ function _chartDefaults(){
 }
 
 function renderDashCharts(filtered) {
-  const source = filtered || PROJ_2026_SHEET;
+  const source = Array.isArray(filtered) ? filtered : [];
 
   /* Recalcular byMonth a partir dos dados filtrados */
   const bm = {};
@@ -9113,20 +9198,14 @@ function renderDashCharts(filtered) {
 
   /* ── 3. DONUT: Status dos projetos ── */
   const statusCount = {concluido:0, em_andamento:0, pendente:0, cancelado:0};
-  /* Usar cache filtrado se disponível, senão a source */
-  const statusSource = _projAllCache.length ? _projAllCache.filter(p => {
-    const mesesFiltro = _dashMesesFiltro();
-    if(!mesesFiltro) return true;
-    const m = p._sheetMes || (p.payment_date ? parseInt(p.payment_date.substring(5,7)) : 0);
-    return mesesFiltro.includes(m);
-  }) : source;
+  const statusSource = source;
   statusSource.forEach(p=>{ const s=p.status||p._status||'concluido'; if(statusCount[s]!==undefined) statusCount[s]++; else statusCount.concluido++; });
-  if(!statusSource.length) statusCount.concluido = source.length;
+  if(!statusSource.length) statusCount.concluido = 0;
   const stLabels = ['Concluído','Em Andamento','Pendente','Cancelado'];
   const stData   = [statusCount.concluido, statusCount.em_andamento, statusCount.pendente, statusCount.cancelado];
   const stColors = [CHART_COLORS.green, CHART_COLORS.blue, CHART_COLORS.orange, CHART_COLORS.red];
   const badgeStatus = document.getElementById('chBadgeStatus');
-  if(badgeStatus) badgeStatus.textContent = PROJ_2026_SHEET.length+' projetos';
+  if(badgeStatus) badgeStatus.textContent = source.length+' projetos';
 
   _destroyChart('status');
   const ctx3 = document.getElementById('chartStatus');
