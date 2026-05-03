@@ -415,6 +415,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   align-items:center;justify-content:center;
 }
 .modal.open{display:flex}
+/* Trial / cartão: acima do overlay de planos (9100), senão o modal abre “invisível” */
+#modalPagarmePlan.modal{z-index:9200}
 .modal-box{
   background:#ffffff;border:1px solid rgba(0,0,0,.12);
   border-radius:8px;padding:28px;
@@ -1358,7 +1360,7 @@ select.login-input{cursor:pointer}
       <button type="button" class="login-btn" id="pgConfirmBtn" onclick="confirmPagarmeTrial()" style="width:100%;margin-top:4px;background:#111!important;border:1px solid #111!important;color:#fff!important;border-radius:8px;padding:14px;font-weight:800;letter-spacing:.06em">
         <i class="fas fa-lock" id="pgConfirmIcon"></i> <span id="pgConfirmText">Iniciar Trial Gratuito →</span>
       </button>
-      <p style="font-size:10px;color:#94a3b8;margin-top:14px;text-align:center;line-height:1.5">🔒 Dados protegidos · Cancele quando quiser</p>
+      <p style="font-size:10px;color:#94a3b8;margin-top:14px;text-align:center;line-height:1.5">🔒 Pagamento seguro · Cancele quando quiser</p>
     </div>
   </div>
 </div>
@@ -5959,13 +5961,14 @@ function buildPlanCardsHtml(ctx) {
   function featList(rows) {
     return rows.map(([ic,t,no]) => `<li class="${no||''}">${ic} ${t}</li>`).join('');
   }
+  const suf = m ? 'anual' : 'mensal';
   return `
     <div class="plan-card plan-solo">
       <div class="plan-card-title" style="color:#3b82f6">SOLO</div>
       <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pSolo)}/mês</small></div>
       <ul class="plan-features">${featList(soloFeat)}</ul>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: E-mail 48h</div>
-      <button type="button" class="plan-cta" style="background:#3b82f6;color:#fff" onclick="selectPlanOffer('solo')">Começar grátis por 7 dias</button>
+      <button type="button" class="plan-cta" style="background:#3b82f6;color:#fff" onclick="escolherPlano('solo_${suf}')">Começar Trial</button>
     </div>
     <div class="plan-card plan-prod featured">
       <span class="plan-badge">⭐ Mais Popular</span>
@@ -5973,7 +5976,7 @@ function buildPlanCardsHtml(ctx) {
       <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pProd)}/mês</small></div>
       <ul class="plan-features">${featList(prodFeat)}</ul>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: WhatsApp 24h</div>
-      <button type="button" class="plan-cta" style="background:#22c55e;color:#fff" onclick="selectPlanOffer('produtora')">Começar grátis por 7 dias</button>
+      <button type="button" class="plan-cta" style="background:#22c55e;color:#fff" onclick="escolherPlano('produtora_${suf}')">Começar Trial</button>
     </div>
     <div class="plan-card plan-ag">
       <span class="plan-badge" style="background:#8b5cf6;color:#fff">Premium</span>
@@ -5981,7 +5984,7 @@ function buildPlanCardsHtml(ctx) {
       <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pAg)}/mês</small></div>
       <ul class="plan-features">${featList(agFeat)}</ul>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: WhatsApp 4h</div>
-      <button type="button" class="plan-cta" style="background:#8b5cf6;color:#fff" onclick="selectPlanOffer('agencia')">Começar grátis por 7 dias</button>
+      <button type="button" class="plan-cta" style="background:#8b5cf6;color:#fff" onclick="escolherPlano('agencia_${suf}')">Começar Trial</button>
     </div>
     <div class="plan-card plan-ent">
       <span class="plan-badge" style="background:#f59e0b;color:#0f172a">Personalizado</span>
@@ -6020,6 +6023,42 @@ function openEnterpriseWhatsApp() {
   window.open(url, '_blank');
 }
 
+/** Clique nos cards de plano — log + chave alinhada a PAGARME_PLANS (solo_mensal, …) */
+function escolherPlano(planKey) {
+  console.log('[PLANO] botão clicado:', planKey);
+  try {
+    window._planSelecionado = planKey;
+  } catch (e) {}
+  const g = String(planKey || '').trim();
+  if (g === 'enterprise') {
+    openEnterpriseWhatsApp();
+    return;
+  }
+  const appCtx = document.getElementById('plansOverlayGlobal')?.classList.contains('open');
+  const full = g.match(/^(solo|produtora|agencia)_(mensal|anual)$/i);
+  if (full) {
+    const base = full[1].toLowerCase();
+    const planBase = base === 'produtora' ? 'produtora' : base === 'agencia' ? 'agencia' : 'solo';
+    const per = full[2].toLowerCase() === 'anual' ? 'yearly' : 'monthly';
+    if (appCtx) {
+      _planBillGlobal = per;
+      document.getElementById('planBillMonthlyG')?.classList.toggle('active', per === 'monthly');
+      document.getElementById('planBillYearlyG')?.classList.toggle('active', per === 'yearly');
+    } else {
+      _planBillSignup = per;
+      document.getElementById('planBillMonthly')?.classList.toggle('active', per === 'monthly');
+      document.getElementById('planBillYearly')?.classList.toggle('active', per === 'yearly');
+    }
+    selectPlanOffer(planBase);
+    return;
+  }
+  if (['solo', 'produtora', 'agencia'].includes(g)) {
+    selectPlanOffer(g);
+    return;
+  }
+  selectPlanOffer('produtora');
+}
+
 function selectPlanOffer(key) {
   _pendingPlanKey = key;
   if(key === 'enterprise') {
@@ -6034,8 +6073,19 @@ function selectPlanOffer(key) {
   else if(key === 'produtora') after = m ? 197 : 297;
   else if(key === 'agencia') after = m ? 397 : 597;
   const planNames = { solo: 'Solo', produtora: 'Produtora', agencia: 'Agência' };
-  document.getElementById('pgPlanSummary').innerHTML =
-    `<strong>Plano ${planNames[key]}</strong> — ${_fmtMoney(0)} hoje<br>Após 7 dias: ${_fmtMoney(after)}/mês`;
+  const ciclo = m ? 'Anual' : 'Mensal';
+  const sum = document.getElementById('pgPlanSummary');
+  if (sum) {
+    sum.innerHTML =
+      `<strong>Plano ${planNames[key]} (${ciclo})</strong><br>${_fmtMoney(0)} hoje · depois <strong>${_fmtMoney(after)}/${m ? 'ano' : 'mês'}</strong>` +
+      `<div style="margin-top:10px;color:#94a3b8;line-height:1.5">Você não será cobrado agora. Trial de 7 dias.</div>`;
+  }
+  try {
+    const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '');
+    if (!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) {
+      toast('Configure a Encryption Key do Pagar.me para continuar', 'warn');
+    }
+  } catch (e) {}
   openModal('modalPagarmePlan');
 }
 
