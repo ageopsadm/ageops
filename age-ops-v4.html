@@ -415,8 +415,11 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   align-items:center;justify-content:center;
 }
 .modal.open{display:flex}
-/* Trial / cartão: acima do overlay de planos (9100), senão o modal abre “invisível” */
-#modalPagarmePlan.modal{z-index:9200}
+/* Trial / cartão: acima de #loginPage (9000) e .plans-overlay (9100) — sem isso o clique “não faz nada” */
+#modalPagarmePlan.modal{
+  z-index:10050;
+  isolation:isolate;
+}
 .modal-box{
   background:#ffffff;border:1px solid rgba(0,0,0,.12);
   border-radius:8px;padding:28px;
@@ -5968,7 +5971,7 @@ function buildPlanCardsHtml(ctx) {
       <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pSolo)}/mês</small></div>
       <ul class="plan-features">${featList(soloFeat)}</ul>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: E-mail 48h</div>
-      <button type="button" class="plan-cta" style="background:#3b82f6;color:#fff" onclick="escolherPlano('solo_${suf}')">Começar Trial</button>
+      <button type="button" class="plan-cta" style="background:#3b82f6;color:#fff" onclick="escolherPlano('solo_${suf}')">Escolher</button>
     </div>
     <div class="plan-card plan-prod featured">
       <span class="plan-badge">⭐ Mais Popular</span>
@@ -5976,7 +5979,7 @@ function buildPlanCardsHtml(ctx) {
       <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pProd)}/mês</small></div>
       <ul class="plan-features">${featList(prodFeat)}</ul>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: WhatsApp 24h</div>
-      <button type="button" class="plan-cta" style="background:#22c55e;color:#fff" onclick="escolherPlano('produtora_${suf}')">Começar Trial</button>
+      <button type="button" class="plan-cta" style="background:#22c55e;color:#fff" onclick="escolherPlano('produtora_${suf}')">Escolher</button>
     </div>
     <div class="plan-card plan-ag">
       <span class="plan-badge" style="background:#8b5cf6;color:#fff">Premium</span>
@@ -5984,7 +5987,7 @@ function buildPlanCardsHtml(ctx) {
       <div class="plan-price">${_fmtMoney(0)} hoje<small>Depois: ${_fmtMoney(pAg)}/mês</small></div>
       <ul class="plan-features">${featList(agFeat)}</ul>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">Suporte: WhatsApp 4h</div>
-      <button type="button" class="plan-cta" style="background:#8b5cf6;color:#fff" onclick="escolherPlano('agencia_${suf}')">Começar Trial</button>
+      <button type="button" class="plan-cta" style="background:#8b5cf6;color:#fff" onclick="escolherPlano('agencia_${suf}')">Escolher</button>
     </div>
     <div class="plan-card plan-ent">
       <span class="plan-badge" style="background:#f59e0b;color:#0f172a">Personalizado</span>
