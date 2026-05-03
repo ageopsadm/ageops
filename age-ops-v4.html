@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://assets.pagar.me/pagarme-js/4/pagarme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════
@@ -1329,15 +1330,15 @@ select.login-input{cursor:pointer}
   <div class="modal-dialog modal-plans-pagarme">
     <div class="modal-body">
       <button type="button" class="modal-close" onclick="closeModal('modalPagarmePlan')" style="float:right;background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer">&times;</button>
-      <h2 style="font-size:18px;font-weight:800;margin:0 0 6px;color:#fff">Adicione seu cartão</h2>
-      <p style="font-size:12px;color:#94a3b8;margin:0 0 18px;line-height:1.5">Você só será cobrado após 7 dias. Cancele antes e não paga nada.</p>
+      <h2 style="font-size:18px;font-weight:800;margin:0 0 6px;color:#fff">Adicionar cartão de crédito</h2>
+      <p style="font-size:12px;color:#94a3b8;margin:0 0 18px;line-height:1.5">Você não será cobrado agora. A cobrança começa após 7 dias.</p>
       <div class="pg-field">
         <label>Número do cartão</label>
         <input class="login-input" id="pgCardNum" type="text" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" oninput="maskPgCardNum(this)">
       </div>
       <div class="pg-field">
         <label>Nome no cartão</label>
-        <input class="login-input" id="pgCardName" type="text" placeholder="Como impresso no cartão" autocomplete="cc-name">
+        <input class="login-input" id="pgCardName" type="text" placeholder="NOME COMO NO CARTÃO" autocomplete="cc-name" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="pg-field">
@@ -1346,18 +1347,18 @@ select.login-input{cursor:pointer}
         </div>
         <div class="pg-field">
           <label>CVV</label>
-          <input class="login-input" id="pgCardCvv" type="password" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+          <input class="login-input" id="pgCardCvv" type="password" placeholder="000 ou 0000" maxlength="4" autocomplete="cc-csc">
         </div>
       </div>
       <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin:14px 0;font-size:12px;color:#cbd5e1" id="pgPlanSummary">—</div>
-      <label style="display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#e2e8f0;margin-bottom:14px;cursor:pointer">
-        <input type="checkbox" id="pgAcceptTerms" style="margin-top:3px;accent-color:#22c55e">
-        <span>Li e aceito os <a href="/terms.html" target="_blank" style="color:#22c55e">Termos de Uso</a></span>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:11px;color:#e2e8f0;margin-bottom:14px;cursor:pointer;line-height:1.45">
+        <input type="checkbox" id="pgAcceptTerms" style="margin-top:3px;accent-color:#22c55e;flex-shrink:0">
+        <span>Li e aceito os <a href="/terms.html" target="_blank" rel="noopener noreferrer" style="color:#22c55e;font-weight:600">Termos de Uso</a> e <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" style="color:#22c55e;font-weight:600">Política de Privacidade</a></span>
       </label>
-      <button type="button" class="btn btn-reg-green login-btn" id="pgConfirmBtn" onclick="confirmPagarmeTrial()" style="width:100%;margin-top:4px">
-        <i class="fas fa-lock" id="pgConfirmIcon"></i> <span id="pgConfirmText">Confirmar e começar trial</span>
+      <button type="button" class="login-btn" id="pgConfirmBtn" onclick="confirmPagarmeTrial()" style="width:100%;margin-top:4px;background:#111!important;border:1px solid #111!important;color:#fff!important;border-radius:8px;padding:14px;font-weight:800;letter-spacing:.06em">
+        <i class="fas fa-lock" id="pgConfirmIcon"></i> <span id="pgConfirmText">Iniciar Trial Gratuito →</span>
       </button>
-      <p style="font-size:10px;color:#64748b;margin-top:12px;text-align:center">Pagamentos processados com segurança via Pagar.me</p>
+      <p style="font-size:10px;color:#94a3b8;margin-top:14px;text-align:center;line-height:1.5">🔒 Dados protegidos · Cancele quando quiser</p>
     </div>
   </div>
 </div>
@@ -3446,6 +3447,21 @@ select.login-input{cursor:pointer}
 ══════════════════════════════════════════ -->
 <script>
 'use strict';
+
+/* Supabase + Pagar.me — JWT anon + encryption key são públicos por desenho (RLS / tokenização). Nunca incluir ak_live / PAGARME_API_KEY aqui — só Edge Functions / servidor. */
+const SUPABASE_URL      = 'https://wiiewucszdbbcxzivnyo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
+
+/** Colar a ek_live_… (Pagar.me → Minha Conta → Contas → Produção). Não usar a chave secreta sk_/ak_ aqui. */
+const PAGARME_EK = 'ek_live_SUA_ENCRYPTION_KEY_AQUI';
+const PAGARME_PLANS = {
+  solo_mensal:      '6901539',
+  solo_anual:       '6901540',
+  produtora_mensal: '6901541',
+  produtora_anual:  '6901542',
+  agencia_mensal:   '6901543',
+  agencia_anual:    '6901544'
+};
 
 /**
  * Quando true: Supabase é a única fonte operacional (projetos, clientes ativos).
@@ -5855,13 +5871,30 @@ function startClock() {
 
 /* ═══════════════════════════════════════════
    PLANOS · PAGAR.ME · TRIAL · REFERRAL
+   (PAGARME_EK e PAGARME_PLANS definidos junto a SUPABASE_* — encryption key no front; API key só na Edge Function)
 ═══════════════════════════════════════════ */
-const PAGARME_API_KEY = 'COLE SUA API KEY AQUI';
 const WHATSAPP_ENTERPRISE_NUM = '5511999999999';
 
+function _pagarmePlansConfigured() {
+  try {
+    return Object.values(PAGARME_PLANS).every(
+      (v) => v && String(v).length >= 4 && !String(v).includes('XXXX'),
+    );
+  } catch(e) {
+    return false;
+  }
+}
+
+/** Produção: EK real + pagarme.js + IDs de planos no Pagar.me preenchidos em PAGARME_PLANS */
+function _pagarmeLiveReady() {
+  const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '').trim();
+  if(!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) return false;
+  if(typeof pagarme === 'undefined') return false;
+  return _pagarmePlansConfigured();
+}
+
 function _pagarmeIsDemoMode() {
-  const key = String(PAGARME_API_KEY || '').trim();
-  return !key || key.includes('COLE');
+  return !_pagarmeLiveReady();
 }
 
 let _planBillSignup = 'monthly';
@@ -6071,25 +6104,64 @@ function maskPgExp(el) {
   el.value = v;
 }
 
+function _pagarmePlanIdFromSelection(planKey, billing) {
+  const suf = billing === 'yearly' ? 'anual' : 'mensal';
+  const map = { solo: 'solo', produtora: 'produtora', agencia: 'agencia' };
+  const base = map[planKey] || 'produtora';
+  return PAGARME_PLANS[`${base}_${suf}`] || null;
+}
+
+async function tokenizarCartao(dadosCartao) {
+  if(typeof pagarme === 'undefined') {
+    throw new Error('Biblioteca Pagar.me não carregou. Verifique sua conexão.');
+  }
+  const ek = String(PAGARME_EK || '').trim();
+  if(!ek) throw new Error('PAGARME_EK não configurada.');
+  return new Promise((resolve, reject) => {
+    pagarme.client.connect({ encryption_key: ek })
+      .then(client => client.security.encrypt(dadosCartao))
+      .then(cardHash => resolve(cardHash))
+      .catch(err => reject(err));
+  });
+}
+
+async function pagarmeCreateSubscriptionEdge(cardHash, planId, customer, username, companyId) {
+  const base = String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '');
+  const url = `${base}/functions/v1/create-subscription`;
+  const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${anon}`,
+      'apikey': anon
+    },
+    body: JSON.stringify({
+      card_hash: cardHash,
+      plan_id: planId,
+      customer,
+      username,
+      company_id: companyId ?? null
+    })
+  });
+  let data = {};
+  try { data = await resp.json(); } catch(e) { data = {}; }
+  if(!resp.ok) {
+    const msg = data?.error ?? data?.detail ?? data?.message ?? resp.statusText;
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+  return data;
+}
+
 async function pagarmeOrDemoCreateSubscription(planKey, billing) {
-  const key = String(PAGARME_API_KEY || '').trim();
-  if(!key || key.includes('COLE')) {
-    await new Promise(r => setTimeout(r, 2000));
-    const sid = 'demo_' + Date.now();
-    return {
-      ok: true,
-      demo: true,
-      customer_id: 'demo_customer_' + sid,
-      subscription_id: 'demo_subscription_' + sid
-    };
-  }
-  try {
-    const auth = 'Basic ' + btoa(key + ':');
-    const headers = { 'Content-Type': 'application/json', Authorization: auth };
-    return { ok: true, demo: true, customer_id: null, subscription_id: null };
-  } catch(e) {
-    return { ok: true, demo: true, customer_id: null, subscription_id: null };
-  }
+  await new Promise(r => setTimeout(r, 600));
+  const sid = 'demo_' + Date.now();
+  return {
+    ok: true,
+    demo: true,
+    customer_id: 'demo_customer_' + sid,
+    subscription_id: 'demo_subscription_' + sid
+  };
 }
 
 async function confirmPagarmeTrial() {
@@ -6108,7 +6180,7 @@ async function confirmPagarmeTrial() {
       toast('Preencha os dados do cartão (modo demo aceita qualquer número).', 'warn');
       return;
     }
-  } else if(digits.length < 13 || !nam || exp.length < 5 || cvv.length < 3) {
+  } else if(digits.length < 13 || !nam || exp.replace(/\D/g, '').length < 4 || cvv.length < 3) {
     toast('Preencha os dados do cartão.', 'warn');
     return;
   }
@@ -6121,17 +6193,50 @@ async function confirmPagarmeTrial() {
   if(ic) ic.className = 'fas fa-spinner fa-spin';
   if(tx) tx.textContent = 'Processando...';
   try {
-    const pg = await pagarmeOrDemoCreateSubscription(pk, bill);
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 7);
-    const payload = {
+    const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    let payload = {
       plan: pk,
-      plan_billing: bill,
+      plan_billing: bill === 'yearly' ? 'annual' : 'monthly',
       trial_ends_at: trialEnd.toISOString(),
       subscription_status: 'trial',
-      pagarme_customer_id: pg.customer_id || null,
-      pagarme_subscription_id: pg.subscription_id || null
+      pagarme_customer_id: null,
+      pagarme_subscription_id: null
     };
+
+    if(demo) {
+      const pg = await pagarmeOrDemoCreateSubscription(pk, bill);
+      payload.pagarme_customer_id = pg.customer_id || null;
+      payload.pagarme_subscription_id = pg.subscription_id || null;
+    } else {
+      const planId = _pagarmePlanIdFromSelection(pk, bill);
+      if(!planId) {
+        toast('Configure os IDs dos planos em PAGARME_PLANS no código.', 'err');
+        return;
+      }
+      const expDigits = exp.replace(/\D/g, '').slice(0, 4);
+      const dadosCartao = {
+        card_number: digits,
+        card_holder_name: nam,
+        card_expiration_date: expDigits,
+        card_cvv: cvv.replace(/\D/g, '')
+      };
+      const cardHash = await tokenizarCartao(dadosCartao);
+      const rowUser = _planCheckoutCtx === 'signup' ? _regPendingSessionRow : currentUser;
+      const uname = rowUser?.username || currentUser?.username || '';
+      const data = await pagarmeCreateSubscriptionEdge(cardHash, planId, {
+        name: rowUser?.full_name || rowUser?.name || currentUser?.full_name || currentUser?.name || uname,
+        email: rowUser?.email || currentUser?.email || '',
+        document: String(rowUser?.cpf || currentUser?.cpf || '').replace(/\D/g, '')
+      }, uname, rowUser?.company_id ?? currentUser?.company_id ?? null);
+
+      if(!data.subscription_id) {
+        toast(data.error || 'Resposta inválida do servidor.', 'err');
+        return;
+      }
+      payload.pagarme_subscription_id = data.subscription_id;
+      payload.pagarme_customer_id = data.customer_id || null;
+    }
+
     if(_planCheckoutCtx === 'signup' && _regPendingSessionRow?.id) {
       const pendingUser = _regPendingSessionRow.username;
       await apiPatch('age_users', _regPendingSessionRow.id, payload);
@@ -6140,24 +6245,25 @@ async function confirmPagarmeTrial() {
       _regPendingSessionRow = null;
       const row = await fetchAgeUserRow(pendingUser);
       await applyLoginSessionFromRow(row);
-      if(_pagarmeIsDemoMode()) {
-        toast('Modo demo: trial de 7 dias ativado (sem cobrança real).', 'ok');
-      }
+      navigate('dashboard');
+      toast(demo ? 'Modo demo: trial de 7 dias ativado (sem cobrança real).' : '✅ Trial iniciado! 7 dias gratuitos.', 'ok');
     } else if(currentUser?.id) {
       await apiPatch('age_users', currentUser.id, payload);
       Object.assign(currentUser, payload);
+      try { await mergeCurrentUserFromSupabase(); } catch(e) {}
       closeModal('modalPagarmePlan');
       closePlansOverlayGlobal();
-      toast(_pagarmeIsDemoMode() ? 'Modo demo: trial de 7 dias ativado (sem cobrança real).' : 'Plano ativado! Trial de 7 dias.', 'ok');
+      navigate('dashboard');
+      toast(demo ? 'Modo demo: trial de 7 dias ativado (sem cobrança real).' : '✅ Trial iniciado! 7 dias gratuitos.', 'ok');
       updateTrialBanner();
     }
   } catch(e) {
     console.error(e);
-    toast('Não foi possível concluir. Tente novamente.', 'err');
+    toast(String(e?.message || 'Não foi possível concluir. Tente novamente.'), 'err');
   } finally {
     if(btn) btn.disabled = false;
     if(ic) ic.className = 'fas fa-lock';
-    if(tx) tx.textContent = 'Confirmar e começar trial';
+    if(tx) tx.textContent = 'Iniciar Trial Gratuito →';
   }
 }
 
@@ -6422,13 +6528,8 @@ function confirm2(msg, cb) {
 }
 
 /* ═══════════════════════════════════════════
-   API HELPERS
+   API HELPERS (SUPABASE_URL / PAGARME_* no início do script)
 ═══════════════════════════════════════════ */
-/* =============================================================================
-   SUPABASE (PostgREST) — Migração da API interna do Genspark
-============================================================================= */
-const SUPABASE_URL      = 'https://wiiewucszdbbcxzivnyo.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
 
 /* Multi-tenant: estas tabelas exigem company_id em leituras e escritas (exceto migração com __tenantScopeSuspended) */
 const TENANT_SCOPED_TABLES = new Set([

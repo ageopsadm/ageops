@@ -1,0 +1,8 @@
+# Credenciais e ambiente local (nunca versionar)
+.env
+.env.*
+!.env.example
+
+# Logs / artefatos locais
+*.log
+.DS_Store
