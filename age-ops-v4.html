@@ -746,12 +746,21 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   box-shadow:0 16px 48px rgba(0,0,0,.1);
 }
 .login-main-card{
-  background:#ffffff;border:1px solid rgba(255,255,255,.12);
-  border-radius:14px;padding:36px 32px;
-  width:100%;max-width:420px;
-  box-shadow:0 24px 64px rgba(0,0,0,.35);
+  background:#ffffff;border:1px solid rgba(0,0,0,.08);
+  border-radius:8px;padding:36px 32px;
+  width:100%;max-width:400px;
+  box-shadow:0 8px 32px rgba(0,0,0,.08);
 }
 .login-main-card.reg-mode-wide{max-width:560px}
+.login-min-links{
+  display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:20px;
+}
+.login-min-links button{
+  background:none;border:none;padding:0;cursor:pointer;
+  font-family:var(--font-m);font-size:10px;color:#64748b;
+  letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px;
+}
+.login-min-links button:hover{color:#111111}
 .reg-progress{
   display:flex;align-items:center;gap:8px;margin-bottom:28px;
 }
@@ -824,20 +833,6 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   outline:none;border-color:#111111;box-shadow:0 0 0 3px rgba(0,0,0,.1);
 }
 select.login-input{cursor:pointer}
-
-.login-persona-tabs{
-  display:flex;gap:0;margin-bottom:14px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.1);
-}
-.login-persona-tab{
-  flex:1;padding:9px 10px;font-family:var(--font-h);font-size:8px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;background:#f8f8f8;color:#777;
-  transition:background .15s,color .15s;border:none;cursor:pointer;
-}
-.login-persona-tab:hover{background:#eee;color:#333}
-.login-persona-tab.active{background:#111;color:#fff}
-.login-persona-hint{
-  font-family:var(--font-m);font-size:9px;color:#64748b;text-align:center;margin:-6px 0 14px;line-height:1.4;
-}
 
 /* ── PLANOS / PAGAR.ME / TRIAL / REF — UI (#0f172a theme) ── */
 .plans-overlay,.plans-overlay *{box-sizing:border-box}
@@ -931,6 +926,7 @@ select.login-input{cursor:pointer}
   color:#ffffff !important;
   border-radius:4px !important;
   cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:0;
 }
 #loginPage #loginBtn.login-btn:hover,
 #loginPage #panelLogin .btn.btn-primary.login-btn:hover{
@@ -1067,31 +1063,31 @@ select.login-input{cursor:pointer}
     <div class="login-logo">AGE OPS</div>
     <div class="login-sub">SISTEMA OPERACIONAL v4.0</div>
 
-    <div class="login-tabs" role="tablist">
-      <button type="button" class="login-tab active" id="tabLogin" onclick="setLoginTab('login')">Entrar</button>
-      <button type="button" class="login-tab" id="tabRegister" onclick="setLoginTab('register')">Criar conta</button>
-    </div>
-
     <div id="panelLogin" class="login-panel active">
       <form id="loginForm" autocomplete="on" onsubmit="return false">
-        <div class="login-persona-tabs" role="tablist" aria-label="Tipo de acesso">
-          <button type="button" class="login-persona-tab active" id="tabPersonaColab" onclick="setLoginPersonaTab('colab')">Colaborador</button>
-          <button type="button" class="login-persona-tab" id="tabPersonaAdmin" onclick="setLoginPersonaTab('admin')">Administrador</button>
-        </div>
-        <p class="login-persona-hint" id="loginPersonaHint">Área pessoal: Meu Dia, tarefas e agenda.</p>
         <div class="login-group">
-          <label class="login-label">EMAIL OU USUÁRIO</label>
+          <label class="login-label" for="loginUser">USUÁRIO</label>
           <input class="login-input" id="loginUser" type="text" placeholder="email ou usuário" autocomplete="username">
         </div>
         <div class="login-group">
-          <label class="login-label">SENHA</label>
+          <label class="login-label" for="loginPass">SENHA</label>
           <input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
         </div>
-        <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt" id="loginBtnIcon"></i> <span id="loginBtnText">ENTRAR</span></button>
+        <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="doLogin()">
+          <i class="fas fa-spinner fa-spin" id="loginBtnIcon" style="display:none;margin-right:8px;vertical-align:middle" aria-hidden="true"></i>
+          <span id="loginBtnText">ENTRAR</span>
+        </button>
+        <div class="login-min-links">
+          <button type="button" onclick="openLoginRegisterWizard()">Criar conta</button>
+          <button type="button" onclick="emergencyReset()">Problemas para entrar? Resetar</button>
+        </div>
       </form>
     </div>
 
     <div id="panelRegister" class="login-panel">
+      <div style="text-align:center;margin-bottom:16px">
+        <button type="button" onclick="setLoginTab('login')" style="background:none;border:none;cursor:pointer;font-family:var(--font-m);font-size:10px;color:#64748b;text-decoration:underline">← Voltar ao login</button>
+      </div>
       <div id="regWizardProgressWrap">
         <div class="reg-progress-label" id="regProgressLabel">Etapa 1 de 3 — Seus dados</div>
         <div class="reg-progress" id="regProgressBar">
@@ -1276,14 +1272,6 @@ select.login-input{cursor:pointer}
     </div>
 
     <div class="login-error" id="loginErr"></div>
-    <div style="text-align:center;margin-top:14px">
-      <button type="button" onclick="emergencyReset()"
-        style="background:none;border:none;font-size:10px;color:#94a3b8;cursor:pointer;
-               font-family:var(--font-m);letter-spacing:.05em;text-decoration:underline;
-               text-underline-offset:2px">
-        Problemas para entrar? Clique aqui para resetar
-      </button>
-    </div>
 
     <!-- Camada planos (login / mesmo fluxo visual) -->
     <div id="plansPostSignupLayer" class="plans-overlay" aria-hidden="true">
@@ -1466,14 +1454,14 @@ select.login-input{cursor:pointer}
 
       <div id="sidebarColaborador" style="display:none">
       <div class="nav-group-label">MINHA ÁREA</div>
+      <button type="button" class="nav-item" data-page="myday" data-perm-module="myday" onclick="navigate('myday')">
+        <i class="fas fa-crosshairs"></i><span>MEU DIA</span>
+      </button>
       <button type="button" class="nav-item" data-page="mytasks" data-perm-module="mytasks" onclick="navigate('mytasks')">
         <i class="fas fa-tasks"></i><span>MINHAS TAREFAS</span>
       </button>
-      <button type="button" class="nav-item" data-page="cronograma" data-perm-module="cronograma" onclick="navigate('cronograma')">
-        <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
-      </button>
       <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')">
-        <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
+        <i class="fas fa-wallet"></i><span>FINANCEIRO PESSOAL</span>
       </button>
       <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
         <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
@@ -4000,11 +3988,34 @@ function _syncPermissionNav() {
 
 function _defaultLandingPage() {
   if(_userPermFullBypass() || _userGestorUnrestricted()) return 'dashboard';
-  const tryPages = ['dashboard', 'projects', 'pipeline', 'pagamentos', 'colaboradores', 'mytasks', 'myfinance', 'profile'];
-  for(const p of tryPages) {
+  const r = _normalizeRole(currentUser?.role);
+  const role = r || 'colaborador';
+  if(role === 'admin' || role === 'gestor') {
+    const corpPages = ['dashboard', 'projects', 'pipeline', 'pagamentos', 'colaboradores', 'mytasks', 'myfinance', 'profile'];
+    for(const p of corpPages) {
+      if(canViewPage(p)) return p;
+    }
+    return 'profile';
+  }
+  const personal = ['myday', 'mytasks', 'myfinance', 'profile'];
+  for(const p of personal) {
     if(canViewPage(p)) return p;
   }
   return 'mytasks';
+}
+
+/** Após login: destino conforme role em age_users (sem escolha manual do usuário). */
+function _postLoginLandingPage() {
+  if(_userPermFullBypass() || _userGestorUnrestricted()) return 'dashboard';
+  const r = _normalizeRole(currentUser?.role);
+  const role = r || 'colaborador';
+  if(role === 'admin' || role === 'gestor') {
+    if(canViewPage('dashboard')) return 'dashboard';
+    return _defaultLandingPage();
+  }
+  if(canViewPage('myday')) return 'myday';
+  if(canViewPage('mytasks')) return 'mytasks';
+  return _defaultLandingPage();
 }
 
 function _refreshSidebarForRole() {
@@ -4013,10 +4024,10 @@ function _refreshSidebarForRole() {
   const staff = document.getElementById('sidebarPersonalStaff');
   const colab = document.getElementById('sidebarColaborador');
   if(_userIsColaborador()) {
-    if(corp) corp.style.display = 'block';
-    if(eq) eq.style.display = 'block';
-    if(staff) staff.style.display = 'block';
-    if(colab) colab.style.display = 'none';
+    if(corp) corp.style.display = 'none';
+    if(eq) eq.style.display = 'none';
+    if(staff) staff.style.display = 'none';
+    if(colab) colab.style.display = 'block';
   } else {
     if(corp) corp.style.display = 'block';
     if(eq) eq.style.display = 'block';
@@ -4669,7 +4680,7 @@ async function applyLoginSessionFromRow(row) {
       try { _syncDashboardKpis(); } catch(_) {}
     }).catch(() => {});
   }
-  navigate(_defaultLandingPage());
+  navigate(_postLoginLandingPage());
   startClock();
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
   setTimeout(()=>{ try { updateTrialBanner(); } catch(e) {} }, 0);
@@ -4957,32 +4968,15 @@ async function regWizardFinishEnter() {
   _regPendingSessionRow = null;
 }
 
-let _loginPersona = 'colab';
-
-function setLoginPersonaTab(p) {
-  _loginPersona = p === 'admin' ? 'admin' : 'colab';
-  const c = document.getElementById('tabPersonaColab');
-  const a = document.getElementById('tabPersonaAdmin');
-  const hint = document.getElementById('loginPersonaHint');
-  if(c) c.classList.toggle('active', _loginPersona === 'colab');
-  if(a) a.classList.toggle('active', _loginPersona === 'admin');
-  if(hint) {
-    hint.textContent = _loginPersona === 'admin'
-      ? 'Painel corporativo: projetos, financeiro, equipe e convites.'
-      : 'Área pessoal: Meu Dia, tarefas e agenda.';
-  }
+function openLoginRegisterWizard() {
+  setLoginTab('register');
 }
 
 function setLoginTab(tab) {
-  document.getElementById('tabLogin')?.classList.toggle('active', tab === 'login');
-  document.getElementById('tabRegister')?.classList.toggle('active', tab === 'register');
   document.getElementById('panelLogin')?.classList.toggle('active', tab === 'login');
   document.getElementById('panelRegister')?.classList.toggle('active', tab === 'register');
   const card = document.getElementById('loginMainFlow');
   if(card) card.classList.toggle('reg-mode-wide', tab === 'register');
-  if(tab === 'login') {
-    setLoginPersonaTab(_loginPersona);
-  }
   if(tab === 'register') {
     resetRegisterWizard();
     initRegisterWizardMasksOnce();
@@ -5614,6 +5608,7 @@ function cancelInviteFlow() {
   document.getElementById('loginInviteFlow').style.display = 'none';
   document.getElementById('loginMainFlow').style.display = 'block';
   _inviteFlowShowForm(true);
+  try { setLoginTab('login'); } catch(e) {}
   const errBox = document.getElementById('inviteFlowErr');
   if(errBox) errBox.textContent = '';
 }
@@ -5762,7 +5757,7 @@ function doLogin() {
 
   function showErr(msg) {
     if(btn)  { btn.disabled = false; }
-    if(icon) { icon.className = 'fas fa-sign-in-alt'; }
+    if(icon) { icon.style.display = 'none'; icon.className = 'fas fa-spinner fa-spin'; }
     if(txt)  { txt.textContent = 'ENTRAR'; }
     if(err)  { err.textContent = msg; setTimeout(()=>{ if(err) err.textContent=''; }, 5000); }
   }
@@ -5770,7 +5765,7 @@ function doLogin() {
   if(!u || !p) { showErr('Preencha email/usuário e senha.'); return; }
 
   if(btn)  btn.disabled = true;
-  if(icon) icon.className = 'fas fa-spinner fa-spin';
+  if(icon) { icon.style.display = 'inline-block'; icon.className = 'fas fa-spinner fa-spin'; }
   if(txt)  txt.textContent = 'ENTRANDO...';
 
   setTimeout(async () => {
@@ -5786,11 +5781,6 @@ function doLogin() {
       } catch(e) {
         console.warn('Bootstrap ignorado:', e);
       }
-      const roleNorm = _normalizeRole(sessionRow?.role);
-      if(_loginPersona === 'admin' && roleNorm === 'colaborador') {
-        showErr('Este acesso é de colaborador. Use a aba Colaborador acima.');
-        return;
-      }
       const res = await applyLoginSessionFromRow(sessionRow);
       if(!res.ok) showErr(res.msg || 'Acesso negado.');
     } catch(e) {
@@ -5798,7 +5788,7 @@ function doLogin() {
       showErr('Erro ao conectar. Tente novamente.');
     } finally {
       if(btn)  btn.disabled = false;
-      if(icon) icon.className = 'fas fa-sign-in-alt';
+      if(icon) { icon.style.display = 'none'; icon.className = 'fas fa-spinner fa-spin'; }
       if(txt)  txt.textContent = 'ENTRAR';
     }
   }, 80);
@@ -5817,7 +5807,7 @@ function emergencyReset() {
   const icon = document.getElementById('loginBtnIcon');
   const txt  = document.getElementById('loginBtnText');
   if(btn)  btn.disabled = false;
-  if(icon) icon.className = 'fas fa-sign-in-alt';
+  if(icon) { icon.style.display = 'none'; icon.className = 'fas fa-spinner fa-spin'; }
   if(txt)  txt.textContent = 'ENTRAR';
 }
 
