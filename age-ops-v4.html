@@ -925,6 +925,55 @@ select.login-input{cursor:pointer}
   font-family:var(--font-m);font-size:10px;background:#f8fafc;border:1px dashed rgba(0,0,0,.15);
   border-radius:6px;padding:10px 12px;word-break:break-all;margin-top:10px;color:#334155;
 }
+/* Convite colaborador (?invite=) — card escuro */
+.invite-flow-card{
+  background:#1e293b;border:1px solid #334155;border-radius:14px;padding:32px 28px;
+  width:100%;max-width:440px;
+  box-shadow:0 24px 64px rgba(0,0,0,.45);
+}
+.invite-flow-logo{
+  font-family:var(--font-h);font-size:22px;font-weight:800;color:#f8fafc;letter-spacing:.06em;
+  text-align:center;margin-bottom:8px;text-transform:uppercase;
+}
+.invite-flow-headline{
+  font-family:var(--font-h);font-size:15px;font-weight:700;color:#f1f5f9;text-align:center;
+  line-height:1.35;margin:0 0 6px;
+}
+.invite-flow-sub{
+  font-family:var(--font-m);font-size:11px;color:#94a3b8;text-align:center;margin:0 0 22px;line-height:1.45;
+}
+.invite-flow-label{
+  font-family:var(--font-m);font-size:8px;color:#94a3b8;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;
+}
+.invite-flow-input{
+  width:100%;padding:11px 14px;font-size:13px;
+  background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f8fafc;
+  font-family:inherit;box-sizing:border-box;
+}
+.invite-flow-input:focus{outline:none;border-color:#64748b;box-shadow:0 0 0 1px #475569}
+.invite-flow-input::placeholder{color:#64748b}
+.invite-flow-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.invite-flow-btn{
+  width:100%;padding:13px;font-family:var(--font-h);font-size:11px;font-weight:700;
+  letter-spacing:.08em;margin-top:8px;background:#22c55e;color:#052e16;border:none;border-radius:8px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.invite-flow-btn:hover{filter:brightness(1.06)}
+.invite-flow-btn:disabled{opacity:.55;cursor:not-allowed}
+.invite-flow-err{
+  font-family:var(--font-m);font-size:11px;color:#f87171;text-align:center;margin-bottom:12px;min-height:20px;line-height:1.35;
+}
+.invite-pass-wrap{position:relative;display:flex;align-items:center;}
+.invite-pass-wrap .invite-flow-input{padding-right:42px;}
+.invite-toggle-pass{
+  position:absolute;right:8px;background:none;border:none;color:#94a3b8;cursor:pointer;padding:6px;font-size:14px;line-height:1;
+}
+.invite-toggle-pass:hover{color:#22c55e}
+.invite-back{
+  color:#94a3b8;background:none;border:none;font-size:11px;cursor:pointer;text-decoration:underline;margin-top:18px;
+  font-family:var(--font-m);display:block;width:100%;text-align:center;
+}
+.invite-flow-btn .invite-arrow{font-size:14px;font-weight:900}
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
 <script>
@@ -937,36 +986,47 @@ select.login-input{cursor:pointer}
 ══════════════════════════════════════════ -->
 <div id="loginPage">
   <!-- Fluxo convite (?invite=TOKEN): aceitar cadastro -->
-  <div id="loginInviteFlow" class="login-main-card reg-mode-wide" style="display:none">
-    <div class="login-logo">CONVITE</div>
-    <div class="login-sub" id="inviteFlowSubtitle">COMPLETE SEU CADASTRO</div>
-    <div id="inviteFlowErr" class="login-error" style="min-height:20px"></div>
+  <div id="loginInviteFlow" class="invite-flow-card reg-mode-wide" style="display:none">
+    <div class="invite-flow-logo">AGE OPS</div>
+    <div class="invite-flow-headline" id="inviteFlowHeadline">Você foi convidado</div>
+    <div class="invite-flow-sub" id="inviteFlowSub">Preencha seus dados para criar sua conta</div>
+    <div id="inviteFlowErr" class="invite-flow-err"></div>
     <form id="inviteAcceptForm" autocomplete="off" onsubmit="return false">
-      <div class="login-group">
-        <label class="login-label">NOME COMPLETO *</label>
-        <input class="login-input" id="invName" type="text" placeholder="Seu nome" autocomplete="name">
+      <div class="invite-flow-group">
+        <label class="invite-flow-label" for="invFullName">Nome completo *</label>
+        <input class="invite-flow-input" id="invFullName" type="text" placeholder="João Silva" autocomplete="name">
       </div>
-      <div class="login-group">
-        <label class="login-label">EMAIL</label>
-        <input class="login-input" id="invEmail" type="email" readonly style="opacity:.75">
+      <div class="invite-flow-group">
+        <label class="invite-flow-label" for="invCpf">CPF *</label>
+        <input class="invite-flow-input" id="invCpf" type="text" inputmode="numeric" placeholder="000.000.000-00" autocomplete="off">
       </div>
-      <div class="login-group">
-        <label class="login-label">SENHA *</label>
-        <input class="login-input" id="invPass" type="password" placeholder="••••••••" autocomplete="new-password">
+      <div class="invite-flow-group">
+        <label class="invite-flow-label" for="invBirth">Data de nascimento *</label>
+        <input class="invite-flow-input" id="invBirth" type="date" autocomplete="bday">
       </div>
-      <div class="login-group">
-        <label class="login-label">CONFIRMAR SENHA *</label>
-        <input class="login-input" id="invPass2" type="password" placeholder="••••••••" autocomplete="new-password">
+      <div class="invite-flow-group">
+        <label class="invite-flow-label" for="invEmail">Email *</label>
+        <input class="invite-flow-input" id="invEmail" type="email" placeholder="joao@email.com" autocomplete="email">
       </div>
-      <div class="login-group">
-        <label class="login-label">FOTO DE PERFIL (opcional)</label>
-        <input class="login-input" id="invPhoto" type="file" accept="image/*" style="padding:8px">
+      <div class="invite-flow-group">
+        <label class="invite-flow-label" for="invPass">Senha *</label>
+        <div class="invite-pass-wrap">
+          <input class="invite-flow-input" id="invPass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          <button type="button" class="invite-toggle-pass" onclick="toggleInvitePass('invPass', this)" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+        </div>
       </div>
-      <button type="button" class="btn btn-primary login-btn" id="inviteSubmitBtn" onclick="submitInviteAccept()"><i class="fas fa-check"></i> <span>CRIAR CONTA E ENTRAR</span></button>
+      <div class="invite-flow-group">
+        <label class="invite-flow-label" for="invPass2">Confirmar senha *</label>
+        <div class="invite-pass-wrap">
+          <input class="invite-flow-input" id="invPass2" type="password" placeholder="Repita a senha" autocomplete="new-password">
+          <button type="button" class="invite-toggle-pass" onclick="toggleInvitePass('invPass2', this)" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+        </div>
+      </div>
+      <button type="button" class="invite-flow-btn" id="inviteSubmitBtn" onclick="submitInviteAccept()">
+        Criar minha conta <span class="invite-arrow">→</span>
+      </button>
     </form>
-    <div style="text-align:center;margin-top:14px">
-      <button type="button" onclick="cancelInviteFlow()" style="background:none;border:none;font-size:10px;color:#94a3b8;cursor:pointer;font-family:var(--font-m);text-decoration:underline">Voltar ao login</button>
-    </div>
+    <button type="button" class="invite-back" onclick="cancelInviteFlow()">Voltar ao login</button>
   </div>
 
   <div id="loginMainFlow" class="login-main-card">
@@ -3172,15 +3232,11 @@ select.login-input{cursor:pointer}
       <span>CONVIDAR COLABORADOR</span>
       <button type="button" onclick="closeModal('modalInviteColab')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
-    <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 12px">Gera um link único. Envie por WhatsApp ou e-mail.</p>
+    <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 12px">Gera um link único (válido por 7 dias). Opcionalmente informe o email para registrar no convite.</p>
     <div class="form-grid">
       <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Email do colaborador *</label>
+        <label class="form-label">Email do convidado (opcional)</label>
         <input id="invColabEmail" type="email" placeholder="nome@email.com" style="width:100%">
-      </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Cargo / função</label>
-        <input id="invColabJob" type="text" placeholder="Ex.: Editor" style="width:100%">
       </div>
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">Nível de acesso *</label>
@@ -3192,7 +3248,7 @@ select.login-input{cursor:pointer}
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
       <button type="button" class="btn btn-ghost" onclick="closeModal('modalInviteColab')">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="submitInviteColaborador()"><i class="fas fa-paper-plane"></i> Gerar link</button>
+      <button type="button" class="btn btn-primary" onclick="submitInviteColaborador()"><i class="fas fa-link"></i> Gerar link</button>
     </div>
   </div>
 </div>
@@ -3204,10 +3260,11 @@ select.login-input{cursor:pointer}
       <span>LINK DE CONVITE</span>
       <button type="button" onclick="closeModal('modalInviteLinkReady')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
-    <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin-bottom:10px">Copie e envie ao convidado. O link expira conforme configurado no banco.</p>
+    <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin-bottom:10px">Copie ou envie pelo WhatsApp. Expira em 7 dias.</p>
     <div class="invite-link-box" id="inviteLinkText"></div>
-    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:flex-end">
       <button type="button" class="btn btn-secondary" onclick="copyInviteLink()"><i class="fas fa-copy"></i> Copiar link</button>
+      <button type="button" class="btn btn-secondary" onclick="shareInviteLinkWhatsApp()" title="WhatsApp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
       <button type="button" class="btn btn-primary" onclick="closeModal('modalInviteLinkReady')">OK</button>
     </div>
   </div>
@@ -3652,6 +3709,38 @@ const PERM_ALL_MODULES = [
   'dashboard','projetos','pipeline','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma','myday','mytasks','myfinance'
 ];
 
+/** Cadastro via convite: módulos corporativos bloqueados até o admin liberar; myday liberado para área pessoal */
+const INVITE_SIGNUP_PERM_MODULES_LOCKED = [
+  'dashboard','projetos','pipeline','orcamentos','clientes','contratos','pagamentos','equipe','financeiro',
+  'fechamento','historico','cronograma'
+];
+
+async function seedInvitePermissionsForNewUser(username, companyId) {
+  const un = String(username || '').trim().toLowerCase();
+  const cid = companyId;
+  if(!un || !cid) return;
+  const rows = [];
+  INVITE_SIGNUP_PERM_MODULES_LOCKED.forEach(mod => {
+    rows.push(apiPost('age_permissions', {
+      username: un,
+      company_id: cid,
+      module: mod,
+      can_view: false,
+      can_edit: false,
+      deleted: false
+    }).catch(e => console.warn('[perm seed]', mod, e)));
+  });
+  rows.push(apiPost('age_permissions', {
+    username: un,
+    company_id: cid,
+    module: 'myday',
+    can_view: true,
+    can_edit: true,
+    deleted: false
+  }).catch(e => console.warn('[perm seed myday]', e)));
+  await Promise.allSettled(rows);
+}
+
 const PAGE_PERM_KEYS = {
   dashboard: ['dashboard'],
   projects: ['projetos'],
@@ -3845,9 +3934,14 @@ function _permRowHtml(key, label, alwaysOn) {
 
 async function openPermissoesModalFor(username) {
   if(!_userCanManagePermissionsUi()) return;
+  if((_normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin()) && !currentUser.company_id) {
+    await linkAdminCompanyFromOwnerRow();
+    await ensureDefaultCompanyForPrivilegedUser();
+  }
   const cid = currentUser.company_id;
   if(!cid) {
-    toast('Empresa não identificada.', 'warn');
+    if(!_userPermFullBypass()) toast('Empresa não identificada.', 'warn');
+    else console.warn('[openPermissoesModalFor] Sem company_id após vínculo automático.');
     return;
   }
   const u = String(username || '').toLowerCase();
@@ -3975,6 +4069,10 @@ async function savePermissoesModal() {
 async function loadEquipePermissoesPage() {
   const host = document.getElementById('permTeamCards');
   if(!host || !_userCanManagePermissionsUi()) return;
+  if((_normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin()) && !currentUser.company_id) {
+    await linkAdminCompanyFromOwnerRow();
+    await ensureDefaultCompanyForPrivilegedUser();
+  }
   await refreshAgeUsersCache();
   const cid = currentUser.company_id;
   let users = _ageUsersCache.filter(x => _sbIsRowVisible(x));
@@ -4054,6 +4152,36 @@ async function mergeCurrentUserFromSupabase() {
     currentUser.referred_by = fresh.referred_by ?? currentUser.referred_by;
   } catch(e) {
     console.warn('[mergeCurrentUserFromSupabase]', e);
+  }
+}
+
+/**
+ * Admin (ou bootstrap admin): se company_id está vazio, associa automaticamente à empresa em
+ * age_companies onde owner_username = usuário atual (sem ação manual).
+ */
+async function linkAdminCompanyFromOwnerRow() {
+  if(!currentUser?.id) return;
+  if(currentUser.company_id) return;
+  const r = _normalizeRole(currentUser.role);
+  if(r !== 'admin' && !_userIsBootstrapAdmin()) return;
+  const un = String(currentUser.username || '').trim().toLowerCase();
+  if(!un) return;
+  try {
+    window.__tenantScopeSuspended = true;
+    const d = await apiGet('age_companies', `?owner_username=eq.${encodeURIComponent(un)}&limit=15`);
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    const pick = rows.find(x => x?.id) || null;
+    if(!pick?.id) return;
+    await apiPatch('age_users', currentUser.id, {
+      company_id: pick.id,
+      company_name: pick.name || currentUser.company_name || ''
+    }).catch(()=>{});
+    currentUser.company_id = pick.id;
+    currentUser.company_name = pick.name || currentUser.company_name || '';
+  } catch(e) {
+    console.warn('[linkAdminCompanyFromOwnerRow]', e);
+  } finally {
+    try { window.__tenantScopeSuspended = false; } catch(_) {}
   }
 }
 
@@ -4239,6 +4367,7 @@ async function applyLoginSessionFromRow(row) {
     permissions: {}
   };
   await mergeCurrentUserFromSupabase();
+  await linkAdminCompanyFromOwnerRow();
   await ensureDefaultCompanyForPrivilegedUser();
   if(String(currentUser.username || '').toLowerCase() === 'gustavowng') {
     await migrateOwnageTenantForBootstrapAdmin().catch(()=>{});
@@ -4781,74 +4910,72 @@ async function submitAdminRegister() {
   }
 }
 
-function openInviteColaboradorModal() {
+async function openInviteColaboradorModal() {
   if(!_userIsAdminLike()) {
     toast('Apenas administradores ou gestores.', 'warn');
     return;
   }
+  const isAdminRole = _normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin();
   if(!currentUser?.company_id) {
-    toast('Associe sua conta a uma empresa (cadastro admin) para convidar.', 'warn');
+    await linkAdminCompanyFromOwnerRow();
+    await ensureDefaultCompanyForPrivilegedUser();
+  }
+  if(!currentUser?.company_id) {
+    if(!isAdminRole) {
+      toast('Associe sua conta a uma empresa (cadastro admin) para convidar.', 'warn');
+    } else {
+      console.warn('[openInviteColaboradorModal] Admin sem company_id após vínculo automático — convite indisponível até existir empresa.');
+    }
     return;
   }
   document.getElementById('invColabEmail').value = '';
-  document.getElementById('invColabJob').value = '';
   document.getElementById('invColabRole').value = 'colaborador';
   openModal('modalInviteColab');
 }
 
+function toggleInvitePass(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  const eye = btn.querySelector('i');
+  if(inp.type === 'password') {
+    inp.type = 'text';
+    if(eye) { eye.classList.remove('fa-eye'); eye.classList.add('fa-eye-slash'); }
+  } else {
+    inp.type = 'password';
+    if(eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
+  }
+}
+
+function initInviteFlowMasksOnce() {
+  if(window._inviteMasksInited) return;
+  window._inviteMasksInited = true;
+  document.getElementById('invCpf')?.addEventListener('input', function() { maskCpfInput(this); });
+}
+
 async function submitInviteColaborador() {
-  const email = document.getElementById('invColabEmail')?.value?.trim().toLowerCase() || '';
-  const job = document.getElementById('invColabJob')?.value?.trim() || '';
+  const emailRaw = document.getElementById('invColabEmail')?.value?.trim().toLowerCase() || '';
   const role = document.getElementById('invColabRole')?.value || 'colaborador';
-  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    toast('Informe um email válido.', 'warn');
+  if(emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
+    toast('Se informar email, use um formato válido.', 'warn');
     return;
   }
   const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
     : ('inv_' + Math.random().toString(36).slice(2) + Date.now());
   const exp = new Date();
-  exp.setDate(exp.getDate() + 14);
+  exp.setDate(exp.getDate() + 7);
   const basePayload = {
     token,
     company_id: currentUser.company_id,
     company_name: currentUser.company_name || '',
     invited_by: currentUser.username,
-    email,
     role,
     used: false,
     expires_at: exp.toISOString()
   };
+  if(emailRaw) basePayload.email = emailRaw;
   try {
-    if(job) {
-      try {
-        await apiPost('age_invites', { ...basePayload, job_title: job });
-      } catch(e0) {
-        try {
-          await apiPost('age_invites', {
-            ...basePayload,
-            job_title: job,
-            company_name: basePayload.company_name,
-            invited_by: basePayload.invited_by
-          });
-        } catch(e0b) {
-          await apiPost('age_invites', basePayload);
-        }
-      }
-    } else {
-      try {
-        await apiPost('age_invites', basePayload);
-      } catch(eInv) {
-        await apiPost('age_invites', {
-          token: basePayload.token,
-          company_id: basePayload.company_id,
-          email: basePayload.email,
-          role: basePayload.role,
-          used: false,
-          expires_at: basePayload.expires_at
-        });
-      }
-    }
+    await apiPost('age_invites', basePayload);
   } catch(e2) {
     console.error(e2);
     toast('Erro ao salvar convite. Verifique a tabela age_invites.', 'err');
@@ -4868,36 +4995,73 @@ function copyInviteLink() {
   navigator.clipboard.writeText(t).then(()=>toast('Link copiado!')).catch(()=>toast('Copie manualmente.', 'warn'));
 }
 
+function shareInviteLinkWhatsApp() {
+  const link = _inviteLinkBuf || document.getElementById('inviteLinkText')?.textContent?.trim();
+  if(!link) return;
+  const txt = `Você foi convidado para participar da equipe no Age Ops. Acesse: ${link}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank', 'noopener,noreferrer');
+}
+
+function _inviteFlowShowForm(show) {
+  const form = document.getElementById('inviteAcceptForm');
+  const sub = document.getElementById('inviteFlowSub');
+  if(form) form.style.display = show ? '' : 'none';
+  if(sub) sub.style.display = show ? '' : 'none';
+}
+
 async function loadInviteByToken(token) {
   const errBox = document.getElementById('inviteFlowErr');
+  const headline = document.getElementById('inviteFlowHeadline');
+  document.getElementById('loginMainFlow').style.display = 'none';
+  document.getElementById('loginInviteFlow').style.display = 'block';
   try {
     const d = await apiGet('age_invites', `?token=eq.${encodeURIComponent(token)}&limit=5`);
     const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
     const inv = rows[0];
     if(!inv) {
-      if(errBox) errBox.textContent = 'Convite não encontrado.';
+      if(headline) headline.textContent = 'Convite';
+      if(errBox) errBox.innerHTML = 'Link inválido ou expirado.<br>Solicite um novo link ao administrador.';
+      _inviteFlowShowForm(false);
+      _pendingInviteRow = null;
+      _pendingInviteToken = null;
       return;
     }
     if(inv.used === true || inv.used === 'true') {
-      if(errBox) errBox.textContent = 'Este convite já foi utilizado.';
+      if(headline) headline.textContent = 'Convite';
+      if(errBox) errBox.innerHTML = 'Este link já foi utilizado.<br>Solicite um novo link ao administrador.';
+      _inviteFlowShowForm(false);
+      _pendingInviteRow = null;
+      _pendingInviteToken = null;
       return;
     }
     if(inv.expires_at && new Date(inv.expires_at) < new Date()) {
-      if(errBox) errBox.textContent = 'Este convite expirou.';
+      if(headline) headline.textContent = 'Convite';
+      if(errBox) errBox.innerHTML = 'Link inválido ou expirado.<br>Solicite um novo link ao administrador.';
+      _inviteFlowShowForm(false);
+      _pendingInviteRow = null;
+      _pendingInviteToken = null;
       return;
     }
     _pendingInviteToken = token;
     _pendingInviteRow = inv;
-    document.getElementById('loginMainFlow').style.display = 'none';
-    document.getElementById('loginInviteFlow').style.display = 'block';
-    document.getElementById('invEmail').value = inv.email || '';
-    document.getElementById('invName').value = '';
+    _inviteFlowShowForm(true);
+    initInviteFlowMasksOnce();
+    const nm = String(inv.company_name || '').trim() || 'sua equipe';
+    if(headline) headline.textContent = `Você foi convidado para ${nm}`;
+    const invEmailEl = document.getElementById('invEmail');
+    if(invEmailEl) invEmailEl.value = inv.email ? String(inv.email).trim().toLowerCase() : '';
+    document.getElementById('invFullName').value = '';
+    document.getElementById('invCpf').value = '';
+    document.getElementById('invBirth').value = '';
     document.getElementById('invPass').value = '';
     document.getElementById('invPass2').value = '';
-    document.getElementById('invPhoto').value = '';
     if(errBox) errBox.textContent = '';
   } catch(e) {
-    if(errBox) errBox.textContent = 'Erro ao validar convite.';
+    if(headline) headline.textContent = 'Convite';
+    if(errBox) errBox.innerHTML = 'Link inválido ou expirado.<br>Solicite um novo link ao administrador.';
+    _inviteFlowShowForm(false);
+    _pendingInviteRow = null;
+    _pendingInviteToken = null;
   }
 }
 
@@ -4907,6 +5071,9 @@ function cancelInviteFlow() {
   try { history.replaceState({}, '', location.pathname); } catch(e) {}
   document.getElementById('loginInviteFlow').style.display = 'none';
   document.getElementById('loginMainFlow').style.display = 'block';
+  _inviteFlowShowForm(true);
+  const errBox = document.getElementById('inviteFlowErr');
+  if(errBox) errBox.textContent = '';
 }
 
 async function submitInviteAccept() {
@@ -4917,44 +5084,39 @@ async function submitInviteAccept() {
     if(errBox) errBox.textContent = 'Sessão de convite inválida.';
     return;
   }
-  const name = document.getElementById('invName')?.value?.trim() || '';
+  const fullName = document.getElementById('invFullName')?.value?.trim() || '';
+  const cpfRaw = document.getElementById('invCpf')?.value || '';
+  const birth = document.getElementById('invBirth')?.value || '';
+  const email = document.getElementById('invEmail')?.value?.trim().toLowerCase() || '';
   const p1 = document.getElementById('invPass')?.value || '';
   const p2 = document.getElementById('invPass2')?.value || '';
-  const fileEl = document.getElementById('invPhoto');
+  const cpfDigits = _regDigits(cpfRaw);
 
   function show(m) { if(errBox) errBox.textContent = m; }
 
-  if(!name) { show('Informe seu nome.'); return; }
+  if(!fullName) { show('Informe seu nome completo.'); return; }
+  if(!validateCPFBr(cpfRaw)) { show('CPF inválido.'); return; }
+  if(!birth) { show('Informe a data de nascimento.'); return; }
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('Informe um email válido.'); return; }
   if(p1.length < 6) { show('Senha mínimo 6 caracteres.'); return; }
   if(p1 !== p2) { show('Senhas não conferem.'); return; }
 
   const btn = document.getElementById('inviteSubmitBtn');
   if(btn) btn.disabled = true;
 
-  let avatarData = '';
-  if(fileEl?.files?.[0]) {
-    try {
-      avatarData = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result || '');
-        fr.onerror = rej;
-        fr.readAsDataURL(fileEl.files[0]);
-      });
-      if(avatarData.length > 400000) avatarData = '';
-    } catch(e) { avatarData = ''; }
-  }
-
   try {
-    const email = String(inv.email || '').trim().toLowerCase();
     const dup = await fetchAgeUserByEmail(email);
-    if(dup) { show('Já existe conta com este email.'); return; }
+    if(dup) { show('Este email já está cadastrado.'); return; }
 
     const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
     const roleInv = _normalizeRole(inv.role) || 'colaborador';
     const payload = {
       username,
       email,
-      name,
+      name: fullName,
+      full_name: fullName,
+      cpf: cpfDigits,
+      birth_date: birth,
       role: roleInv === 'gestor' ? 'gestor' : 'colaborador',
       company_id: inv.company_id,
       company_name: inv.company_name || '',
@@ -4962,9 +5124,48 @@ async function submitInviteAccept() {
       active: true,
       deleted: false
     };
-    if(avatarData) payload.avatar_url = avatarData;
 
-    await apiPost('age_users', payload);
+    window.__tenantScopeSuspended = true;
+    try {
+      await apiPost('age_users', payload);
+    } finally {
+      try { window.__tenantScopeSuspended = false; } catch(_) {}
+    }
+
+    const cid = inv.company_id;
+    try {
+      const colabBody = {
+        nome: fullName,
+        contato_email: email,
+        cpf: cpfDigits,
+        company_id: cid,
+        created_by: 'system',
+        status: 'ativo'
+      };
+      window.__tenantScopeSuspended = true;
+      try {
+        await apiPost('age_colaboradores', colabBody);
+      } catch(ec) {
+        try {
+          await apiPost('age_colaboradores', {
+            nome: fullName,
+            contato_email: email,
+            company_id: cid,
+            created_by: 'system',
+            status: 'ativo'
+          });
+        } catch(ec2) {
+          try {
+            await apiPost('age_colaboradores', { nome: fullName, contato_email: email, company_id: cid });
+          } catch(ec3) { console.warn('[invite colaboradores]', ec3); }
+        }
+      } finally {
+        try { window.__tenantScopeSuspended = false; } catch(_) {}
+      }
+    } catch(ec0) { console.warn('[invite colaboradores]', ec0); }
+
+    await seedInvitePermissionsForNewUser(username, cid);
+
     await apiPatch('age_invites', inv.id, { used: true, used_at: new Date().toISOString() }).catch(() =>
       apiPatch('age_invites', inv.id, { used: true })
     );
@@ -4978,7 +5179,7 @@ async function submitInviteAccept() {
           company_id: inv.company_id,
           type: 'novo_colaborador',
           title: 'Novo colaborador',
-          message: `${name} aceitou o convite e entrou na equipe`,
+          message: `${fullName} aceitou o convite e entrou na equipe`,
           link: 'colaboradores',
           dedupe_key: `colab_inv_${inv.id}_${a}`
         });
@@ -4988,6 +5189,7 @@ async function submitInviteAccept() {
     cancelInviteFlow();
     const row = await fetchAgeUserRow(username);
     await applyLoginSessionFromRow(row || payload);
+    navigate('myday');
     toast('Bem-vindo!');
   } catch(e) {
     console.error('[inviteAccept]', e);
@@ -5134,6 +5336,8 @@ function _effectiveUserPlan() {
 
 function _planAllowsPage(page) {
   if(_userIsBootstrapAdmin()) return true;
+  /* Solo e outros planos bloqueiam equipe-permissoes; admins globais precisam sempre acessar gestão de permissões */
+  if(page === 'equipe-permissoes' && _userPermFullBypass()) return true;
   const pl = _effectiveUserPlan();
   if(pl === 'enterprise' || pl === 'agencia') return true;
   if(pl === 'produtora') {
