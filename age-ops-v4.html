@@ -818,7 +818,24 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .login-input:focus{
   outline:none;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);
 }
+#panelLogin .login-input:focus{
+  outline:none;border-color:#111111;box-shadow:0 0 0 3px rgba(0,0,0,.1);
+}
 select.login-input{cursor:pointer}
+
+.login-persona-tabs{
+  display:flex;gap:0;margin-bottom:14px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.1);
+}
+.login-persona-tab{
+  flex:1;padding:9px 10px;font-family:var(--font-h);font-size:8px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;background:#f8f8f8;color:#777;
+  transition:background .15s,color .15s;border:none;cursor:pointer;
+}
+.login-persona-tab:hover{background:#eee;color:#333}
+.login-persona-tab.active{background:#111;color:#fff}
+.login-persona-hint{
+  font-family:var(--font-m);font-size:9px;color:#64748b;text-align:center;margin:-6px 0 14px;line-height:1.4;
+}
 
 /* ── PLANOS / PAGAR.ME / TRIAL / REF — UI (#0f172a theme) ── */
 .plans-overlay,.plans-overlay *{box-sizing:border-box}
@@ -1040,6 +1057,11 @@ select.login-input{cursor:pointer}
 
     <div id="panelLogin" class="login-panel active">
       <form id="loginForm" autocomplete="on" onsubmit="return false">
+        <div class="login-persona-tabs" role="tablist" aria-label="Tipo de acesso">
+          <button type="button" class="login-persona-tab active" id="tabPersonaColab" onclick="setLoginPersonaTab('colab')">Colaborador</button>
+          <button type="button" class="login-persona-tab" id="tabPersonaAdmin" onclick="setLoginPersonaTab('admin')">Administrador</button>
+        </div>
+        <p class="login-persona-hint" id="loginPersonaHint">Área pessoal: Meu Dia, tarefas e agenda.</p>
         <div class="login-group">
           <label class="login-label">EMAIL OU USUÁRIO</label>
           <input class="login-input" id="loginUser" type="text" placeholder="email ou usuário" autocomplete="username">
@@ -1048,7 +1070,7 @@ select.login-input{cursor:pointer}
           <label class="login-label">SENHA</label>
           <input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
         </div>
-        <button type="button" class="btn btn-reg-green login-btn" id="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt" id="loginBtnIcon"></i> <span id="loginBtnText">ENTRAR</span></button>
+        <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt" id="loginBtnIcon"></i> <span id="loginBtnText">ENTRAR</span></button>
       </form>
     </div>
 
@@ -3710,6 +3732,7 @@ async function authenticateDatabase(loginInput, password) {
   const raw = String(loginInput || '').trim();
   const lower = raw.toLowerCase();
   const pass = String(password || '');
+  /* Login: GET age_users só por email OU username (nunca filtrar senha na URL). Senha validada abaixo com === na linha retornada. */
   let rows = [];
   try {
     if(raw.includes('@')) {
@@ -3723,18 +3746,36 @@ async function authenticateDatabase(loginInput, password) {
   rows = rows.filter(_sbIsRowVisible);
   const row = rows[0];
   if(row) {
+    try {
+      const safe = { ...row };
+      if('password_hash' in safe) safe.password_hash = safe.password_hash != null && safe.password_hash !== '' ? '[presente]' : safe.password_hash;
+      if('password' in safe) safe.password = safe.password != null && safe.password !== '' ? '[presente]' : safe.password;
+      console.log('[login] usuário encontrado (age_users):', safe);
+    } catch(_) {}
     const ph = row.password_hash ?? row.password ?? row.pass;
-    if(String(ph || '') !== pass) return { ok: false, msg: 'Usuário ou senha incorretos.' };
+    /* Comparação direta: password_hash (ou password/pass) === senha digitada */
+    if(String(ph || '') !== pass) {
+      /* Única exceção documentada: admin bootstrap em USERS quando o BD ficou dessincronizado */
+      if(USERS[lower] && USERS[lower].pass === pass && (lower === 'gustavowng' || lower === 'vraulin')) {
+        console.log('[login] hash no BD ≠ digitada; aceitando senha bootstrap USERS para', lower);
+      } else {
+        console.log('[login] senha não confere com a linha retornada pelo Supabase.');
+        return { ok: false, msg: 'Usuário ou senha incorretos.' };
+      }
+    }
     if(row.active === false || row.active === 'false') return { ok: false, msg: 'Usuário inativo. Contate o administrador.' };
     return { ok: true, row };
   }
+  console.log('[login] nenhuma linha em age_users para este login; tentando credenciais bootstrap em USERS.');
   if(USERS[lower] && USERS[lower].pass === pass) {
     const dbRow = await fetchAgeUserRow(lower);
     if(dbRow && _sbIsRowVisible(dbRow)) {
-      const ph = dbRow.password_hash ?? dbRow.password ?? dbRow.pass;
-      if(ph != null && String(ph) !== '' && String(ph) !== pass) {
-        return { ok: false, msg: 'Usuário ou senha incorretos.' };
-      }
+      /* Senha já validada contra USERS; não revalidar hash do BD (evita bloquear bootstrap quando BD divergiu). */
+      try {
+        const safe = { ...dbRow };
+        if('password_hash' in safe) safe.password_hash = safe.password_hash != null && safe.password_hash !== '' ? '[presente]' : safe.password_hash;
+        console.log('[login] bootstrap: usando linha age_users:', safe);
+      } catch(_) {}
       return { ok: true, row: dbRow };
     }
     return {
@@ -4894,6 +4935,22 @@ async function regWizardFinishEnter() {
   _regPendingSessionRow = null;
 }
 
+let _loginPersona = 'colab';
+
+function setLoginPersonaTab(p) {
+  _loginPersona = p === 'admin' ? 'admin' : 'colab';
+  const c = document.getElementById('tabPersonaColab');
+  const a = document.getElementById('tabPersonaAdmin');
+  const hint = document.getElementById('loginPersonaHint');
+  if(c) c.classList.toggle('active', _loginPersona === 'colab');
+  if(a) a.classList.toggle('active', _loginPersona === 'admin');
+  if(hint) {
+    hint.textContent = _loginPersona === 'admin'
+      ? 'Painel corporativo: projetos, financeiro, equipe e convites.'
+      : 'Área pessoal: Meu Dia, tarefas e agenda.';
+  }
+}
+
 function setLoginTab(tab) {
   document.getElementById('tabLogin')?.classList.toggle('active', tab === 'login');
   document.getElementById('tabRegister')?.classList.toggle('active', tab === 'register');
@@ -4901,6 +4958,9 @@ function setLoginTab(tab) {
   document.getElementById('panelRegister')?.classList.toggle('active', tab === 'register');
   const card = document.getElementById('loginMainFlow');
   if(card) card.classList.toggle('reg-mode-wide', tab === 'register');
+  if(tab === 'login') {
+    setLoginPersonaTab(_loginPersona);
+  }
   if(tab === 'register') {
     resetRegisterWizard();
     initRegisterWizardMasksOnce();
@@ -5703,6 +5763,11 @@ function doLogin() {
         sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, p);
       } catch(e) {
         console.warn('Bootstrap ignorado:', e);
+      }
+      const roleNorm = _normalizeRole(sessionRow?.role);
+      if(_loginPersona === 'admin' && roleNorm === 'colaborador') {
+        showErr('Este acesso é de colaborador. Use a aba Colaborador acima.');
+        return;
       }
       const res = await applyLoginSessionFromRow(sessionRow);
       if(!res.ok) showErr(res.msg || 'Acesso negado.');
