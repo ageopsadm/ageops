@@ -961,6 +961,45 @@ select.login-input{cursor:pointer}
 }
 .dash-intel-ia-btn:disabled{opacity:.45;cursor:not-allowed}
 .dash-intel-ia-hint{font-size:10px;color:#888}
+
+/* ── Fluxo de caixa ── */
+.cf-select{
+  font-family:var(--font-m);font-size:11px;padding:8px 10px;border-radius:5px;
+  border:1px solid var(--bd);background:#0f172a;color:#e2e8f0;min-width:120px
+}
+.cf-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:8px}
+.cf-tab{
+  font-family:var(--font-h);font-size:9px;font-weight:700;letter-spacing:.1em;padding:8px 14px;
+  border:none;background:transparent;color:#94a3b8;cursor:pointer;border-radius:4px;text-transform:uppercase
+}
+.cf-tab:hover{color:#cbd5e1}
+.cf-tab.active{background:rgba(37,99,235,.2);color:#93c5fd}
+.cf-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.cf-kpi{
+  background:rgba(15,23,42,.9);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;
+  border-left:3px solid #334155
+}
+.cf-kpi.cf-pos{border-left-color:#16a34a}
+.cf-kpi.cf-neg{border-left-color:#dc2626}
+.cf-kpi.cf-neu{border-left-color:#2563eb}
+.cf-kpi-lbl{font-family:var(--font-m);font-size:8px;color:#94a3b8;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.cf-kpi-val{font-family:var(--font-h);font-size:16px;font-weight:700;color:#f1f5f9}
+.cf-table-wrap{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:rgba(15,23,42,.5)}
+.cf-table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:11px;color:#e2e8f0}
+.cf-table thead th{
+  text-align:left;padding:10px 12px;background:rgba(0,0,0,.25);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;font-weight:700
+}
+.cf-table tbody td{padding:10px 12px;border-top:1px solid rgba(255,255,255,.06);vertical-align:middle}
+.cf-table tbody tr:hover{background:rgba(255,255,255,.03)}
+.cf-btn-mini{
+  background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px 8px;font-size:12px
+}
+.cf-btn-mini:hover{color:#f87171}
+.cf-label{display:block;font-size:9px;color:#94a3b8;margin-bottom:4px;font-family:var(--font-m);letter-spacing:.06em;text-transform:uppercase}
+.cf-input{
+  width:100%;box-sizing:border-box;font-family:var(--font-m);font-size:12px;padding:8px 10px;border-radius:5px;
+  border:1px solid var(--bd);background:#020617;color:#e2e8f0
+}
 .ref-card-dash{
   font-family:'Inter',system-ui,sans-serif;background:linear-gradient(135deg,#1e293b,#0f172a);
   border:1px solid #334155;border-radius:12px;padding:16px 18px;margin-bottom:18px;color:#f1f5f9;
@@ -1462,6 +1501,89 @@ select.login-input{cursor:pointer}
   </div>
 </div>
 
+<div id="modalCashflow" class="modal">
+  <div class="modal-dialog" style="max-width:480px;background:#0f172a;border:1px solid var(--bd);border-radius:8px">
+    <div class="modal-body" style="padding:20px">
+      <h3 style="font-family:var(--font-h);font-size:11px;letter-spacing:.1em;margin:0 0 14px;color:#e2e8f0">LANÇAMENTO</h3>
+      <input type="hidden" id="cfFormId">
+      <input type="hidden" id="cfFormContext">
+      <div style="display:grid;gap:10px">
+        <div id="cfFormTipoWrap">
+          <label class="cf-label">Tipo</label>
+          <select id="cfFormTipo" class="cf-input" onchange="cfOnTipoChange()">
+            <option value="receita">Receita</option>
+            <option value="custo_fixo">Custo fixo</option>
+            <option value="custo_variavel">Custo variável</option>
+            <option value="projecao">Projeção</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="cf-label">Mês</label>
+            <select id="cfFormMes" class="cf-input"></select>
+          </div>
+          <div>
+            <label class="cf-label">Ano</label>
+            <select id="cfFormAno" class="cf-input"></select>
+          </div>
+        </div>
+        <div>
+          <label class="cf-label">Categoria</label>
+          <select id="cfFormCategoria" class="cf-input">
+            <option value="pessoal">Pessoal</option>
+            <option value="administrativo">Administrativo</option>
+            <option value="marketing">Marketing</option>
+            <option value="financeiro">Financeiro</option>
+            <option value="projeto">Projeto</option>
+          </select>
+        </div>
+        <div>
+          <label class="cf-label">Descrição</label>
+          <input type="text" id="cfFormDesc" class="cf-input" placeholder="Ex.: Aluguel, honorários, recebimento cliente X">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div>
+            <label class="cf-label">Qtd</label>
+            <input type="number" id="cfFormQtd" class="cf-input" min="0" step="0.01" value="1" oninput="cfRecalcTotal()">
+          </div>
+          <div>
+            <label class="cf-label">Valor unit.</label>
+            <input type="number" id="cfFormVUnit" class="cf-input" min="0" step="0.01" oninput="cfRecalcTotal()">
+          </div>
+          <div>
+            <label class="cf-label">Valor total</label>
+            <input type="number" id="cfFormVTotal" class="cf-input" min="0" step="0.01" oninput="cfOnTotalManual()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="cf-label">Cliente</label>
+            <input type="text" id="cfFormCliente" class="cf-input">
+          </div>
+          <div>
+            <label class="cf-label">Projeto</label>
+            <input type="text" id="cfFormProjeto" class="cf-input">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="cf-label">Data venda</label>
+            <input type="date" id="cfFormDVenda" class="cf-input">
+          </div>
+          <div>
+            <label class="cf-label">Data recebimento</label>
+            <input type="date" id="cfFormDRec" class="cf-input">
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('modalCashflow')">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="saveCfRow()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════
      SIDEBAR OVERLAY (mobile)
 ══════════════════════════════════════════ -->
@@ -1511,6 +1633,9 @@ select.login-input{cursor:pointer}
       </button>
       <button type="button" class="nav-item" data-page="fechamento" data-perm-module="fechamento" onclick="navigate('fechamento')">
         <i class="fas fa-file-invoice-dollar"></i><span>FECHAMENTO</span>
+      </button>
+      <button type="button" class="nav-item nav-admin-gestor-only" data-page="cashflow" onclick="navigate('cashflow')" style="display:none">
+        <i class="fas fa-chart-line"></i><span>FLUXO DE CAIXA</span>
       </button>
       <button type="button" class="nav-item" data-page="historico" data-perm-module="historico" onclick="navigate('historico')">
         <i class="fas fa-archive"></i><span>HISTÓRICO</span>
@@ -2009,6 +2134,98 @@ select.login-input{cursor:pointer}
                 <div style="font-size:10px;color:#94a3b8">Clique em um projeto da lista para ver ou registrar o fechamento financeiro</div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           FLUXO DE CAIXA (admin / gestor)
+      ══════════════════════════════════ -->
+      <div id="page-cashflow" class="page">
+        <div class="page-header" style="align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px">
+          <div>
+            <div class="page-title"><i class="fas fa-chart-line"></i> FLUXO DE CAIXA</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px">Balanço mensal · Custos fixos · Projeção anual</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="cfMes" class="cf-select" onchange="loadCashflow()">
+              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+              <option value="3">Março</option><option value="4">Abril</option>
+              <option value="5">Maio</option><option value="6">Junho</option>
+              <option value="7">Julho</option><option value="8">Agosto</option>
+              <option value="9">Setembro</option><option value="10">Outubro</option>
+              <option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+            <select id="cfAno" class="cf-select" onchange="loadCashflow()"></select>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadCashflow()" title="Atualizar"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+
+        <div class="cf-tabs">
+          <button type="button" class="cf-tab active" id="cfTabBalanco" onclick="cfTab('balanco')">BALANÇO MENSAL</button>
+          <button type="button" class="cf-tab" id="cfTabFixos" onclick="cfTab('fixos')">CUSTOS FIXOS</button>
+          <button type="button" class="cf-tab" id="cfTabProj" onclick="cfTab('projecao')">PROJEÇÃO ANUAL</button>
+        </div>
+
+        <div id="cf-balanco">
+          <div class="cf-kpi-row" id="cfKpiBalanco"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'balanco')"><i class="fas fa-plus"></i> Novo lançamento</button>
+          </div>
+          <div class="cf-table-wrap">
+            <table class="cf-table" id="cfTableBalanco">
+              <thead>
+                <tr>
+                  <th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Qtd</th><th>Vl. unit.</th><th>Total</th><th>Cliente</th><th>Projeto</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="cfTbodyBalanco"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="cf-fixos" style="display:none">
+          <div class="cf-kpi-row" id="cfKpiFixos"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'fixos')"><i class="fas fa-plus"></i> Custo fixo</button>
+          </div>
+          <div class="cf-table-wrap">
+            <table class="cf-table" id="cfTableFixos">
+              <thead>
+                <tr>
+                  <th>Categoria</th><th>Descrição</th><th>Qtd</th><th>Vl. unit.</th><th>Total</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="cfTbodyFixos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="cf-projecao" style="display:none">
+          <div class="cf-kpi-row" id="cfKpiProj"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'projecao')"><i class="fas fa-plus"></i> Linha de projeção</button>
+          </div>
+          <div class="cf-table-wrap">
+            <table class="cf-table" id="cfTableProjMes">
+              <thead>
+                <tr>
+                  <th>Mês</th><th>Receitas proj.</th><th>Custos proj.</th><th>Saldo proj.</th>
+                </tr>
+              </thead>
+              <tbody id="cfTbodyProjMes"></tbody>
+            </table>
+          </div>
+          <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.12em;margin:18px 0 8px">DETALHE — PROJEÇÕES</div>
+          <div class="cf-table-wrap">
+            <table class="cf-table" id="cfTableProj">
+              <thead>
+                <tr>
+                  <th>Mês</th><th>Categoria</th><th>Descrição</th><th>Total</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="cfTbodyProj"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -4039,6 +4256,7 @@ function canViewPage(page) {
   if(page === 'plan-upgrade') return true;
   if(!_planAllowsPage(page)) return false;
   if(page === 'equipe-permissoes') return _userCanManagePermissionsUi();
+  if(page === 'cashflow') return _userIsAdminLike() || _userIsBootstrapAdmin();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
   if(page === 'mytasks' || page === 'myfinance') return true;
@@ -4050,6 +4268,7 @@ function canViewPage(page) {
 function hasModuleEditForPage(page) {
   if(page === 'profile') return true;
   if(page === 'equipe-permissoes') return _userCanManagePermissionsUi();
+  if(page === 'cashflow') return _userIsAdminLike() || _userIsBootstrapAdmin();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
   if(page === 'mytasks' || page === 'myfinance') return true;
@@ -4099,6 +4318,9 @@ function _canShowNavModule(mod) {
 function _syncPermissionNav() {
   document.querySelectorAll('.nav-admin-perm-page').forEach(btn => {
     btn.style.display = _userCanManagePermissionsUi() ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-admin-gestor-only').forEach(btn => {
+    btn.style.display = (_userIsAdminLike() || _userIsBootstrapAdmin()) ? '' : 'none';
   });
   document.querySelectorAll('.nav-item[data-perm-module]').forEach(btn => {
     const mod = btn.getAttribute('data-perm-module');
@@ -6042,6 +6264,7 @@ function _planAllowsPage(page) {
     'pagamentos',
     'fechamento',
     'equipe-permissoes',
+    'cashflow',
   ]);
   return !soloBlocked.has(page);
 }
@@ -6721,7 +6944,8 @@ const PAGE_TITLES = {
   'no-access':'ACESSO NEGADO',
   relatorios:'RELATÓRIOS DE PROJETOS',
   pipeline:'PIPELINE COMERCIAL',
-  nps:'NPS — AVALIAÇÃO DE CLIENTES'
+  nps:'NPS — AVALIAÇÃO DE CLIENTES',
+  cashflow:'FLUXO DE CAIXA'
 };
 
 function navigate(page) {
@@ -6783,6 +7007,7 @@ function navigate(page) {
   if(page==='relatorios')   loadRelatorios();
   if(page==='pipeline')     loadPipeline();
   if(page==='nps')          loadNps();
+  if(page==='cashflow')     loadCashflow();
 
   if(page !== 'no-access') {
     setTimeout(() => applyActivePageEditGuards(page), 0);
@@ -6839,7 +7064,7 @@ const TENANT_SCOPED_TABLES = new Set([
   'age_projects','age_fechamento','age_hist_projects','age_contracts','age_project_stages',
   'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
   'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
-  'age_relatorios','age_leads','age_permissions','age_notifications'
+  'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow'
 ]);
 
 function _tenantCidForScope() {
@@ -14504,6 +14729,334 @@ async function deleteColab() {
   toast('Colaborador excluído');
   closeModal('modalColab');
   await loadColaboradores();
+}
+
+/* ══════════════════════════════════════════════════════
+   FLUXO DE CAIXA — age_cashflow
+══════════════════════════════════════════════════════ */
+let _cfYearRows = [];
+
+function _cfTipoLabel(t) {
+  const m = { receita: 'Receita', custo_fixo: 'Custo fixo', custo_variavel: 'Custo variável', projecao: 'Projeção' };
+  return m[t] || t || '—';
+}
+
+function _cfCatLabel(c) {
+  const m = { pessoal: 'Pessoal', administrativo: 'Administrativo', marketing: 'Marketing', financeiro: 'Financeiro', projeto: 'Projeto' };
+  return m[c] || c || '—';
+}
+
+function _cfVal(r) {
+  const t = parseFloat(r.valor_total);
+  if(!isNaN(t)) return t;
+  const q = parseFloat(r.quantidade) || 0;
+  const u = parseFloat(r.valor_unitario) || 0;
+  return q * u;
+}
+
+function cfPopulateHeaderYear() {
+  const anoSel = document.getElementById('cfAno');
+  if(anoSel && !anoSel.dataset.ready) {
+    let h = '';
+    for(let y = 2021; y <= 2030; y++) h += `<option value="${y}">${y}</option>`;
+    anoSel.innerHTML = h;
+    anoSel.dataset.ready = '1';
+  }
+  const mesEl = document.getElementById('cfMes');
+  const anoEl = document.getElementById('cfAno');
+  const now = new Date();
+  if(mesEl && !mesEl.dataset.cfInit) {
+    mesEl.value = String(now.getMonth() + 1);
+    mesEl.dataset.cfInit = '1';
+  }
+  if(anoEl && !anoEl.dataset.cfInit) {
+    anoEl.value = String(Math.max(2021, Math.min(2030, now.getFullYear())));
+    anoEl.dataset.cfInit = '1';
+  }
+}
+
+function cfFillFormSelects() {
+  const fm = document.getElementById('cfFormMes');
+  const fa = document.getElementById('cfFormAno');
+  if(fm && !fm.dataset.ready) {
+    let h = '';
+    for(let m = 1; m <= 12; m++) h += `<option value="${m}">${MONTHS[m - 1]}</option>`;
+    fm.innerHTML = h;
+    fm.dataset.ready = '1';
+  }
+  if(fa && !fa.dataset.ready) {
+    let h = '';
+    for(let y = 2021; y <= 2030; y++) h += `<option value="${y}">${y}</option>`;
+    fa.innerHTML = h;
+    fa.dataset.ready = '1';
+  }
+}
+
+function cfTab(name) {
+  document.getElementById('cf-balanco').style.display = name === 'balanco' ? '' : 'none';
+  document.getElementById('cf-fixos').style.display = name === 'fixos' ? '' : 'none';
+  document.getElementById('cf-projecao').style.display = name === 'projecao' ? '' : 'none';
+  document.querySelectorAll('.cf-tab').forEach(t => t.classList.remove('active'));
+  const map = { balanco: 'cfTabBalanco', fixos: 'cfTabFixos', projecao: 'cfTabProj' };
+  const b = document.getElementById(map[name]);
+  if(b) b.classList.add('active');
+}
+
+function cfRecalcTotal() {
+  const q = parseFloat(document.getElementById('cfFormQtd')?.value) || 0;
+  const u = parseFloat(document.getElementById('cfFormVUnit')?.value) || 0;
+  const vt = document.getElementById('cfFormVTotal');
+  if(vt && document.activeElement !== vt) vt.value = String(Math.round(q * u * 100) / 100);
+}
+
+function cfOnTotalManual() { /* total editável manualmente */ }
+
+function cfRowHtml(r, ctx) {
+  const id = r.id;
+  const del = `<button type="button" class="cf-btn-mini perm-guard-edit" title="Excluir" onclick="deleteCfRow('${id}')"><i class="fas fa-trash"></i></button>`;
+  const ed = `<button type="button" class="cf-btn-mini perm-guard-edit" title="Editar" onclick="openCfModal('${id}','${ctx}')"><i class="fas fa-pen"></i></button>`;
+  if(ctx === 'fixos') {
+    return `<tr>
+      <td>${escHtml(_cfCatLabel(r.categoria))}</td>
+      <td>${escHtml(r.descricao || '')}</td>
+      <td>${escHtml(String(r.quantidade ?? 1))}</td>
+      <td>${fmtBRL(parseFloat(r.valor_unitario) || 0)}</td>
+      <td>${fmtBRL(_cfVal(r))}</td>
+      <td style="white-space:nowrap">${ed} ${del}</td>
+    </tr>`;
+  }
+  if(ctx === 'projecao') {
+    return `<tr>
+      <td>${MONTHS[(parseInt(r.mes, 10) || 1) - 1]}</td>
+      <td>${escHtml(_cfCatLabel(r.categoria))}</td>
+      <td>${escHtml(r.descricao || '')}</td>
+      <td>${fmtBRL(_cfVal(r))}</td>
+      <td style="white-space:nowrap">${ed} ${del}</td>
+    </tr>`;
+  }
+  return `<tr>
+    <td>${escHtml(_cfTipoLabel(r.tipo))}</td>
+    <td>${escHtml(_cfCatLabel(r.categoria))}</td>
+    <td>${escHtml(r.descricao || '')}</td>
+    <td>${escHtml(String(r.quantidade ?? 1))}</td>
+    <td>${fmtBRL(parseFloat(r.valor_unitario) || 0)}</td>
+    <td>${fmtBRL(_cfVal(r))}</td>
+    <td>${escHtml(r.cliente || '')}</td>
+    <td>${escHtml(r.projeto || '')}</td>
+    <td style="white-space:nowrap">${ed} ${del}</td>
+  </tr>`;
+}
+
+function renderCfAll(mes, ano) {
+  const rows = _cfYearRows || [];
+  const inMonth = r => parseInt(r.mes, 10) === mes && parseInt(r.ano, 10) === ano;
+  const bal = rows.filter(r => inMonth(r) && ['receita', 'custo_fixo', 'custo_variavel'].includes(String(r.tipo)));
+  const fix = rows.filter(r => inMonth(r) && String(r.tipo) === 'custo_fixo');
+  const proj = rows.filter(r => parseInt(r.ano, 10) === ano && String(r.tipo) === 'projecao');
+
+  const rec = bal.filter(r => r.tipo === 'receita').reduce((s, r) => s + _cfVal(r), 0);
+  const cfix = bal.filter(r => r.tipo === 'custo_fixo').reduce((s, r) => s + _cfVal(r), 0);
+  const cvar = bal.filter(r => r.tipo === 'custo_variavel').reduce((s, r) => s + _cfVal(r), 0);
+  const saldo = rec - cfix - cvar;
+  const kpiB = document.getElementById('cfKpiBalanco');
+  if(kpiB) {
+    kpiB.innerHTML = [
+      { l: 'Receitas', v: rec, c: 'cf-neu' },
+      { l: 'Custos fixos', v: cfix, c: 'cf-neg' },
+      { l: 'Custos variáveis', v: cvar, c: 'cf-neg' },
+      { l: 'Saldo', v: saldo, c: saldo >= 0 ? 'cf-pos' : 'cf-neg' }
+    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
+  }
+  const tbB = document.getElementById('cfTbodyBalanco');
+  if(tbB) {
+    tbB.innerHTML = bal.length
+      ? bal.map(r => cfRowHtml(r, 'balanco')).join('')
+      : '<tr><td colspan="9" style="color:#64748b;padding:20px">Nenhum lançamento neste mês.</td></tr>';
+  }
+
+  const totFix = fix.reduce((s, r) => s + _cfVal(r), 0);
+  const fk = document.getElementById('cfKpiFixos');
+  if(fk) {
+    fk.innerHTML = `<div class="cf-kpi cf-neu"><div class="cf-kpi-lbl">Total custos fixos (${MONTHS[mes - 1]})</div><div class="cf-kpi-val">${fmtBRL(totFix)}</div></div>`;
+  }
+  const tbF = document.getElementById('cfTbodyFixos');
+  if(tbF) {
+    tbF.innerHTML = fix.length
+      ? fix.map(r => cfRowHtml(r, 'fixos')).join('')
+      : '<tr><td colspan="6" style="color:#64748b;padding:20px">Nenhum custo fixo neste mês.</td></tr>';
+  }
+
+  const byM = {};
+  for(let m = 1; m <= 12; m++) byM[m] = { rec: 0, cst: 0 };
+  proj.forEach(r => {
+    const m = parseInt(r.mes, 10);
+    if(m < 1 || m > 12) return;
+    const v = _cfVal(r);
+    const cat = String(r.categoria || '');
+    if(['administrativo', 'pessoal', 'marketing', 'financeiro'].includes(cat)) byM[m].cst += v;
+    else byM[m].rec += v;
+  });
+  let yRec = 0, yCst = 0;
+  for(let m = 1; m <= 12; m++) {
+    yRec += byM[m].rec;
+    yCst += byM[m].cst;
+  }
+  const salP = yRec - yCst;
+  const kpiP = document.getElementById('cfKpiProj');
+  if(kpiP) {
+    kpiP.innerHTML = [
+      { l: 'Receitas projetadas (ano)', v: yRec, c: 'cf-neu' },
+      { l: 'Custos projetados (ano)', v: yCst, c: 'cf-neg' },
+      { l: 'Saldo projetado', v: salP, c: salP >= 0 ? 'cf-pos' : 'cf-neg' }
+    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
+  }
+  const tbPM = document.getElementById('cfTbodyProjMes');
+  if(tbPM) {
+    tbPM.innerHTML = MONTHS.map((name, i) => {
+      const m = i + 1;
+      const s = byM[m].rec - byM[m].cst;
+      return `<tr><td>${name}</td><td>${fmtBRL(byM[m].rec)}</td><td>${fmtBRL(byM[m].cst)}</td><td style="color:${s >= 0 ? '#86efac' : '#fca5a5'}">${fmtBRL(s)}</td></tr>`;
+    }).join('');
+  }
+  const tbP = document.getElementById('cfTbodyProj');
+  if(tbP) {
+    tbP.innerHTML = proj.length
+      ? proj.sort((a, b) => (parseInt(a.mes, 10) || 0) - (parseInt(b.mes, 10) || 0)).map(r => cfRowHtml(r, 'projecao')).join('')
+      : '<tr><td colspan="5" style="color:#64748b;padding:20px">Nenhuma linha de projeção para este ano.</td></tr>';
+  }
+}
+
+async function loadCashflow() {
+  if(typeof canViewPage === 'function' && !canViewPage('cashflow')) return;
+  cfPopulateHeaderYear();
+  const mes = parseInt(document.getElementById('cfMes')?.value, 10) || 1;
+  const ano = parseInt(document.getElementById('cfAno')?.value, 10) || new Date().getFullYear();
+  try {
+    const d = await apiGet('age_cashflow', `?ano=eq.${ano}&order=mes.asc&limit=500`);
+    _cfYearRows = Array.isArray(d?.data) ? d.data.filter(_sbIsRowVisible) : [];
+  } catch(e) {
+    console.warn('[loadCashflow]', e);
+    _cfYearRows = [];
+    try { toast('Verifique se a tabela age_cashflow existe no Supabase e suas políticas RLS.', 'err'); } catch(_) {}
+  }
+  renderCfAll(mes, ano);
+}
+
+function openCfModal(id, context) {
+  cfFillFormSelects();
+  const ctx = context || 'balanco';
+  document.getElementById('cfFormContext').value = ctx;
+  const mes = parseInt(document.getElementById('cfMes')?.value, 10) || 1;
+  const ano = parseInt(document.getElementById('cfAno')?.value, 10) || 2026;
+  const tipoEl = document.getElementById('cfFormTipo');
+  const tipoWrap = document.getElementById('cfFormTipoWrap');
+  document.getElementById('cfFormMes').value = String(mes);
+  document.getElementById('cfFormAno').value = String(ano);
+
+  if(ctx === 'fixos') {
+    tipoEl.value = 'custo_fixo';
+    if(tipoWrap) tipoWrap.style.display = 'none';
+  } else if(ctx === 'projecao') {
+    tipoEl.value = 'projecao';
+    if(tipoWrap) tipoWrap.style.display = 'none';
+  } else {
+    if(tipoWrap) tipoWrap.style.display = '';
+    if(!id) tipoEl.value = 'receita';
+  }
+
+  if(id) {
+    const r = _cfYearRows.find(x => String(x.id) === String(id));
+    if(r) {
+      document.getElementById('cfFormId').value = r.id;
+      tipoEl.value = r.tipo || 'receita';
+      document.getElementById('cfFormMes').value = String(parseInt(r.mes, 10) || 1);
+      document.getElementById('cfFormAno').value = String(parseInt(r.ano, 10) || ano);
+      document.getElementById('cfFormCategoria').value = r.categoria || 'administrativo';
+      document.getElementById('cfFormDesc').value = r.descricao || '';
+      document.getElementById('cfFormQtd').value = String(r.quantidade ?? 1);
+      document.getElementById('cfFormVUnit').value = String(r.valor_unitario ?? 0);
+      document.getElementById('cfFormVTotal').value = String(_cfVal(r));
+      document.getElementById('cfFormCliente').value = r.cliente || '';
+      document.getElementById('cfFormProjeto').value = r.projeto || '';
+      document.getElementById('cfFormDVenda').value = r.data_venda || '';
+      document.getElementById('cfFormDRec').value = r.data_recebimento || '';
+      if(ctx === 'fixos' && tipoWrap) tipoWrap.style.display = 'none';
+      if(ctx === 'projecao' && tipoWrap) tipoWrap.style.display = 'none';
+    }
+  } else {
+    document.getElementById('cfFormId').value = '';
+    document.getElementById('cfFormCategoria').value = 'administrativo';
+    document.getElementById('cfFormDesc').value = '';
+    document.getElementById('cfFormQtd').value = '1';
+    document.getElementById('cfFormVUnit').value = '';
+    document.getElementById('cfFormVTotal').value = '';
+    document.getElementById('cfFormCliente').value = '';
+    document.getElementById('cfFormProjeto').value = '';
+    document.getElementById('cfFormDVenda').value = '';
+    document.getElementById('cfFormDRec').value = '';
+    cfRecalcTotal();
+  }
+  openModal('modalCashflow');
+}
+
+function cfOnTipoChange() { cfRecalcTotal(); }
+
+async function saveCfRow() {
+  const ctx = document.getElementById('cfFormContext')?.value || 'balanco';
+  const id = document.getElementById('cfFormId')?.value?.trim();
+  let tipo = document.getElementById('cfFormTipo')?.value;
+  if(ctx === 'fixos') tipo = 'custo_fixo';
+  if(ctx === 'projecao') tipo = 'projecao';
+  const mes = parseInt(document.getElementById('cfFormMes')?.value, 10) || 1;
+  const ano = parseInt(document.getElementById('cfFormAno')?.value, 10) || 2026;
+  const q = parseFloat(document.getElementById('cfFormQtd')?.value) || 0;
+  const u = parseFloat(document.getElementById('cfFormVUnit')?.value) || 0;
+  let vt = parseFloat(document.getElementById('cfFormVTotal')?.value);
+  if(isNaN(vt)) vt = q * u;
+
+  const payload = {
+    mes,
+    ano,
+    tipo,
+    categoria: document.getElementById('cfFormCategoria')?.value || 'administrativo',
+    descricao: document.getElementById('cfFormDesc')?.value?.trim() || '',
+    quantidade: q || 1,
+    valor_unitario: u,
+    valor_total: vt,
+    cliente: document.getElementById('cfFormCliente')?.value?.trim() || null,
+    projeto: document.getElementById('cfFormProjeto')?.value?.trim() || null,
+    data_venda: document.getElementById('cfFormDVenda')?.value || null,
+    data_recebimento: document.getElementById('cfFormDRec')?.value || null,
+    updated_at: Date.now()
+  };
+
+  try {
+    if(id) {
+      await apiPatch('age_cashflow', id, payload);
+      toast('Lançamento atualizado.', 'ok');
+    } else {
+      payload.created_at = Date.now();
+      await apiPost('age_cashflow', payload);
+      toast('Lançamento criado.', 'ok');
+    }
+    closeModal('modalCashflow');
+    await loadCashflow();
+  } catch(e) {
+    console.error(e);
+    try { toast(String(e.message || e), 'err'); } catch(_) {}
+  }
+}
+
+async function deleteCfRow(id) {
+  if(!id || !confirm('Excluir este lançamento?')) return;
+  try {
+    await apiDel('age_cashflow', id);
+    toast('Removido.', 'ok');
+    await loadCashflow();
+  } catch(e) {
+    console.error(e);
+    try { toast(String(e.message || e), 'err'); } catch(_) {}
+  }
 }
 
 /* ══════════════════════════════════════════════════════
