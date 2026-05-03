@@ -7525,16 +7525,34 @@ function _dashSetKpisLoading(loading) {
 }
 
 /**
+ * Mês/ano para filtros e KPIs: planilha (mes) ou datas negócio → Supabase.
+ */
+function _dashResolveMesAno(p) {
+  const pm = parseInt(p.mes, 10);
+  if(pm >= 1 && pm <= 12) {
+    let ano = parseInt(p.ano, 10);
+    if(!(ano >= 1990 && ano <= 2100)) {
+      const rawA = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.created_at || p.updated_at;
+      if(rawA) {
+        const dx = new Date(rawA);
+        if(!isNaN(dx.getTime())) ano = dx.getFullYear();
+      }
+    }
+    if(!(ano >= 1990 && ano <= 2100)) ano = 2026;
+    return { mes: pm, ano };
+  }
+  const raw = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.created_at || p.updated_at;
+  if(!raw) return null;
+  const d = new Date(raw);
+  if(isNaN(d.getTime())) return null;
+  return { mes: d.getMonth() + 1, ano: d.getFullYear() };
+}
+
+/**
  * Mapeia age_projects + age_fechamento → formato usado pelos gráficos/tabelas do dashboard.
- * Ano/mês derivados de created_at (dashboard 2026 = projetos com ano 2026).
  */
 function _dashRowFromSupabase(p, fechByProjectId) {
   const fech = (p && p.id != null) ? fechByProjectId.get(p.id) : null;
-  const rawDate = p.created_at || p.updated_at || null;
-  const d = rawDate ? new Date(rawDate) : null;
-  const ok = d && !isNaN(d.getTime());
-  const mes = ok ? d.getMonth() + 1 : 1;
-  const ano = ok ? d.getFullYear() : new Date().getFullYear();
   const fat = parseFloat(p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
   let cost = 0;
   if(fech && fech.custo_total != null && fech.custo_total !== '') {
@@ -7546,22 +7564,50 @@ function _dashRowFromSupabase(p, fechByProjectId) {
   const margin = fat > 0 ? Math.round((lucro / fat) * 100) : 0;
   const cliente = String(p.client_name || p.client || '').trim();
   const projeto = String(p.project_name || p.title || '').trim();
-  const seg = String(p.segment || p.seg || '').trim();
+  const seg = String(p.segment || p.seg || 'Outro').trim() || 'Outro';
   const cat = String(p.category || p.cat || '').trim();
   const nps = parseFloat(p.nps) || 0;
   let status = String(p.status || 'concluido').trim().toLowerCase().replace(/\s+/g, '_');
   if(!['concluido','em_andamento','pendente','cancelado'].includes(status)) status = 'concluido';
   const novo = !!(p.novo || p.is_new_client);
-  return {
-    cliente, projeto, fat, cost, lucro, margin, mes, ano,
+  const row = {
+    cliente, projeto, fat, cost, lucro, margin,
     cat, seg,
     nps, _nps: nps,
     novo,
     status, _status: status,
     pay_date: p.pay_date || p.payment_date || null,
     sale_date: p.sale_date || null,
-    id: p.id
+    start_date: p.start_date || null,
+    payment_date: p.payment_date || null,
+    created_at: p.created_at || null,
+    updated_at: p.updated_at || null,
+    id: p.id,
+    total_value: p.total_value,
+    contract_value: p.contract_value,
+    value: p.value
   };
+  const ma = _dashResolveMesAno({ ...row, mes: p.mes, ano: p.ano });
+  if(ma) {
+    row.mes = ma.mes;
+    row.ano = ma.ano;
+  } else {
+    const fb = p.created_at || p.updated_at;
+    if(fb) {
+      const d = new Date(fb);
+      if(!isNaN(d.getTime())) {
+        row.mes = d.getMonth() + 1;
+        row.ano = d.getFullYear();
+      } else {
+        row.mes = 1;
+        row.ano = new Date().getFullYear();
+      }
+    } else {
+      row.mes = 1;
+      row.ano = new Date().getFullYear();
+    }
+  }
+  return row;
 }
 
 function refreshDashboardManual() {
@@ -7583,7 +7629,7 @@ async function loadDashboard() {
   _dashSetKpisLoading(true);
   try {
     try { updateTrialBanner(); ensureReferralTokenAndUi(); } catch(e) {}
-    /* Dashboard: 100% Supabase (sem PROJ_2026_SHEET) */
+    /* Planilha 2026 + projetos do Supabase que não estão na planilha */
     const [dbProjects, dbFechs] = await Promise.all([
       fetchAll('age_projects', 500).catch(()=>[]),
       fetchAll('age_fechamento', 300).catch(()=>[])
@@ -7595,13 +7641,43 @@ async function loadDashboard() {
       if(f && f.project_id != null) fechByProjectId.set(f.project_id, f);
     });
 
-    const mappedAll = (dbProjects || []).map(p => _dashRowFromSupabase(p, fechByProjectId))
-      .filter(r => r.ano === 2026);
+    function _dashSheetKey(cliente, projeto) {
+      return String(cliente || '').trim().toLowerCase() + '||' + String(projeto || '').trim().toLowerCase();
+    }
+    const sheetKeys = new Set(PROJ_2026_SHEET.map(s => _dashSheetKey(s.cliente, s.projeto)));
+
+    const fromSheet = PROJ_2026_SHEET.map(s => {
+      let ano = 2026;
+      if(s.sale_date) {
+        const dx = new Date(s.sale_date);
+        if(!isNaN(dx.getTime())) ano = dx.getFullYear();
+      }
+      return { ...s, ano };
+    });
+
+    const extras = [];
+    for(const p of dbProjects || []) {
+      const cliente = String(p.client_name || p.client || '').trim();
+      const projeto = String(p.project_name || p.title || '').trim();
+      if(!cliente && !projeto) continue;
+      if(sheetKeys.has(_dashSheetKey(cliente, projeto))) continue;
+      extras.push(_dashRowFromSupabase(p, fechByProjectId));
+    }
+
+    const allProjects = [...fromSheet, ...extras];
+
+    const mappedAll = allProjects.filter(p => {
+      const ma = _dashResolveMesAno(p);
+      return ma && ma.ano === 2026;
+    });
 
     /* Filtrar pelo período selecionado */
     const mesesFiltro = _dashMesesFiltro();
     const filtered = mesesFiltro
-      ? mappedAll.filter(p => mesesFiltro.includes(p.mes))
+      ? mappedAll.filter(p => {
+          const ma = _dashResolveMesAno(p);
+          return ma && mesesFiltro.includes(ma.mes);
+        })
       : mappedAll;
 
     /* KPIs do período filtrado */
@@ -7663,7 +7739,13 @@ async function loadDashboard() {
     // Média mensal: faturamento dividido pelos meses com receita no período
     const mesesComFat = Object.values((() => {
       const bm = {};
-      filtered.forEach(p => { const m = p.mes||1; if(!bm[m]) bm[m]=0; bm[m]+=p.fat; });
+      filtered.forEach(p => {
+        const ma = _dashResolveMesAno(p);
+        if(!ma) return;
+        const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+        if(!bm[ma.mes]) bm[ma.mes] = 0;
+        bm[ma.mes] += f;
+      });
       return bm;
     })()).filter(v => v > 0);
     const medMes = mesesComFat.length > 0 ? fat / mesesComFat.length : 0;
@@ -7673,7 +7755,12 @@ async function loadDashboard() {
 
     // Melhor mês
     const byMonthFat = {};
-    filtered.forEach(p => { const m=p.mes||1; byMonthFat[m]=(byMonthFat[m]||0)+p.fat; });
+    filtered.forEach(p => {
+      const ma = _dashResolveMesAno(p);
+      if(!ma) return;
+      const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+      byMonthFat[ma.mes] = (byMonthFat[ma.mes] || 0) + f;
+    });
     let bestM=0, bestV=0;
     Object.entries(byMonthFat).forEach(([m,v])=>{ if(v>bestV){ bestV=v; bestM=parseInt(m); } });
     setEl('dBestMes', bestM>0 ? fmtBRL(bestV) : '—');
@@ -7706,7 +7793,7 @@ async function loadDashboard() {
     /* Charts — passar dados filtrados */
     renderDashCharts(filtered);
 
-    /* Totais do ano 2026 (Supabase, todos os meses) — série histórica na análise profunda */
+    /* Totais do ano 2026 (planilha + Supabase, todos os meses) — série histórica na análise profunda */
     let supa2026 = null;
     try {
       const fatY = mappedAll.reduce((s, p) => s + (p.fat || 0), 0);
@@ -7795,11 +7882,14 @@ function renderDeepAnalysis(filtered2026, kpis) {
   /* ── 2. SAZONALIDADE 2026 (por mês) ── */
   const byMes = {};
   filtered2026.forEach(p => {
-    const m = p.mes||1;
+    const ma = _dashResolveMesAno(p);
+    const m = ma ? ma.mes : 1;
+    const pf = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    const pc = parseFloat(p.cost ?? p.custo_total ?? 0) || 0;
     if(!byMes[m]) byMes[m] = { fat:0, n:0, lucro:0 };
-    byMes[m].fat   += p.fat||0;
+    byMes[m].fat   += pf;
     byMes[m].n++;
-    byMes[m].lucro += p.lucro||p.fat-(p.cost||0)||0;
+    byMes[m].lucro += (p.lucro != null ? p.lucro : pf - pc);
   });
   const mesesAtivos = Object.keys(byMes).map(Number).sort((a,b)=>a-b);
   const totalMeses  = mesesAtivos.length;
@@ -9098,27 +9188,37 @@ function _chartDefaults(){
 function renderDashCharts(filtered) {
   const source = Array.isArray(filtered) ? filtered : [];
 
-  /* Recalcular byMonth a partir dos dados filtrados */
+  function _dashChartFat(p) {
+    return parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+  }
+  function _dashChartCost(p) {
+    return parseFloat(p.cost ?? p.custo_total ?? 0) || 0;
+  }
+  function _dashChartMonth(p) {
+    const ma = _dashResolveMesAno(p);
+    return ma ? ma.mes : null;
+  }
+
+  /* Recalcular byMonth — mes da planilha ou datas negócio; sem mês válido → não entra no agrupamento */
   const bm = {};
   source.forEach(p => {
-    const m = p.mes || 1;
+    const m = _dashChartMonth(p);
+    if(m == null || m < 1 || m > 12) return;
     if(!bm[m]) bm[m] = { fat:0, cost:0 };
-    bm[m].fat  += p.fat || 0;
-    bm[m].cost += p.cost || 0;
+    bm[m].fat  += _dashChartFat(p);
+    bm[m].cost += _dashChartCost(p);
   });
 
-  const totalFat = source.reduce((s,p)=>s+(p.fat||0),0);
+  const totalFat = source.reduce((s, p) => s + _dashChartFat(p), 0);
 
-  /* ── 1. BAR: Faturamento vs Custo vs Lucro mensal ── */
+  /* ── 1. BAR: Faturamento vs Custo vs Lucro — todos os 12 meses do ano ── */
   const mLabels=[], mFat=[], mCusto=[], mLucro=[];
   for(let m=1;m<=12;m++){
-    const d=bm[m];
-    if(d && d.fat>0){
-      mLabels.push(MONTHS[m-1]);
-      mFat.push(d.fat);
-      mCusto.push(d.cost||0);
-      mLucro.push(Math.max(0, d.fat-(d.cost||0)));
-    }
+    const d = bm[m] || { fat:0, cost:0 };
+    mLabels.push(MONTHS[m-1]);
+    mFat.push(d.fat || 0);
+    mCusto.push(d.cost || 0);
+    mLucro.push(Math.max(0, (d.fat || 0) - (d.cost || 0)));
   }
   /* Badge total */
   const badgeFat = document.getElementById('chBadgeFat');
@@ -9155,7 +9255,10 @@ function renderDashCharts(filtered) {
 
   /* ── 2. DONUT: Distribuição por segmento ── */
   const segMap={};
-  source.forEach(p=>{ segMap[p.seg||'Outro']=(segMap[p.seg||'Outro']||0)+p.fat; });
+  source.forEach(p=>{
+    const seg = p.seg || p.segment || 'Outro';
+    segMap[seg] = (segMap[seg] || 0) + _dashChartFat(p);
+  });
   const sKeys=Object.keys(segMap).sort((a,b)=>segMap[b]-segMap[a]);
   const segColors = [CHART_COLORS.blue,CHART_COLORS.green,CHART_COLORS.purple,
                     CHART_COLORS.orange,CHART_COLORS.cyan,CHART_COLORS.pink,CHART_COLORS.amber];
@@ -9225,7 +9328,10 @@ function renderDashCharts(filtered) {
   const npsProjs = source.filter(p=>(p.nps||p._nps||0)>0)
     .sort((a,b)=>((b.nps||b._nps||0))-((a.nps||a._nps||0)))
     .slice(0,10);
-  const npsLabels = npsProjs.map(p => (p.cliente||'').length>14 ? (p.cliente||'').slice(0,13)+'…' : (p.cliente||''));
+  const npsLabels = npsProjs.map(p => {
+    const nm = p.cliente || p.client_name || p.client || '';
+    return nm.length > 14 ? nm.slice(0, 13) + '…' : nm;
+  });
   const npsData   = npsProjs.map(p => p.nps||p._nps||0);
   const npsColors = npsData.map(n => n>=9?CHART_COLORS.green : n>=7?CHART_COLORS.blue : n>=5?CHART_COLORS.orange : CHART_COLORS.red);
   const avgNpsFinal = npsData.length ? npsData.reduce((s,n)=>s+n,0)/npsData.length : 0;
