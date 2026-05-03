@@ -1522,6 +1522,12 @@ select.login-input{cursor:pointer}
         <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin:-8px 0 16px">
           Gerencie o acesso por módulo para cada colaborador da empresa. Administradores globais ignoram estas regras.
         </p>
+        <div id="permPendingInvitesWrap" style="display:none;margin-bottom:20px">
+          <div style="font-family:var(--font-h);font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--textsub);margin-bottom:10px">
+            <i class="fas fa-link"></i> CONVITES PENDENTES
+          </div>
+          <div id="permPendingInvitesList" style="border:1px solid var(--bd);border-radius:10px;overflow:hidden;background:var(--bg2)"></div>
+        </div>
         <div id="permTeamCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
       </div>
 
@@ -3232,23 +3238,27 @@ select.login-input{cursor:pointer}
       <span>CONVIDAR COLABORADOR</span>
       <button type="button" onclick="closeModal('modalInviteColab')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
-    <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 12px">Gera um link único (válido por 7 dias). Opcionalmente informe o email para registrar no convite.</p>
+    <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 12px">Gera um link único válido por <strong>7 dias</strong>. Envie por WhatsApp ou e-mail.</p>
     <div class="form-grid">
       <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Email do convidado (opcional)</label>
-        <input id="invColabEmail" type="email" placeholder="nome@email.com" style="width:100%">
+        <label class="form-label">Email (opcional)</label>
+        <input id="invColabEmail" type="email" placeholder="email@colaborador.com" style="width:100%">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Função / cargo (opcional)</label>
+        <input id="invColabJob" type="text" placeholder="Editor, Diretor, Produtor..." style="width:100%">
       </div>
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">Nível de acesso *</label>
         <select id="invColabRole" style="width:100%">
-          <option value="colaborador">Colaborador</option>
-          <option value="gestor">Gestor</option>
+          <option value="colaborador">Colaborador — área pessoal (Meu Dia, tarefas…)</option>
+          <option value="gestor">Gestor — acesso ao corporativo da empresa</option>
         </select>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
       <button type="button" class="btn btn-ghost" onclick="closeModal('modalInviteColab')">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="submitInviteColaborador()"><i class="fas fa-link"></i> Gerar link</button>
+      <button type="button" class="btn btn-primary" onclick="submitInviteColaborador()"><i class="fas fa-link"></i> Gerar Link de Convite</button>
     </div>
   </div>
 </div>
@@ -3257,16 +3267,21 @@ select.login-input{cursor:pointer}
 <div class="modal" id="modalInviteLinkReady">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-title">
-      <span>LINK DE CONVITE</span>
+      <span>LINK GERADO</span>
       <button type="button" onclick="closeModal('modalInviteLinkReady')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
-    <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin-bottom:10px">Copie ou envie pelo WhatsApp. Expira em 7 dias.</p>
-    <div class="invite-link-box" id="inviteLinkText"></div>
-    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:flex-end">
-      <button type="button" class="btn btn-secondary" onclick="copyInviteLink()"><i class="fas fa-copy"></i> Copiar link</button>
-      <button type="button" class="btn btn-secondary" onclick="shareInviteLinkWhatsApp()" title="WhatsApp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
-      <button type="button" class="btn btn-primary" onclick="closeModal('modalInviteLinkReady')">OK</button>
+    <div style="font-family:var(--font-m);font-size:12px;color:#16a34a;margin-bottom:12px;font-weight:700">
+      <i class="fas fa-check-circle"></i> Link gerado com sucesso!
     </div>
+    <div class="invite-link-box" id="inviteLinkText" style="font-size:11px;line-height:1.45"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button type="button" class="btn btn-secondary" id="inviteLinkCopyBtn" onclick="copyInviteLinkFromReadyModal(this)"><i class="fas fa-copy"></i> <span id="inviteLinkCopyBtnLabel">Copiar Link</span></button>
+      <button type="button" class="btn btn-secondary" onclick="shareInviteLinkWhatsApp()" title="WhatsApp"><i class="fab fa-whatsapp"></i> Enviar no WhatsApp</button>
+      <button type="button" class="btn btn-primary" onclick="closeModal('modalInviteLinkReady')" style="margin-left:auto">Fechar</button>
+    </div>
+    <p style="font-family:var(--font-m);font-size:9px;color:#f59e0b;margin:14px 0 0;line-height:1.4">
+      <i class="fas fa-exclamation-triangle"></i> Este link expira em 7 dias.
+    </p>
   </div>
 </div>
 
@@ -3813,7 +3828,8 @@ function _userGestorUnrestricted() {
 }
 
 function _userCanManagePermissionsUi() {
-  return _userPermFullBypass();
+  /* Admin global + bootstrap + gestor corporativo podem gerir convites e permissões */
+  return _userPermFullBypass() || _userGestorUnrestricted();
 }
 
 function canViewPage(page) {
@@ -4097,6 +4113,88 @@ async function savePermissoesModal() {
   }
 }
 
+function _inviteRowStatusUi(inv) {
+  const used = inv.used === true || inv.used === 'true';
+  if(used) return { label: 'Usado', color: '#64748b' };
+  const exp = inv.expires_at ? new Date(inv.expires_at) : null;
+  if(exp && exp < new Date()) return { label: 'Expirado', color: '#dc2626' };
+  return { label: 'Pendente', color: '#16a34a' };
+}
+
+async function loadPendingInvitesForEquipePage() {
+  const wrap = document.getElementById('permPendingInvitesWrap');
+  const listEl = document.getElementById('permPendingInvitesList');
+  if(!wrap || !listEl || !_userCanManagePermissionsUi()) return;
+  const cid = currentUser?.company_id;
+  if(!cid) {
+    wrap.style.display = 'none';
+    return;
+  }
+  try {
+    const d = await apiGet('age_invites', `?company_id=eq.${encodeURIComponent(cid)}&limit=200`);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    const sorted = [...rows].sort((a, b) => {
+      const ta = new Date(a.created_at || a.expires_at || 0).getTime();
+      const tb = new Date(b.created_at || b.expires_at || 0).getTime();
+      return tb - ta;
+    });
+    if(!sorted.length) {
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = '';
+    const now = Date.now();
+    const rowsHtml = sorted.map(inv => {
+      const st = _inviteRowStatusUi(inv);
+      const emailDisp = (inv.email && String(inv.email).trim())
+        ? escHtml(inv.email)
+        : '<span style="color:var(--textsub)">Qualquer pessoa</span>';
+      const job = escHtml(inv.job_title || '—');
+      const role = escHtml(_roleDisplayLabel(_normalizeRole(inv.role)) || 'Colaborador');
+      const created = inv.created_at ? new Date(inv.created_at) : null;
+      const exp = inv.expires_at ? new Date(inv.expires_at) : null;
+      const criadoHa = created ? Math.max(0, Math.floor((now - created.getTime()) / 86400000)) : null;
+      const expiraEm = exp ? Math.ceil((exp.getTime() - now) / 86400000) : null;
+      const canCancel = st.label === 'Pendente';
+      const idSafe = String(inv.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      return `<tr style="border-bottom:1px solid var(--bd)">
+        <td style="padding:8px 10px">${emailDisp}</td>
+        <td style="padding:8px 10px">${job}</td>
+        <td style="padding:8px 10px">${role}</td>
+        <td style="padding:8px 10px">${criadoHa != null ? criadoHa + ' d' : '—'}</td>
+        <td style="padding:8px 10px">${exp ? (expiraEm != null && expiraEm >= 0 ? expiraEm + ' d' : '—') : '—'}</td>
+        <td style="padding:8px 10px"><span style="color:${st.color};font-weight:700">${st.label}</span></td>
+        <td style="padding:8px 10px;text-align:right">${canCancel ? `<button type="button" class="btn btn-ghost btn-sm" onclick="cancelCompanyInvite('${idSafe}')"><i class="fas fa-times"></i> Cancelar</button>` : '—'}</td>
+      </tr>`;
+    }).join('');
+    listEl.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;min-width:720px;border-collapse:collapse;font-family:var(--font-m);font-size:10px">
+      <thead><tr style="background:rgba(0,0,0,.06);text-align:left">
+        <th style="padding:8px 10px">Destino</th>
+        <th style="padding:8px 10px">Função</th>
+        <th style="padding:8px 10px">Papel</th>
+        <th style="padding:8px 10px">Há</th>
+        <th style="padding:8px 10px">Expira em</th>
+        <th style="padding:8px 10px">Status</th>
+        <th style="padding:8px 10px;text-align:right">Ação</th>
+      </tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+  } catch(e) {
+    console.warn('[loadPendingInvitesForEquipePage]', e);
+    wrap.style.display = 'none';
+  }
+}
+
+async function cancelCompanyInvite(inviteId) {
+  if(!inviteId || !confirm('Cancelar este convite? O link deixará de funcionar.')) return;
+  try {
+    await apiDel('age_invites', inviteId);
+    toast('Convite removido.');
+    await loadPendingInvitesForEquipePage();
+  } catch(e) {
+    console.warn(e);
+    toast('Não foi possível remover o convite.', 'err');
+  }
+}
+
 async function loadEquipePermissoesPage() {
   const host = document.getElementById('permTeamCards');
   if(!host || !_userCanManagePermissionsUi()) return;
@@ -4105,6 +4203,7 @@ async function loadEquipePermissoesPage() {
     await ensureDefaultCompanyForPrivilegedUser();
   }
   await refreshAgeUsersCache();
+  await loadPendingInvitesForEquipePage();
   const cid = currentUser.company_id;
   let users = _ageUsersCache.filter(x => _sbIsRowVisible(x));
   if(cid) users = users.filter(x => String(x.company_id || '') === String(cid));
@@ -4947,26 +5046,30 @@ async function submitAdminRegister() {
 }
 
 async function openInviteColaboradorModal() {
-  if(!_userIsAdminLike()) {
-    toast('Apenas administradores ou gestores.', 'warn');
-    return;
-  }
-  const isAdminRole = _normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin();
-  if(!currentUser?.company_id) {
-    await linkAdminCompanyFromOwnerRow();
-    await ensureDefaultCompanyForPrivilegedUser();
-  }
-  if(!currentUser?.company_id) {
-    if(!isAdminRole) {
-      toast('Associe sua conta a uma empresa (cadastro admin) para convidar.', 'warn');
-    } else {
-      console.warn('[openInviteColaboradorModal] Admin sem company_id após vínculo automático — convite indisponível até existir empresa.');
+  try {
+    if(!_userIsAdminLike()) {
+      toast('Apenas administradores ou gestores podem convidar.', 'warn');
+      return;
     }
-    return;
+    if(!currentUser?.company_id) {
+      await linkAdminCompanyFromOwnerRow();
+      await ensureDefaultCompanyForPrivilegedUser();
+    }
+    if(!currentUser?.company_id) {
+      toast('Não é possível gerar convite sem uma empresa vinculada. Confirme company_id no Supabase (age_users) ou complete o cadastro da empresa.', 'warn');
+      return;
+    }
+    const em = document.getElementById('invColabEmail');
+    const jb = document.getElementById('invColabJob');
+    const rl = document.getElementById('invColabRole');
+    if(em) em.value = '';
+    if(jb) jb.value = '';
+    if(rl) rl.value = 'colaborador';
+    openModal('modalInviteColab');
+  } catch(e) {
+    console.error('[openInviteColaboradorModal]', e);
+    toast(String(e?.message || 'Erro ao abrir convite. Veja o console (F12).'), 'err');
   }
-  document.getElementById('invColabEmail').value = '';
-  document.getElementById('invColabRole').value = 'colaborador';
-  openModal('modalInviteColab');
 }
 
 function toggleInvitePass(inputId, btn) {
@@ -4990,9 +5093,14 @@ function initInviteFlowMasksOnce() {
 
 async function submitInviteColaborador() {
   const emailRaw = document.getElementById('invColabEmail')?.value?.trim().toLowerCase() || '';
+  const jobRaw = document.getElementById('invColabJob')?.value?.trim() || '';
   const role = document.getElementById('invColabRole')?.value || 'colaborador';
   if(emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
     toast('Se informar email, use um formato válido.', 'warn');
+    return;
+  }
+  if(!currentUser?.company_id) {
+    toast('Sessão sem empresa. Atualize a página ou vincule uma empresa.', 'warn');
     return;
   }
   const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
@@ -5010,31 +5118,57 @@ async function submitInviteColaborador() {
     expires_at: exp.toISOString()
   };
   if(emailRaw) basePayload.email = emailRaw;
+  if(jobRaw) basePayload.job_title = jobRaw;
   try {
     await apiPost('age_invites', basePayload);
   } catch(e2) {
-    console.error(e2);
-    toast('Erro ao salvar convite. Verifique a tabela age_invites.', 'err');
-    return;
+    try {
+      const minimal = { ...basePayload };
+      delete minimal.job_title;
+      await apiPost('age_invites', minimal);
+    } catch(e3) {
+      console.error(e2, e3);
+      toast('Erro ao salvar convite. Verifique a tabela age_invites no Supabase.', 'err');
+      return;
+    }
   }
   const baseUrl = `${location.origin}${location.pathname}`;
   _inviteLinkBuf = `${baseUrl}?invite=${encodeURIComponent(token)}`;
-  document.getElementById('inviteLinkText').textContent = _inviteLinkBuf;
+  const linkEl = document.getElementById('inviteLinkText');
+  if(linkEl) linkEl.textContent = _inviteLinkBuf;
+  const copyLbl = document.getElementById('inviteLinkCopyBtnLabel');
+  if(copyLbl) copyLbl.textContent = 'Copiar Link';
   closeModal('modalInviteColab');
   openModal('modalInviteLinkReady');
   toast('Link gerado!');
+  loadPendingInvitesForEquipePage().catch(()=>{});
+}
+
+let _inviteCopyBtnTimer = null;
+function copyInviteLinkFromReadyModal(btn) {
+  const t = _inviteLinkBuf || document.getElementById('inviteLinkText')?.textContent?.trim();
+  if(!t) return;
+  const label = document.getElementById('inviteLinkCopyBtnLabel');
+  navigator.clipboard.writeText(t).then(() => {
+    if(label) label.textContent = '✅ Copiado!';
+    if(btn) btn.classList.add('btn-primary');
+    clearTimeout(_inviteCopyBtnTimer);
+    _inviteCopyBtnTimer = setTimeout(() => {
+      if(label) label.textContent = 'Copiar Link';
+      if(btn) btn.classList.remove('btn-primary');
+    }, 2000);
+  }).catch(() => toast('Não foi possível copiar. Selecione o link e copie manualmente.', 'warn'));
 }
 
 function copyInviteLink() {
-  const t = _inviteLinkBuf || document.getElementById('inviteLinkText')?.textContent;
-  if(!t) return;
-  navigator.clipboard.writeText(t).then(()=>toast('Link copiado!')).catch(()=>toast('Copie manualmente.', 'warn'));
+  copyInviteLinkFromReadyModal(document.getElementById('inviteLinkCopyBtn'));
 }
 
 function shareInviteLinkWhatsApp() {
   const link = _inviteLinkBuf || document.getElementById('inviteLinkText')?.textContent?.trim();
   if(!link) return;
-  const txt = `Você foi convidado para participar da equipe no Age Ops. Acesse: ${link}`;
+  const cn = String(currentUser?.company_name || 'sua equipe').trim();
+  const txt = `Você foi convidado para ${cn} no Age Ops!\nClique no link para criar sua conta:\n${link}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank', 'noopener,noreferrer');
 }
 
@@ -5372,8 +5506,8 @@ function _effectiveUserPlan() {
 
 function _planAllowsPage(page) {
   if(_userIsBootstrapAdmin()) return true;
-  /* Solo e outros planos bloqueiam equipe-permissoes; admins globais precisam sempre acessar gestão de permissões */
-  if(page === 'equipe-permissoes' && _userPermFullBypass()) return true;
+  /* Solo bloqueia equipe-permissoes; admin global e gestor precisam convidar/gerir permissões */
+  if(page === 'equipe-permissoes' && (_userPermFullBypass() || _userGestorUnrestricted())) return true;
   const pl = _effectiveUserPlan();
   if(pl === 'enterprise' || pl === 'agencia') return true;
   if(pl === 'produtora') {
