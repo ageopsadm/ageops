@@ -7457,9 +7457,11 @@ const SYNC = {
    DASHBOARD
 ═══════════════════════════════════════════ */
 let _charts = {};
+/** Último conjunto usado nos gráficos (ano 2026 completo) — para renderDashCharts() sem argumento */
+let _dashChartSourceCache = [];
 
 /* ── Estado do filtro de período ── */
-let _dashPeriod = 'anual'; /* anual | semestral | trimestral | mensal */
+let _dashPeriod = 'anual'; /* anual | semestral | trimestral | mensal — padrão: ano completo */
 
 function setDashPeriod(period) {
   _dashPeriod = period;
@@ -7532,7 +7534,7 @@ function _dashResolveMesAno(p) {
   if(pm >= 1 && pm <= 12) {
     let ano = parseInt(p.ano, 10);
     if(!(ano >= 1990 && ano <= 2100)) {
-      const rawA = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.created_at || p.updated_at;
+      const rawA = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.due_date || p.created_at || p.updated_at;
       if(rawA) {
         const dx = new Date(rawA);
         if(!isNaN(dx.getTime())) ano = dx.getFullYear();
@@ -7541,7 +7543,7 @@ function _dashResolveMesAno(p) {
     if(!(ano >= 1990 && ano <= 2100)) ano = 2026;
     return { mes: pm, ano };
   }
-  const raw = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.created_at || p.updated_at;
+  const raw = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.due_date || p.created_at || p.updated_at;
   if(!raw) return null;
   const d = new Date(raw);
   if(isNaN(d.getTime())) return null;
@@ -7579,6 +7581,7 @@ function _dashRowFromSupabase(p, fechByProjectId) {
     pay_date: p.pay_date || p.payment_date || null,
     sale_date: p.sale_date || null,
     start_date: p.start_date || null,
+    due_date: p.due_date || null,
     payment_date: p.payment_date || null,
     created_at: p.created_at || null,
     updated_at: p.updated_at || null,
@@ -7679,6 +7682,11 @@ async function loadDashboard() {
           return ma && mesesFiltro.includes(ma.mes);
         })
       : mappedAll;
+
+    try {
+      console.log('[DASH] projetos no filtered:', filtered.length);
+      console.log('[DASH] meses encontrados:', [...new Set(filtered.map(p => p.mes || new Date(p.created_at || '').getMonth() + 1))]);
+    } catch(_) {}
 
     /* KPIs do período filtrado */
     const fat    = filtered.reduce((s,p)=>s+p.fat,0);
@@ -7790,8 +7798,9 @@ async function loadDashboard() {
     /* Saúde */
     renderDashHealth(margem, avgNps, nNovos, nTotal, fat, custoTotal);
 
-    /* Charts — passar dados filtrados */
-    renderDashCharts(filtered);
+    /* Gráficos: ano 2026 completo (barras mensais com todos os meses); KPIs/tabela seguem `filtered` */
+    _dashChartSourceCache = mappedAll;
+    renderDashCharts(mappedAll);
 
     /* Totais do ano 2026 (planilha + Supabase, todos os meses) — série histórica na análise profunda */
     let supa2026 = null;
@@ -9185,8 +9194,10 @@ function _chartDefaults(){
   };
 }
 
-function renderDashCharts(filtered) {
-  const source = Array.isArray(filtered) ? filtered : [];
+function renderDashCharts(chartProjects) {
+  const source = chartProjects === undefined || chartProjects === null
+    ? (Array.isArray(_dashChartSourceCache) ? _dashChartSourceCache : [])
+    : (Array.isArray(chartProjects) ? chartProjects : []);
 
   function _dashChartFat(p) {
     return parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
@@ -9194,19 +9205,23 @@ function renderDashCharts(filtered) {
   function _dashChartCost(p) {
     return parseFloat(p.cost ?? p.custo_total ?? 0) || 0;
   }
-  function _dashChartMonth(p) {
-    const ma = _dashResolveMesAno(p);
-    return ma ? ma.mes : null;
-  }
 
-  /* Recalcular byMonth — mes da planilha ou datas negócio; sem mês válido → não entra no agrupamento */
+  /* Agrupamento mensal: campo mes (planilha) ou datas de negócio antes de created_at */
   const bm = {};
   source.forEach(p => {
-    const m = _dashChartMonth(p);
-    if(m == null || m < 1 || m > 12) return;
-    if(!bm[m]) bm[m] = { fat:0, cost:0 };
-    bm[m].fat  += _dashChartFat(p);
-    bm[m].cost += _dashChartCost(p);
+    const pm = parseInt(p.mes, 10);
+    let m = (pm >= 1 && pm <= 12) ? pm : null;
+    if(!m) {
+      const raw = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.due_date || p.created_at || null;
+      if(raw) {
+        const d = new Date(raw);
+        if(!isNaN(d.getTime())) m = d.getMonth() + 1;
+      }
+    }
+    if(!m) return;
+    if(!bm[m]) bm[m] = { fat: 0, cost: 0 };
+    bm[m].fat  += parseFloat(p.fat || p.total_value || p.contract_value || p.value || 0) || 0;
+    bm[m].cost += parseFloat(p.cost || p.custo_total || 0) || 0;
   });
 
   const totalFat = source.reduce((s, p) => s + _dashChartFat(p), 0);
