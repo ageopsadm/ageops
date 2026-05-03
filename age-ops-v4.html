@@ -1356,6 +1356,7 @@ select.login-input{cursor:pointer}
         </div>
       </div>
       <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin:14px 0;font-size:12px;color:#cbd5e1" id="pgPlanSummary">—</div>
+      <div id="pgModalErr" role="alert" style="display:none;margin:0 0 12px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.45;background:#450a0a;border:1px solid #991b1b;color:#fecaca"></div>
       <label style="display:flex;gap:10px;align-items:flex-start;font-size:11px;color:#e2e8f0;margin-bottom:14px;cursor:pointer;line-height:1.45">
         <input type="checkbox" id="pgAcceptTerms" style="margin-top:3px;accent-color:#22c55e;flex-shrink:0">
         <span>Li e aceito os <a href="/terms.html" target="_blank" rel="noopener noreferrer" style="color:#22c55e;font-weight:600">Termos de Uso</a> e <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" style="color:#22c55e;font-weight:600">Política de Privacidade</a></span>
@@ -5898,8 +5899,13 @@ function _pagarmeLiveReady() {
   return _pagarmePlansConfigured();
 }
 
+/** Trial simulado só com window.__PAGARME_DEMO === true (console). Sem EK real nunca finge assinatura. */
 function _pagarmeIsDemoMode() {
-  return !_pagarmeLiveReady();
+  try {
+    return typeof window !== 'undefined' && window.__PAGARME_DEMO === true;
+  } catch (e) {
+    return false;
+  }
 }
 
 let _planBillSignup = 'monthly';
@@ -6089,6 +6095,9 @@ function selectPlanOffer(key) {
       toast('Configure a Encryption Key do Pagar.me para continuar', 'warn');
     }
   } catch (e) {}
+  try {
+    clearPgModalError();
+  } catch (e) {}
   openModal('modalPagarmePlan');
 }
 
@@ -6146,6 +6155,62 @@ function openPlansFromGate() {
   openPlansOverlayGlobal();
 }
 
+function setPgModalError(msg) {
+  const el = document.getElementById('pgModalErr');
+  const m = String(msg || '').trim() || 'Não foi possível concluir. Tente novamente.';
+  if (!el) {
+    toast(m, 'err');
+    return;
+  }
+  el.textContent = m;
+  el.style.display = 'block';
+}
+
+function clearPgModalError() {
+  const el = document.getElementById('pgModalErr');
+  if (el) {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+}
+
+/** plan_id: prioriza window._planSelecionado (solo_mensal, …) alinhado a PAGARME_PLANS */
+function _resolvePagarmePlanId() {
+  try {
+    const sel = String(window._planSelecionado || '').trim();
+    if (sel && PAGARME_PLANS[sel]) return PAGARME_PLANS[sel];
+  } catch (e) {}
+  const pk = _pendingPlanKey || 'produtora';
+  const bill = _planCheckoutCtx === 'app' ? _planBillGlobal : _planBillSignup;
+  return _pagarmePlanIdFromSelection(pk, bill);
+}
+
+/** age_users.plan: slug solo | produtora | agência (app) */
+function _planSlugForPayload() {
+  try {
+    const sel = String(window._planSelecionado || '').trim();
+    const m = sel.match(/^(solo|produtora|agencia)_/i);
+    if (m) return m[1].toLowerCase();
+  } catch (e) {}
+  const pk = _pendingPlanKey || 'produtora';
+  return ['solo', 'produtora', 'agencia'].includes(pk) ? pk : 'produtora';
+}
+
+function _formatPagarmeApiError(err, fallback) {
+  if (err == null) return fallback;
+  if (typeof err === 'string') return err;
+  if (Array.isArray(err)) {
+    const parts = err.map((e) => (typeof e === 'string' ? e : e?.message || JSON.stringify(e))).filter(Boolean);
+    if (parts.length) return parts.join(' ');
+  }
+  if (typeof err === 'object' && err.message) return String(err.message);
+  try {
+    return JSON.stringify(err);
+  } catch (e) {
+    return fallback;
+  }
+}
+
 function maskPgCardNum(el) {
   const v = String(el.value || '').replace(/\D/g, '').slice(0, 16);
   el.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
@@ -6165,16 +6230,23 @@ function _pagarmePlanIdFromSelection(planKey, billing) {
 }
 
 async function tokenizarCartao(dadosCartao) {
-  if(typeof pagarme === 'undefined') {
-    throw new Error('Biblioteca Pagar.me não carregou. Verifique sua conexão.');
+  if (typeof pagarme === 'undefined') {
+    throw new Error('Biblioteca Pagar.me não carregou. Recarregue a página.');
   }
-  const ek = String(PAGARME_EK || '').trim();
-  if(!ek) throw new Error('PAGARME_EK não configurada.');
+  const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '').trim();
+  if (!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) {
+    throw new Error('Configure a Encryption Key (ek_live_…) do Pagar.me no arquivo (PAGARME_EK).');
+  }
   return new Promise((resolve, reject) => {
-    pagarme.client.connect({ encryption_key: ek })
-      .then(client => client.security.encrypt(dadosCartao))
-      .then(cardHash => resolve(cardHash))
-      .catch(err => reject(err));
+    pagarme.client
+      .connect({ encryption_key: ek })
+      .then((client) => client.security.encrypt(dadosCartao))
+      .then((cardHash) => resolve(cardHash))
+      .catch((err) => {
+        const raw = String(err?.message || err || '').trim();
+        if (/encryption|ek_live|chave|configur/i.test(raw)) reject(err instanceof Error ? err : new Error(raw));
+        else reject(new Error(raw ? `Cartão inválido: ${raw}` : 'Cartão inválido ou recusado. Tente outro cartão.'));
+      });
   });
 }
 
@@ -6198,10 +6270,18 @@ async function pagarmeCreateSubscriptionEdge(cardHash, planId, customer, usernam
     })
   });
   let data = {};
-  try { data = await resp.json(); } catch(e) { data = {}; }
-  if(!resp.ok) {
-    const msg = data?.error ?? data?.detail ?? data?.message ?? resp.statusText;
-    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  try {
+    data = await resp.json();
+  } catch (e) {
+    data = {};
+  }
+  if (!resp.ok) {
+    const raw = data?.error ?? data?.errors ?? data?.detail ?? data?.message;
+    const text = _formatPagarmeApiError(raw, resp.statusText || 'Erro no servidor');
+    if (resp.status === 400 || /cart|card|neg|refus|invál/i.test(String(text))) {
+      throw new Error('Cartão recusado ou dados inválidos. Tente outro cartão.');
+    }
+    throw new Error(String(text).length < 200 ? String(text) : 'Não foi possível criar a assinatura. Tente novamente.');
   }
   return data;
 }
@@ -6218,8 +6298,9 @@ async function pagarmeOrDemoCreateSubscription(planKey, billing) {
 }
 
 async function confirmPagarmeTrial() {
-  if(!document.getElementById('pgAcceptTerms')?.checked) {
-    toast('Aceite os termos para continuar.', 'warn');
+  clearPgModalError();
+  if (!document.getElementById('pgAcceptTerms')?.checked) {
+    setPgModalError('Aceite os Termos de Uso e a Política de Privacidade para continuar.');
     return;
   }
   const num = document.getElementById('pgCardNum')?.value?.trim() || '';
@@ -6227,96 +6308,129 @@ async function confirmPagarmeTrial() {
   const exp = document.getElementById('pgCardExp')?.value?.trim() || '';
   const cvv = document.getElementById('pgCardCvv')?.value?.trim() || '';
   const digits = num.replace(/\D/g, '');
+  const expDigitsRaw = exp.replace(/\D/g, '');
   const demo = _pagarmeIsDemoMode();
-  if(demo) {
-    if(digits.length < 4 || !nam || exp.replace(/\D/g, '').length < 4 || cvv.length < 3) {
-      toast('Preencha os dados do cartão (modo demo aceita qualquer número).', 'warn');
+
+  if (demo) {
+    if (digits.length < 4 || !nam || expDigitsRaw.length < 4 || cvv.replace(/\D/g, '').length < 3) {
+      setPgModalError('Preencha número do cartão, nome, validade (MM/AA) e CVV.');
       return;
     }
-  } else if(digits.length < 13 || !nam || exp.replace(/\D/g, '').length < 4 || cvv.length < 3) {
-    toast('Preencha os dados do cartão.', 'warn');
-    return;
+  } else {
+    if (digits.length < 13 || !nam || expDigitsRaw.length < 4 || cvv.replace(/\D/g, '').length < 3) {
+      setPgModalError('Dados do cartão incompletos. Verifique número (13–16 dígitos), nome, validade e CVV.');
+      return;
+    }
+    const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '').trim();
+    if (!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) {
+      setPgModalError('Configure a Encryption Key (ek_live_…) do Pagar.me no código (PAGARME_EK) para tokenizar o cartão.');
+      return;
+    }
+    if (typeof pagarme === 'undefined') {
+      setPgModalError('Biblioteca Pagar.me não carregou. Recarregue a página.');
+      return;
+    }
+    if (!_pagarmePlansConfigured()) {
+      setPgModalError('Configure os IDs dos planos em PAGARME_PLANS.');
+      return;
+    }
   }
-  const pk = _pendingPlanKey || 'produtora';
+
   const bill = _planCheckoutCtx === 'app' ? _planBillGlobal : _planBillSignup;
   const btn = document.getElementById('pgConfirmBtn');
   const ic = document.getElementById('pgConfirmIcon');
   const tx = document.getElementById('pgConfirmText');
-  if(btn) btn.disabled = true;
-  if(ic) ic.className = 'fas fa-spinner fa-spin';
-  if(tx) tx.textContent = 'Processando...';
+  if (btn) btn.disabled = true;
+  if (ic) ic.className = 'fas fa-spinner fa-spin';
+  if (tx) tx.textContent = 'Processando...';
+
   try {
     const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const slug = _planSlugForPayload();
     let payload = {
-      plan: pk,
+      plan: slug,
       plan_billing: bill === 'yearly' ? 'annual' : 'monthly',
       trial_ends_at: trialEnd.toISOString(),
       subscription_status: 'trial',
       pagarme_customer_id: null,
-      pagarme_subscription_id: null
+      pagarme_subscription_id: null,
     };
 
-    if(demo) {
+    if (demo) {
+      const pk = _pendingPlanKey || 'produtora';
       const pg = await pagarmeOrDemoCreateSubscription(pk, bill);
       payload.pagarme_customer_id = pg.customer_id || null;
       payload.pagarme_subscription_id = pg.subscription_id || null;
     } else {
-      const planId = _pagarmePlanIdFromSelection(pk, bill);
-      if(!planId) {
-        toast('Configure os IDs dos planos em PAGARME_PLANS no código.', 'err');
+      const planId = _resolvePagarmePlanId();
+      if (!planId) {
+        setPgModalError('Plano inválido ou não encontrado em PAGARME_PLANS. Escolha o plano novamente.');
         return;
       }
-      const expDigits = exp.replace(/\D/g, '').slice(0, 4);
+      const expDigits = expDigitsRaw.slice(0, 4);
       const dadosCartao = {
         card_number: digits,
         card_holder_name: nam,
         card_expiration_date: expDigits,
-        card_cvv: cvv.replace(/\D/g, '')
+        card_cvv: cvv.replace(/\D/g, ''),
       };
       const cardHash = await tokenizarCartao(dadosCartao);
       const rowUser = _planCheckoutCtx === 'signup' ? _regPendingSessionRow : currentUser;
       const uname = rowUser?.username || currentUser?.username || '';
+      if (!uname) {
+        setPgModalError('Usuário não identificado. Faça login ou complete o cadastro.');
+        return;
+      }
       const data = await pagarmeCreateSubscriptionEdge(cardHash, planId, {
         name: rowUser?.full_name || rowUser?.name || currentUser?.full_name || currentUser?.name || uname,
         email: rowUser?.email || currentUser?.email || '',
-        document: String(rowUser?.cpf || currentUser?.cpf || '').replace(/\D/g, '')
+        document: String(rowUser?.cpf || currentUser?.cpf || '').replace(/\D/g, ''),
       }, uname, rowUser?.company_id ?? currentUser?.company_id ?? null);
 
-      if(!data.subscription_id) {
-        toast(data.error || 'Resposta inválida do servidor.', 'err');
+      const sid = data.subscription_id;
+      if (sid == null || sid === '') {
+        const er = _formatPagarmeApiError(data?.error ?? data?.errors, 'Resposta inválida do servidor.');
+        setPgModalError(String(er));
         return;
       }
-      payload.pagarme_subscription_id = data.subscription_id;
-      payload.pagarme_customer_id = data.customer_id || null;
+      payload.pagarme_subscription_id = String(sid);
+      payload.pagarme_customer_id = data.customer_id != null ? String(data.customer_id) : null;
     }
 
-    if(_planCheckoutCtx === 'signup' && _regPendingSessionRow?.id) {
+    if (_planCheckoutCtx === 'signup' && _regPendingSessionRow?.id) {
       const pendingUser = _regPendingSessionRow.username;
       await apiPatch('age_users', _regPendingSessionRow.id, payload);
+      clearPgModalError();
       closeModal('modalPagarmePlan');
       document.getElementById('plansPostSignupLayer')?.classList.remove('open');
       _regPendingSessionRow = null;
       const row = await fetchAgeUserRow(pendingUser);
       await applyLoginSessionFromRow(row);
       navigate('dashboard');
-      toast(demo ? 'Modo demo: trial de 7 dias ativado (sem cobrança real).' : '✅ Trial iniciado! 7 dias gratuitos.', 'ok');
-    } else if(currentUser?.id) {
+      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : '✅ Trial iniciado! 7 dias gratuitos.', 'ok');
+    } else if (currentUser?.id) {
       await apiPatch('age_users', currentUser.id, payload);
       Object.assign(currentUser, payload);
-      try { await mergeCurrentUserFromSupabase(); } catch(e) {}
+      try {
+        await mergeCurrentUserFromSupabase();
+      } catch (e) {}
+      clearPgModalError();
       closeModal('modalPagarmePlan');
       closePlansOverlayGlobal();
       navigate('dashboard');
-      toast(demo ? 'Modo demo: trial de 7 dias ativado (sem cobrança real).' : '✅ Trial iniciado! 7 dias gratuitos.', 'ok');
+      toast(demo ? 'Modo demo: trial de 7 dias (sem cobrança real).' : '✅ Trial iniciado! 7 dias gratuitos.', 'ok');
       updateTrialBanner();
+    } else {
+      setPgModalError('Sessão inválida. Entre na conta ou refaça o cadastro para concluir o plano.');
     }
-  } catch(e) {
+  } catch (e) {
     console.error(e);
-    toast(String(e?.message || 'Não foi possível concluir. Tente novamente.'), 'err');
+    const msg = String(e?.message || e || 'Não foi possível concluir. Tente novamente.');
+    setPgModalError(msg);
   } finally {
-    if(btn) btn.disabled = false;
-    if(ic) ic.className = 'fas fa-lock';
-    if(tx) tx.textContent = 'Iniciar Trial Gratuito →';
+    if (btn) btn.disabled = false;
+    if (ic) ic.className = 'fas fa-lock';
+    if (tx) tx.textContent = 'Iniciar Trial Gratuito →';
   }
 }
 
