@@ -3239,26 +3239,46 @@ select.login-input{cursor:pointer}
       <button type="button" onclick="closeModal('modalInviteColab')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
     <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 12px">Gera um link único válido por <strong>7 dias</strong>. Envie por WhatsApp ou e-mail.</p>
-    <div class="form-grid">
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Email (opcional)</label>
-        <input id="inviteEmail" type="email" placeholder="email@colaborador.com" style="width:100%">
+    <div id="inviteFormBlock">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Email (opcional)</label>
+          <input id="inviteEmail" type="email" placeholder="email@colaborador.com" style="width:100%">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Função / cargo (opcional)</label>
+          <input id="inviteCargo" type="text" placeholder="Editor, Diretor, Produtor..." style="width:100%">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Nível de acesso *</label>
+          <select id="inviteRole" style="width:100%">
+            <option value="colaborador">Colaborador — área pessoal (Meu Dia, tarefas…)</option>
+            <option value="gestor">Gestor — acesso ao corporativo da empresa</option>
+          </select>
+        </div>
       </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Função / cargo (opcional)</label>
-        <input id="inviteCargo" type="text" placeholder="Editor, Diretor, Produtor..." style="width:100%">
-      </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Nível de acesso *</label>
-        <select id="inviteRole" style="width:100%">
-          <option value="colaborador">Colaborador — área pessoal (Meu Dia, tarefas…)</option>
-          <option value="gestor">Gestor — acesso ao corporativo da empresa</option>
-        </select>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modalInviteColab')">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGerarConvite" onclick="gerarConvite()"><i class="fas fa-link"></i> Gerar Link de Convite</button>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
-      <button type="button" class="btn btn-ghost" onclick="closeModal('modalInviteColab')">Cancelar</button>
-      <button type="button" class="btn btn-primary" id="btnGerarConvite" onclick="gerarConvite()"><i class="fas fa-link"></i> Gerar Link de Convite</button>
+    <div id="inviteConviteResult" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-family:var(--font-m);font-size:12px;color:#16a34a;margin-bottom:10px;font-weight:700">
+        <i class="fas fa-check-circle"></i> Link gerado com sucesso!
+      </div>
+      <label class="form-label" style="margin-bottom:6px">Copie o link abaixo</label>
+      <input type="text" readonly id="inviteLinkTextColab" style="width:100%;font-size:11px;padding:10px;border-radius:8px;background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:var(--font-m)">
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button type="button" class="btn btn-secondary" id="btnCopiarLinkColab" onclick="copiarLinkConviteColab()"><i class="fas fa-copy"></i> <span id="inviteLinkCopyColabLabel">📋 Copiar Link</span></button>
+        <button type="button" class="btn btn-secondary" id="btnWhatsappLinkColab" onclick="compartilharWhatsappColab()"><i class="fab fa-whatsapp"></i> Enviar no WhatsApp</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="resetInviteColabModalForm()">Novo convite</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="closeModal('modalInviteColab')">Fechar</button>
+      </div>
+      <p style="font-family:var(--font-m);font-size:9px;color:#f59e0b;margin:12px 0 0;line-height:1.4">
+        <i class="fas fa-exclamation-triangle"></i> Este link expira em 7 dias.
+      </p>
     </div>
   </div>
 </div>
@@ -4493,27 +4513,32 @@ async function migrateOwnageTenantForBootstrapAdmin() {
 }
 
 async function persistBootstrapAccountIfNeeded(row, plainPassword) {
-  if(!row || !row.username) return row;
-  if(row.id) return row;
-  const u = String(row.username).toLowerCase();
-  if(!USERS[u]) return row;
   try {
-    let ex = await fetchAgeUserRow(u);
-    if(ex) return ex;
-    const payload = {
-      username: u,
-      email: row.email || `${u}@bootstrap.ageops.local`,
-      name: row.name || USERS[u].name,
-      role: u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador',
-      password_hash: plainPassword,
-      active: true,
-      deleted: false
-    };
-    await apiPost('age_users', payload);
-    ex = await fetchAgeUserRow(u);
-    return ex || row;
+    if(!row || !row.username) return row;
+    if(row.id) return row;
+    const u = String(row.username).toLowerCase();
+    if(!USERS[u]) return row;
+    try {
+      let ex = await fetchAgeUserRow(u);
+      if(ex) return ex;
+      const payload = {
+        username: u,
+        email: row.email || `${u}@bootstrap.ageops.local`,
+        name: row.name || USERS[u].name,
+        role: u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador',
+        password_hash: plainPassword,
+        active: true,
+        deleted: false
+      };
+      await apiPost('age_users', payload);
+      ex = await fetchAgeUserRow(u);
+      return ex || row;
+    } catch(e) {
+      console.warn('[persistBootstrapAccountIfNeeded]', e);
+      return row;
+    }
   } catch(e) {
-    console.warn('[persistBootstrapAccountIfNeeded]', e);
+    console.warn('Bootstrap ignorado (persistBootstrapAccountIfNeeded):', e);
     return row;
   }
 }
@@ -5122,6 +5147,72 @@ async function resolveCompanyForInviteFlow() {
   }
 }
 
+/**
+ * Busca forçada em age_users + vínculo por owner em age_companies + empresa padrão (admin).
+ * Usado antes de gerar convite para não depender só da sessão em memória.
+ */
+async function hydrateCompanyForInviteStrict() {
+  const un = String(currentUser?.username || '').trim().toLowerCase();
+  if(!un || !currentUser) return;
+  let prevSuspended = false;
+  try {
+    prevSuspended = !!window.__tenantScopeSuspended;
+    window.__tenantScopeSuspended = true;
+
+    const freshD = await apiGet('age_users', `?username=eq.${encodeURIComponent(un)}&limit=1`);
+    const frows = Array.isArray(freshD?.data) ? freshD.data : [];
+    const fr = frows.filter(_sbIsRowVisible)[0] || frows[0];
+    if(fr) {
+      if(fr.id) currentUser.id = fr.id;
+      if(fr.company_id != null && String(fr.company_id).trim() !== '') {
+        currentUser.company_id = fr.company_id;
+      }
+      if(fr.company_name != null && String(fr.company_name).trim() !== '') {
+        currentUser.company_name = fr.company_name;
+      }
+      if(fr.role != null) currentUser.role = _normalizeRole(fr.role) || currentUser.role;
+    }
+
+    const isAdmin = _normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin();
+
+    if(!currentUser.company_id && isAdmin) {
+      const cd = await apiGet('age_companies', `?owner_username=eq.${encodeURIComponent(un)}&limit=15`);
+      const crows = Array.isArray(cd?.data) ? cd.data : [];
+      const comp = crows.find(c => c?.id) || null;
+      if(comp?.id && currentUser.id) {
+        currentUser.company_id = comp.id;
+        currentUser.company_name = comp.name || '';
+        await apiPatch('age_users', currentUser.id, {
+          company_id: comp.id,
+          company_name: comp.name || ''
+        }).catch(()=>{});
+      }
+    }
+
+    if(!currentUser.company_id && isAdmin) {
+      await ensureDefaultCompanyForPrivilegedUser();
+      await applyFreshUserRowFromSupabase();
+    }
+  } catch(e) {
+    console.warn('[hydrateCompanyForInviteStrict]', e);
+  } finally {
+    try { window.__tenantScopeSuspended = prevSuspended; } catch(_) {}
+  }
+}
+
+function resetInviteColabModalForm() {
+  const fb = document.getElementById('inviteFormBlock');
+  const res = document.getElementById('inviteConviteResult');
+  if(fb) fb.style.display = '';
+  if(res) res.style.display = 'none';
+  const em = document.getElementById('inviteEmail');
+  const jb = document.getElementById('inviteCargo');
+  const rl = document.getElementById('inviteRole');
+  if(em) em.value = '';
+  if(jb) jb.value = '';
+  if(rl) rl.value = 'colaborador';
+}
+
 async function openInviteColaboradorModal() {
   try {
     if(!_userIsAdminLike()) {
@@ -5129,17 +5220,13 @@ async function openInviteColaboradorModal() {
       return;
     }
     await resolveCompanyForInviteFlow();
+    await hydrateCompanyForInviteStrict();
     const isAdmin = _normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin();
     if(!currentUser?.company_id && !isAdmin) {
       toast('Não é possível gerar convite sem uma empresa vinculada. Confirme company_id no Supabase (age_users) ou complete o cadastro da empresa.', 'warn');
       return;
     }
-    const em = document.getElementById('inviteEmail');
-    const jb = document.getElementById('inviteCargo');
-    const rl = document.getElementById('inviteRole');
-    if(em) em.value = '';
-    if(jb) jb.value = '';
-    if(rl) rl.value = 'colaborador';
+    resetInviteColabModalForm();
     openModal('modalInviteColab');
   } catch(e) {
     console.error('[openInviteColaboradorModal]', e);
@@ -5175,10 +5262,18 @@ function _inviteFormPick(ids) {
 }
 
 function _inviteLinkDisplayValue() {
-  const el = document.getElementById('inviteLinkText');
-  if(!el) return '';
-  if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return String(el.value || '').trim();
-  return String(el.textContent || '').trim();
+  for(const id of ['inviteLinkText', 'inviteLinkTextColab']) {
+    const el = document.getElementById(id);
+    if(!el) continue;
+    if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      const v = String(el.value || '').trim();
+      if(v) return v;
+    } else {
+      const v = String(el.textContent || '').trim();
+      if(v) return v;
+    }
+  }
+  return '';
 }
 
 async function gerarConvite() {
@@ -5202,6 +5297,7 @@ async function gerarConvite() {
     }
 
     await resolveCompanyForInviteFlow();
+    await hydrateCompanyForInviteStrict();
 
     const submitIsAdmin = _normalizeRole(currentUser?.role) === 'admin' || _userIsBootstrapAdmin();
 
@@ -5212,11 +5308,20 @@ async function gerarConvite() {
 
     if(!currentUser?.company_id && submitIsAdmin) {
       await ensureDefaultCompanyForPrivilegedUser();
-      await applyFreshUserRowFromSupabase();
-      if(!currentUser?.company_id) {
-        toast('Não foi possível preparar o convite agora. Recarregue a página ou confira sua empresa no Supabase.', 'warn');
-        return;
+      await hydrateCompanyForInviteStrict();
+      await linkAdminCompanyFromOwnerRow();
+      await hydrateCompanyForInviteStrict();
+      await ensureDefaultCompanyForPrivilegedUser();
+      await hydrateCompanyForInviteStrict();
+    }
+
+    if(!currentUser.company_id) {
+      if(submitIsAdmin) {
+        toast('Não foi possível obter empresa automaticamente. Verifique permissões RLS ou cadastre company_id em age_users.', 'warn');
+      } else {
+        toast('Sessão sem empresa. Atualize a página ou vincule uma empresa.', 'warn');
       }
+      return;
     }
 
     const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
@@ -5266,17 +5371,17 @@ async function gerarConvite() {
     const baseUrl = `${location.origin}${location.pathname}`;
     _inviteLinkBuf = `${baseUrl}?invite=${encodeURIComponent(token)}`;
 
-    const linkEl = document.getElementById('inviteLinkText');
-    if(linkEl) {
-      if(linkEl.tagName === 'INPUT' || linkEl.tagName === 'TEXTAREA') linkEl.value = _inviteLinkBuf;
-      else linkEl.textContent = _inviteLinkBuf;
-    }
+    const linkColab = document.getElementById('inviteLinkTextColab');
+    if(linkColab) linkColab.value = _inviteLinkBuf;
 
-    const copyLbl = document.getElementById('inviteLinkCopyBtnLabel');
-    if(copyLbl) copyLbl.textContent = '📋 Copiar Link';
+    const lblColab = document.getElementById('inviteLinkCopyColabLabel');
+    if(lblColab) lblColab.textContent = '📋 Copiar Link';
 
-    closeModal('modalInviteColab');
-    openModal('modalInviteLinkReady');
+    const fb = document.getElementById('inviteFormBlock');
+    const resBox = document.getElementById('inviteConviteResult');
+    if(fb) fb.style.display = 'none';
+    if(resBox) resBox.style.display = 'block';
+
     toast('✅ Link gerado com sucesso!');
     loadPendingInvitesForEquipePage().catch(()=>{});
   } catch(err) {
@@ -5308,6 +5413,33 @@ function compartilharWhatsapp() {
 
 function shareInviteLinkWhatsApp() {
   compartilharWhatsapp();
+}
+
+let _inviteColabCopyTimer = null;
+function copiarLinkConviteColab() {
+  const t = _inviteLinkBuf || document.getElementById('inviteLinkTextColab')?.value?.trim();
+  if(!t) return;
+  const label = document.getElementById('inviteLinkCopyColabLabel');
+  navigator.clipboard.writeText(t).then(() => {
+    if(label) label.textContent = '✅ Copiado!';
+    clearTimeout(_inviteColabCopyTimer);
+    _inviteColabCopyTimer = setTimeout(() => {
+      if(label) label.textContent = '📋 Copiar Link';
+    }, 2000);
+  }).catch(() => toast('Não foi possível copiar. Selecione o link e copie manualmente.', 'warn'));
+}
+
+function compartilharWhatsappColab() {
+  const link = _inviteLinkBuf || document.getElementById('inviteLinkTextColab')?.value?.trim();
+  if(!link) return;
+  const cn = String(currentUser?.company_name || 'sua equipe').trim();
+  const texto = encodeURIComponent(
+    'Você foi convidado para ' + cn + ' no Age Ops!\n\n' +
+    'Clique no link para criar sua conta:\n' +
+    link + '\n\n' +
+    '⚠️ Este link expira em 7 dias.'
+  );
+  window.open('https://wa.me/?text=' + texto, '_blank', 'noopener,noreferrer');
 }
 
 let _inviteCopyBtnTimer = null;
@@ -5567,7 +5699,11 @@ function doLogin() {
         return;
       }
       let sessionRow = auth.row;
-      sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, p);
+      try {
+        sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, p);
+      } catch(e) {
+        console.warn('Bootstrap ignorado:', e);
+      }
       const res = await applyLoginSessionFromRow(sessionRow);
       if(!res.ok) showErr(res.msg || 'Acesso negado.');
     } catch(e) {
