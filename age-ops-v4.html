@@ -3242,15 +3242,15 @@ select.login-input{cursor:pointer}
     <div class="form-grid">
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">Email (opcional)</label>
-        <input id="invColabEmail" type="email" placeholder="email@colaborador.com" style="width:100%">
+        <input id="inviteEmail" type="email" placeholder="email@colaborador.com" style="width:100%">
       </div>
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">Função / cargo (opcional)</label>
-        <input id="invColabJob" type="text" placeholder="Editor, Diretor, Produtor..." style="width:100%">
+        <input id="inviteCargo" type="text" placeholder="Editor, Diretor, Produtor..." style="width:100%">
       </div>
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">Nível de acesso *</label>
-        <select id="invColabRole" style="width:100%">
+        <select id="inviteRole" style="width:100%">
           <option value="colaborador">Colaborador — área pessoal (Meu Dia, tarefas…)</option>
           <option value="gestor">Gestor — acesso ao corporativo da empresa</option>
         </select>
@@ -3258,7 +3258,7 @@ select.login-input{cursor:pointer}
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
       <button type="button" class="btn btn-ghost" onclick="closeModal('modalInviteColab')">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="submitInviteColaborador()"><i class="fas fa-link"></i> Gerar Link de Convite</button>
+      <button type="button" class="btn btn-primary" id="btnGerarConvite" onclick="gerarConvite()"><i class="fas fa-link"></i> Gerar Link de Convite</button>
     </div>
   </div>
 </div>
@@ -3270,13 +3270,16 @@ select.login-input{cursor:pointer}
       <span>LINK GERADO</span>
       <button type="button" onclick="closeModal('modalInviteLinkReady')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
-    <div style="font-family:var(--font-m);font-size:12px;color:#16a34a;margin-bottom:12px;font-weight:700">
-      <i class="fas fa-check-circle"></i> Link gerado com sucesso!
+    <div id="inviteResult">
+      <div style="font-family:var(--font-m);font-size:12px;color:#16a34a;margin-bottom:12px;font-weight:700">
+        <i class="fas fa-check-circle"></i> Link gerado com sucesso!
+      </div>
+      <label class="form-label" style="margin-bottom:6px">Copie o link abaixo</label>
+      <input type="text" readonly id="inviteLinkText" class="invite-link-box" style="width:100%;font-size:11px;line-height:1.45;padding:10px;border-radius:8px;background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:var(--font-m)">
     </div>
-    <div class="invite-link-box" id="inviteLinkText" style="font-size:11px;line-height:1.45"></div>
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      <button type="button" class="btn btn-secondary" id="inviteLinkCopyBtn" onclick="copyInviteLinkFromReadyModal(this)"><i class="fas fa-copy"></i> <span id="inviteLinkCopyBtnLabel">Copiar Link</span></button>
-      <button type="button" class="btn btn-secondary" onclick="shareInviteLinkWhatsApp()" title="WhatsApp"><i class="fab fa-whatsapp"></i> Enviar no WhatsApp</button>
+      <button type="button" class="btn btn-secondary" id="btnCopiarLink" onclick="copiarLinkConvite()"><i class="fas fa-copy"></i> <span id="inviteLinkCopyBtnLabel">📋 Copiar Link</span></button>
+      <button type="button" class="btn btn-secondary" id="btnWhatsappLink" onclick="compartilharWhatsapp()" title="WhatsApp"><i class="fab fa-whatsapp"></i> Enviar no WhatsApp</button>
       <button type="button" class="btn btn-primary" onclick="closeModal('modalInviteLinkReady')" style="margin-left:auto">Fechar</button>
     </div>
     <p style="font-family:var(--font-m);font-size:9px;color:#f59e0b;margin:14px 0 0;line-height:1.4">
@@ -5131,9 +5134,9 @@ async function openInviteColaboradorModal() {
       toast('Não é possível gerar convite sem uma empresa vinculada. Confirme company_id no Supabase (age_users) ou complete o cadastro da empresa.', 'warn');
       return;
     }
-    const em = document.getElementById('invColabEmail');
-    const jb = document.getElementById('invColabJob');
-    const rl = document.getElementById('invColabRole');
+    const em = document.getElementById('inviteEmail');
+    const jb = document.getElementById('inviteCargo');
+    const rl = document.getElementById('inviteRole');
     if(em) em.value = '';
     if(jb) jb.value = '';
     if(rl) rl.value = 'colaborador';
@@ -5163,70 +5166,153 @@ function initInviteFlowMasksOnce() {
   document.getElementById('invCpf')?.addEventListener('input', function() { maskCpfInput(this); });
 }
 
-async function submitInviteColaborador() {
-  const emailRaw = document.getElementById('invColabEmail')?.value?.trim().toLowerCase() || '';
-  const jobRaw = document.getElementById('invColabJob')?.value?.trim() || '';
-  const role = document.getElementById('invColabRole')?.value || 'colaborador';
-  if(emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
-    toast('Se informar email, use um formato válido.', 'warn');
-    return;
+function _inviteFormPick(ids) {
+  for(const id of ids) {
+    const el = document.getElementById(id);
+    if(el) return el;
   }
-  if(!currentUser?.company_id) {
-    await resolveCompanyForInviteFlow();
-  }
-  const submitIsAdmin = _normalizeRole(currentUser?.role) === 'admin' || _userIsBootstrapAdmin();
-  if(!currentUser?.company_id && !submitIsAdmin) {
-    toast('Sessão sem empresa. Atualize a página ou vincule uma empresa.', 'warn');
-    return;
-  }
-  if(!currentUser?.company_id && submitIsAdmin) {
-    console.warn('[submitInviteColaborador] Admin sem company_id após resolução automática.');
-    return;
-  }
-  const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : ('inv_' + Math.random().toString(36).slice(2) + Date.now());
-  const exp = new Date();
-  exp.setDate(exp.getDate() + 7);
-  const basePayload = {
-    token,
-    company_id: currentUser.company_id,
-    company_name: currentUser.company_name || '',
-    invited_by: currentUser.username,
-    role,
-    used: false,
-    expires_at: exp.toISOString()
-  };
-  if(emailRaw) basePayload.email = emailRaw;
-  if(jobRaw) basePayload.job_title = jobRaw;
+  return null;
+}
+
+function _inviteLinkDisplayValue() {
+  const el = document.getElementById('inviteLinkText');
+  if(!el) return '';
+  if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return String(el.value || '').trim();
+  return String(el.textContent || '').trim();
+}
+
+async function gerarConvite() {
   try {
-    await apiPost('age_invites', basePayload);
-  } catch(e2) {
-    try {
-      const minimal = { ...basePayload };
-      delete minimal.job_title;
-      await apiPost('age_invites', minimal);
-    } catch(e3) {
-      console.error(e2, e3);
-      toast('Erro ao salvar convite. Verifique a tabela age_invites no Supabase.', 'err');
+    const emailEl = _inviteFormPick(['inviteEmail', 'invColabEmail']);
+    const cargoEl = _inviteFormPick(['inviteCargo', 'invColabJob']);
+    const roleEl = _inviteFormPick(['inviteRole', 'invColabRole']);
+
+    const email = emailEl?.value?.trim().toLowerCase() || '';
+    const cargo = cargoEl?.value?.trim() || '';
+    const role = roleEl?.value || 'colaborador';
+
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast('Se informar email, use um formato válido.', 'warn');
       return;
     }
+
+    if(!currentUser?.username) {
+      toast('Faça login novamente.', 'warn');
+      return;
+    }
+
+    await resolveCompanyForInviteFlow();
+
+    const submitIsAdmin = _normalizeRole(currentUser?.role) === 'admin' || _userIsBootstrapAdmin();
+
+    if(!currentUser?.company_id && !submitIsAdmin) {
+      toast('Sessão sem empresa. Atualize a página ou vincule uma empresa.', 'warn');
+      return;
+    }
+
+    if(!currentUser?.company_id && submitIsAdmin) {
+      await ensureDefaultCompanyForPrivilegedUser();
+      await applyFreshUserRowFromSupabase();
+      if(!currentUser?.company_id) {
+        toast('Não foi possível preparar o convite agora. Recarregue a página ou confira sua empresa no Supabase.', 'warn');
+        return;
+      }
+    }
+
+    const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : ('inv_' + Math.random().toString(36).slice(2) + Date.now());
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const basePayload = {
+      token,
+      company_id: currentUser.company_id,
+      company_name: currentUser.company_name || '',
+      invited_by: currentUser.username,
+      role,
+      used: false,
+      expires_at: expiresAt.toISOString()
+    };
+    if(email) basePayload.email = email;
+    if(cargo) {
+      basePayload.cargo = cargo;
+      basePayload.job_title = cargo;
+    }
+
+    try {
+      await apiPost('age_invites', basePayload);
+    } catch(e2) {
+      try {
+        const slim = { ...basePayload };
+        delete slim.cargo;
+        delete slim.job_title;
+        await apiPost('age_invites', slim);
+      } catch(e3) {
+        try {
+          const minimal = { ...basePayload };
+          delete minimal.cargo;
+          delete minimal.job_title;
+          delete minimal.email;
+          await apiPost('age_invites', minimal);
+        } catch(e4) {
+          console.error('[gerarConvite]', e2, e3, e4);
+          toast(String(e4?.message || e3?.message || 'Erro ao salvar convite. Verifique age_invites no Supabase.'), 'err');
+          return;
+        }
+      }
+    }
+
+    const baseUrl = `${location.origin}${location.pathname}`;
+    _inviteLinkBuf = `${baseUrl}?invite=${encodeURIComponent(token)}`;
+
+    const linkEl = document.getElementById('inviteLinkText');
+    if(linkEl) {
+      if(linkEl.tagName === 'INPUT' || linkEl.tagName === 'TEXTAREA') linkEl.value = _inviteLinkBuf;
+      else linkEl.textContent = _inviteLinkBuf;
+    }
+
+    const copyLbl = document.getElementById('inviteLinkCopyBtnLabel');
+    if(copyLbl) copyLbl.textContent = '📋 Copiar Link';
+
+    closeModal('modalInviteColab');
+    openModal('modalInviteLinkReady');
+    toast('✅ Link gerado com sucesso!');
+    loadPendingInvitesForEquipePage().catch(()=>{});
+  } catch(err) {
+    console.error('Erro ao gerar convite:', err);
+    toast('Erro ao gerar convite: ' + (err?.message || err), 'err');
   }
-  const baseUrl = `${location.origin}${location.pathname}`;
-  _inviteLinkBuf = `${baseUrl}?invite=${encodeURIComponent(token)}`;
-  const linkEl = document.getElementById('inviteLinkText');
-  if(linkEl) linkEl.textContent = _inviteLinkBuf;
-  const copyLbl = document.getElementById('inviteLinkCopyBtnLabel');
-  if(copyLbl) copyLbl.textContent = 'Copiar Link';
-  closeModal('modalInviteColab');
-  openModal('modalInviteLinkReady');
-  toast('Link gerado!');
-  loadPendingInvitesForEquipePage().catch(()=>{});
+}
+
+async function submitInviteColaborador() {
+  return gerarConvite();
+}
+
+function copiarLinkConvite() {
+  copyInviteLinkFromReadyModal(document.getElementById('btnCopiarLink'));
+}
+
+function compartilharWhatsapp() {
+  const link = _inviteLinkBuf || _inviteLinkDisplayValue();
+  if(!link) return;
+  const cn = String(currentUser?.company_name || 'sua equipe').trim();
+  const texto = encodeURIComponent(
+    'Você foi convidado para ' + cn + ' no Age Ops!\n\n' +
+    'Clique no link para criar sua conta:\n' +
+    link + '\n\n' +
+    '⚠️ Este link expira em 7 dias.'
+  );
+  window.open('https://wa.me/?text=' + texto, '_blank', 'noopener,noreferrer');
+}
+
+function shareInviteLinkWhatsApp() {
+  compartilharWhatsapp();
 }
 
 let _inviteCopyBtnTimer = null;
 function copyInviteLinkFromReadyModal(btn) {
-  const t = _inviteLinkBuf || document.getElementById('inviteLinkText')?.textContent?.trim();
+  const t = _inviteLinkBuf || _inviteLinkDisplayValue();
   if(!t) return;
   const label = document.getElementById('inviteLinkCopyBtnLabel');
   navigator.clipboard.writeText(t).then(() => {
@@ -5234,22 +5320,14 @@ function copyInviteLinkFromReadyModal(btn) {
     if(btn) btn.classList.add('btn-primary');
     clearTimeout(_inviteCopyBtnTimer);
     _inviteCopyBtnTimer = setTimeout(() => {
-      if(label) label.textContent = 'Copiar Link';
+      if(label) label.textContent = '📋 Copiar Link';
       if(btn) btn.classList.remove('btn-primary');
     }, 2000);
   }).catch(() => toast('Não foi possível copiar. Selecione o link e copie manualmente.', 'warn'));
 }
 
 function copyInviteLink() {
-  copyInviteLinkFromReadyModal(document.getElementById('inviteLinkCopyBtn'));
-}
-
-function shareInviteLinkWhatsApp() {
-  const link = _inviteLinkBuf || document.getElementById('inviteLinkText')?.textContent?.trim();
-  if(!link) return;
-  const cn = String(currentUser?.company_name || 'sua equipe').trim();
-  const txt = `Você foi convidado para ${cn} no Age Ops!\nClique no link para criar sua conta:\n${link}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank', 'noopener,noreferrer');
+  copyInviteLinkFromReadyModal(document.getElementById('btnCopiarLink'));
 }
 
 function _inviteFlowShowForm(show) {
