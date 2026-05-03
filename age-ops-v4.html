@@ -4265,9 +4265,17 @@ async function mergeCurrentUserFromSupabase() {
     if(!fresh) return;
     currentUser.id = fresh.id;
     currentUser.email = fresh.email ?? currentUser.email;
-    currentUser.company_id = fresh.company_id ?? currentUser.company_id;
-    currentUser.company_name = fresh.company_name ?? currentUser.company_name;
+    /* Prioriza sempre o banco quando company_id está definido (evita sessão stale após PATCH no Supabase) */
+    if(fresh.company_id != null && String(fresh.company_id).trim() !== '') {
+      currentUser.company_id = fresh.company_id;
+    }
+    if(fresh.company_name != null && String(fresh.company_name).trim() !== '') {
+      currentUser.company_name = fresh.company_name;
+    }
     currentUser.name = fresh.name ?? fresh.full_name ?? currentUser.name;
+    if(fresh.full_name != null || fresh.name) {
+      currentUser.full_name = fresh.full_name || fresh.name || currentUser.full_name;
+    }
     currentUser.role = _normalizeRole(fresh.role) || currentUser.role;
     currentUser.avatar_url = fresh.avatar_url ?? fresh.photo_url ?? currentUser.avatar_url;
     currentUser.job_title = fresh.job_title ?? fresh.cargo ?? currentUser.job_title;
@@ -4286,12 +4294,50 @@ async function mergeCurrentUserFromSupabase() {
 }
 
 /**
+ * Busca linha atual em age_users (sem depender de cache) e atualiza currentUser.
+ * Usa tenant suspend para não filtrar GET indevidamente.
+ */
+async function applyFreshUserRowFromSupabase() {
+  const un = String(currentUser?.username || '').trim().toLowerCase();
+  if(!un || !currentUser) return;
+  try {
+    window.__tenantScopeSuspended = true;
+    const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(un)}&limit=1`);
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    const r = rows.filter(_sbIsRowVisible)[0] || rows[0];
+    if(!r) return;
+    if(r.id) currentUser.id = r.id;
+    if(r.email != null && String(r.email).trim() !== '') currentUser.email = r.email;
+    if(r.company_id != null && String(r.company_id).trim() !== '') {
+      currentUser.company_id = r.company_id;
+    }
+    if(r.company_name != null && String(r.company_name).trim() !== '') {
+      currentUser.company_name = r.company_name;
+    }
+    if(r.role != null) currentUser.role = _normalizeRole(r.role) || currentUser.role;
+    currentUser.name = r.name || r.full_name || currentUser.name;
+    currentUser.full_name = r.full_name || r.name || currentUser.full_name || '';
+    currentUser.avatar_url = r.avatar_url ?? r.photo_url ?? currentUser.avatar_url;
+    currentUser.job_title = r.job_title ?? r.cargo ?? currentUser.job_title;
+  } catch(e) {
+    console.warn('[applyFreshUserRowFromSupabase]', e);
+  } finally {
+    try { window.__tenantScopeSuspended = false; } catch(_) {}
+  }
+}
+
+/**
  * Admin (ou bootstrap admin): se company_id está vazio, associa automaticamente à empresa em
  * age_companies onde owner_username = usuário atual (sem ação manual).
  */
 async function linkAdminCompanyFromOwnerRow() {
-  if(!currentUser?.id) return;
+  if(!currentUser) return;
   if(currentUser.company_id) return;
+  if(!currentUser.id) {
+    const row = await fetchAgeUserRow(currentUser.username);
+    if(row?.id) currentUser.id = row.id;
+  }
+  if(!currentUser?.id) return;
   const r = _normalizeRole(currentUser.role);
   if(r !== 'admin' && !_userIsBootstrapAdmin()) return;
   const un = String(currentUser.username || '').trim().toLowerCase();
@@ -4319,6 +4365,10 @@ async function ensureDefaultCompanyForPrivilegedUser() {
   if(!currentUser) return;
   if(currentUser.company_id) return;
   if(!(_userPermFullBypass() || _userGestorUnrestricted())) return;
+  if(!currentUser.id) {
+    const row = await fetchAgeUserRow(currentUser.username);
+    if(row?.id) currentUser.id = row.id;
+  }
   if(!currentUser.id) return;
   try {
     const compPayload = {
@@ -4479,6 +4529,7 @@ async function applyLoginSessionFromRow(row) {
     id: row.id,
     username: u,
     name: row.name || row.full_name || u,
+    full_name: row.full_name || row.name || '',
     email: row.email || '',
     role: _normalizeRole(row.role) || 'colaborador',
     company_id: row.company_id ?? null,
@@ -4501,6 +4552,11 @@ async function applyLoginSessionFromRow(row) {
   await ensureDefaultCompanyForPrivilegedUser();
   if(String(currentUser.username || '').toLowerCase() === 'gustavowng') {
     await migrateOwnageTenantForBootstrapAdmin().catch(()=>{});
+  }
+  try {
+    await applyFreshUserRowFromSupabase();
+  } catch(e) {
+    console.warn('Não foi possível atualizar dados do usuário:', e);
   }
   try {
     _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
@@ -5045,17 +5101,33 @@ async function submitAdminRegister() {
   }
 }
 
+async function resolveCompanyForInviteFlow() {
+  if(!currentUser) return;
+  await applyFreshUserRowFromSupabase();
+  if(!currentUser.id) {
+    const row = await fetchAgeUserRow(currentUser.username);
+    if(row?.id) currentUser.id = row.id;
+  }
+  await linkAdminCompanyFromOwnerRow();
+  await ensureDefaultCompanyForPrivilegedUser();
+  await applyFreshUserRowFromSupabase();
+  const isAdmin = _normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin();
+  if(!currentUser.company_id && isAdmin) {
+    await linkAdminCompanyFromOwnerRow();
+    await ensureDefaultCompanyForPrivilegedUser();
+    await applyFreshUserRowFromSupabase();
+  }
+}
+
 async function openInviteColaboradorModal() {
   try {
     if(!_userIsAdminLike()) {
       toast('Apenas administradores ou gestores podem convidar.', 'warn');
       return;
     }
-    if(!currentUser?.company_id) {
-      await linkAdminCompanyFromOwnerRow();
-      await ensureDefaultCompanyForPrivilegedUser();
-    }
-    if(!currentUser?.company_id) {
+    await resolveCompanyForInviteFlow();
+    const isAdmin = _normalizeRole(currentUser.role) === 'admin' || _userIsBootstrapAdmin();
+    if(!currentUser?.company_id && !isAdmin) {
       toast('Não é possível gerar convite sem uma empresa vinculada. Confirme company_id no Supabase (age_users) ou complete o cadastro da empresa.', 'warn');
       return;
     }
@@ -5100,7 +5172,15 @@ async function submitInviteColaborador() {
     return;
   }
   if(!currentUser?.company_id) {
+    await resolveCompanyForInviteFlow();
+  }
+  const submitIsAdmin = _normalizeRole(currentUser?.role) === 'admin' || _userIsBootstrapAdmin();
+  if(!currentUser?.company_id && !submitIsAdmin) {
     toast('Sessão sem empresa. Atualize a página ou vincule uma empresa.', 'warn');
+    return;
+  }
+  if(!currentUser?.company_id && submitIsAdmin) {
+    console.warn('[submitInviteColaborador] Admin sem company_id após resolução automática.');
     return;
   }
   const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
