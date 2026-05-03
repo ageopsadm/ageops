@@ -934,6 +934,33 @@ select.login-input{cursor:pointer}
 #trialBanner.warn{color:#6b5b00;border-bottom-color:#d4c77c}
 #trialBanner.danger{color:#7f1d1d;border-bottom-color:#e5c7c7}
 #main.has-trial-banner #content{padding-top:0}
+
+/* ── Dashboard · Inteligência operacional ── */
+.dash-intel-section{font-family:var(--font-b)}
+.dash-intel-head{
+  font-family:var(--font-h);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:#334155;margin-bottom:12px;opacity:.88;
+}
+.dash-intel-cards{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:10px;
+}
+.dash-intel-card{
+  display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#fff;border:1px solid var(--bd);
+  border-radius:4px;border-left-width:4px;border-left-style:solid;box-shadow:0 1px 2px rgba(0,0,0,.04);
+  font-size:12px;line-height:1.45;color:#333;
+}
+.dash-intel-card i{margin-top:2px;flex-shrink:0;font-size:13px;opacity:.9}
+.dash-intel-card.critico{border-left-color:#dc2626}
+.dash-intel-card.atencao{border-left-color:#d97706}
+.dash-intel-card.positivo{border-left-color:#16a34a}
+.dash-intel-card.estrategico{border-left-color:#2563eb}
+.dash-intel-ia-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+.dash-intel-ia-btn{
+  font-family:var(--font-m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  background:none;border:none;color:#2563eb;cursor:pointer;padding:4px 0;text-decoration:underline;
+}
+.dash-intel-ia-btn:disabled{opacity:.45;cursor:not-allowed}
+.dash-intel-ia-hint{font-size:10px;color:#888}
 .ref-card-dash{
   font-family:'Inter',system-ui,sans-serif;background:linear-gradient(135deg,#1e293b,#0f172a);
   border:1px solid #334155;border-radius:12px;padding:16px 18px;margin-bottom:18px;color:#f1f5f9;
@@ -1420,6 +1447,21 @@ select.login-input{cursor:pointer}
   </div>
 </div>
 
+<div id="modalDashIntelIA" class="modal">
+  <div class="modal-dialog" style="max-width:560px;background:#fff;border:1px solid var(--bd);border-radius:6px;box-shadow:0 20px 50px rgba(0,0,0,.12)">
+    <div class="modal-body" style="padding:24px;max-height:min(70vh,520px);overflow-y:auto">
+      <button type="button" onclick="closeModal('modalDashIntelIA')" style="float:right;background:none;border:none;color:#888;font-size:18px;cursor:pointer">&times;</button>
+      <h2 id="dashIntelIaTitle" style="font-family:var(--font-h);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 14px;color:#111">Análise IA</h2>
+      <div id="dashIntelIaBody" style="font-family:var(--font-b);font-size:13px;line-height:1.65;color:#333;white-space:pre-wrap"></div>
+      <div id="dashIntelIaLoading" style="display:none;font-family:var(--font-m);font-size:10px;color:#888;margin-top:12px">Gerando análise…</div>
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+        <button type="button" class="plan-gate-btn" id="dashIntelIaCopy" onclick="copyDashIntelIaAnalysis()" style="display:none">Copiar análise</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('modalDashIntelIA')">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════
      SIDEBAR OVERLAY (mobile)
 ══════════════════════════════════════════ -->
@@ -1747,6 +1789,16 @@ select.login-input{cursor:pointer}
             <div class="kpi-label">CRESCIM. ANUAL</div>
             <div class="kpi-val" id="dGrowth">—</div>
             <div class="kpi-sub" id="dGrowthSub"></div>
+          </div>
+        </div>
+
+        <!-- Inteligência operacional (admin / gestor) -->
+        <div id="dashIntelSection" class="dash-intel-section" style="display:none;margin-bottom:16px">
+          <div class="dash-intel-head">Inteligência operacional</div>
+          <div id="dashIntelCards" class="dash-intel-cards"></div>
+          <div class="dash-intel-ia-row">
+            <button type="button" id="dashIntelIaBtn" class="dash-intel-ia-btn" onclick="runDashIntelOpenAI()">Análise completa com IA →</button>
+            <span id="dashIntelIaHint" class="dash-intel-ia-hint"></span>
           </div>
         </div>
 
@@ -3517,6 +3569,9 @@ const PAGARME_PLANS = {
   agencia_mensal:   '6901543',
   agencia_anual:    '6901544'
 };
+
+/** OpenAI — análise IA no dashboard; nunca commite chave real (use env/proxy em produção) */
+const OPENAI_KEY = 'sk-SUA_CHAVE_AQUI';
 
 /**
  * Quando true: Supabase é a única fonte operacional (projetos, clientes ativos).
@@ -7977,6 +8032,369 @@ function _dashStatusLabel(status) {
   return map[s] || s.replace(/_/g, ' ');
 }
 
+function _dashIntelVisible() {
+  const r = _normalizeRole(currentUser?.role);
+  if(r === 'admin' || r === 'gestor') return true;
+  if(typeof _userIsBootstrapAdmin === 'function' && _userIsBootstrapAdmin()) return true;
+  return false;
+}
+
+function _dashIntelMonthFatMap(mappedAll) {
+  const bm = {};
+  (mappedAll || []).forEach(p => {
+    const ma = _dashResolveMesAno(p);
+    if(!ma || ma.ano !== 2026) return;
+    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    bm[ma.mes] = (bm[ma.mes] || 0) + f;
+  });
+  return bm;
+}
+
+function _dashIntelMonthTicketMap(mappedAll) {
+  const cnt = {};
+  const fatm = {};
+  (mappedAll || []).forEach(p => {
+    const ma = _dashResolveMesAno(p);
+    if(!ma || ma.ano !== 2026) return;
+    const m = ma.mes;
+    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    fatm[m] = (fatm[m] || 0) + f;
+    cnt[m] = (cnt[m] || 0) + 1;
+  });
+  const tk = {};
+  for(let m = 1; m <= 12; m++) {
+    if(cnt[m]) tk[m] = fatm[m] / cnt[m];
+  }
+  return tk;
+}
+
+/**
+ * Regras de alertas e insights para o dashboard (admin/gestor).
+ * @returns {Array<{ tipo:'critico'|'atencao'|'positivo'|'estrategico', texto:string, icon:string }>}
+ */
+function analisarDashboard(projetos, kpis) {
+  const out = [];
+  const {
+    margem = 0, fat = 0, ticket = 0, avgNps = 0, nTotal = 0, nNovos = 0,
+    mappedAll = [], dbProjects = [], dashPeriod = 'anual'
+  } = kpis || {};
+
+  const mesesFiltro = _dashMesesFiltro();
+  const mesRef = Array.isArray(mesesFiltro) && mesesFiltro.length === 1 ? mesesFiltro[0] : null;
+  const bm = _dashIntelMonthFatMap(mappedAll);
+  const tm = _dashIntelMonthTicketMap(mappedAll);
+
+  if(fat > 0 && margem < 30) {
+    out.push({ tipo: 'critico', texto: 'Margem abaixo do saudável este mês', icon: 'fa-exclamation-circle' });
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let nAtrasados = 0;
+  (dbProjects || []).forEach(p => {
+    const st = String(p.status || '').toLowerCase().replace(/\s+/g, '_');
+    if(st === 'concluido' || st === 'cancelado') return;
+    const raw = p.due_date || p.end_date;
+    if(!raw) return;
+    const d = new Date(raw);
+    if(isNaN(d.getTime())) return;
+    d.setHours(0, 0, 0, 0);
+    if(d < today) nAtrasados++;
+  });
+  if(nAtrasados > 0) {
+    out.push({
+      tipo: 'critico',
+      texto: `${nAtrasados} projeto${nAtrasados > 1 ? 's' : ''} com prazo vencido`,
+      icon: 'fa-calendar-times'
+    });
+  }
+
+  const byCli = {};
+  let tf = 0;
+  (projetos || []).forEach(p => {
+    const c = String(p.cliente || '').trim() || '(sem nome)';
+    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    byCli[c] = (byCli[c] || 0) + f;
+    tf += f;
+  });
+  if(tf > 0) {
+    let maxC = '', maxV = 0;
+    Object.entries(byCli).forEach(([c, v]) => {
+      if(v > maxV) { maxV = v; maxC = c; }
+    });
+    const pct = (maxV / tf) * 100;
+    if(pct > 50) {
+      out.push({
+        tipo: 'critico',
+        texto: `Risco: ${maxC} representa ${pct.toFixed(0)}% da receita`,
+        icon: 'fa-scale-balanced'
+      });
+    }
+  }
+
+  let fatPrev = null;
+  let labelPrev = 'período anterior';
+  if(dashPeriod === 'mensal' && mesRef) {
+    if(mesRef > 1) {
+      fatPrev = bm[mesRef - 1] ?? 0;
+      labelPrev = MONTHS[mesRef - 2];
+    }
+  } else if(dashPeriod === 'trimestral' && Array.isArray(mesesFiltro) && mesesFiltro.length === 3) {
+    const minM = Math.min(...mesesFiltro);
+    const ps = minM - 3;
+    if(ps >= 1) {
+      fatPrev = (bm[ps] || 0) + (bm[ps + 1] || 0) + (bm[ps + 2] || 0);
+      labelPrev = 'trimestre anterior';
+    }
+  } else if(dashPeriod === 'semestral' && Array.isArray(mesesFiltro) && mesesFiltro.length === 6) {
+    const minM = Math.min(...mesesFiltro);
+    if(minM === 7) {
+      let s = 0;
+      for(let m = 1; m <= 6; m++) s += bm[m] || 0;
+      fatPrev = s;
+      labelPrev = '1º semestre';
+    }
+  }
+
+  if(fatPrev != null && fatPrev > 0 && fat < fatPrev * 0.8) {
+    const drop = ((fat - fatPrev) / fatPrev) * 100;
+    out.push({
+      tipo: 'critico',
+      texto: `Queda de ${Math.abs(drop).toFixed(0)}% no faturamento em relação a ${labelPrev}`,
+      icon: 'fa-arrow-trend-down'
+    });
+  }
+
+  if(fat > 0 && margem >= 30 && margem < 45) {
+    out.push({ tipo: 'atencao', texto: 'Margem regular — revise custos', icon: 'fa-exclamation-triangle' });
+  }
+
+  if(dashPeriod === 'mensal' && mesRef && nNovos === 0) {
+    out.push({ tipo: 'atencao', texto: `Sem novos projetos em ${MONTHS[mesRef - 1]}`, icon: 'fa-folder-open' });
+  }
+
+  if(avgNps > 0 && avgNps < 7) {
+    out.push({ tipo: 'atencao', texto: 'NPS abaixo do ideal', icon: 'fa-star-half-stroke' });
+  }
+
+  if(dashPeriod === 'mensal' && mesRef && mesRef >= 3) {
+    const t0 = tm[mesRef], t1 = tm[mesRef - 1], t2 = tm[mesRef - 2];
+    if(t0 && t1 && t2 && t0 < t1 && t1 < t2) {
+      out.push({ tipo: 'atencao', texto: 'Ticket médio em queda há dois meses consecutivos', icon: 'fa-receipt' });
+    }
+  }
+
+  let bestM = 0, bestV = 0;
+  for(let m = 1; m <= 12; m++) {
+    const v = bm[m] || 0;
+    if(v > bestV) { bestV = v; bestM = m; }
+  }
+  if(bestM > 0 && bestV > 0) {
+    out.push({
+      tipo: 'positivo',
+      texto: `${MONTHS[bestM - 1]} foi seu melhor mês — ${fmtBRL(bestV)}`,
+      icon: 'fa-trophy'
+    });
+  }
+
+  if(avgNps >= 9) {
+    out.push({ tipo: 'positivo', texto: 'NPS excelente — peça indicações agora', icon: 'fa-thumbs-up' });
+  }
+
+  if(fat > 0 && margem > 55) {
+    out.push({ tipo: 'positivo', texto: 'Margem saudável — bom momento para investir', icon: 'fa-seedling' });
+  }
+
+  const monthsByClient = {};
+  (mappedAll || []).forEach(p => {
+    const ma = _dashResolveMesAno(p);
+    if(!ma || ma.ano !== 2026) return;
+    const c = String(p.cliente || '').trim();
+    if(!c) return;
+    if(!monthsByClient[c]) monthsByClient[c] = new Set();
+    monthsByClient[c].add(ma.mes);
+  });
+  let bestName = '', bestRun = 0;
+  Object.entries(monthsByClient).forEach(([c, set]) => {
+    const arr = [...set].sort((a, b) => a - b);
+    let run = 1, maxRun = 1;
+    for(let i = 1; i < arr.length; i++) {
+      if(arr[i] === arr[i - 1] + 1) {
+        run++;
+        maxRun = Math.max(maxRun, run);
+      } else run = 1;
+    }
+    if(maxRun > bestRun) { bestRun = maxRun; bestName = c; }
+  });
+  if(bestRun >= 3 && bestName) {
+    out.push({
+      tipo: 'positivo',
+      texto: `Cliente ${bestName} presente por ${bestRun} meses seguidos`,
+      icon: 'fa-handshake'
+    });
+  }
+
+  let weakM = 0, weakFat = Infinity;
+  for(let m = 1; m <= 12; m++) {
+    const v = bm[m] || 0;
+    if(v > 0 && v < weakFat) { weakFat = v; weakM = m; }
+  }
+  const monthsWithData = Object.keys(bm).filter(k => bm[k] > 0).length;
+  if(weakM && monthsWithData >= 3) {
+    const antes = weakM === 1 ? 12 : weakM - 1;
+    const mesAntesNome = MONTHS[antes - 1];
+    out.push({
+      tipo: 'estrategico',
+      texto: `Historicamente ${MONTHS[weakM - 1]} é seu mês mais fraco em 2026 — considere fechar contratos em ${mesAntesNome}`,
+      icon: 'fa-calendar-days'
+    });
+  }
+
+  const order = { critico: 0, atencao: 1, estrategico: 2, positivo: 3 };
+  out.sort((a, b) => (order[a.tipo] ?? 9) - (order[b.tipo] ?? 9));
+  return out;
+}
+
+function _dashIntelEscapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderDashInteligencia(items) {
+  const root = document.getElementById('dashIntelCards');
+  if(!root) return;
+  const cls = { critico: 'critico', atencao: 'atencao', positivo: 'positivo', estrategico: 'estrategico' };
+  root.innerHTML = (items || []).map(it => {
+    const c = cls[it.tipo] || 'estrategico';
+    const esc = _dashIntelEscapeHtml(it.texto || '');
+    const ic = it.icon || 'fa-circle-info';
+    return `<div class="dash-intel-card ${c}" role="status"><i class="fas ${ic}" style="color:inherit;opacity:.85"></i><span>${esc}</span></div>`;
+  }).join('');
+}
+
+function _dashIntelOpenAiPlaceholder() {
+  const k = String(typeof OPENAI_KEY !== 'undefined' ? OPENAI_KEY : '');
+  return !k || k === 'sk-SUA_CHAVE_AQUI' || /sk-SUA_CHAVE/i.test(k);
+}
+
+function updateDashIntelIaButton() {
+  const btn = document.getElementById('dashIntelIaBtn');
+  const hint = document.getElementById('dashIntelIaHint');
+  if(!btn) return;
+  const ph = _dashIntelOpenAiPlaceholder();
+  if(ph) {
+    btn.disabled = true;
+    btn.textContent = 'Configure a chave OpenAI para usar esta função';
+    if(hint) hint.textContent = '';
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Análise completa com IA →';
+    if(hint) hint.textContent = '';
+  }
+}
+
+function _dashIntelTopClients(filtered, n) {
+  const map = {};
+  (filtered || []).forEach(p => {
+    const c = String(p.cliente || '').trim() || '(sem nome)';
+    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    map[c] = (map[c] || 0) + f;
+  });
+  return Object.entries(map)
+    .map(([cliente, fatv]) => ({ cliente, fat: fatv }))
+    .sort((a, b) => b.fat - a.fat)
+    .slice(0, n || 3);
+}
+
+function _dashIntelLast6MonthsSeries(mappedAll, refMonth) {
+  const bm = _dashIntelMonthFatMap(mappedAll);
+  const m0 = refMonth && refMonth >= 1 && refMonth <= 12 ? refMonth : (parseInt(document.getElementById('dashMesSelect')?.value, 10) || new Date().getMonth() + 1);
+  const series = [];
+  for(let i = 5; i >= 0; i--) {
+    const mm = m0 - i;
+    if(mm < 1) continue;
+    series.push({
+      mes: mm,
+      label: MONTHS[mm - 1] + ' 2026',
+      faturamento: bm[mm] || 0
+    });
+  }
+  return series;
+}
+
+async function runDashIntelOpenAI() {
+  if(!_dashIntelVisible()) return;
+  if(_dashIntelOpenAiPlaceholder()) {
+    toast('Configure OPENAI_KEY no código para usar a análise com IA.', 'warn');
+    return;
+  }
+  const ctx = window._dashIntelContext;
+  if(!ctx) {
+    toast('Carregue o dashboard novamente.', 'warn');
+    return;
+  }
+  const modal = document.getElementById('modalDashIntelIA');
+  const body = document.getElementById('dashIntelIaBody');
+  const loadEl = document.getElementById('dashIntelIaLoading');
+  const titleEl = document.getElementById('dashIntelIaTitle');
+  const copyBtn = document.getElementById('dashIntelIaCopy');
+  if(!modal || !body) return;
+
+  const nowStr = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  if(titleEl) titleEl.textContent = `Análise IA — ${nowStr}`;
+  body.textContent = '';
+  if(copyBtn) copyBtn.style.display = 'none';
+  if(loadEl) loadEl.style.display = 'block';
+  openModal('modalDashIntelIA');
+
+  const systemPrompt =
+    'Você é um analista financeiro especialista em produtoras de vídeo e agências de conteúdo brasileiras.\n' +
+    'Analise os dados fornecidos e gere um relatório executivo em português com: pontos críticos, oportunidades, ' +
+    'sugestões práticas e uma previsão para o próximo mês. Seja direto, use números reais, máximo 300 palavras.';
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + OPENAI_KEY
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        temperature: 0.4,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: JSON.stringify(ctx, null, 0) }
+        ]
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok) {
+      const err = data.error?.message || res.statusText || 'Erro na API';
+      throw new Error(err);
+    }
+    const text = data.choices?.[0]?.message?.content?.trim() || '';
+    body.textContent = text || '(Resposta vazia)';
+    window._dashIntelIaLastText = text;
+    if(copyBtn && text) copyBtn.style.display = 'inline-block';
+  } catch(e) {
+    console.error(e);
+    body.textContent = 'Não foi possível obter a análise. Em navegadores, chamadas diretas à OpenAI podem ser bloqueadas (CORS); use extensão, proxy ou backend. Detalhes: ' + (e.message || e);
+    window._dashIntelIaLastText = body.textContent;
+    if(copyBtn) copyBtn.style.display = 'inline-block';
+  }
+  if(loadEl) loadEl.style.display = 'none';
+}
+
+function copyDashIntelIaAnalysis() {
+  const t = window._dashIntelIaLastText;
+  if(!t) return;
+  navigator.clipboard.writeText(t).then(() => toast('Copiado', 'ok')).catch(() => toast('Não foi possível copiar', 'err'));
+}
+
 async function loadDashboard() {
   _dashSetKpisLoading(true);
   try {
@@ -8146,6 +8564,53 @@ async function loadDashboard() {
 
     /* Saúde */
     renderDashHealth(margem, avgNps, nNovos, nTotal, fat, custoTotal);
+
+    /* Inteligência operacional — alertas + contexto IA (admin / gestor) */
+    try {
+      const intelSec = document.getElementById('dashIntelSection');
+      if(intelSec) {
+        if(_dashIntelVisible()) {
+          intelSec.style.display = '';
+          const mesesFiltroArr = _dashMesesFiltro();
+          const mesRefCtx = Array.isArray(mesesFiltroArr) && mesesFiltroArr.length
+            ? Math.max(...mesesFiltroArr)
+            : (parseInt(document.getElementById('dashMesSelect')?.value, 10) || new Date().getMonth() + 1);
+          const intelItems = analisarDashboard(filtered, {
+            margem, fat, lucro, ticket, avgNps, nTotal, nNovos,
+            mappedAll, dbProjects, dashPeriod: _dashPeriod
+          });
+          renderDashInteligencia(intelItems);
+          const bmMap = _dashIntelMonthFatMap(mappedAll);
+          let fatMesAnt = null;
+          if(_dashPeriod === 'mensal' && mesesFiltroArr && mesesFiltroArr.length === 1 && mesesFiltroArr[0] > 1) {
+            fatMesAnt = bmMap[mesesFiltroArr[0] - 1] ?? 0;
+          }
+          window._dashIntelContext = {
+            periodo: _dashPeriodLabel(),
+            kpis: {
+              faturamento: fat,
+              lucro,
+              margemPct: margem,
+              projetos: nTotal,
+              ticketMedio: ticket,
+              npsMedio: avgNps
+            },
+            topClientes: _dashIntelTopClients(filtered, 3),
+            alertasAtivos: intelItems,
+            comparativoMesAnterior: fatMesAnt != null
+              ? {
+                  faturamentoMesAnterior: fatMesAnt,
+                  variacaoPct: fatMesAnt > 0 ? ((fat - fatMesAnt) / fatMesAnt) * 100 : null
+                }
+              : null,
+            historico6Meses: _dashIntelLast6MonthsSeries(mappedAll, mesRefCtx)
+          };
+          updateDashIntelIaButton();
+        } else {
+          intelSec.style.display = 'none';
+        }
+      }
+    } catch(e) { console.warn('dash intel:', e); }
 
     /* Gráficos: ano 2026 completo (barras mensais com todos os meses); KPIs/tabela seguem `filtered` */
     _dashChartSourceCache = mappedAll;
