@@ -963,42 +963,100 @@ select.login-input{cursor:pointer}
 .dash-intel-ia-hint{font-size:10px;color:#888}
 
 /* ── Fluxo de caixa ── */
-.cf-select{
-  font-family:var(--font-m);font-size:11px;padding:8px 10px;border-radius:5px;
-  border:1px solid var(--bd);background:#0f172a;color:#e2e8f0;min-width:120px
+.cf-select {
+  font-family: var(--font-h); font-size: 10px; letter-spacing: 1px;
+  padding: 6px 10px; border: 1px solid rgba(0,0,0,0.12);
+  background: #fff; color: #111; text-transform: uppercase;
 }
-.cf-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:8px}
-.cf-tab{
-  font-family:var(--font-h);font-size:9px;font-weight:700;letter-spacing:.1em;padding:8px 14px;
-  border:none;background:transparent;color:#94a3b8;cursor:pointer;border-radius:4px;text-transform:uppercase
+.cf-tabs {
+  display: flex; gap: 0; border-bottom: 2px solid rgba(0,0,0,0.08);
+  margin-bottom: 24px; margin-top: 16px;
 }
-.cf-tab:hover{color:#cbd5e1}
-.cf-tab.active{background:rgba(37,99,235,.2);color:#93c5fd}
-.cf-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
-.cf-kpi{
-  background:rgba(15,23,42,.9);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;
-  border-left:3px solid #334155
+.cf-tab {
+  font-family: var(--font-h); font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 12px 20px; border: none; background: none;
+  color: #999; cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
 }
-.cf-kpi.cf-pos{border-left-color:#16a34a}
-.cf-kpi.cf-neg{border-left-color:#dc2626}
-.cf-kpi.cf-neu{border-left-color:#2563eb}
-.cf-kpi-lbl{font-family:var(--font-m);font-size:8px;color:#94a3b8;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
-.cf-kpi-val{font-family:var(--font-h);font-size:16px;font-weight:700;color:#f1f5f9}
-.cf-table-wrap{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:rgba(15,23,42,.5)}
-.cf-table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:11px;color:#e2e8f0}
-.cf-table thead th{
-  text-align:left;padding:10px 12px;background:rgba(0,0,0,.25);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;font-weight:700
+.cf-tab.active { color: #111; border-bottom-color: #111; }
+.cf-tab:hover { color: #333; }
+
+.cf-table { width: 100%; border-collapse: collapse; font-family: var(--font-b); font-size: 14px; }
+.cf-table th {
+  font-family: var(--font-h); font-size: 9px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; padding: 10px 12px;
+  text-align: left; border-bottom: 2px solid rgba(0,0,0,0.1); color: #555;
 }
-.cf-table tbody td{padding:10px 12px;border-top:1px solid rgba(255,255,255,.06);vertical-align:middle}
-.cf-table tbody tr:hover{background:rgba(255,255,255,.03)}
-.cf-btn-mini{
-  background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px 8px;font-size:12px
+.cf-table td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.05); color: #333; vertical-align: middle; }
+.cf-table tr:hover td { background: #fafafa; }
+.cf-table .total-row td { font-weight: 700; background: #f5f5f5; border-top: 2px solid rgba(0,0,0,0.1); }
+.cf-table .total-row td:first-child { font-family: var(--font-h); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+.cf-inline-input {
+  border: none; background: transparent; font-family: var(--font-b);
+  font-size: 14px; color: #333; width: 100%; padding: 2px 4px;
+  border-bottom: 1px solid transparent;
 }
-.cf-btn-mini:hover{color:#f87171}
-.cf-label{display:block;font-size:9px;color:#94a3b8;margin-bottom:4px;font-family:var(--font-m);letter-spacing:.06em;text-transform:uppercase}
-.cf-input{
-  width:100%;box-sizing:border-box;font-family:var(--font-m);font-size:12px;padding:8px 10px;border-radius:5px;
-  border:1px solid var(--bd);background:#020617;color:#e2e8f0
+.cf-inline-input:focus { outline: none; border-bottom-color: #111; background: #fafafa; }
+
+.cf-category-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; background: #f5f5f5; cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.08); margin-top: 16px;
+}
+.cf-category-title { font-family: var(--font-h); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #111; }
+.cf-category-subtotal { font-family: var(--font-h); font-size: 11px; font-weight: 700; color: #111; }
+
+.cf-summary-card {
+  border: 1px solid rgba(0,0,0,0.08); padding: 16px 20px;
+  background: #fff; flex: 1;
+}
+.cf-summary-val { font-family: var(--font-h); font-size: 22px; font-weight: 900; color: #111; letter-spacing: -1px; }
+.cf-summary-lbl { font-family: var(--font-h); font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #999; margin-top: 4px; }
+
+.cf-positive { color: #16a34a !important; }
+.cf-negative { color: #dc2626 !important; }
+.cf-warning { color: #d97706 !important; }
+
+/* Projeção table */
+.cf-proj-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cf-proj-table th { font-family: var(--font-h); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 10px 8px; text-align: center; border-bottom: 2px solid rgba(0,0,0,0.1); color: #555; }
+.cf-proj-table td { padding: 8px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); color: #333; }
+.cf-proj-table .row-label { text-align: left; font-family: var(--font-h); font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #555; padding-left: 12px; }
+.cf-proj-table .row-total { font-family: var(--font-h); font-size: 10px; font-weight: 700; text-align: center; }
+.cf-proj-table input { width: 80px; border: 1px solid transparent; background: transparent; text-align: center; font-family: var(--font-b); font-size: 13px; padding: 4px; border-radius: 3px; }
+.cf-proj-table input:focus { outline: none; border-color: rgba(0,0,0,0.15); background: #fafafa; }
+/* Tabela detalhada de projeção: alinhar como .cf-table (não só centro) */
+#cfTableProj th, #cfTableProj td { text-align: left; }
+#cfTableProj th:last-child, #cfTableProj td:last-child { text-align: right; }
+
+/* KPI, wrapper, modal fields, gráfico — compatível com tema claro da página */
+.cf-kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.cf-kpi {
+  border: 1px solid rgba(0,0,0,.08); border-radius: 8px; padding: 14px 16px; background: #fff;
+  border-left: 3px solid #cbd5e1;
+}
+.cf-kpi.cf-pos { border-left-color: #16a34a; }
+.cf-kpi.cf-neg { border-left-color: #dc2626; }
+.cf-kpi.cf-neu { border-left-color: #2563eb; }
+.cf-kpi-lbl { font-family: var(--font-h); font-size: 8px; font-weight: 700; color: #999; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; }
+.cf-kpi-val { font-family: var(--font-h); font-size: 16px; font-weight: 700; color: #111; }
+.cf-table-wrap { overflow-x: auto; border: 1px solid rgba(0,0,0,.08); border-radius: 8px; background: #fff; }
+.cf-btn-mini { background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 8px; font-size: 13px; }
+.cf-btn-mini:hover { color: #dc2626; }
+.cf-label { display: block; font-size: 9px; color: #666; margin-bottom: 4px; font-family: var(--font-h); letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.cf-input {
+  width: 100%; box-sizing: border-box; font-family: var(--font-b); font-size: 14px; padding: 8px 10px; border-radius: 5px;
+  border: 1px solid rgba(0,0,0,.12); background: #fff; color: #111;
+}
+.cf-chart-wrap { margin-bottom: 18px; border: 1px solid rgba(0,0,0,.08); border-radius: 8px; background: #fff; padding: 14px 16px; }
+.cf-chart-title { font-family: var(--font-h); font-size: 9px; font-weight: 700; color: #555; letter-spacing: .12em; margin-bottom: 8px; }
+.cf-chart-canvas { height: 268px; position: relative; }
+.cf-chart-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-family: var(--font-m); font-size: 9px; color: #64748b; }
+#modalCashflow .cf-modal-dialog { background: #fff; border: 1px solid rgba(0,0,0,.1); }
+#modalCashflow .cf-modal-title {
+  font-family: var(--font-h); font-size: 11px; letter-spacing: .1em; margin: 0 0 14px; color: #111; font-weight: 700; text-transform: uppercase;
 }
 .ref-card-dash{
   font-family:'Inter',system-ui,sans-serif;background:linear-gradient(135deg,#1e293b,#0f172a);
@@ -1502,9 +1560,9 @@ select.login-input{cursor:pointer}
 </div>
 
 <div id="modalCashflow" class="modal">
-  <div class="modal-dialog" style="max-width:480px;background:#0f172a;border:1px solid var(--bd);border-radius:8px">
+  <div class="modal-dialog cf-modal-dialog" style="max-width:480px;border-radius:8px">
     <div class="modal-body" style="padding:20px">
-      <h3 style="font-family:var(--font-h);font-size:11px;letter-spacing:.1em;margin:0 0 14px;color:#e2e8f0">LANÇAMENTO</h3>
+      <h3 class="cf-modal-title">LANÇAMENTO</h3>
       <input type="hidden" id="cfFormId">
       <input type="hidden" id="cfFormContext">
       <div style="display:grid;gap:10px">
@@ -2161,6 +2219,18 @@ select.login-input{cursor:pointer}
           </div>
         </div>
 
+        <div class="cf-chart-wrap">
+          <div class="cf-chart-title">VISÃO ANUAL (ANO DO SELETOR)</div>
+          <div class="cf-chart-canvas">
+            <canvas id="chartCashflowYear"></canvas>
+          </div>
+          <div class="cf-chart-legend">
+            <span><span style="display:inline-block;width:10px;height:10px;background:#374151;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Receita</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Custos totais</span>
+            <span><span style="display:inline-block;width:14px;height:2px;background:#0a0a0a;vertical-align:middle;margin-right:6px"></span>Lucro líquido</span>
+          </div>
+        </div>
+
         <div class="cf-tabs">
           <button type="button" class="cf-tab active" id="cfTabBalanco" onclick="cfTab('balanco')">BALANÇO MENSAL</button>
           <button type="button" class="cf-tab" id="cfTabFixos" onclick="cfTab('fixos')">CUSTOS FIXOS</button>
@@ -2176,7 +2246,12 @@ select.login-input{cursor:pointer}
             <table class="cf-table" id="cfTableBalanco">
               <thead>
                 <tr>
-                  <th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Qtd</th><th>Vl. unit.</th><th>Total</th><th>Cliente</th><th>Projeto</th><th></th>
+                  <th>Cliente</th>
+                  <th>Projeto</th>
+                  <th>Data venda</th>
+                  <th>Data recebimento</th>
+                  <th>Valor (R$)</th>
+                  <th style="text-align:right">Ações</th>
                 </tr>
               </thead>
               <tbody id="cfTbodyBalanco"></tbody>
@@ -2193,7 +2268,10 @@ select.login-input{cursor:pointer}
             <table class="cf-table" id="cfTableFixos">
               <thead>
                 <tr>
-                  <th>Categoria</th><th>Descrição</th><th>Qtd</th><th>Vl. unit.</th><th>Total</th><th></th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor (R$)</th>
+                  <th style="text-align:right">Ações</th>
                 </tr>
               </thead>
               <tbody id="cfTbodyFixos"></tbody>
@@ -2207,7 +2285,7 @@ select.login-input{cursor:pointer}
             <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'projecao')"><i class="fas fa-plus"></i> Linha de projeção</button>
           </div>
           <div class="cf-table-wrap">
-            <table class="cf-table" id="cfTableProjMes">
+            <table class="cf-proj-table" id="cfTableProjMes">
               <thead>
                 <tr>
                   <th>Mês</th><th>Receitas proj.</th><th>Custos proj.</th><th>Saldo proj.</th>
@@ -2218,7 +2296,7 @@ select.login-input{cursor:pointer}
           </div>
           <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.12em;margin:18px 0 8px">DETALHE — PROJEÇÕES</div>
           <div class="cf-table-wrap">
-            <table class="cf-table" id="cfTableProj">
+            <table class="cf-table cf-proj-table" id="cfTableProj">
               <thead>
                 <tr>
                   <th>Mês</th><th>Categoria</th><th>Descrição</th><th>Total</th><th></th>
@@ -3775,6 +3853,8 @@ select.login-input{cursor:pointer}
 /* Supabase + Pagar.me — JWT anon + encryption key são públicos por desenho (RLS / tokenização). Nunca incluir ak_live / PAGARME_API_KEY aqui — só Edge Functions / servidor. */
 const SUPABASE_URL      = 'https://wiiewucszdbbcxzivnyo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
+/** Alias da chave anon (PostgREST / sbFetch) */
+const SUPABASE_KEY = SUPABASE_ANON_KEY;
 
 /** Colar a ek_live_… (Pagar.me → Minha Conta → Contas → Produção). Não usar a chave secreta sk_/ak_ aqui. */
 const PAGARME_EK = 'ek_live_SUA_ENCRYPTION_KEY_AQUI';
@@ -14736,6 +14816,65 @@ async function deleteColab() {
 ══════════════════════════════════════════════════════ */
 let _cfYearRows = [];
 
+/**
+ * GET/POST direto ao PostgREST (`endpoint` = `tabela` ou `tabela?filtros`).
+ * Retorna objeto/array parseados ou null se erro / corpo vazio.
+ */
+async function sbFetch(endpoint, options = {}) {
+  const base = String(SUPABASE_URL || '').replace(/\/+$/, '');
+  const key = String(typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : SUPABASE_ANON_KEY).trim();
+  if(!base || !key || base === 'COLE_AQUI_SUA_SUPABASE_URL' || key === 'COLE_AQUI_SUA_SUPABASE_ANON_KEY') {
+    return null;
+  }
+  const url = `${base}/rest/v1/${String(endpoint).replace(/^\//, '')}`;
+  const { headers: optHeaders = {}, ...restOptions } = options;
+  const res = await fetch(url, {
+    ...restOptions,
+    headers: {
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...optHeaders
+    }
+  });
+  if(!res.ok) return null;
+  const text = await res.text();
+  if(!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    console.warn('[sbFetch] JSON', e);
+    return null;
+  }
+}
+
+/** Normaliza retorno do PostgREST para lista de linhas visíveis (fluxo de caixa). */
+function _cfRowsFromSb(data) {
+  if(data == null) return [];
+  const rows = Array.isArray(data) ? data : [data];
+  return rows.filter(_sbIsRowVisible);
+}
+
+/** Cria linhas de custo fixo iniciais (mês/ano do seletor) quando não existe nenhum. */
+async function criarCustosFixosPadrao(cid) {
+  const mes = parseInt(document.getElementById('cfMes')?.value, 10) || 1;
+  const ano = parseInt(document.getElementById('cfAno')?.value, 10) || new Date().getFullYear();
+  const now = Date.now();
+  const defaults = [
+    { tipo: 'custo_fixo', categoria: 'administrativo', descricao: 'Aluguel / estrutura', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano },
+    { tipo: 'custo_fixo', categoria: 'pessoal', descricao: 'Folha / honorários fixos', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano },
+    { tipo: 'custo_fixo', categoria: 'financeiro', descricao: 'Software e assinaturas', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano }
+  ];
+  for(const body of defaults) {
+    try {
+      await apiPost('age_cashflow', { ...body, updated_at: now, created_at: now });
+    } catch(e) {
+      console.warn('[criarCustosFixosPadrao]', e);
+    }
+  }
+}
+
 function _cfTipoLabel(t) {
   const m = { receita: 'Receita', custo_fixo: 'Custo fixo', custo_variavel: 'Custo variável', projecao: 'Projeção' };
   return m[t] || t || '—';
@@ -14752,6 +14891,15 @@ function _cfVal(r) {
   const q = parseFloat(r.quantidade) || 0;
   const u = parseFloat(r.valor_unitario) || 0;
   return q * u;
+}
+
+/** Exibe data (YYYY-MM-DD ou ISO) em pt-BR para tabelas do fluxo de caixa */
+function _cfFmtDateCell(raw) {
+  if(!raw) return '<span style="color:#64748b">—</span>';
+  const s = String(raw).slice(0, 10);
+  const d = new Date(s + 'T12:00:00');
+  if(isNaN(d.getTime())) return escHtml(String(raw));
+  return escHtml(d.toLocaleDateString('pt-BR'));
 }
 
 function cfPopulateHeaderYear() {
@@ -14817,12 +14965,10 @@ function cfRowHtml(r, ctx) {
   const ed = `<button type="button" class="cf-btn-mini perm-guard-edit" title="Editar" onclick="openCfModal('${id}','${ctx}')"><i class="fas fa-pen"></i></button>`;
   if(ctx === 'fixos') {
     return `<tr>
+      <td>${escHtml(r.descricao || '—')}</td>
       <td>${escHtml(_cfCatLabel(r.categoria))}</td>
-      <td>${escHtml(r.descricao || '')}</td>
-      <td>${escHtml(String(r.quantidade ?? 1))}</td>
-      <td>${fmtBRL(parseFloat(r.valor_unitario) || 0)}</td>
-      <td>${fmtBRL(_cfVal(r))}</td>
-      <td style="white-space:nowrap">${ed} ${del}</td>
+      <td style="font-weight:600">${fmtBRL(_cfVal(r))}</td>
+      <td style="white-space:nowrap;text-align:right">${ed} ${del}</td>
     </tr>`;
   }
   if(ctx === 'projecao') {
@@ -14835,28 +14981,47 @@ function cfRowHtml(r, ctx) {
     </tr>`;
   }
   return `<tr>
-    <td>${escHtml(_cfTipoLabel(r.tipo))}</td>
-    <td>${escHtml(_cfCatLabel(r.categoria))}</td>
-    <td>${escHtml(r.descricao || '')}</td>
-    <td>${escHtml(String(r.quantidade ?? 1))}</td>
-    <td>${fmtBRL(parseFloat(r.valor_unitario) || 0)}</td>
-    <td>${fmtBRL(_cfVal(r))}</td>
-    <td>${escHtml(r.cliente || '')}</td>
-    <td>${escHtml(r.projeto || '')}</td>
-    <td style="white-space:nowrap">${ed} ${del}</td>
+    <td>${escHtml(r.cliente || '—')}</td>
+    <td>${escHtml(r.projeto || '—')}</td>
+    <td>${_cfFmtDateCell(r.data_venda)}</td>
+    <td>${_cfFmtDateCell(r.data_recebimento)}</td>
+    <td style="font-weight:600">${fmtBRL(_cfVal(r))}</td>
+    <td style="white-space:nowrap;text-align:right">${ed} ${del}</td>
   </tr>`;
 }
 
-function renderCfAll(mes, ano) {
-  const rows = _cfYearRows || [];
-  const inMonth = r => parseInt(r.mes, 10) === mes && parseInt(r.ano, 10) === ano;
-  const bal = rows.filter(r => inMonth(r) && ['receita', 'custo_fixo', 'custo_variavel'].includes(String(r.tipo)));
-  const fix = rows.filter(r => inMonth(r) && String(r.tipo) === 'custo_fixo');
-  const proj = rows.filter(r => parseInt(r.ano, 10) === ano && String(r.tipo) === 'projecao');
+function renderBalanco(receitas, variaveis, fixosMes) {
+  const rec = receitas || [];
+  const vari = variaveis || [];
+  const fix = fixosMes || [];
+  const bal = [...rec, ...vari, ...fix];
+  const tbB = document.getElementById('cfTbodyBalanco');
+  if(tbB) {
+    tbB.innerHTML = bal.length
+      ? bal.map(r => cfRowHtml(r, 'balanco')).join('')
+      : '<tr><td colspan="6" style="color:#64748b;padding:20px">Nenhum lançamento neste mês.</td></tr>';
+  }
+}
 
-  const rec = bal.filter(r => r.tipo === 'receita').reduce((s, r) => s + _cfVal(r), 0);
-  const cfix = bal.filter(r => r.tipo === 'custo_fixo').reduce((s, r) => s + _cfVal(r), 0);
-  const cvar = bal.filter(r => r.tipo === 'custo_variavel').reduce((s, r) => s + _cfVal(r), 0);
+function renderCustosFixos(fixosMes, mes) {
+  const fix = fixosMes || [];
+  const totFix = fix.reduce((s, r) => s + _cfVal(r), 0);
+  const fk = document.getElementById('cfKpiFixos');
+  if(fk) {
+    fk.innerHTML = `<div class="cf-kpi cf-neu"><div class="cf-kpi-lbl">Total custos fixos (${MONTHS[mes - 1]})</div><div class="cf-kpi-val">${fmtBRL(totFix)}</div></div>`;
+  }
+  const tbF = document.getElementById('cfTbodyFixos');
+  if(tbF) {
+    tbF.innerHTML = fix.length
+      ? fix.map(r => cfRowHtml(r, 'fixos')).join('')
+      : '<tr><td colspan="4" style="color:#64748b;padding:20px">Nenhum custo fixo neste mês.</td></tr>';
+  }
+}
+
+function renderSummaryCards(receitas, variaveis, fixosMes) {
+  const rec = (receitas || []).reduce((s, r) => s + _cfVal(r), 0);
+  const cvar = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
+  const cfix = (fixosMes || []).reduce((s, r) => s + _cfVal(r), 0);
   const saldo = rec - cfix - cvar;
   const kpiB = document.getElementById('cfKpiBalanco');
   if(kpiB) {
@@ -14867,24 +15032,12 @@ function renderCfAll(mes, ano) {
       { l: 'Saldo', v: saldo, c: saldo >= 0 ? 'cf-pos' : 'cf-neg' }
     ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
   }
-  const tbB = document.getElementById('cfTbodyBalanco');
-  if(tbB) {
-    tbB.innerHTML = bal.length
-      ? bal.map(r => cfRowHtml(r, 'balanco')).join('')
-      : '<tr><td colspan="9" style="color:#64748b;padding:20px">Nenhum lançamento neste mês.</td></tr>';
-  }
+}
 
-  const totFix = fix.reduce((s, r) => s + _cfVal(r), 0);
-  const fk = document.getElementById('cfKpiFixos');
-  if(fk) {
-    fk.innerHTML = `<div class="cf-kpi cf-neu"><div class="cf-kpi-lbl">Total custos fixos (${MONTHS[mes - 1]})</div><div class="cf-kpi-val">${fmtBRL(totFix)}</div></div>`;
-  }
-  const tbF = document.getElementById('cfTbodyFixos');
-  if(tbF) {
-    tbF.innerHTML = fix.length
-      ? fix.map(r => cfRowHtml(r, 'fixos')).join('')
-      : '<tr><td colspan="6" style="color:#64748b;padding:20px">Nenhum custo fixo neste mês.</td></tr>';
-  }
+function renderCfProjecaoFromYear(ano) {
+  const rows = _cfYearRows || [];
+  const y = parseInt(ano, 10) || new Date().getFullYear();
+  const proj = rows.filter(r => parseInt(r.ano, 10) === y && String(r.tipo) === 'projecao');
 
   const byM = {};
   for(let m = 1; m <= 12; m++) byM[m] = { rec: 0, cst: 0 };
@@ -14926,20 +15079,171 @@ function renderCfAll(mes, ano) {
   }
 }
 
+/** Barras agrupadas (receita / custos) + linha lucro — eixo Jan–Dez, tooltip em BRL */
+function renderCfYearChart(ano) {
+  const year = parseInt(ano, 10) || new Date().getFullYear();
+  const rows = _cfYearRows || [];
+  const rec = [];
+  const cust = [];
+  const lucro = [];
+
+  for(let m = 1; m <= 12; m++) {
+    const slice = rows.filter(r =>
+      parseInt(r.mes, 10) === m &&
+      parseInt(r.ano, 10) === year &&
+      ['receita', 'custo_fixo', 'custo_variavel'].includes(String(r.tipo))
+    );
+    let rSum = 0;
+    let cSum = 0;
+    slice.forEach(r => {
+      const v = _cfVal(r);
+      if(String(r.tipo) === 'receita') rSum += v;
+      else cSum += v;
+    });
+    rec.push(rSum);
+    cust.push(cSum);
+    lucro.push(rSum - cSum);
+  }
+
+  _destroyChart('cashflow');
+  const canvas = document.getElementById('chartCashflowYear');
+  if(!canvas || typeof Chart === 'undefined') return;
+
+  const base = _chartDefaults();
+  _charts.cashflow = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: [...MONTHS],
+      datasets: [
+        {
+          label: 'Receita',
+          data: rec,
+          backgroundColor: '#374151',
+          borderColor: '#1f2937',
+          borderWidth: 1,
+          borderRadius: 4,
+          maxBarThickness: 28,
+          order: 2
+        },
+        {
+          label: 'Custos totais',
+          data: cust,
+          backgroundColor: '#d1d5db',
+          borderColor: '#e5e7eb',
+          borderWidth: 1,
+          borderRadius: 4,
+          maxBarThickness: 28,
+          order: 2
+        },
+        {
+          type: 'line',
+          label: 'Lucro líquido',
+          data: lucro,
+          borderColor: '#0a0a0a',
+          backgroundColor: 'rgba(0,0,0,.06)',
+          borderWidth: 2.5,
+          tension: 0.25,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#0a0a0a',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1,
+          fill: false,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      ...base,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          stacked: false,
+          ticks: { color: '#64748b', font: { size: 10, family: 'Rajdhani,sans-serif' } },
+          grid: { color: 'rgba(0,0,0,.06)' }
+        },
+        y: {
+          beginAtZero: false,
+          grace: '8%',
+          ticks: {
+            color: '#64748b',
+            font: { size: 9 },
+            callback: v => fmtBRLk(v)
+          },
+          grid: { color: 'rgba(0,0,0,.06)' }
+        }
+      },
+      plugins: {
+        ...base.plugins,
+        legend: { display: false },
+        tooltip: {
+          ...base.plugins.tooltip,
+          backgroundColor: 'rgba(17,17,17,.94)',
+          titleColor: '#fff',
+          bodyColor: '#e2e8f0',
+          padding: 12,
+          callbacks: {
+            title: items => (items[0] ? items[0].label : ''),
+            label: ctx => {
+              const v = ctx.parsed.y !== undefined ? ctx.parsed.y : ctx.raw;
+              return ' ' + ctx.dataset.label + ': ' + fmtBRL(v);
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
 async function loadCashflow() {
   if(typeof canViewPage === 'function' && !canViewPage('cashflow')) return;
   cfPopulateHeaderYear();
   const mes = parseInt(document.getElementById('cfMes')?.value, 10) || 1;
   const ano = parseInt(document.getElementById('cfAno')?.value, 10) || new Date().getFullYear();
+  const cid = currentUser?.company_id;
+  if(!cid) {
+    try { toast('Empresa não identificada.', 'warn'); } catch(_) {}
+    return;
+  }
+
+  const enc = encodeURIComponent(cid);
+  let receitas = [];
+  let variaveis = [];
+  let fixos = [];
+
+  try {
+    [receitas, variaveis, fixos] = await Promise.all([
+      _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&mes=eq.${mes}&ano=eq.${ano}&tipo=eq.receita`)),
+      _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&mes=eq.${mes}&ano=eq.${ano}&tipo=eq.custo_variavel`)),
+      _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&tipo=eq.custo_fixo`))
+    ]);
+  } catch(e) {
+    console.warn('[loadCashflow]', e);
+    try { toast('Verifique a tabela age_cashflow e o Supabase.', 'err'); } catch(_) {}
+  }
+
+  if(!fixos || fixos.length === 0) {
+    await criarCustosFixosPadrao(cid);
+    fixos = _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&tipo=eq.custo_fixo`));
+  }
+
+  const fixosMes = (fixos || []).filter(r =>
+    parseInt(r.mes, 10) === mes && parseInt(r.ano, 10) === ano
+  );
+
   try {
     const d = await apiGet('age_cashflow', `?ano=eq.${ano}&order=mes.asc&limit=500`);
     _cfYearRows = Array.isArray(d?.data) ? d.data.filter(_sbIsRowVisible) : [];
   } catch(e) {
-    console.warn('[loadCashflow]', e);
+    console.warn('[loadCashflow] ano', e);
     _cfYearRows = [];
-    try { toast('Verifique se a tabela age_cashflow existe no Supabase e suas políticas RLS.', 'err'); } catch(_) {}
   }
-  renderCfAll(mes, ano);
+
+  renderBalanco(receitas, variaveis, fixosMes);
+  renderCustosFixos(fixosMes, mes);
+  renderSummaryCards(receitas, variaveis, fixosMes);
+  renderCfProjecaoFromYear(ano);
+  renderCfYearChart(ano);
 }
 
 function openCfModal(id, context) {
