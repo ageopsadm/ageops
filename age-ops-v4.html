@@ -730,7 +730,9 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 
 /* ── LOGIN PAGE ── */
 #loginPage{
-  position:fixed;inset:0;background:linear-gradient(165deg,#0f172a 0%,#1e293b 45%,#0f172a 100%);z-index:9000;
+  position:fixed;inset:0;
+  background:#eeeeee !important;
+  z-index:9000;
   display:flex;align-items:center;justify-content:center;
   padding:24px 16px;
   overflow:auto;
@@ -920,6 +922,21 @@ select.login-input{cursor:pointer}
   font-family:var(--font-h);font-size:11px;font-weight:700;
   letter-spacing:.1em;margin-top:10px;
   text-transform:uppercase;
+}
+/* Botão ENTRAR — preto (sobrescreve .btn-primary / verdes em qualquer ordem) */
+#loginPage #loginBtn.login-btn,
+#loginPage #panelLogin .btn.btn-primary.login-btn{
+  background:#111111 !important;
+  border:1px solid #111111 !important;
+  color:#ffffff !important;
+  border-radius:4px !important;
+  cursor:pointer;
+}
+#loginPage #loginBtn.login-btn:hover,
+#loginPage #panelLogin .btn.btn-primary.login-btn:hover{
+  background:#333333 !important;
+  border-color:#333333 !important;
+  color:#ffffff !important;
 }
 .login-error{
   font-family:var(--font-m);font-size:9px;color:#cc4444;
@@ -3451,6 +3468,11 @@ const SUPABASE_IS_SOURCE_OF_TRUTH = true;
 
 /** Cache de projetos do Supabase para KPIs do dashboard quando SUPABASE_IS_SOURCE_OF_TRUTH */
 let _liveProjectsKpiCache = [];
+
+/** Custo do projeto ao abrir o modal — modo Supabase não usa PROJ_2026_SHEET */
+let _projModalCostCache = 0;
+/** Kanban: lista vem do Supabase em vez da planilha embutida */
+let _kanbanUsesDb = false;
 
 async function refreshLiveProjectsKpiCache() {
   try {
@@ -9607,8 +9629,8 @@ async function saveSheetCell(inp) {
   let _ieSavingReleased = false;
   const _releaseIeSaving = () => { if(!_ieSavingReleased){ _ieSavingReleased=true; _ieSaving.delete(key); } };
 
-  /* Atualizar planilha em memória (PROJ_2026_SHEET) */
-  const sheet = PROJ_2026_SHEET[sidx];
+  /* Planilha embutida: só mutar em modo legado (índices batem com PROJ_2026_SHEET) */
+  const sheet = !SUPABASE_IS_SOURCE_OF_TRUTH ? PROJ_2026_SHEET[sidx] : null;
 
   /* Mapa de campo UI → campo planilha */
   const sheetFieldMap = {
@@ -9659,9 +9681,9 @@ async function saveSheetCell(inp) {
     else if(field==='payment_date') { cached.payment_date = newVal; if(autoMes) cached._sheetMes = autoMes; }
     else                           cached[field]       = newVal;
     if(field==='total_value' || field==='cost') {
-      const sLin = PROJ_2026_SHEET[sidx];
-      if(sLin) cached.profit_pct = sLin.margin;
-      else {
+      if(!SUPABASE_IS_SOURCE_OF_TRUTH && PROJ_2026_SHEET[sidx]) {
+        cached.profit_pct = PROJ_2026_SHEET[sidx].margin;
+      } else if(cached) {
         const tv = parseFloat(cached.total_value)||0;
         const co = parseFloat(cached.cost)||0;
         cached.profit_pct = tv > 0 ? Math.round((tv - co) / tv * 100) : 0;
@@ -9702,7 +9724,7 @@ async function saveSheetCell(inp) {
 
       /* Se editou custo ou valor → propagar para o fechamento vinculado */
       if(field === 'cost' || field === 'total_value') {
-        const sheetRow = PROJ_2026_SHEET[sidx];
+        const sheetRow = !SUPABASE_IS_SOURCE_OF_TRUTH ? PROJ_2026_SHEET[sidx] : null;
         let newCost, newFat;
         if(sheetRow) {
           newCost = sheetRow.cost || 0;
@@ -9974,9 +9996,21 @@ function openProjectModal(proj=null) {
   const pEnd = document.getElementById('pEndDate');
   if(pEnd) pEnd.value = _projDateStr(proj?.end_date);
   document.getElementById('pFat').value      = proj?.total_value||'';
-  /* custo vem da planilha 2026 — não editável pelo usuário */
   const sheetE = PROJ_2026_SHEET.find(s=>s.cliente===_ageProjDbClient(proj)&&s.projeto===_ageProjDbTitle(proj));
-  const margin = sheetE ? sheetE.margin : (proj?.profit_pct||'');
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && proj) {
+    _projModalCostCache = parseFloat(proj.cost) || 0;
+  } else {
+    _projModalCostCache = sheetE ? (parseFloat(sheetE.cost) || 0) : (parseFloat(proj?.cost) || 0);
+  }
+  const tv = parseFloat(proj?.total_value) || 0;
+  let margin = '';
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && proj && tv > 0) {
+    margin = (((tv - _projModalCostCache) / tv) * 100).toFixed(1);
+  } else if(sheetE) {
+    margin = sheetE.margin;
+  } else {
+    margin = proj?.profit_pct != null ? String(proj.profit_pct) : '';
+  }
   document.getElementById('pMargin').value   = margin;
   document.getElementById('pNps').value      = proj?.nps||'';
   document.getElementById('pNovo').value     = (proj?.is_new_client===true||proj?.is_new_client==='true')?'true':'false';
@@ -9985,12 +10019,16 @@ function openProjectModal(proj=null) {
 }
 
 function calcProjMargin() {
-  /* margem calculada a partir do custo fixo da planilha 2026 */
   const fat=parseFloat(document.getElementById('pFat').value)||0;
   const client=_ageProjFormVal('pClient', 'client_name', 'pCliente', 'projectClient');
   const proj=_ageProjFormVal('pName', 'projectName', 'project_name', 'pTitle', 'title');
-  const sheetE=PROJ_2026_SHEET.find(s=>s.cliente===client&&s.projeto===proj);
-  const cost=sheetE?sheetE.cost:0;
+  let cost = 0;
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+    cost = _projModalCostCache || 0;
+  } else {
+    const sheetE=PROJ_2026_SHEET.find(s=>s.cliente===client&&s.projeto===proj);
+    cost = sheetE ? sheetE.cost : 0;
+  }
   const el=document.getElementById('pMargin');
   if(el) el.value=fat>0?((fat-cost)/fat*100).toFixed(1):'';
 }
@@ -10023,12 +10061,22 @@ async function saveProject() {
 
   if(!clientName || !projName) { toast('Preencha cliente e projeto', 'warn'); return; }
 
-  /* Custo vem da planilha — busca case-insensitive para evitar falhas por capitalização */
-  const sheetE = PROJ_2026_SHEET.find(s =>
-    (s.cliente||'').toLowerCase() === clientName.toLowerCase() &&
-    (s.projeto||'').toLowerCase() === projName.toLowerCase()
-  );
-  const cost       = sheetE ? (sheetE.cost || 0) : 0;
+  const realIdEarly = id && !id.startsWith('sheet_') ? id : '';
+  let cost = 0;
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && realIdEarly) {
+    try {
+      const exRow = await apiGet('age_projects', `/${realIdEarly}`);
+      cost = parseFloat(exRow?.cost) || 0;
+    } catch(e) {
+      cost = _projModalCostCache || 0;
+    }
+  } else {
+    const sheetE = PROJ_2026_SHEET.find(s =>
+      (s.cliente||'').toLowerCase() === clientName.toLowerCase() &&
+      (s.projeto||'').toLowerCase() === projName.toLowerCase()
+    );
+    cost = sheetE ? (sheetE.cost || 0) : (_projModalCostCache || 0);
+  }
   const profit_pct = fat > 0 ? +((fat - cost) / fat * 100).toFixed(1) : 0;
 
   /* Datas vazias no <input type="date"> viram "" — Supabase/Postgres espera null, não string vazia. */
@@ -10067,7 +10115,7 @@ async function saveProject() {
   });
 
   /* Verificar se é um ID fictício (sheet_N): nesse caso cria novo registro */
-  const realId = id && !id.startsWith('sheet_') ? id : '';
+  const realId = realIdEarly;
 
   console.log('[saveProject] pId no formulário:', id || '(vazio)', '→', realId ? `PATCH id=${realId}` : 'POST (novo registro)');
   console.log('[saveProject] payload (sem segredos):', { ...payload, cost: payload.cost, total_value: payload.total_value });
@@ -10101,6 +10149,7 @@ async function saveProject() {
     _fechAllProjects = [];
     _projAllCache = [];
     await loadProjects();
+    if(SUPABASE_IS_SOURCE_OF_TRUTH) await refreshLiveProjectsKpiCache().catch(()=>{});
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
   } catch(e) {
     console.error('[saveProject]', e);
@@ -10850,11 +10899,8 @@ const AV_COLORS = ['#1a1a1a','#1e1e1e','#1c1c1c','#181818','#161616','#141414'];
 async function loadClientes() {
   try {
     /* ══════════════════════════════════════════════════
-       FONTE ÚNICA — sem cruzamento, sem duplicação:
-       • 2026 → APENAS PROJ_2026_SHEET  (array JS)
-       • 2021-2025 → APENAS age_hist_projects (banco),
-         excluindo qualquer registro com year===2026
-       Nunca misturar as duas fontes para o mesmo ano.
+       • 2026 → Supabase (projetos) se SUPABASE_IS_SOURCE_OF_TRUTH; senão PROJ_2026_SHEET
+       • 2021-2025 → age_hist_projects
     ══════════════════════════════════════════════════ */
     const clientMap = {};
 
@@ -10875,12 +10921,25 @@ async function loadClientes() {
       clientMap[key].lastYear  = Math.max(clientMap[key].lastYear,  year);
     }
 
-    /* ── 2026: 100% da planilha JS ── */
-    PROJ_2026_SHEET.forEach(p => {
-      const k = (p.cliente||'').trim().toLowerCase();
-      if(!k) return;
-      addClient(k, p.cliente.trim(), p.fat, p.nps, p.novo, 2026);
-    });
+    /* ── 2026: Supabase (operacional) ou planilha JS legada ── */
+    if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+      const live = await fetchAgeProjectsScoped(2500).catch(()=>[]);
+      live.forEach(p => {
+        const nm = _ageProjDbClient(p);
+        const k = String(nm||'').trim().toLowerCase();
+        if(!k) return;
+        const fat = parseFloat(p.total_value) || 0;
+        const nps = parseFloat(p.nps) || 0;
+        const novo = p.is_new_client === true || p.is_new_client === 'true';
+        addClient(k, String(nm).trim(), fat, nps, novo, 2026);
+      });
+    } else {
+      PROJ_2026_SHEET.forEach(p => {
+        const k = (p.cliente||'').trim().toLowerCase();
+        if(!k) return;
+        addClient(k, p.cliente.trim(), p.fat, p.nps, p.novo, 2026);
+      });
+    }
 
     /* ── 2021-2025: 100% do banco histórico (excluir 2026 definitivamente) ── */
     const hist = await fetchAll('age_hist_projects', 500).catch(()=>[]);
@@ -11003,9 +11062,32 @@ async function loadKanban() {
   }
 }
 
-/* Garante que cada projeto da planilha tem uma entrada em age_project_stages */
+/* Garante que cada projeto tem entrada em age_project_stages */
 async function _ensureKanbanRecords() {
-  if(SUPABASE_IS_SOURCE_OF_TRUTH) return;
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+    for(const p of _kbProjects) {
+      if(!p?.id) continue;
+      const has = _kbStages.find(r => _sbIsRowVisible(r) && String(r.project_id||'') === String(p.id));
+      if(has) continue;
+      try {
+        const created = await apiPost('age_project_stages', {
+          project_id: p.id,
+          project_name: _ageProjDbTitle(p),
+          client: _ageProjDbClient(p),
+          category: p.category || '',
+          segment: p.segment || '',
+          value: parseFloat(p.total_value) || 0,
+          stage: 'reuniao',
+          sheet_idx: null,
+          priority: 'media',
+          stage_updated_at: new Date().toISOString().slice(0, 10),
+          created_by: currentUser?.username || 'system'
+        });
+        if(created) _kbStages.push(Array.isArray(created) ? created[0] : created);
+      } catch(e) { /* ignore duplicate / RLS */ }
+    }
+    return;
+  }
   for(let i = 0; i < PROJ_2026_SHEET.length; i++) {
     const s = PROJ_2026_SHEET[i];
     const existing = _kbStages.find(r =>
@@ -11055,34 +11137,71 @@ function renderKanban() {
   const board = document.getElementById('kanbanBoard');
   if(!board) return;
 
+  _kanbanUsesDb = !!SUPABASE_IS_SOURCE_OF_TRUTH;
+
   const filterCat  = document.getElementById('kbFilterCat')?.value  || '';
   const filterText = (document.getElementById('kbSearch')?.value || '').toLowerCase().trim();
 
   /* Montar lista de projetos enriquecidos */
-  const projCards = PROJ_2026_SHEET.map((s, i) => {
-    const stageRec = _kbStages.find(r =>
-      _sbIsRowVisible(r) && (
-        r.sheet_idx === i ||
-        ((r.client||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-         (r.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase())
-      )
-    );
-    return {
-      _idx:    i,
-      _id:     stageRec?.id || null,
-      client:  s.cliente,
-      proj:    s.projeto,
-      cat:     s.cat || '',
-      seg:     s.seg || '',
-      mes:     s.mes,
-      fat:     s.fat || 0,
-      novo:    s.novo,
-      nps:     s.nps,
-      stage:   stageRec?.stage || 'reuniao',
-      priority:stageRec?.priority || 'media',
-      notes:   stageRec?.stage_notes || ''
-    };
-  });
+  let projCards;
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+    projCards = _kbProjects.map((p, i) => {
+      const stageRec = _kbStages.find(r =>
+        _sbIsRowVisible(r) && String(r.project_id || '') === String(p.id)
+      ) || _kbStages.find(r =>
+        _sbIsRowVisible(r) &&
+        (r.client||'').toLowerCase() === (_ageProjDbClient(p)||'').toLowerCase() &&
+        (r.project_name||'').toLowerCase() === (_ageProjDbTitle(p)||'').toLowerCase()
+      );
+      const fat = parseFloat(p.total_value) || 0;
+      const cost = parseFloat(p.cost) || 0;
+      const payD = p.payment_date ? String(p.payment_date).slice(0, 10) : '';
+      const projD = p.project_date ? String(p.project_date).slice(0, 10) : '';
+      const mes = payD ? parseInt(payD.substring(5, 7), 10) : (projD ? parseInt(projD.substring(5, 7), 10) : 1);
+      return {
+        _idx: i,
+        _id: stageRec?.id || null,
+        _cost: cost,
+        client: _ageProjDbClient(p),
+        proj: _ageProjDbTitle(p),
+        cat: p.category || '',
+        seg: p.segment || '',
+        mes,
+        fat,
+        novo: p.is_new_client === true || p.is_new_client === 'true',
+        nps: parseFloat(p.nps) || 0,
+        stage: stageRec?.stage || 'reuniao',
+        priority: stageRec?.priority || 'media',
+        notes: stageRec?.stage_notes || ''
+      };
+    });
+  } else {
+    projCards = PROJ_2026_SHEET.map((s, i) => {
+      const stageRec = _kbStages.find(r =>
+        _sbIsRowVisible(r) && (
+          r.sheet_idx === i ||
+          ((r.client||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
+           (r.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase())
+        )
+      );
+      return {
+        _idx:    i,
+        _id:     stageRec?.id || null,
+        _cost:   s.cost || 0,
+        client:  s.cliente,
+        proj:    s.projeto,
+        cat:     s.cat || '',
+        seg:     s.seg || '',
+        mes:     s.mes,
+        fat:     s.fat || 0,
+        novo:    s.novo,
+        nps:     s.nps,
+        stage:   stageRec?.stage || 'reuniao',
+        priority:stageRec?.priority || 'media',
+        notes:   stageRec?.stage_notes || ''
+      };
+    });
+  }
 
   /* Aplicar filtros */
   let filtered = projCards;
@@ -11118,7 +11237,7 @@ function renderKanban() {
           const mesLabel   = MESES[(p.mes||1)-1] || '';
           const prioColor  = PRIO_COLOR[p.priority] || '#6b7280';
           const catColor   = CAT_COLOR[p.cat]  || '#475569';
-          const margin     = p.fat > 0 ? Math.round((p.fat - (PROJ_2026_SHEET[p._idx]?.cost||0)) / p.fat * 100) : 0;
+          const margin     = p.fat > 0 ? Math.round((p.fat - (p._cost||0)) / p.fat * 100) : 0;
           const mCol       = getMarginColor(margin);
           return `<div class="kb-card" draggable="true"
                       data-kid="${p._id||''}" data-idx="${p._idx}"
@@ -11155,6 +11274,19 @@ function renderKanban() {
   }).join('');
 }
 
+function _kbResolveStageRec(idx, kid) {
+  if(kid) {
+    const byId = _kbStages.find(r => r.id === kid);
+    if(byId) return byId;
+  }
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && _kbProjects[idx]?.id) {
+    const pid = _kbProjects[idx].id;
+    const byProj = _kbStages.find(r => _sbIsRowVisible(r) && String(r.project_id||'') === String(pid));
+    if(byProj) return byProj;
+  }
+  return _kbStages.find(r => r.sheet_idx === idx);
+}
+
 /* ── Drag & Drop ── */
 let _kbDragIdx = null;
 let _kbDragId  = null;
@@ -11182,7 +11314,7 @@ async function kbDrop(e, newStage) {
   _kbDragId  = null;
 
   /* Atualizar stage na memória imediatamente */
-  const stageRec = _kbStages.find(r => r.id === kid || r.sheet_idx === idx);
+  const stageRec = _kbResolveStageRec(idx, kid);
   if(stageRec) {
     stageRec.stage = newStage;
     stageRec.stage_updated_at = new Date().toISOString().slice(0,10);
@@ -11190,8 +11322,9 @@ async function kbDrop(e, newStage) {
   renderKanban();
 
   /* Persistir no banco */
-  if(kid && kid !== '') {
-    await apiPatch('age_project_stages', kid, {
+  const persistId = stageRec?.id || (kid && kid !== '' ? kid : '');
+  if(persistId) {
+    await apiPatch('age_project_stages', persistId, {
       stage: newStage,
       stage_updated_at: new Date().toISOString().slice(0,10)
     }).catch(()=>{});
@@ -11200,11 +11333,30 @@ async function kbDrop(e, newStage) {
 
 /* ── Detalhe / edição do card ── */
 function openKanbanDetail(idx) {
-  const s = PROJ_2026_SHEET[idx];
-  if(!s) return;
-  const stageRec = _kbStages.find(r => _sbIsRowVisible(r) && (r.sheet_idx === idx ||
-    ((r.client||'').toLowerCase()===(s.cliente||'').toLowerCase() &&
-     (r.project_name||'').toLowerCase()===(s.projeto||'').toLowerCase())));
+  let s;
+  let stageRec;
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && _kanbanUsesDb) {
+    const p = _kbProjects[idx];
+    if(!p) return;
+    stageRec = _kbStages.find(r => _sbIsRowVisible(r) && String(r.project_id||'') === String(p.id))
+      || _kbStages.find(r => _sbIsRowVisible(r) &&
+        (r.client||'').toLowerCase() === (_ageProjDbClient(p)||'').toLowerCase() &&
+        (r.project_name||'').toLowerCase() === (_ageProjDbTitle(p)||'').toLowerCase());
+    const fat = parseFloat(p.total_value) || 0;
+    s = {
+      cliente: _ageProjDbClient(p),
+      projeto: _ageProjDbTitle(p),
+      fat,
+      cat: p.category,
+      nps: p.nps
+    };
+  } else {
+    s = PROJ_2026_SHEET[idx];
+    if(!s) return;
+    stageRec = _kbStages.find(r => _sbIsRowVisible(r) && (r.sheet_idx === idx ||
+      ((r.client||'').toLowerCase()===(s.cliente||'').toLowerCase() &&
+       (r.project_name||'').toLowerCase()===(s.projeto||'').toLowerCase())));
+  }
 
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const stageLabel = KANBAN_STAGES.find(st=>st.key===stageRec?.stage)?.label || 'Reunião';
@@ -11273,30 +11425,30 @@ function openKanbanDetail(idx) {
 
 async function kbMoveCard(idx, newStage, kid) {
   document.getElementById('kbDetailModal')?.remove();
-  const stageRec = _kbStages.find(r => r.id === kid || r.sheet_idx === idx);
+  const stageRec = _kbResolveStageRec(idx, kid);
   if(stageRec) {
     stageRec.stage = newStage;
     stageRec.stage_updated_at = new Date().toISOString().slice(0,10);
   }
   renderKanban();
-  if(kid) await apiPatch('age_project_stages', kid, { stage: newStage, stage_updated_at: new Date().toISOString().slice(0,10) }).catch(()=>{});
+  if(stageRec?.id) await apiPatch('age_project_stages', stageRec.id, { stage: newStage, stage_updated_at: new Date().toISOString().slice(0,10) }).catch(()=>{});
   toast('Projeto movido para ' + (KANBAN_STAGES.find(s=>s.key===newStage)?.label||newStage));
 }
 
 async function kbSetPriority(idx, prio, kid) {
-  const stageRec = _kbStages.find(r => r.id === kid || r.sheet_idx === idx);
+  const stageRec = _kbResolveStageRec(idx, kid);
   if(stageRec) stageRec.priority = prio;
   renderKanban();
   document.getElementById('kbDetailModal')?.remove();
   openKanbanDetail(idx);   /* reabre com dados atualizados */
-  if(kid) await apiPatch('age_project_stages', kid, { priority: prio }).catch(()=>{});
+  if(stageRec?.id) await apiPatch('age_project_stages', stageRec.id, { priority: prio }).catch(()=>{});
 }
 
 async function saveKanbanNotes(idx, kid) {
   const notes = document.getElementById('kbNotesTxt')?.value || '';
-  const stageRec = _kbStages.find(r => r.id === kid || r.sheet_idx === idx);
+  const stageRec = _kbResolveStageRec(idx, kid);
   if(stageRec) stageRec.stage_notes = notes;
-  if(kid) await apiPatch('age_project_stages', kid, { stage_notes: notes }).catch(()=>{});
+  if(stageRec?.id) await apiPatch('age_project_stages', stageRec.id, { stage_notes: notes }).catch(()=>{});
   document.getElementById('kbDetailModal')?.remove();
   toast('Notas salvas!');
 }
