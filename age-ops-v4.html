@@ -1743,7 +1743,7 @@ select.login-input{cursor:pointer}
             <span style="font-family:var(--font-m);font-size:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:3px 9px;border-radius:3px;letter-spacing:.1em">2026</span>
           </div>
           <div class="page-actions">
-            <button class="btn btn-ghost btn-sm" onclick="purgeProjectsNotInSheet().then(()=>loadProjects())"><i class="fas fa-sync-alt"></i> Sync</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="purgeProjectsNotInSheet({ showToast: true }).then(()=>loadProjects())" title="Legado: sync com planilha embutida (desativado se Supabase for fonte)"><i class="fas fa-sync-alt"></i> Sync planilha</button>
             <button class="btn btn-secondary btn-sm" onclick="exportProjectsCSV()"><i class="fas fa-download"></i> Exportar</button>
             <button class="btn btn-primary" onclick="openProjectModal()"><i class="fas fa-plus"></i> Novo Projeto</button>
           </div>
@@ -3381,10 +3381,30 @@ select.login-input{cursor:pointer}
 ══════════════════════════════════════════ -->
 <script>
 'use strict';
+
+/**
+ * Quando true: Supabase é a única fonte operacional (projetos, clientes ativos).
+ * Arrays PROJ_2026_SHEET / PLAN_2026 permanecem como referência histórica e fallback offline,
+ * mas nunca devem disparar sync automático nem purge no banco.
+ */
+const SUPABASE_IS_SOURCE_OF_TRUTH = true;
+
+/** Cache de projetos do Supabase para KPIs do dashboard quando SUPABASE_IS_SOURCE_OF_TRUTH */
+let _liveProjectsKpiCache = [];
+
+async function refreshLiveProjectsKpiCache() {
+  try {
+    _liveProjectsKpiCache = await fetchAgeProjectsScoped(1000);
+  } catch(e) {
+    _liveProjectsKpiCache = [];
+  }
+  return _liveProjectsKpiCache;
+}
+
 /* ═══════════════════════════════════════════════════════════
    DADOS REAIS 2026 — PLANILHA "_Ownage KPIs DASHBOARD 2026"
-   Atualizado em 27/04/2026. 17 projetos (15 realizados + 2 futuros Cobertec), 11 clientes únicos.
-   ÚNICA fonte de verdade para dados históricos 2026.
+   Atualizado em 27/04/2026. Referência histórica / fallback offline / base para módulo Histórico.
+   Com SUPABASE_IS_SOURCE_OF_TRUTH=true, dados operacionais vêm de age_projects (Supabase), não deste array.
 ═══════════════════════════════════════════════════════════ */
 const PROJ_2026_SHEET = [
   /* ── JANEIRO ─────────────────────────────────────────────── */
@@ -3445,10 +3465,21 @@ const HIST_SUMMARY = {
 };
 
 /* ═══════════════════════════════════════════
-   LIMPEZA DO BANCO — remover projetos fora da planilha 2026
-   Executado uma vez no login
+   LIMPEZA / SYNC LEGADO — planilha JS → Supabase
+   COM SUPABASE_IS_SOURCE_OF_TRUTH: função desativada (nunca sobrescrever/deletar pelo array fixo).
+   Use apenas referência no módulo Histórico ou import manual explícito no futuro.
 ═══════════════════════════════════════════ */
-async function purgeProjectsNotInSheet() {
+async function purgeProjectsNotInSheet(opts = {}) {
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && !opts.forceLegacyDestructiveSync) {
+    const msg = '[purgeProjectsNotInSheet] Bloqueado: SUPABASE_IS_SOURCE_OF_TRUTH. Nenhuma escrita a partir da planilha embutida.';
+    console.warn(msg);
+    try {
+      if(opts.showToast !== false && typeof toast === 'function') {
+        toast('Sincronização com a planilha fixa está desativada. Os projetos vêm apenas do Supabase.', 'warn');
+      }
+    } catch(_e) {}
+    return;
+  }
   try {
     /* ═══════════════════════════════════════════════════════════
        PASSO 1 — Sincronizar age_projects com a planilha 2026
@@ -4387,6 +4418,11 @@ async function applyLoginSessionFromRow(row) {
   if(nm) nm.textContent = currentUser.name || u;
   if(rl) rl.textContent = _roleDisplayLabel(currentUser.role);
   _refreshSidebarForRole();
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+    refreshLiveProjectsKpiCache().then(() => {
+      try { _syncDashboardKpis(); } catch(_) {}
+    }).catch(() => {});
+  }
   navigate(_defaultLandingPage());
   startClock();
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
@@ -6858,15 +6894,17 @@ const SYNC = {
     const profit = val - cost;
     const margin = val>0?(profit/val*100):0;
 
-    /* 1. Atualizar planilha em memória por NOME (funciona mesmo sem ID banco) */
-    const sheetEntry = PROJ_2026_SHEET.find(s =>
-      (s.cliente||'').toLowerCase() === (fech.client_name||'').toLowerCase() &&
-      (s.projeto||'').toLowerCase()  === (fech.project_name||'').toLowerCase()
-    );
-    if(sheetEntry) {
-      sheetEntry.cost   = cost;
-      sheetEntry.lucro  = profit;
-      sheetEntry.margin = Math.round(margin);
+    /* 1. Planilha estática (legado): atualizar memória só se não estiver em modo Supabase-only */
+    if(!SUPABASE_IS_SOURCE_OF_TRUTH) {
+      const sheetEntry = PROJ_2026_SHEET.find(s =>
+        (s.cliente||'').toLowerCase() === (fech.client_name||'').toLowerCase() &&
+        (s.projeto||'').toLowerCase()  === (fech.project_name||'').toLowerCase()
+      );
+      if(sheetEntry) {
+        sheetEntry.cost   = cost;
+        sheetEntry.lucro  = profit;
+        sheetEntry.margin = Math.round(margin);
+      }
     }
 
     /* 2. Propagar custo ao banco (age_projects) se tiver ID real */
@@ -6900,7 +6938,13 @@ const SYNC = {
 
     /* 4. Atualizar KPIs e gráficos */
     _recheckPlan2026();
-    _syncDashboardKpis();
+    if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+      refreshLiveProjectsKpiCache().then(() => {
+        try { _syncDashboardKpis(); } catch(_) {}
+      }).catch(() => {});
+    } else {
+      _syncDashboardKpis();
+    }
   }
 };
 
@@ -8667,13 +8711,15 @@ let _projAutoSyncDone = false;
 async function _loadProjectsWithAutoSync() {
   if(!_projAutoSyncDone) {
     _projAutoSyncDone = true;
-    /* Verificar se há projetos da planilha sem registro no banco */
-    const tbody = document.getElementById('projBody');
-    if(tbody) tbody.innerHTML = `<tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos...</td></tr>`;
-    try {
-      await purgeProjectsNotInSheet();
-    } catch(e) {
-      console.warn('[auto-sync] falhou, carregando mesmo assim:', e);
+    /* Com Supabase como fonte: nunca rodar purge/sync da planilha embutida ao abrir a página */
+    if(!SUPABASE_IS_SOURCE_OF_TRUTH) {
+      const tbody = document.getElementById('projBody');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos...</td></tr>`;
+      try {
+        await purgeProjectsNotInSheet();
+      } catch(e) {
+        console.warn('[auto-sync] falhou, carregando mesmo assim:', e);
+      }
     }
   }
   await loadProjects();
@@ -8685,14 +8731,49 @@ async function loadProjects() {
   tbody.innerHTML = `<tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
 
   try {
-    /* FONTE DE VERDADE: planilha 2026
-       Banco usado para enriquecer status, NPS e custo do fechamento */
     const [dbProjects, dbFechs] = await Promise.all([
       fetchAgeProjectsScoped(1000),
       fetchAll('age_fechamento', 500)
     ]);
 
-    /* Montar cache a partir da planilha, enriquecido com dados do banco */
+    if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+      _liveProjectsKpiCache = dbProjects;
+      let idx = 0;
+      _projAllCache = [];
+      for(const p of dbProjects) {
+        if(!p?.id) continue;
+        const fech = dbFechs.find(f => f.project_id === p.id);
+        const costFromFech = fech ? (parseFloat(fech.custo_total) || 0) : null;
+        const costFinal = costFromFech !== null ? costFromFech : (parseFloat(p.cost) || 0);
+        const fat = parseFloat(p.total_value) || 0;
+        const lucro = fat - costFinal;
+        const margin = fat > 0 ? Math.round(lucro / fat * 100) : (parseFloat(p.profit_pct) || 0);
+        const payD = p.payment_date ? String(p.payment_date).slice(0, 10) : '';
+        const projD = p.project_date ? String(p.project_date).slice(0, 10) : '';
+        const mesFromDate = payD ? parseInt(payD.substring(5, 7), 10) : (projD ? parseInt(projD.substring(5, 7), 10) : 1);
+        _projAllCache.push({
+          id: p.id,
+          client_name: _ageProjDbClient(p),
+          project_name: _ageProjDbTitle(p),
+          category: p.category || 'Vídeo',
+          segment: p.segment || '',
+          project_date: p.project_date || null,
+          payment_date: p.payment_date || null,
+          total_value: fat,
+          cost: costFinal,
+          profit_pct: p.profit_pct != null ? parseFloat(p.profit_pct) : margin,
+          nps: parseFloat(p.nps) || 0,
+          is_new_client: p.is_new_client === true || p.is_new_client === 'true',
+          status: p.status || 'pendente',
+          _sheetIdx: idx,
+          _sheetMes: mesFromDate || 1,
+          _hasFech: !!fech,
+          _dbOnly: true
+        });
+        idx++;
+      }
+    } else {
+    /* Legado: planilha 2026 em memória + enriquecimento do banco */
     const matchedDbIds = new Set();
     _projAllCache = PROJ_2026_SHEET.map((s, idx) => {
       const db = dbProjects.find(p =>
@@ -8760,6 +8841,8 @@ async function loadProjects() {
         _hasFech:     !!fech,
         _dbOnly:      true
       });
+    }
+
     }
 
     /* Aplicar filtros */
@@ -8921,15 +9004,27 @@ function renderProjRow(p, rowNum) {
 }
 
 function renderProjKpis(rows) {
-  /* KPIs vêm diretamente da planilha 2026 (fonte de verdade) */
-  const fat    = PLAN_2026.fat;
-  const lucro  = PLAN_2026.lucro;
-  const margin = fat>0?(lucro/fat*100):0;
-  const nTotal = PLAN_2026.n;
-  const ticket = nTotal>0?fat/nTotal:0;
-  const npsSheet = PROJ_2026_SHEET.filter(p=>p.nps>0);
-  const avgNps = npsSheet.length ? npsSheet.reduce((s,p)=>s+p.nps,0)/npsSheet.length : 0;
-  const novos  = PLAN_2026.novos;
+  let fat, lucro, margin, nTotal, ticket, avgNps, novos;
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && Array.isArray(rows) && rows.length) {
+    fat = rows.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
+    const costSum = rows.reduce((s, p) => s + (parseFloat(p.cost) || 0), 0);
+    lucro = fat - costSum;
+    margin = fat > 0 ? (lucro / fat * 100) : 0;
+    nTotal = rows.length;
+    ticket = nTotal > 0 ? fat / nTotal : 0;
+    const npsRows = rows.filter(p => (parseFloat(p.nps) || 0) > 0);
+    avgNps = npsRows.length ? npsRows.reduce((s, p) => s + (parseFloat(p.nps) || 0), 0) / npsRows.length : 0;
+    novos = rows.filter(p => p.is_new_client === true || p.is_new_client === 'true').length;
+  } else {
+    fat = PLAN_2026.fat;
+    lucro = PLAN_2026.lucro;
+    margin = fat > 0 ? (lucro / fat * 100) : 0;
+    nTotal = PLAN_2026.n;
+    ticket = nTotal > 0 ? fat / nTotal : 0;
+    const npsSheet = PROJ_2026_SHEET.filter(p => p.nps > 0);
+    avgNps = npsSheet.length ? npsSheet.reduce((s, p) => s + p.nps, 0) / npsSheet.length : 0;
+    novos = PLAN_2026.novos;
+  }
 
   const set=(id,v,col)=>{ const el=document.getElementById(id); if(!el)return; el.textContent=v; if(col)el.style.color=col; };
   set('pkFat',   fmtBRL(fat));
@@ -8941,7 +9036,11 @@ function renderProjKpis(rows) {
   set('pkTicket',fmtBRL(ticket));
 
   const ss=document.getElementById('projSyncStatus');
-  if(ss) ss.innerHTML=`<i class="fas fa-circle" style="font-size:6px"></i> ${nTotal} projetos · planilha 2026`;
+  if(ss) {
+    ss.innerHTML = SUPABASE_IS_SOURCE_OF_TRUTH
+      ? `<i class="fas fa-circle" style="font-size:6px"></i> ${nTotal} projetos · Supabase`
+      : `<i class="fas fa-circle" style="font-size:6px"></i> ${nTotal} projetos · planilha 2026`;
+  }
 }
 
 function renderProjMonthBars(rows) {
@@ -8949,11 +9048,25 @@ function renderProjMonthBars(rows) {
   const lblEl = document.getElementById('projMonthLabels');
   if(!barEl||!lblEl) return;
 
-  /* Fonte única: apenas PROJ_2026_SHEET — sem misturar banco */
-  const bm = PLAN_2026.byMonth;
+  let vals;
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && Array.isArray(rows) && rows.length) {
+    vals = Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1;
+      let sum = 0;
+      rows.forEach(p => {
+        const raw = p.payment_date || p.project_date || '';
+        const d = String(raw).slice(0, 10);
+        const mes = d.length >= 7 ? parseInt(d.substring(5, 7), 10) : (parseInt(p._sheetMes, 10) || 1);
+        if(mes === m) sum += parseFloat(p.total_value) || 0;
+      });
+      return sum;
+    });
+  } else {
+    const bm = PLAN_2026.byMonth;
+    vals = Array.from({ length: 12 }, (_, i) => (bm[i + 1]?.fat || 0));
+  }
 
-  const vals = Array.from({length:12},(_,i)=>(bm[i+1]?.fat||0));
-  const maxV = Math.max(...vals,1);
+  const maxV = Math.max(...vals, 1);
   const maxI = vals.indexOf(Math.max(...vals));
 
   barEl.innerHTML = vals.map((v,i)=>`<div class="month-bar" style="background:${i===maxI?'rgba(255,255,255,.7)':v>0?'rgba(255,255,255,.2)':'rgba(255,255,255,.04)'};height:${Math.max(v/maxV*100,2)}%" data-tip="${MONTHS[i]}: ${fmtBRL(v)}"></div>`).join('');
@@ -9045,13 +9158,22 @@ async function saveSheetCell(inp) {
   /* Atualizar cache local para UI reativa sem reload */
   const cached = _projAllCache.find(p=>p.id===pid||p._sheetIdx===sidx);
   if(cached) {
-    if(field==='total_value')    { cached.total_value  = parseFloat(newVal)||0; const s=PROJ_2026_SHEET[sidx]; if(s){ cached.profit_pct=s.margin; } }
-    else if(field==='cost')      { cached.cost         = parseFloat(newVal)||0; const s=PROJ_2026_SHEET[sidx]; if(s){ cached.profit_pct=s.margin; } }
-    else if(field==='nps')       { cached.nps          = parseFloat(newVal)||0; }
-    else if(field==='is_new_client'){ cached.is_new_client = newVal==='true'; }
-    else if(field==='mes')       { cached._sheetMes    = parseInt(newVal)||1; }
+    if(field==='total_value')       cached.total_value  = parseFloat(newVal)||0;
+    else if(field==='cost')        cached.cost         = parseFloat(newVal)||0;
+    else if(field==='nps')         cached.nps          = parseFloat(newVal)||0;
+    else if(field==='is_new_client') cached.is_new_client = newVal==='true';
+    else if(field==='mes')         cached._sheetMes    = parseInt(newVal)||1;
     else if(field==='payment_date') { cached.payment_date = newVal; if(autoMes) cached._sheetMes = autoMes; }
-    else                         { cached[field]       = newVal; }
+    else                           cached[field]       = newVal;
+    if(field==='total_value' || field==='cost') {
+      const sLin = PROJ_2026_SHEET[sidx];
+      if(sLin) cached.profit_pct = sLin.margin;
+      else {
+        const tv = parseFloat(cached.total_value)||0;
+        const co = parseFloat(cached.cost)||0;
+        cached.profit_pct = tv > 0 ? Math.round((tv - co) / tv * 100) : 0;
+      }
+    }
   }
 
   /* Atualizar KPI / barra mensal sem reload completo */
@@ -9088,16 +9210,28 @@ async function saveSheetCell(inp) {
       /* Se editou custo ou valor → propagar para o fechamento vinculado */
       if(field === 'cost' || field === 'total_value') {
         const sheetRow = PROJ_2026_SHEET[sidx];
-        const newCost  = sheetRow?.cost  || 0;
-        const newFat   = sheetRow?.fat   || 0;
+        let newCost, newFat;
+        if(sheetRow) {
+          newCost = sheetRow.cost || 0;
+          newFat = sheetRow.fat || 0;
+        } else if(cached) {
+          newFat = parseFloat(cached.total_value) || 0;
+          newCost = parseFloat(cached.cost) || 0;
+        } else {
+          newFat = newCost = 0;
+        }
         const newLucro = newFat - newCost;
-        const newMarg  = newFat>0 ? Math.round(newLucro/newFat*100) : 0;
+        const newMarg  = newFat > 0 ? Math.round(newLucro / newFat * 100) : 0;
+
+        const cn = (cached?.client_name || sheetRow?.cliente || '').toLowerCase();
+        const pn = (cached?.project_name || sheetRow?.projeto || '').toLowerCase();
 
         /* Buscar fechamento vinculado a este projeto */
         const linkedFech = _fechAllFechs.find(f =>
           f.project_id === pid ||
-          ((f.client_name||'').toLowerCase() === (sheetRow?.cliente||'').toLowerCase() &&
-           (f.project_name||'').toLowerCase() === (sheetRow?.projeto||'').toLowerCase())
+          (cn && pn &&
+           (f.client_name || '').toLowerCase() === cn &&
+           (f.project_name || '').toLowerCase() === pn)
         );
 
         if(linkedFech) {
@@ -9118,10 +9252,16 @@ async function saveSheetCell(inp) {
             _fechAllFechs = _fechAllFechs.map(f => f.id === linkedFech.id ? {...f,...fechPatch} : f);
             _renderFechPanel(sidx);
           }
-        } else if(sheetRow) {
+        } else if(sheetRow || cached) {
           /* Sem fechamento vinculado: apenas atualizar o painel se estiver aberto */
           if(_fechSelectedProj === sidx) _renderFechPanel(sidx);
         }
+      }
+
+      if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+        refreshLiveProjectsKpiCache().then(() => {
+          try { _syncDashboardKpis(); } catch(_) {}
+        }).catch(() => {});
       }
 
     } catch(err) {
@@ -9156,8 +9296,9 @@ async function saveSheetCell(inp) {
   _releaseIeSaving();
 }
 
-/* Recalcula PLAN_2026 ao vivo quando dados mudam */
+/* Recalcula PLAN_2026 ao vivo quando dados mudam (somente modo legado planilha) */
 function _recheckPlan2026() {
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) return;
   let fat=0,cost=0,lucro=0,n=0,novos=0,npsSum=0,npsN=0;
   const bm={}, clientSet=new Set();
   PROJ_2026_SHEET.forEach(p=>{
@@ -9177,18 +9318,37 @@ function _recheckPlan2026() {
 
 /* Atualiza KPIs do dashboard sem reload da página */
 function _syncDashboardKpis() {
-  /* Respeita o filtro de período ativo */
-  const mesesFiltro = _dashMesesFiltro();
-  const src = mesesFiltro ? PROJ_2026_SHEET.filter(p=>mesesFiltro.includes(p.mes)) : PROJ_2026_SHEET;
-  const fat    = src.reduce((s,p)=>s+(p.fat||0),0);
-  const custo  = src.reduce((s,p)=>s+(p.cost||0),0);
-  const lucro  = fat - custo;
-  const margem = fat>0?(lucro/fat*100):0;
-  const nTotal = src.length;
-  const nNovos = src.filter(p=>p.novo).length;
-  const ticket = nTotal>0?fat/nTotal:0;
-  const npsArr = src.filter(p=>p.nps>0);
-  const avgNps = npsArr.length ? npsArr.reduce((s,p)=>s+p.nps,0)/npsArr.length : 0;
+  let fat, custo, lucro, margem, nTotal, nNovos, ticket, avgNps;
+
+  if(SUPABASE_IS_SOURCE_OF_TRUTH && Array.isArray(_liveProjectsKpiCache)) {
+    const rows = _liveProjectsKpiCache;
+    if(rows.length) {
+      fat = rows.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
+      custo = rows.reduce((s, p) => s + (parseFloat(p.cost) || 0), 0);
+      lucro = fat - custo;
+      margem = fat > 0 ? (lucro / fat * 100) : 0;
+      nTotal = rows.length;
+      nNovos = rows.filter(p => p.is_new_client === true || p.is_new_client === 'true').length;
+      ticket = nTotal > 0 ? fat / nTotal : 0;
+      const npsArr = rows.filter(p => (parseFloat(p.nps) || 0) > 0);
+      avgNps = npsArr.length ? npsArr.reduce((s, p) => s + (parseFloat(p.nps) || 0), 0) / npsArr.length : 0;
+    } else {
+      fat = custo = lucro = margem = ticket = avgNps = nTotal = nNovos = 0;
+    }
+  } else {
+    /* Respeita o filtro de período ativo — fonte planilha embutida */
+    const mesesFiltro = _dashMesesFiltro();
+    const src = mesesFiltro ? PROJ_2026_SHEET.filter(p=>mesesFiltro.includes(p.mes)) : PROJ_2026_SHEET;
+    fat    = src.reduce((s,p)=>s+(p.fat||0),0);
+    custo  = src.reduce((s,p)=>s+(p.cost||0),0);
+    lucro  = fat - custo;
+    margem = fat>0?(lucro/fat*100):0;
+    nTotal = src.length;
+    nNovos = src.filter(p=>p.novo).length;
+    ticket = nTotal>0?fat/nTotal:0;
+    const npsArr = src.filter(p=>p.nps>0);
+    avgNps = npsArr.length ? npsArr.reduce((s,p)=>s+p.nps,0)/npsArr.length : 0;
+  }
 
   const txt=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   const cls=(id,c)=>{const el=document.getElementById(id);if(el)el.className='kpi-val '+c;};
@@ -9205,7 +9365,7 @@ function _syncDashboardKpis() {
   txt('dMargemSub', margem>=55?'Saudável':margem>=30?'Regular':'Baixa');
 
   txt('dCusto',  fmtBRL(custo));
-  txt('dCustoSub', custo>0?Math.round(custo/fat*100)+'% do fat.':'da planilha');
+  txt('dCustoSub', fat > 0 && custo > 0 ? Math.round(custo / fat * 100) + '% do fat.' : (SUPABASE_IS_SOURCE_OF_TRUTH ? 'Supabase' : 'da planilha'));
 
   txt('dProj',  nTotal);
   txt('dProjSub', nNovos+' novos clientes');
@@ -9889,10 +10049,22 @@ async function deleteFechProj(fechId, idx) {
                        (p.project_name||'').toLowerCase()===(fech.project_name||'').toLowerCase()
                      );
       if(dbProj) {
-        const s = PROJ_2026_SHEET[idx];
+        let costRev = 0;
+        let pctRev = 0;
+        const fat = parseFloat(dbProj.total_value) || 0;
+        if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+          const curCost = parseFloat(dbProj.cost) || 0;
+          const fechC = parseFloat(fech.custo_total) || 0;
+          costRev = Math.max(0, curCost - fechC);
+          pctRev = fat > 0 ? Math.round((fat - costRev) / fat * 100) : 0;
+        } else {
+          const s = PROJ_2026_SHEET[idx];
+          costRev = s?.cost || 0;
+          pctRev = s?.margin || 0;
+        }
         await apiPatch('age_projects', dbProj.id, {
-          cost:       s?.cost || 0,
-          profit_pct: s?.margin || 0
+          cost:       costRev,
+          profit_pct: pctRev
         }).catch(()=>{});
       }
     }
@@ -10340,6 +10512,7 @@ async function loadKanban() {
 
 /* Garante que cada projeto da planilha tem uma entrada em age_project_stages */
 async function _ensureKanbanRecords() {
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) return;
   for(let i = 0; i < PROJ_2026_SHEET.length; i++) {
     const s = PROJ_2026_SHEET[i];
     const existing = _kbStages.find(r =>
