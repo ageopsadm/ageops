@@ -1273,6 +1273,119 @@ select.login-input{cursor:pointer}
 
 .pay2-modal .modal-box{max-width:560px;width:96vw;border-radius:16px}
 .pay2-money{font-family:var(--font-h);font-weight:900}
+
+/* ═══════════════════════════════════════════
+   PROJETOS · CUSTOS inline (modal)
+═══════════════════════════════════════════ */
+.proj-costs-box{
+  background:rgba(0,0,0,.03);
+  border:1px solid var(--bd);
+  border-radius:12px;
+  padding:12px;
+}
+.proj-costs-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border-radius:10px;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.08);
+}
+.proj-costs-table thead th{
+  background:#0b1220;
+  color:rgba(255,255,255,.85);
+  font-family:var(--font-h);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  padding:8px 8px;
+  text-align:left;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.proj-costs-table tbody td{
+  padding:8px 8px;
+  border-bottom:1px solid rgba(0,0,0,.06);
+  font-family:var(--font-b);
+  font-size:13px;
+  color:#0f172a;
+  vertical-align:middle;
+}
+.proj-costs-table tbody tr:nth-child(even) td{background:rgba(0,0,0,.015)}
+.proj-costs-table tbody tr:hover td{background:rgba(0,0,0,.02)}
+.proj-costs-table input,.proj-costs-table select{
+  padding:6px 8px;
+  font-size:13px;
+  font-family:var(--font-b);
+  height:32px;
+}
+.proj-costs-table .amt{
+  font-family:var(--font-h);
+  font-weight:900;
+  text-align:right;
+}
+.proj-costs-table .xbtn{
+  width:28px;height:28px;border-radius:10px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid rgba(0,0,0,.12);
+  background:rgba(220,38,38,.08);
+  color:#b91c1c;
+}
+.proj-costs-table .xbtn:hover{filter:brightness(1.03)}
+.proj-costs-add{
+  margin-top:10px;
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px dashed rgba(0,0,0,.25);
+  background:rgba(255,255,255,.65);
+  font-family:var(--font-h);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#0f172a;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.proj-costs-add:hover{background:#fff}
+.proj-costs-row-in{animation:projCostFadeIn .16s ease-out}
+@keyframes projCostFadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.proj-costs-row-out{animation:projCostFadeOut .14s ease-in}
+@keyframes projCostFadeOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(4px)}}
+.proj-costs-sum{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(160px,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+@media (max-width: 720px){ .proj-costs-sum{grid-template-columns:1fr} }
+.proj-costs-card{
+  background:#0b1220;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:10px 12px;
+}
+.proj-costs-card .lbl{
+  font-family:var(--font-h);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.62);
+}
+.proj-costs-card .val{
+  font-family:var(--font-h);
+  font-size:15px;
+  font-weight:900;
+  color:#fff;
+  margin-top:6px;
+}
+.proj-costs-card.blue .val{color:#93c5fd}
+.proj-costs-card.purple .val{color:#c4b5fd}
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
 <script>
@@ -3626,8 +3739,6 @@ select.login-input{cursor:pointer}
       <div class="form-group"><label class="form-label">PRAZO / VENCIMENTO</label><input id="pDueDate" type="date"></div>
       <div class="form-group"><label class="form-label">DATA ENTREGA</label><input id="pDeliveryDate" type="date"></div>
       <div class="form-group"><label class="form-label">DATA GRAVAÇÃO</label><input id="pRecordingDate" type="date"></div>
-      <div class="form-group"><label class="form-label">INÍCIO</label><input id="pStartDate" type="date"></div>
-      <div class="form-group"><label class="form-label">FIM</label><input id="pEndDate" type="date"></div>
       <div class="form-group"><label class="form-label">FATURAMENTO (R$)</label><input id="pFat" type="number" step="0.01" min="0" oninput="calcProjMargin()"></div>
 
       <div class="form-group"><label class="form-label">MARGEM %</label><input id="pMargin" type="number" step="0.1" readonly style="opacity:.6"></div>
@@ -3642,6 +3753,52 @@ select.login-input{cursor:pointer}
           <option value="concluido">Concluído</option>
           <option value="cancelado">Cancelado</option>
         </select>
+      </div>
+    </div>
+
+    <!-- Custos do projeto -->
+    <div style="margin-top:14px;border-top:1px solid rgba(0,0,0,.07);padding-top:14px">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:10px;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;border:1px solid var(--bd)">
+          <i class="fas fa-dollar-sign" style="color:#0f172a"></i>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--font-h);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#0f172a">CUSTOS DO PROJETO</div>
+          <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:2px">Opcional — adicione os custos previstos para este projeto</div>
+        </div>
+      </div>
+
+      <div class="proj-costs-box">
+        <table class="proj-costs-table">
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th style="text-align:right">Valor (R$)</th>
+              <th>Tipo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="projCostsBody">
+            <tr><td colspan="5" style="padding:12px;color:var(--textsub);font-family:var(--font-m);font-size:10px;text-align:center">Carregando…</td></tr>
+          </tbody>
+        </table>
+        <button type="button" class="proj-costs-add perm-guard-edit" onclick="addProjCostRow()"><i class="fas fa-plus"></i> Adicionar Custo</button>
+
+        <div class="proj-costs-sum">
+          <div class="proj-costs-card blue">
+            <div class="lbl">Total Previsto</div>
+            <div class="val" id="projCostSumPrev">—</div>
+          </div>
+          <div class="proj-costs-card purple">
+            <div class="lbl">Total Real</div>
+            <div class="val" id="projCostSumReal">—</div>
+          </div>
+          <div class="proj-costs-card">
+            <div class="lbl">Diferença</div>
+            <div class="val" id="projCostSumDiff">—</div>
+          </div>
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end">
@@ -11547,6 +11704,221 @@ function initProjDragDrop() {
 }
 
 /* ── Project CRUD ── */
+let _projCostsCache = [];            /* linhas atuais no modal (age_gastos) */
+let _projCostsDeletedIds = new Set();/* ids removidos no modal */
+
+function _projCostCatOptionsHtml(selected='') {
+  const cats = ['Equipamento','Locação','Equipe','Transporte','Alimentação','Pós-produção','Arte/Cenografia','Marketing','Impostos','Outros'];
+  const sel = String(selected||'');
+  return '<option value="">—</option>' + cats.map(c=>`<option value="${escAttr(c)}"${c===sel?' selected':''}>${escHtml(c)}</option>`).join('');
+}
+
+function _projCostTipoOptionsHtml(selected='previsto') {
+  const t = String(selected||'previsto').toLowerCase();
+  const norm = (t === 'real') ? 'real' : 'previsto';
+  return `
+    <option value="previsto"${norm==='previsto'?' selected':''}>Previsto</option>
+    <option value="real"${norm==='real'?' selected':''}>Real</option>
+  `;
+}
+
+function _projCostParseMoney(inpIdOrEl) {
+  const el = typeof inpIdOrEl === 'string' ? document.getElementById(inpIdOrEl) : inpIdOrEl;
+  if(!el) return 0;
+  const raw = el.dataset?.raw;
+  if(raw) {
+    const v = parseFloat(raw);
+    return Number.isFinite(v) ? v : 0;
+  }
+  return parseBRL(el.value);
+}
+
+function _projCostRecalcSummary() {
+  let prev = 0, real = 0;
+  for(const r of _projCostsCache) {
+    const v = parseFloat(r.valor)||0;
+    if(String(r.tipo||'previsto').toLowerCase() === 'real') real += v;
+    else prev += v;
+  }
+  const diff = real - prev;
+  const elPrev = document.getElementById('projCostSumPrev');
+  const elReal = document.getElementById('projCostSumReal');
+  const elDiff = document.getElementById('projCostSumDiff');
+  if(elPrev) elPrev.textContent = fmtBRL(prev);
+  if(elReal) elReal.textContent = fmtBRL(real);
+  if(elDiff) {
+    elDiff.textContent = fmtBRL(diff);
+    elDiff.style.color = diff <= 0 ? '#86efac' : '#fca5a5';
+  }
+}
+
+function renderProjCostsTable() {
+  const tbody = document.getElementById('projCostsBody');
+  if(!tbody) return;
+
+  if(!_projCostsCache.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:12px;color:var(--textsub);font-family:var(--font-m);font-size:10px;text-align:center">Nenhum custo adicionado.</td></tr>`;
+    _projCostRecalcSummary();
+    setTimeout(() => applyActivePageEditGuards('projects'), 0);
+    return;
+  }
+
+  const canEdit = hasModuleEditForPage('projects');
+  tbody.innerHTML = _projCostsCache.map((r, idx) => {
+    const rid = String(r.id || '');
+    const desc = escAttr(r.descricao || '');
+    const cat = String(r.categoria || '');
+    const tipo = String(r.tipo || 'previsto').toLowerCase() === 'real' ? 'real' : 'previsto';
+    const v = parseFloat(r.valor)||0;
+    const vStr = v ? v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '';
+    const xbtn = canEdit
+      ? `<button type="button" class="xbtn" title="Remover" onclick="removeProjCostRow(${idx})"><i class="fas fa-times"></i></button>`
+      : '';
+    return `<tr class="proj-costs-row-in" data-idx="${idx}" data-id="${escAttr(rid)}">
+      <td><input type="text" value="${desc}" ${canEdit?'':'readonly'} placeholder="Descrição" oninput="onProjCostField(${idx},'descricao',this.value)"></td>
+      <td><select ${canEdit?'':'disabled'} onchange="onProjCostField(${idx},'categoria',this.value)">${_projCostCatOptionsHtml(cat)}</select></td>
+      <td style="text-align:right"><input class="amt" type="text" inputmode="numeric" placeholder="R$ 0,00" value="${escAttr(vStr)}" ${canEdit?'':'readonly'} oninput="onProjCostMoney(${idx},this)"></td>
+      <td><select ${canEdit?'':'disabled'} onchange="onProjCostField(${idx},'tipo',this.value)">${_projCostTipoOptionsHtml(tipo)}</select></td>
+      <td style="text-align:right">${xbtn}</td>
+    </tr>`;
+  }).join('');
+
+  _projCostRecalcSummary();
+  setTimeout(() => applyActivePageEditGuards('projects'), 0);
+}
+
+function onProjCostField(idx, field, value) {
+  if(!_projCostsCache[idx]) return;
+  _projCostsCache[idx][field] = value;
+  _projCostRecalcSummary();
+}
+
+function onProjCostMoney(idx, el) {
+  maskMoneyBRL(el);
+  const v = _projCostParseMoney(el);
+  if(_projCostsCache[idx]) _projCostsCache[idx].valor = v;
+  _projCostRecalcSummary();
+}
+
+function addProjCostRow() {
+  if(!hasModuleEditForPage('projects')) { toast('Sem permissão de edição.', 'warn'); return; }
+  _projCostsCache.push({
+    id: '',
+    descricao: '',
+    categoria: '',
+    valor: 0,
+    tipo: 'previsto'
+  });
+  renderProjCostsTable();
+}
+
+function removeProjCostRow(idx) {
+  if(!hasModuleEditForPage('projects')) return;
+  const tbody = document.getElementById('projCostsBody');
+  const tr = tbody ? tbody.querySelector(`tr[data-idx="${idx}"]`) : null;
+  const row = _projCostsCache[idx];
+  if(row?.id) _projCostsDeletedIds.add(String(row.id));
+  if(tr) {
+    tr.classList.remove('proj-costs-row-in');
+    tr.classList.add('proj-costs-row-out');
+    setTimeout(() => {
+      _projCostsCache.splice(idx, 1);
+      renderProjCostsTable();
+    }, 140);
+    return;
+  }
+  _projCostsCache.splice(idx, 1);
+  renderProjCostsTable();
+}
+
+async function loadProjectCosts(projectId) {
+  _projCostsCache = [];
+  _projCostsDeletedIds = new Set();
+  const tbody = document.getElementById('projCostsBody');
+  if(tbody) tbody.innerHTML = `<tr><td colspan="5" style="padding:12px;color:var(--textsub);font-family:var(--font-m);font-size:10px;text-align:center">Carregando…</td></tr>`;
+  if(!projectId || String(projectId).startsWith('sheet_')) {
+    renderProjCostsTable();
+    return;
+  }
+  try {
+    const res = await apiGet('age_gastos', `?projeto_id=eq.${encodeURIComponent(projectId)}&limit=200&order=created_at.asc`);
+    const rows = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+    _projCostsCache = rows.filter(_sbIsRowVisible).map(r => ({
+      id: r.id || '',
+      descricao: r.descricao || '',
+      categoria: r.categoria || '',
+      valor: parseFloat(r.valor)||0,
+      tipo: String(r.tipo||'previsto').toLowerCase()==='real'?'real':'previsto',
+      company_id: r.company_id || null,
+      projeto_id: r.projeto_id || projectId
+    }));
+  } catch(e) {
+    console.error('[loadProjectCosts]', e);
+    _projCostsCache = [];
+  }
+  renderProjCostsTable();
+}
+
+function _projCostsValidateRows() {
+  for(const r of _projCostsCache) {
+    const desc = String(r.descricao||'').trim();
+    const v = parseFloat(r.valor)||0;
+    const hasDesc = !!desc;
+    const hasVal = v > 0;
+    if((hasDesc && !hasVal) || (!hasDesc && hasVal)) {
+      return { ok:false, msg:'Em custos: descrição e valor devem ser preenchidos juntos.' };
+    }
+    if(hasVal && v <= 0) {
+      return { ok:false, msg:'Em custos: valor deve ser positivo.' };
+    }
+  }
+  return { ok:true };
+}
+
+async function saveProjectCosts(projectId, companyIdMaybe) {
+  const delIds = Array.from(_projCostsDeletedIds || []);
+  const cid = companyIdMaybe || currentUser?.company_id || null;
+
+  const rowsToSave = _projCostsCache
+    .map(r => ({
+      id: r.id || '',
+      descricao: String(r.descricao||'').trim(),
+      categoria: String(r.categoria||'').trim() || null,
+      valor: parseFloat(r.valor)||0,
+      tipo: String(r.tipo||'previsto').toLowerCase()==='real' ? 'real' : 'previsto'
+    }))
+    .filter(r => (r.descricao && r.valor > 0) || (!r.descricao && !(r.valor > 0))); // mantém linhas vazias para ignorar depois
+
+  // Ignorar linhas totalmente vazias
+  const effective = rowsToSave.filter(r => r.descricao && r.valor > 0);
+
+  // 1) deletes
+  for(const did of delIds) {
+    if(!did) continue;
+    await apiDel('age_gastos', did);
+  }
+
+  // 2) upserts (POST/PATCH)
+  for(const r of effective) {
+    const payload = {
+      projeto_id: String(projectId),
+      company_id: cid || undefined,
+      descricao: r.descricao,
+      categoria: r.categoria,
+      valor: r.valor,
+      tipo: r.tipo
+    };
+    if(r.id) await apiPatch('age_gastos', String(r.id), payload);
+    else {
+      const created = await apiPost('age_gastos', payload);
+      const row = Array.isArray(created) ? created[0] : created;
+      if(row?.id) r.id = row.id;
+    }
+  }
+
+  _projCostsDeletedIds = new Set();
+}
+
 function openProjectModal(proj=null) {
   document.getElementById('modalProjTitle').textContent = proj?'EDITAR PROJETO':'NOVO PROJETO';
   document.getElementById('pId').value       = proj?.id||'';
@@ -11563,10 +11935,6 @@ function openProjectModal(proj=null) {
   if(pDel) pDel.value = _projDateStr(proj?.delivery_date);
   const pRec = document.getElementById('pRecordingDate');
   if(pRec) pRec.value = _projDateStr(proj?.recording_date);
-  const pSta = document.getElementById('pStartDate');
-  if(pSta) pSta.value = _projDateStr(proj?.start_date);
-  const pEnd = document.getElementById('pEndDate');
-  if(pEnd) pEnd.value = _projDateStr(proj?.end_date);
   document.getElementById('pFat').value      = proj?.total_value||'';
   const sheetE = PROJ_2026_SHEET.find(s=>s.cliente===_ageProjDbClient(proj)&&s.projeto===_ageProjDbTitle(proj));
   if(SUPABASE_IS_SOURCE_OF_TRUTH && proj) {
@@ -11587,6 +11955,7 @@ function openProjectModal(proj=null) {
   document.getElementById('pNps').value      = proj?.nps||'';
   document.getElementById('pNovo').value     = (proj?.is_new_client===true||proj?.is_new_client==='true')?'true':'false';
   document.getElementById('pStatus').value   = proj?.status||'pendente';
+  loadProjectCosts(proj?.id).catch(()=>{});
   openModal('modalProject');
 }
 
@@ -11632,6 +12001,9 @@ async function saveProject() {
   const isNewVal   = document.getElementById('pNovo').value === 'true';
 
   if(!clientName || !projName) { toast('Preencha cliente e projeto', 'warn'); return; }
+
+  const vCosts = _projCostsValidateRows();
+  if(!vCosts.ok) { toast(vCosts.msg, 'warn'); return; }
 
   const realIdEarly = id && !id.startsWith('sheet_') ? id : '';
   let cost = 0;
@@ -11679,8 +12051,6 @@ async function saveProject() {
     ['pDueDate', 'due_date'],
     ['pDeliveryDate', 'delivery_date'],
     ['pRecordingDate', 'recording_date'],
-    ['pStartDate', 'start_date'],
-    ['pEndDate', 'end_date'],
   ].forEach(([fid, col]) => {
     const v = dateOrNull(fid);
     if(v !== undefined) payload[col] = v;
@@ -11697,6 +12067,21 @@ async function saveProject() {
       ? await apiPut('age_projects', realId, payload)
       : await apiPost('age_projects', payload);
     console.log('[saveProject] resposta Supabase:', saved);
+    // Persistir custos (age_gastos) vinculados ao projeto salvo
+    let savedId = realId;
+    let savedCompanyId = currentUser?.company_id || null;
+    const srow = Array.isArray(saved) ? saved[0] : saved;
+    if(!savedId && srow?.id) savedId = srow.id;
+    if(srow?.company_id) savedCompanyId = srow.company_id;
+    let costsOk = true;
+    if(savedId) {
+      try {
+        await saveProjectCosts(savedId, savedCompanyId);
+      } catch(eC) {
+        console.error('[saveProjectCosts]', eC);
+        costsOk = false;
+      }
+    }
     if(!realId && saved) {
       const sid = Array.isArray(saved) ? saved[0] : saved;
       if(sid?.id) {
@@ -11717,7 +12102,7 @@ async function saveProject() {
       }
     }
     closeModal('modalProject');
-    toast(realId ? 'Projeto salvo ✓' : 'Projeto criado ✓');
+    toast(costsOk ? 'Projeto e custos salvos com sucesso!' : 'Projeto salvo, mas houve erro ao salvar os custos. Tente novamente.', costsOk ? 'ok' : 'warn');
     _fechAllProjects = [];
     _projAllCache = [];
     await loadProjects();
