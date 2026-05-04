@@ -7716,6 +7716,12 @@ function sbHeaders(extra, anonKey) {
 }
 
 async function _fetchSaveAgePayment(payload) {
+  console.log('[AUTH DEBUG]', {
+    url: `${SUPABASE_URL}/rest/v1/age_payments`,
+    keyInicio: SUPABASE_ANON_KEY?.substring(0, 30),
+    keyFim: SUPABASE_ANON_KEY?.slice(-10),
+    keyTamanho: SUPABASE_ANON_KEY?.length
+  });
   const res = await fetch(`${SUPABASE_URL}/rest/v1/age_payments`, {
     method: 'POST',
     headers: {
