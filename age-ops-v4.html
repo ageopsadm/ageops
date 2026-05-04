@@ -15403,6 +15403,12 @@ function renderColabKpis() {
     </div>`).join('');
 }
 
+function _formatCpfLoose(d) {
+  const x = String(d || '').replace(/\D/g, '');
+  if(x.length !== 11) return String(d || '').trim() || '—';
+  return x.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
 async function loadColabDetailPanel(colabId) {
   const el = document.getElementById('colabDetail_' + colabId);
   if(!el) return;
@@ -15432,17 +15438,36 @@ async function loadColabDetailPanel(colabId) {
     pago.sort((a, b) => String(b.data_pagamento || b.paid_at || '').localeCompare(String(a.data_pagamento || a.paid_at || '')));
     const last = pago[0];
     const lastLine = last
-      ? `Último pagamento: ${fmtBRL(last.valor)} — ${fmtDate(last.data_pagamento || last.paid_at)}`
-      : 'Último pagamento: —';
+      ? `Último pago: ${fmtBRL(last.valor)} — ${fmtDate(last.data_pagamento || last.paid_at)}`
+      : 'Último pago: —';
+    const byVenc = [...pays].sort((a, b) => String(b.data_vencimento || '').localeCompare(String(a.data_vencimento || '')));
+    const recent = byVenc.slice(0, 12);
+    const recentRows = recent.length
+      ? `<div style="max-height:200px;overflow-y:auto;border:1px solid rgba(0,0,0,.08);border-radius:8px;margin-top:8px">
+        <table style="width:100%;font-size:10px;border-collapse:collapse;font-family:var(--font-m)">
+        <thead><tr style="background:rgba(0,0,0,.04);color:#64748b">
+          <th style="text-align:left;padding:6px 8px;font-weight:700">Vencimento</th>
+          <th style="text-align:right;padding:6px 8px;font-weight:700">Valor</th>
+          <th style="text-align:left;padding:6px 8px;font-weight:700">Status</th>
+        </tr></thead><tbody>
+        ${recent.map(p => `<tr style="border-top:1px solid rgba(0,0,0,.06)">
+          <td style="padding:6px 8px">${escHtml(p.data_vencimento ? fmtDate(p.data_vencimento) : '—')}</td>
+          <td style="padding:6px 8px;text-align:right;font-family:var(--font-h)">${fmtBRL(p.valor)}</td>
+          <td style="padding:6px 8px">${_payStatusBadge(p.status)}</td>
+        </tr>`).join('')}
+        </tbody></table></div>`
+      : '<div style="font-size:11px;color:#94a3b8;margin-top:6px">Nenhum pagamento vinculado a este colaborador.</div>';
     const isTed = String(c.forma_recebimento || 'pix').toLowerCase() === 'ted';
     const bankHtml = isTed
       ? `Forma: TED<br/>Banco: ${escHtml(c.banco || '—')}<br/>Ag: ${escHtml(c.agencia || '—')} · Cc: ${escHtml(c.conta || '—')} <span style="color:#94a3b8">(${escHtml(c.tipo_conta || 'corrente')})</span>`
       : `Forma: PIX<br/>Tipo: ${escHtml(c.pix_tipo || '—')}<br/>Chave: ${escHtml(c.pix_chave || '—')}`;
     const stLab = (String(c.status || '').toLowerCase() === 'inativo') ? 'Inativo' : 'Ativo';
+    const cpfLine = (c.cpf || c.documento) ? `<div>CPF: ${escHtml(_formatCpfLoose(c.cpf || c.documento))}</div>` : '';
     el.innerHTML = `
       <div class="sec">👤 DADOS DO COLABORADOR</div>
       <div>Cargo: ${escHtml(c.funcao || '—')}</div>
       <div>E-mail: ${escHtml(c.contato_email || '—')}</div>
+      ${cpfLine}
       <div>Telefone: ${escHtml(c.contato_whatsapp || '—')}</div>
       <div>Status: ${escHtml(stLab)}</div>
       <div class="sec">💳 DADOS BANCÁRIOS</div>
@@ -15450,7 +15475,9 @@ async function loadColabDetailPanel(colabId) {
       <div class="sec">💰 HISTÓRICO DE PAGAMENTOS</div>
       <div>${lastLine}</div>
       <div>Total recebido (mês): <b style="color:#2563eb;font-family:var(--font-h)">${fmtBRL(totMes)}</b></div>
-      <div>Total recebido (ano): <b style="color:#7c3aed;font-family:var(--font-h)">${fmtBRL(totAno)}</b></div>`;
+      <div>Total recebido (ano): <b style="color:#7c3aed;font-family:var(--font-h)">${fmtBRL(totAno)}</b></div>
+      <div style="font-size:10px;font-weight:700;color:#64748b;margin-top:10px;letter-spacing:.04em">Últimos lançamentos</div>
+      ${recentRows}`;
   } catch(e) {
     console.error('[loadColabDetailPanel]', e);
     el.textContent = 'Erro ao carregar histórico.';
