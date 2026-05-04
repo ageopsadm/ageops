@@ -1184,6 +1184,95 @@ select.login-input{cursor:pointer}
   font-family:var(--font-m);display:block;width:100%;text-align:center;
 }
 .invite-flow-btn .invite-arrow{font-size:14px;font-weight:900}
+
+/* ═══════════════════════════════════════════
+   PAGAMENTOS (novo)
+═══════════════════════════════════════════ */
+.pay2-toolbar{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  background:rgba(0,0,0,.03);border:1px solid var(--bd);border-radius:12px;
+  padding:12px 12px;margin:0 0 12px;
+}
+.pay2-toolbar .pay2-f{
+  display:flex;flex-direction:column;gap:4px;min-width:160px;
+}
+.pay2-toolbar .pay2-f label{
+  font-family:var(--font-h);font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#334155;
+}
+.pay2-toolbar select,.pay2-toolbar input{height:36px}
+.pay2-summary{
+  display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;margin:0 0 14px;
+}
+@media (max-width: 980px){ .pay2-summary{grid-template-columns:repeat(2,minmax(160px,1fr));} }
+@media (max-width: 520px){ .pay2-summary{grid-template-columns:1fr;} }
+.pay2-card{
+  background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
+  box-shadow:0 18px 50px rgba(0,0,0,.18);
+}
+.pay2-card .lbl{
+  font-family:var(--font-h);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62);
+}
+.pay2-card .val{
+  font-family:var(--font-h);font-size:18px;font-weight:900;margin-top:6px;color:#fff;
+}
+.pay2-card.red  .val{color:#f87171}
+.pay2-card.green .val{color:#86efac}
+.pay2-card.orange .val{color:#fdba74}
+.pay2-card.blue .val{color:#93c5fd}
+
+.pay2-table-wrap{
+  background:var(--bg2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;
+}
+.pay2-table{
+  width:100%;border-collapse:separate;border-spacing:0;
+}
+.pay2-table thead th{
+  background:#0b1220;color:rgba(255,255,255,.85);
+  font-family:var(--font-h);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;
+}
+.pay2-table tbody td{
+  padding:10px 10px;border-bottom:1px solid rgba(0,0,0,.06);
+  font-family:var(--font-b);font-size:12px;color:#0f172a;vertical-align:middle;
+}
+.pay2-table tbody tr:hover td{ background:rgba(0,0,0,.02); }
+.pay2-amt{
+  font-family:var(--font-h);font-weight:900;font-size:12px;text-align:right;white-space:nowrap;
+}
+.pay2-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+
+.pay2-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:20px;
+  border:1px solid rgba(0,0,0,.12);
+  font-family:var(--font-h);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  white-space:nowrap;
+}
+.pay2-badge.t-colaborador{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.25);color:#1d4ed8}
+.pay2-badge.t-fornecedor{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.24);color:#6d28d9}
+.pay2-badge.t-freelancer{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.24);color:#15803d}
+.pay2-badge.t-assinatura{background:rgba(14,116,144,.12);border-color:rgba(14,116,144,.22);color:#0e7490}
+.pay2-badge.t-imposto{background:rgba(234,88,12,.12);border-color:rgba(234,88,12,.22);color:#c2410c}
+.pay2-badge.t-outros{background:rgba(100,116,139,.14);border-color:rgba(100,116,139,.22);color:#475569}
+.pay2-badge.s-pendente{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.3);color:#b45309}
+.pay2-badge.s-pago{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.26);color:#15803d}
+.pay2-badge.s-atrasado{background:rgba(220,38,38,.14);border-color:rgba(220,38,38,.24);color:#b91c1c}
+.pay2-badge.s-cancelado{background:rgba(148,163,184,.2);border-color:rgba(148,163,184,.32);color:#475569}
+
+.pay2-details-toggle{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 12px;border:1px solid var(--bd);border-radius:12px;background:rgba(0,0,0,.02);
+  cursor:pointer;user-select:none;margin-top:10px;
+}
+.pay2-details-toggle .t{
+  font-family:var(--font-h);font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#0f172a;
+}
+.pay2-details-box{display:none;margin-top:10px}
+.pay2-details-box.open{display:block}
+.pay2-minihelp{font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:4px}
+
+.pay2-modal .modal-box{max-width:560px;width:96vw;border-radius:16px}
+.pay2-money{font-family:var(--font-h);font-weight:900}
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
 <script>
@@ -3039,26 +3128,78 @@ select.login-input{cursor:pointer}
         <div class="page-header">
           <div class="page-title"><i class="fas fa-money-check-alt"></i> PAGAMENTOS</div>
           <div class="page-actions">
-            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> + NOVO PAGAMENTO</button>
             <button type="button" class="btn btn-ghost btn-sm perm-always" onclick="loadPagamentosPage()"><i class="fas fa-sync-alt"></i></button>
           </div>
         </div>
-        <div class="kpi-grid" style="margin-bottom:16px">
-          <div class="kpi-card" style="border-left:3px solid #f59e0b">
-            <div class="kpi-label">TOTAL PENDENTE</div>
-            <div class="kpi-val" style="color:#f59e0b" id="payKpiPendente">—</div>
+        <div class="pay2-toolbar">
+          <div class="pay2-f">
+            <label>Status</label>
+            <select id="payFilterStatus" onchange="aplicarFiltrosPagamentos()">
+              <option value="">Todos</option>
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago</option>
+              <option value="atrasado">Atrasado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
           </div>
-          <div class="kpi-card" style="border-left:3px solid #16a34a">
-            <div class="kpi-label">PAGO NO MÊS</div>
-            <div class="kpi-val green" id="payKpiMes">—</div>
+          <div class="pay2-f">
+            <label>Tipo</label>
+            <select id="payFilterTipo" onchange="aplicarFiltrosPagamentos()">
+              <option value="">Todos</option>
+              <option value="colaborador">Colaborador</option>
+              <option value="fornecedor">Fornecedor</option>
+              <option value="freelancer">Freelancer</option>
+              <option value="assinatura">Assinatura</option>
+              <option value="imposto">Imposto</option>
+              <option value="outros">Outros</option>
+            </select>
           </div>
-          <div class="kpi-card" style="border-left:3px solid #dc2626">
-            <div class="kpi-label">ATRASADOS</div>
-            <div class="kpi-val" style="color:#dc2626" id="payKpiAtraso">—</div>
+          <div class="pay2-f">
+            <label>Mês/Ano</label>
+            <select id="payFilterYm" onchange="aplicarFiltrosPagamentos()"></select>
+          </div>
+          <div style="flex:1;min-width:10px"></div>
+          <button type="button" class="btn btn-primary perm-guard-edit" onclick="openPagamentoModal()" style="height:38px"><i class="fas fa-plus"></i> + NOVO PAGAMENTO</button>
+        </div>
+
+        <div class="pay2-summary">
+          <div class="pay2-card red">
+            <div class="lbl">Total Pendente</div>
+            <div class="val" id="paySumPendente">—</div>
+          </div>
+          <div class="pay2-card green">
+            <div class="lbl">Total Pago no Mês</div>
+            <div class="val" id="paySumPagoMes">—</div>
+          </div>
+          <div class="pay2-card orange">
+            <div class="lbl">Total Atrasado</div>
+            <div class="val" id="paySumAtrasado">—</div>
+          </div>
+          <div class="pay2-card blue">
+            <div class="lbl">Total Geral do Mês</div>
+            <div class="val" id="paySumTotalMes">—</div>
           </div>
         </div>
-        <div id="pagamentosList" style="display:flex;flex-direction:column;gap:8px">
-          <div style="text-align:center;padding:40px;color:#bbb;font-family:var(--font-m);font-size:11px">Carregando…</div>
+
+        <div class="pay2-table-wrap">
+          <table class="pay2-table">
+            <thead>
+              <tr>
+                <th>Destinatário</th>
+                <th>Tipo</th>
+                <th>Categoria</th>
+                <th style="text-align:right">Valor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th>Projeto</th>
+                <th style="text-align:right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="payTableBody">
+              <tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -3618,8 +3759,8 @@ select.login-input{cursor:pointer}
 </div>
 
 <!-- Modal Pagamento corporativo -->
-<div class="modal" id="modalPagamento">
-  <div class="modal-box" style="max-width:480px">
+<div class="modal pay2-modal" id="modalPagamento">
+  <div class="modal-box">
     <div class="modal-title">
       <span id="modalPagTitle">NOVO PAGAMENTO</span>
       <button onclick="closeModal('modalPagamento')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
@@ -3627,36 +3768,146 @@ select.login-input{cursor:pointer}
     <input type="hidden" id="payEditId" value="">
     <div class="form-grid">
       <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Colaborador *</label>
-        <select id="payColab" style="width:100%"></select>
+        <label class="form-label">Nome do destinatário *</label>
+        <input id="payNome" type="text" placeholder="Ex.: João (Freelancer) / Nubank / Receita Federal" style="width:100%">
       </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Projeto *</label>
-        <select id="payProject" style="width:100%"></select>
-      </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Descrição</label>
-        <input id="payDesc" type="text" placeholder="Ex.: honorários diária">
-      </div>
-      <div class="form-group"><label class="form-label">Valor (R$) *</label><input id="payAmount" type="number" step="0.01" min="0"></div>
-      <div class="form-group"><label class="form-label">Vencimento *</label><input id="payDue" type="date"></div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Método</label>
-        <select id="payMethod" style="width:100%">
-          <option value="PIX">PIX</option>
-          <option value="TED">TED</option>
-          <option value="Dinheiro">Dinheiro</option>
-          <option value="Outro">Outro</option>
+      <div class="form-group">
+        <label class="form-label">Tipo de destinatário *</label>
+        <select id="payTipo" style="width:100%" onchange="onPayTipoChanged()">
+          <option value="colaborador">Colaborador</option>
+          <option value="fornecedor">Fornecedor</option>
+          <option value="freelancer">Freelancer</option>
+          <option value="assinatura">Assinatura/Software</option>
+          <option value="imposto">Imposto/Taxa</option>
+          <option value="outros">Outros</option>
         </select>
       </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Notas</label>
-        <textarea id="payNotes" rows="2" style="width:100%"></textarea>
+      <div class="form-group">
+        <label class="form-label">Valor (R$) *</label>
+        <input id="payValor" type="text" inputmode="numeric" placeholder="R$ 0,00" oninput="maskMoneyBRL(this)" style="width:100%" class="pay2-money">
+        <div class="pay2-minihelp">Máscara BRL automática.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data de vencimento *</label>
+        <input id="payVenc" type="date" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status *</label>
+        <select id="payStatus" style="width:100%">
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago</option>
+          <option value="atrasado">Atrasado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="grid-column:1/-1;margin-top:2px">
+        <div class="pay2-details-toggle" onclick="togglePayDetails()">
+          <div class="t">Mais detalhes</div>
+          <i id="payDetailsChevron" class="fas fa-chevron-down" style="color:#64748b"></i>
+        </div>
+        <div id="payDetailsBox" class="pay2-details-box">
+          <div class="form-grid" style="margin-top:10px">
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <select id="payCategoria" style="width:100%">
+                <option value="">—</option>
+                <option value="Pessoal">Pessoal</option>
+                <option value="Equipamento">Equipamento</option>
+                <option value="Software">Software</option>
+                <option value="Serviço">Serviço</option>
+                <option value="Imposto">Imposto</option>
+                <option value="Aluguel">Aluguel</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subcategoria</label>
+              <input id="paySubcategoria" type="text" placeholder="Opcional" style="width:100%">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Descrição / Motivo</label>
+              <textarea id="payDescricao" rows="2" style="width:100%" placeholder="Descreva o que é este pagamento"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Forma de pagamento</label>
+              <select id="payForma" style="width:100%" onchange="onPayFormaChanged()">
+                <option value="pix">PIX</option>
+                <option value="ted">TED</option>
+                <option value="boleto">Boleto</option>
+                <option value="cartao">Cartão</option>
+                <option value="dinheiro">Dinheiro</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+            <div class="form-group" id="payPixBox">
+              <label class="form-label">Chave PIX / Dados bancários</label>
+              <input id="payChavePix" type="text" placeholder="Chave PIX ou conta/agência" style="width:100%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Banco</label>
+              <input id="payBanco" type="text" placeholder="Opcional" style="width:100%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">NF / Nota fiscal</label>
+              <input id="payNF" type="text" placeholder="Número da NF" style="width:100%">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Projeto vinculado (opcional)</label>
+              <select id="payProjeto" style="width:100%"></select>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Observações</label>
+              <textarea id="payObs" rows="2" style="width:100%"></textarea>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label" style="display:flex;align-items:center;gap:10px">
+                <input id="payRecorrente" type="checkbox" onchange="onPayRecorrenteChanged()">
+                Pagamento recorrente?
+              </label>
+              <div id="payPeriodicidadeBox" style="display:none;margin-top:8px">
+                <label class="form-label">Periodicidade</label>
+                <select id="payPeriodicidade" style="width:100%">
+                  <option value="mensal">Mensal</option>
+                  <option value="semanal">Semanal</option>
+                  <option value="quinzenal">Quinzenal</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('modalPagamento')">Cancelar</button>
       <button class="btn btn-primary" onclick="savePagamento()"><i class="fas fa-save"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mini-modal: marcar como pago -->
+<div class="modal pay2-modal" id="modalPayPaid">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>MARCAR COMO PAGO</span>
+      <button onclick="closeModal('modalPayPaid')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="payPaidId" value="">
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Data do pagamento</label>
+        <input id="payPaidDate" type="date" style="width:100%">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Comprovante (URL ou nº)</label>
+        <input id="payPaidProof" type="text" placeholder="https://... ou código do comprovante" style="width:100%">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalPayPaid')">Cancelar</button>
+      <button class="btn btn-primary" style="background:#16a34a" onclick="confirmMarkAsPaid()"><i class="fas fa-check"></i> Confirmar</button>
     </div>
   </div>
 </div>
@@ -10549,10 +10800,13 @@ async function _loadProjectsWithAutoSync() {
   await loadProjects();
 }
 
-async function loadProjects() {
+async function loadProjects(opts) {
+  const quiet = opts && opts.quiet === true;
   const tbody = document.getElementById('projBody');
   if(!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
+  if(!quiet) {
+    tbody.innerHTML = `<tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
+  }
 
   try {
     const [dbProjects, dbFechs] = await Promise.all([
@@ -10687,6 +10941,9 @@ async function loadProjects() {
     if(search) rows=rows.filter(p=>(p.client_name||'').toLowerCase().includes(search)||(p.project_name||'').toLowerCase().includes(search)||(p.segment||'').toLowerCase().includes(search));
 
     _projCache = rows;
+    /* Mantém fechamento / lista DB alinhados ao Supabase após qualquer reload de projetos */
+    _fechAllFechs = Array.isArray(dbFechs) ? dbFechs : [];
+    _fechAllProjects = Array.isArray(dbProjects) ? dbProjects : [];
     renderProjTable();
     renderProjKpis(_projAllCache);
     renderProjMonthBars(_projAllCache);
@@ -11013,6 +11270,7 @@ async function saveSheetCell(inp) {
   /* Persistir no banco se o projeto existe no banco */
   if(pid && !pid.startsWith('sheet_')) {
     try {
+      let needsSbReload = false;
       const payload = {};
       if(field==='total_value')       payload.total_value  = parseFloat(newVal)||0;
       else if(field==='cost')          payload.cost         = parseFloat(newVal)||0;
@@ -11029,6 +11287,7 @@ async function saveSheetCell(inp) {
       if(Object.keys(payload).length) {
         await apiPatch('age_projects', pid, payload);
         SYNC.emit('project:saved', {id:pid,...payload});
+        needsSbReload = true;
       }
 
       /* Se editou custo ou valor → propagar para o fechamento vinculado */
@@ -11067,6 +11326,7 @@ async function saveSheetCell(inp) {
 
           /* Atualizar cache local do fechamento */
           Object.assign(linkedFech, fechPatch);
+          needsSbReload = true;
 
           /* Atualizar margem no projeto também */
           await apiPatch('age_projects', pid, { profit_pct: newMarg }).catch(()=>{});
@@ -11082,7 +11342,10 @@ async function saveSheetCell(inp) {
         }
       }
 
-      if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+      if(SUPABASE_IS_SOURCE_OF_TRUTH && needsSbReload) {
+        await loadProjects({ quiet: true });
+        try { _syncDashboardKpis(); } catch(_) {}
+      } else if(SUPABASE_IS_SOURCE_OF_TRUTH) {
         refreshLiveProjectsKpiCache().then(() => {
           try { _syncDashboardKpis(); } catch(_) {}
         }).catch(() => {});
@@ -16234,194 +16497,408 @@ async function saveProfile() {
 /* ═══════════════════════════════════════════
    PAGAMENTOS CORPORATIVOS (age_payments)
 ═══════════════════════════════════════════ */
-let _pagamentosRows = [];
+let _pagamentosAll = [];
+let _pagamentosView = [];
+let _pagamentosFilters = { status:'', tipo:'', ym:'' };
+let _payProjectsCache = [];
 
-async function loadPagamentosPage() {
-  const listEl = document.getElementById('pagamentosList');
-  const k1 = document.getElementById('payKpiPendente');
-  const k2 = document.getElementById('payKpiMes');
-  const k3 = document.getElementById('payKpiAtraso');
-  if(!listEl) return;
+function _payToday() { return new Date().toISOString().slice(0,10); }
+function _ymFromDate(d) { const s = String(d||'').slice(0,10); return s ? s.slice(0,7) : ''; }
+function _normTipo(v) {
+  const t = String(v||'').toLowerCase().trim();
+  if(!t) return 'outros';
+  if(['colaborador','fornecedor','freelancer','assinatura','imposto','outros'].includes(t)) return t;
+  if(t.includes('assin')) return 'assinatura';
+  if(t.includes('tax') || t.includes('imp')) return 'imposto';
+  if(t.includes('free')) return 'freelancer';
+  if(t.includes('forn')) return 'fornecedor';
+  if(t.includes('colab')) return 'colaborador';
+  return 'outros';
+}
+function _normStatus(v) {
+  const s = String(v||'pendente').toLowerCase().trim();
+  if(['pendente','pago','atrasado','cancelado'].includes(s)) return s;
+  if(s.includes('pag')) return 'pago';
+  if(s.includes('atra')) return 'atrasado';
+  if(s.includes('canc')) return 'cancelado';
+  return 'pendente';
+}
+function parseBRL(input) {
+  const s = String(input||'').replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',', '.');
+  const v = parseFloat(s);
+  return Number.isFinite(v) ? v : 0;
+}
+function maskMoneyBRL(el) {
+  const raw = String(el.value||'').replace(/[^\d]/g,'');
+  const v = (parseInt(raw||'0',10) || 0) / 100;
+  el.dataset.raw = String(v);
+  el.value = v === 0 ? '' : v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+
+function _payRowNormalize(p) {
+  const id = p?.id ? String(p.id) : '';
+  const valor = parseFloat(p.valor ?? p.amount ?? p.total ?? 0) || 0;
+  const data_vencimento = String(p.data_vencimento || p.due_date || p.vencimento || '').slice(0,10) || '';
+  const data_pagamento  = String(p.data_pagamento || p.paid_at || p.paid_date || '').slice(0,10) || '';
+  const status = _normStatus(p.status);
+  const tipo_destinatario = _normTipo(p.tipo_destinatario || (p.colaborador_username ? 'colaborador' : 'outros'));
+  const nome_destinatario =
+    (p.nome_destinatario && String(p.nome_destinatario).trim()) ||
+    (p.colaborador_username ? displayNameForUsername(p.colaborador_username) : '') ||
+    (p.colaborador_username ? String(p.colaborador_username) : '') ||
+    (p.destinatario ? String(p.destinatario) : '') ||
+    '—';
+  const projeto_id = p.projeto_id || p.project_id || '';
+  const projeto_nome = p.project_name || p.projeto || '';
+  return {
+    ...p,
+    id,
+    valor,
+    data_vencimento,
+    data_pagamento,
+    status,
+    tipo_destinatario,
+    nome_destinatario,
+    projeto_id: projeto_id ? String(projeto_id) : '',
+    projeto_nome: String(projeto_nome||''),
+    categoria: p.categoria || '',
+    subcategoria: p.subcategoria || '',
+    descricao: p.descricao || p.description || p.desc || '',
+    numero_nota: p.numero_nota || '',
+    forma_pagamento: p.forma_pagamento || p.payment_method || 'pix',
+    banco: p.banco || '',
+    chave_pix: p.chave_pix || '',
+    observacoes: p.observacoes || p.notes || '',
+    comprovante_url: p.comprovante_url || '',
+    recorrente: p.recorrente === true,
+    periodicidade: p.periodicidade || ''
+  };
+}
+
+function _payTipoBadge(t) {
+  const tipo = _normTipo(t);
+  const label = tipo === 'colaborador' ? 'Colaborador' :
+                tipo === 'fornecedor'  ? 'Fornecedor' :
+                tipo === 'freelancer'  ? 'Freelancer' :
+                tipo === 'assinatura'  ? 'Assinatura' :
+                tipo === 'imposto'     ? 'Imposto' : 'Outros';
+  return `<span class="pay2-badge t-${tipo}">${label}</span>`;
+}
+function _payStatusBadge(s) {
+  const st = _normStatus(s);
+  const label = st === 'pendente' ? 'Pendente' :
+                st === 'pago' ? 'Pago' :
+                st === 'atrasado' ? 'Atrasado' : 'Cancelado';
+  return `<span class="pay2-badge s-${st}">${label}</span>`;
+}
+
+function initPayMonthSelect() {
+  const sel = document.getElementById('payFilterYm');
+  if(!sel) return;
+  const now = new Date();
+  const opts = [];
+  opts.push({ v:'', l:'Todos' });
+  for(let i=0;i<18;i++){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const ym = d.toISOString().slice(0,7);
+    const m = d.toLocaleDateString('pt-BR', { month:'long' });
+    const label = m.charAt(0).toUpperCase()+m.slice(1) + ' / ' + d.getFullYear();
+    opts.push({ v:ym, l:label });
+  }
+  sel.innerHTML = opts.map(o=>`<option value="${escAttr(o.v)}">${escHtml(o.l)}</option>`).join('');
+  const curYm = now.toISOString().slice(0,7);
+  sel.value = curYm;
+  _pagamentosFilters.ym = curYm;
+}
+
+async function loadPagamentos() {
+  const rows = await fetchAll('age_payments', 800);
+  const norm = (Array.isArray(rows) ? rows : []).map(_payRowNormalize);
+
+  // Auto-atraso: vencido + pendente => atrasado (UI e PATCH best-effort)
+  const today = _payToday();
+  const toPatch = [];
+  for(const p of norm) {
+    if(p.status === 'pendente' && p.data_vencimento && p.data_vencimento < today) {
+      p.status = 'atrasado';
+      if(p.id) toPatch.push(p.id);
+    }
+  }
+  // Evita tempestade de PATCH: limita por carregamento
+  const patchIds = toPatch.slice(0, 25);
+  if(patchIds.length) {
+    Promise.allSettled(patchIds.map(id => apiPatch('age_payments', id, { status:'atrasado' }))).catch(()=>{});
+  }
+  _pagamentosAll = norm;
+  return _pagamentosAll;
+}
+
+function aplicarFiltrosPagamentos() {
+  _pagamentosFilters.status = document.getElementById('payFilterStatus')?.value || '';
+  _pagamentosFilters.tipo   = document.getElementById('payFilterTipo')?.value || '';
+  _pagamentosFilters.ym     = document.getElementById('payFilterYm')?.value || '';
+
+  const st = _pagamentosFilters.status;
+  const tp = _pagamentosFilters.tipo;
+  const ym = _pagamentosFilters.ym;
+
+  _pagamentosView = _pagamentosAll.filter(p => {
+    if(st && _normStatus(p.status) !== st) return false;
+    if(tp && _normTipo(p.tipo_destinatario) !== tp) return false;
+    if(ym) {
+      const d = p.data_vencimento || p.due_date || '';
+      if(_ymFromDate(d) !== ym) return false;
+    }
+    return true;
+  });
+
+  calcularResumosPagamentos();
+  renderTabelaPagamentos(_pagamentosView);
+}
+
+function calcularResumosPagamentos() {
+  const elP = document.getElementById('paySumPendente');
+  const elG = document.getElementById('paySumPagoMes');
+  const elA = document.getElementById('paySumAtrasado');
+  const elT = document.getElementById('paySumTotalMes');
+  const ym = _pagamentosFilters.ym || new Date().toISOString().slice(0,7);
+
+  let pend = 0, pagMes = 0, atras = 0, totMes = 0;
+  for(const p of _pagamentosView) {
+    const v = parseFloat(p.valor ?? p.amount ?? 0) || 0;
+    const st = _normStatus(p.status);
+    if(st === 'pendente') pend += v;
+    if(st === 'atrasado') atras += v;
+    if(_ymFromDate(p.data_vencimento) === ym) totMes += v;
+    if(st === 'pago' && _ymFromDate(p.data_pagamento) === ym) pagMes += v;
+  }
+  if(elP) elP.textContent = fmtBRL(pend);
+  if(elG) elG.textContent = fmtBRL(pagMes);
+  if(elA) elA.textContent = fmtBRL(atras);
+  if(elT) elT.textContent = fmtBRL(totMes);
+}
+
+function renderTabelaPagamentos(list) {
+  const tbody = document.getElementById('payTableBody');
+  if(!tbody) return;
   if(!canViewPage('pagamentos')) {
-    listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Sem permissão para esta área.</div>`;
-    if(k1) k1.textContent = '—';
-    if(k2) k2.textContent = '—';
-    if(k3) k3.textContent = '—';
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Sem permissão para esta área.</td></tr>`;
     return;
   }
-  listEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</div>`;
+  if(!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum pagamento encontrado.</td></tr>`;
+    return;
+  }
+
+  const canEdit = hasModuleEditForPage('pagamentos');
+  const rows = [...list].sort((a,b)=>String(a.data_vencimento||'').localeCompare(String(b.data_vencimento||'')));
+  tbody.innerHTML = rows.map(p => {
+    const id = String(p.id||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const nome = escHtml(p.nome_destinatario || '—');
+    const tipo = _payTipoBadge(p.tipo_destinatario);
+    const cat  = escHtml(p.categoria || '—');
+    const val  = fmtBRL(p.valor ?? p.amount ?? 0);
+    const venc = p.data_vencimento ? fmtDate(p.data_vencimento) : '—';
+    const st   = _payStatusBadge(p.status);
+    const proj = escHtml(p.projeto_nome || p.project_name || '—');
+
+    const btnPay = canEdit && _normStatus(p.status) !== 'pago'
+      ? `<button type="button" class="btn btn-primary btn-sm" style="background:#16a34a" onclick="openMarkAsPaid('${id}')"><i class="fas fa-check"></i></button>`
+      : '';
+    const btnEdit = canEdit
+      ? `<button type="button" class="btn btn-ghost btn-sm" onclick="openPagamentoModal('${id}')"><i class="fas fa-pen"></i></button>`
+      : '';
+    const btnDel = canEdit
+      ? `<button type="button" class="btn btn-danger btn-sm" onclick="deletePagamento('${id}')"><i class="fas fa-trash"></i></button>`
+      : '';
+    return `<tr>
+      <td>${nome}</td>
+      <td>${tipo}</td>
+      <td>${cat}</td>
+      <td class="pay2-amt">${val}</td>
+      <td>${escHtml(venc)}</td>
+      <td>${st}</td>
+      <td>${proj}</td>
+      <td><div class="pay2-actions">${btnPay}${btnEdit}${btnDel}</div></td>
+    </tr>`;
+  }).join('');
+
+  setTimeout(() => applyActivePageEditGuards('pagamentos'), 0);
+}
+
+async function loadPagamentosPage() {
+  const tbody = document.getElementById('payTableBody');
+  if(!tbody) return;
+  initPayMonthSelect();
+  tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</td></tr>`;
   try {
-    _pagamentosRows = await fetchAll('age_payments', 600);
-    const today = new Date().toISOString().slice(0, 10);
-    const now = new Date();
-    const msStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const msEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
-
-    let totalPendente = 0;
-    let totalMes = 0;
-    const atrasadosUsers = new Set();
-
-    for(const p of _pagamentosRows) {
-      const meta = _payStatusMeta(p);
-      const amt = parseFloat(p.amount ?? p.valor ?? 0) || 0;
-      if(meta.kind === 'pago') {
-        const pd = String(p.paid_at || '').slice(0, 10);
-        if(pd >= msStart && pd <= msEnd) totalMes += amt;
-      } else {
-        totalPendente += amt;
-        if(meta.kind === 'atrasado') {
-          const cu = String(p.colaborador_username || '').trim();
-          if(cu) atrasadosUsers.add(cu);
-        }
-      }
-    }
-
-    if(k1) k1.textContent = fmtBRL(totalPendente);
-    if(k2) k2.textContent = fmtBRL(totalMes);
-    if(k3) k3.textContent = String(atrasadosUsers.size);
-
-    if(!_pagamentosRows.length) {
-      listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum pagamento cadastrado.<br><br><button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openPagamentoModal()"><i class="fas fa-plus"></i> Novo Pagamento</button></div>`;
-      setTimeout(() => applyActivePageEditGuards('pagamentos'), 0);
-      return;
-    }
-
-    const sorted = [..._pagamentosRows].sort((a, b) => String(b.due_date || '').localeCompare(String(a.due_date || '')));
-    listEl.innerHTML = sorted.map(p => {
-      const meta = _payStatusMeta(p);
-      const nome = escHtml(displayNameForUsername(p.colaborador_username));
-      const proj = escHtml(p.project_name || p.projeto || '—');
-      const amt = fmtBRL(p.amount ?? p.valor ?? 0);
-      const due = fmtDate(p.due_date);
-      const canPay = meta.kind !== 'pago';
-      const payBtn = canPay
-        ? `<button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="markPaymentPaid('${String(p.id).replace(/'/g, "\\'")}')"><i class="fas fa-check"></i> Marcar como Pago</button>`
-        : `<span style="font-family:var(--font-m);font-size:9px;color:var(--textsub)">${fmtDate(p.paid_at)}</span>`;
-      return `<div class="task-item" style="flex-wrap:wrap;gap:8px">
-        <div style="font-size:18px;line-height:1">${meta.emoji}</div>
-        <div style="flex:1;min-width:200px">
-          <div class="task-text">${nome}</div>
-          <div class="task-meta">${proj}</div>
-          <div class="task-meta">${escHtml(p.description || p.desc || '')}</div>
-          <div style="margin-top:6px;font-family:var(--font-m);font-size:9px;color:var(--textsub)">
-            ${meta.emoji} <strong>${meta.label}</strong> · Venc. ${due} · ${escHtml(p.payment_method || '—')}
-          </div>
-        </div>
-        <div style="font-family:var(--font-h);font-size:14px;font-weight:700;align-self:center">${amt}</div>
-        <div style="display:flex;gap:6px;align-items:center">${payBtn}</div>
-      </div>`;
-    }).join('');
-    setTimeout(() => applyActivePageEditGuards('pagamentos'), 0);
+    await loadPagamentos();
+    aplicarFiltrosPagamentos();
   } catch(e) {
     console.error('[loadPagamentosPage]', e);
-    listEl.innerHTML = `<div style="color:var(--textsub);padding:20px;text-align:center">Erro ao carregar pagamentos.</div>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Erro ao carregar pagamentos.</td></tr>`;
   }
 }
 
+function togglePayDetails() {
+  const box = document.getElementById('payDetailsBox');
+  const ch  = document.getElementById('payDetailsChevron');
+  if(!box) return;
+  const open = !box.classList.contains('open');
+  if(open) box.classList.add('open'); else box.classList.remove('open');
+  if(ch) ch.className = open ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+}
+function onPayFormaChanged() {
+  const f = document.getElementById('payForma')?.value || 'pix';
+  const box = document.getElementById('payPixBox');
+  if(!box) return;
+  box.style.display = (f === 'pix' || f === 'ted') ? '' : 'none';
+}
+function onPayRecorrenteChanged() {
+  const on = document.getElementById('payRecorrente')?.checked === true;
+  const box = document.getElementById('payPeriodicidadeBox');
+  if(box) box.style.display = on ? '' : 'none';
+}
+function onPayTipoChanged() { /* reservado para futuras regras por tipo */ }
+
+async function _ensurePayProjects() {
+  try {
+    if(!_payProjectsCache.length) _payProjectsCache = await fetchAgeProjectsScoped(900);
+  } catch(e) { _payProjectsCache = []; }
+  const sel = document.getElementById('payProjeto');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— Nenhum —</option>' + _payProjectsCache.map(p => {
+    const tid = escAttr(String(p.id));
+    const title = escHtml(_ageProjDbTitle(p) || '(sem nome)');
+    return `<option value="${tid}">${title}</option>`;
+  }).join('');
+}
+
 async function openPagamentoModal(editId) {
-  if(!hasModuleEditForPage('pagamentos')) {
-    toast('Sem permissão de edição.', 'warn');
-    return;
-  }
+  if(!hasModuleEditForPage('pagamentos')) { toast('Sem permissão de edição.', 'warn'); return; }
   document.getElementById('modalPagTitle').textContent = editId ? 'EDITAR PAGAMENTO' : 'NOVO PAGAMENTO';
   document.getElementById('payEditId').value = editId || '';
-  document.getElementById('payDesc').value = '';
-  document.getElementById('payAmount').value = '';
-  document.getElementById('payDue').value = '';
-  document.getElementById('payNotes').value = '';
-  document.getElementById('payMethod').value = 'PIX';
 
-  if(!_ageUsersCache.length) await refreshAgeUsersCache();
-  const colSel = document.getElementById('payColab');
-  const cid = currentUser?.company_id;
-  const cols = _ageUsersCache.filter(u =>
-    _normalizeRole(u.role) === 'colaborador' && _sbIsRowVisible(u) &&
-    (!cid || !u.company_id || String(u.company_id) === String(cid))
-  );
-  colSel.innerHTML = cols.length
-    ? cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('')
-    : '<option value="">— Nenhum colaborador —</option>';
+  // reset obrigatório
+  document.getElementById('payNome').value = '';
+  document.getElementById('payTipo').value = 'colaborador';
+  document.getElementById('payValor').value = '';
+  document.getElementById('payValor').dataset.raw = '';
+  document.getElementById('payVenc').value = '';
+  document.getElementById('payStatus').value = 'pendente';
 
-  const projSel = document.getElementById('payProject');
-  const projects = await fetchAgeProjectsScoped(800);
-  projSel.innerHTML = '<option value="">— Selecione o projeto —</option>' +
-    projects.map(p => {
-      const tid = escAttr(String(p.id));
-      const title = escHtml(_ageProjDbTitle(p) || '(sem nome)');
-      return `<option value="${tid}">${title}</option>`;
-    }).join('');
+  // reset detalhes
+  document.getElementById('payCategoria').value = '';
+  document.getElementById('paySubcategoria').value = '';
+  document.getElementById('payDescricao').value = '';
+  document.getElementById('payForma').value = 'pix';
+  document.getElementById('payChavePix').value = '';
+  document.getElementById('payBanco').value = '';
+  document.getElementById('payNF').value = '';
+  document.getElementById('payObs').value = '';
+  document.getElementById('payRecorrente').checked = false;
+  document.getElementById('payPeriodicidade').value = 'mensal';
+  onPayFormaChanged();
+  onPayRecorrenteChanged();
+
+  await _ensurePayProjects();
+  const selProj = document.getElementById('payProjeto');
+  if(selProj) selProj.value = '';
 
   if(editId) {
-    const row = _pagamentosRows.find(r => String(r.id) === String(editId));
+    const row = _pagamentosAll.find(r => String(r.id) === String(editId));
     if(row) {
-      colSel.value = row.colaborador_username || '';
-      const pid = row.project_id ? String(row.project_id) : '';
-      if(pid) projSel.value = pid;
-      document.getElementById('payDesc').value = row.description || row.desc || '';
-      document.getElementById('payAmount').value = row.amount ?? row.valor ?? '';
-      document.getElementById('payDue').value = String(row.due_date || '').slice(0, 10);
-      document.getElementById('payMethod').value = row.payment_method || 'PIX';
-      document.getElementById('payNotes').value = row.notes || '';
+      document.getElementById('payNome').value = row.nome_destinatario || '';
+      document.getElementById('payTipo').value = _normTipo(row.tipo_destinatario || 'outros');
+      const v = parseFloat(row.valor ?? row.amount ?? 0) || 0;
+      document.getElementById('payValor').dataset.raw = String(v);
+      document.getElementById('payValor').value = v ? v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '';
+      document.getElementById('payVenc').value = String(row.data_vencimento || '').slice(0,10);
+      document.getElementById('payStatus').value = _normStatus(row.status || 'pendente');
+
+      document.getElementById('payCategoria').value = row.categoria || '';
+      document.getElementById('paySubcategoria').value = row.subcategoria || '';
+      document.getElementById('payDescricao').value = row.descricao || '';
+      document.getElementById('payForma').value = String(row.forma_pagamento || 'pix').toLowerCase();
+      document.getElementById('payChavePix').value = row.chave_pix || '';
+      document.getElementById('payBanco').value = row.banco || '';
+      document.getElementById('payNF').value = row.numero_nota || '';
+      document.getElementById('payObs').value = row.observacoes || '';
+      if(selProj) selProj.value = row.projeto_id ? String(row.projeto_id) : '';
+      document.getElementById('payRecorrente').checked = row.recorrente === true;
+      document.getElementById('payPeriodicidade').value = row.periodicidade || 'mensal';
+      onPayFormaChanged();
+      onPayRecorrenteChanged();
     }
   } else {
-    document.getElementById('payDue').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('payVenc').value = _payToday();
   }
 
   openModal('modalPagamento');
 }
 
 async function savePagamento() {
-  if(!hasModuleEditForPage('pagamentos')) {
-    toast('Sem permissão de edição.', 'warn');
-    return;
-  }
-  const editId = document.getElementById('payEditId').value.trim();
-  const colab = document.getElementById('payColab').value.trim();
-  const projEl = document.getElementById('payProject');
-  const project_id = (projEl && projEl.value) ? projEl.value.trim() : '';
-  const opt = projEl?.selectedOptions?.[0];
-  const project_name = opt ? String(opt.textContent || '').trim() : '';
-  const description = document.getElementById('payDesc').value.trim();
-  const amount = parseFloat(document.getElementById('payAmount').value);
-  const due_date = document.getElementById('payDue').value;
-  const payment_method = document.getElementById('payMethod').value;
-  const notes = document.getElementById('payNotes').value.trim();
+  if(!hasModuleEditForPage('pagamentos')) { toast('Sem permissão de edição.', 'warn'); return; }
 
-  if(!colab) { toast('Selecione o colaborador.', 'warn'); return; }
-  if(!project_id) { toast('Selecione o projeto.', 'warn'); return; }
-  if(!amount || amount <= 0) { toast('Informe o valor.', 'warn'); return; }
-  if(!due_date) { toast('Informe o vencimento.', 'warn'); return; }
+  const editId = document.getElementById('payEditId').value.trim();
+  const nome_destinatario = document.getElementById('payNome').value.trim();
+  const tipo_destinatario = _normTipo(document.getElementById('payTipo').value);
+  const data_vencimento   = document.getElementById('payVenc').value;
+  const status            = _normStatus(document.getElementById('payStatus').value);
+
+  const rawV = document.getElementById('payValor').dataset.raw;
+  const valor = rawV ? parseFloat(rawV) : parseBRL(document.getElementById('payValor').value);
+
+  if(!nome_destinatario) { toast('Informe o nome do destinatário.', 'warn'); return; }
+  if(!valor || valor <= 0) { toast('Informe o valor.', 'warn'); return; }
+  if(!data_vencimento) { toast('Informe a data de vencimento.', 'warn'); return; }
+
+  const categoria     = document.getElementById('payCategoria').value || null;
+  const subcategoria  = document.getElementById('paySubcategoria').value.trim() || null;
+  const descricao     = document.getElementById('payDescricao').value.trim() || null;
+  const forma_pagamento = (document.getElementById('payForma').value || 'pix').toLowerCase();
+  const chave_pix     = document.getElementById('payChavePix').value.trim() || null;
+  const banco         = document.getElementById('payBanco').value.trim() || null;
+  const numero_nota   = document.getElementById('payNF').value.trim() || null;
+  const projeto_id    = document.getElementById('payProjeto')?.value?.trim() || null;
+  const observacoes   = document.getElementById('payObs').value.trim() || null;
+  const recorrente    = document.getElementById('payRecorrente').checked === true;
+  const periodicidade = recorrente ? (document.getElementById('payPeriodicidade').value || 'mensal') : null;
+
+  // projeto_nome opcional (para render rápido)
+  let projeto_nome = '';
+  if(projeto_id && _payProjectsCache.length) {
+    const p = _payProjectsCache.find(x => String(x.id) === String(projeto_id));
+    projeto_nome = p ? (_ageProjDbTitle(p) || '') : '';
+  }
 
   const payload = {
-    colaborador_username: colab,
-    project_id,
-    project_name: project_name || '',
-    description,
-    amount,
-    due_date,
-    payment_method,
-    notes,
-    status: 'pendente',
+    tipo_destinatario,
+    nome_destinatario,
+    categoria,
+    subcategoria,
+    descricao,
+    numero_nota,
+    forma_pagamento,
+    banco,
+    chave_pix,
+    data_vencimento,
+    status,
+    projeto_id,
+    project_id: projeto_id || null,   // compat: caso a tabela ainda use project_id em integrações antigas
+    project_name: projeto_nome || null,
+    observacoes,
+    comprovante_url: null,
+    recorrente,
+    periodicidade,
+    valor,
+    amount: valor,                    // compat: colunas antigas
     deleted: false
   };
 
   try {
-    let createdRow = null;
     if(editId) await apiPatch('age_payments', editId, payload);
-    else {
-      createdRow = await apiPost('age_payments', payload);
-      const payId = Array.isArray(createdRow) ? createdRow[0]?.id : createdRow?.id;
-      if(payId) {
-        await createNotification({
-          username: colab,
-          type: 'pagamento_pendente',
-          title: 'Pagamento pendente',
-          message: `Você tem ${fmtBRL(amount)} a receber de '${project_name || 'projeto'}'`,
-          link: 'myfinance',
-          dedupe_key: `pay_${payId}`
-        });
-      }
-    }
+    else await apiPost('age_payments', payload);
     closeModal('modalPagamento');
     toast(editId ? 'Pagamento atualizado.' : 'Pagamento criado.');
     await loadPagamentosPage();
@@ -16433,19 +16910,62 @@ async function savePagamento() {
   }
 }
 
-async function markPaymentPaid(id) {
+async function updatePagamento(id, data) {
   if(!hasModuleEditForPage('pagamentos')) return;
-  confirm2('Marcar este pagamento como pago agora?', async () => {
+  if(!id) return;
+  await apiPatch('age_payments', id, data);
+  await loadPagamentosPage();
+}
+
+async function deletePagamento(id) {
+  if(!hasModuleEditForPage('pagamentos')) return;
+  if(!id) return;
+  confirm2('Excluir este pagamento?', async () => {
     try {
-      await apiPatch('age_payments', id, { status: 'pago', paid_at: new Date().toISOString() });
-      toast('Pagamento marcado como pago.');
+      await apiDel('age_payments', id);
+      toast('Pagamento excluído.');
       await loadPagamentosPage();
-      const fin = document.getElementById('page-myfinance');
-      if(fin?.classList.contains('active')) loadFinance();
     } catch(e) {
-      toast('Erro ao atualizar.', 'err');
+      toast('Erro ao excluir.', 'err');
     }
   });
+}
+
+function openMarkAsPaid(id) {
+  if(!hasModuleEditForPage('pagamentos')) return;
+  document.getElementById('payPaidId').value = id || '';
+  document.getElementById('payPaidDate').value = _payToday();
+  document.getElementById('payPaidProof').value = '';
+  openModal('modalPayPaid');
+}
+
+async function confirmMarkAsPaid() {
+  const id = document.getElementById('payPaidId').value.trim();
+  const data_pagamento = document.getElementById('payPaidDate').value || _payToday();
+  const comprovante = document.getElementById('payPaidProof').value.trim();
+  if(!id) return;
+  try {
+    await marcarComoPago(id, data_pagamento, comprovante);
+    closeModal('modalPayPaid');
+    toast('Pagamento marcado como pago.');
+    await loadPagamentosPage();
+    const fin = document.getElementById('page-myfinance');
+    if(fin?.classList.contains('active')) loadFinance();
+  } catch(e) {
+    console.error('[confirmMarkAsPaid]', e);
+    toast('Erro ao atualizar.', 'err');
+  }
+}
+
+async function marcarComoPago(id, dataPagamento, comprovante) {
+  if(!hasModuleEditForPage('pagamentos')) return;
+  const patch = {
+    status: 'pago',
+    data_pagamento: dataPagamento,
+    paid_at: new Date(String(dataPagamento||_payToday())+'T12:00:00.000Z').toISOString(),
+    comprovante_url: comprovante || null
+  };
+  await apiPatch('age_payments', id, patch);
 }
 
 /* ═══════════════════════════════════════════
