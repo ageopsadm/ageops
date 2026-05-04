@@ -7769,6 +7769,24 @@ async function _fetchSaveAgePayment(method, rowId, payload) {
   return Array.isArray(json) ? json : (json != null ? [json] : []);
 }
 
+async function reloadSupabaseSchema() {
+  try {
+    const sbUrl = String(SUPABASE_URL || '').trim().replace(/\/+$/, '');
+    const key = String(SUPABASE_ANON_KEY || '').trim();
+    if(!sbUrl || sbUrl === 'COLE_AQUI_SUA_SUPABASE_URL' || !key || key === 'COLE_AQUI_SUA_SUPABASE_ANON_KEY') return;
+    const q = new URLSearchParams({ select: 'id', limit: '1' });
+    const cid = _tenantCidForScope();
+    if(cid && _tenantShouldFilterTable('age_payments')) q.set('company_id', `eq.${cid}`);
+    await fetch(`${sbUrl}/rest/v1/age_payments?${q.toString()}`, {
+      method: 'GET',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`
+      }
+    });
+  } catch(e) {}
+}
+
 function _sbNormalizeQuery(qs = '') {
   const q = new URLSearchParams((qs || '').startsWith('?') ? (qs || '').slice(1) : (qs || ''));
   if(q.has('sort') && !q.has('order')) {
@@ -17816,13 +17834,36 @@ async function savePagamento() {
   }
 
   try {
+    await reloadSupabaseSchema();
     await _warmupPostgrestTableCache('age_payments');
-    console.log('[savePagamento] payload:', JSON.stringify(payload, null, 2));
+
+    // Remove campos que o PostgREST ainda não reconhece no schema cache e tenta novamente.
     let created = null;
-    if(editId) {
-      await _fetchSaveAgePayment('PATCH', editId, payload);
-    } else {
-      created = await _fetchSaveAgePayment('POST', null, payload);
+    let attempt = 0;
+    while(attempt < 6) {
+      attempt++;
+      console.log('[DEBUG payload]', JSON.stringify(payload));
+      try {
+        if(editId) {
+          await _fetchSaveAgePayment('PATCH', editId, payload);
+          created = null;
+        } else {
+          created = await _fetchSaveAgePayment('POST', null, payload);
+        }
+        break; // ok
+      } catch(e1) {
+        const msg = String(e1?.message || e1 || '');
+        const m = msg.match(/Could not find the '([^']+)' column in the schema cache/i);
+        if(m && m[1]) {
+          const col = String(m[1]).trim();
+          // Remove apenas do payload desta tentativa (sem quebrar a UI)
+          if(Object.prototype.hasOwnProperty.call(payload, col)) {
+            delete payload[col];
+            continue;
+          }
+        }
+        throw e1;
+      }
     }
     const saved = Array.isArray(created) ? created[0] : created;
     const payId = editId || saved?.id;
