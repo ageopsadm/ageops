@@ -1386,6 +1386,20 @@ select.login-input{cursor:pointer}
 }
 .proj-costs-card.blue .val{color:#93c5fd}
 .proj-costs-card.purple .val{color:#c4b5fd}
+
+/* Equipe — painel expansível (detalhes colaborador) */
+.team-card-wrap{margin-bottom:12px}
+.colab-detail-panel{
+  margin-top:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--bd);
+  background:rgba(0,0,0,.03);font-family:var(--font-b);font-size:12px;line-height:1.55;color:#0f172a;
+}
+.colab-detail-panel .sec{font-family:var(--font-h);font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin:10px 0 6px}
+.colab-detail-panel .sec:first-child{margin-top:0}
+.colab-chev-btn{
+  width:28px;height:28px;border-radius:999px;border:1px solid var(--bd);background:var(--bg2);
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:#64748b;
+}
+.colab-chev-btn:hover{background:rgba(0,0,0,.04);color:#0f172a}
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
 <script>
@@ -1434,6 +1448,54 @@ select.login-input{cursor:pointer}
           <button type="button" class="invite-toggle-pass" onclick="toggleInvitePass('invPass2', this)" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
         </div>
       </div>
+
+      <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid #334155">
+        <div class="invite-flow-label" style="margin-bottom:8px">DADOS PARA RECEBIMENTO *</div>
+        <div class="invite-flow-group">
+          <label class="invite-flow-label" for="colab-forma-recebimento">Forma de Recebimento Preferida</label>
+          <select class="invite-flow-input" id="colab-forma-recebimento" onchange="initInviteBankUI()">
+            <option value="pix">PIX</option>
+            <option value="ted">TED / Transferência Bancária</option>
+          </select>
+        </div>
+        <div id="grupo-pix">
+          <div class="invite-flow-group">
+            <label class="invite-flow-label" for="colab-pix-tipo">Tipo de Chave PIX</label>
+            <select class="invite-flow-input" id="colab-pix-tipo">
+              <option value="cpf">CPF</option>
+              <option value="telefone">Telefone</option>
+              <option value="email">E-mail</option>
+              <option value="aleatoria">Chave Aleatória</option>
+            </select>
+          </div>
+          <div class="invite-flow-group">
+            <label class="invite-flow-label" for="colab-pix-chave">Chave PIX</label>
+            <input class="invite-flow-input" id="colab-pix-chave" type="text" placeholder="Digite sua chave PIX" autocomplete="off">
+          </div>
+        </div>
+        <div id="grupo-ted" style="display:none">
+          <div class="invite-flow-group">
+            <label class="invite-flow-label" for="colab-banco">Banco</label>
+            <input class="invite-flow-input" id="colab-banco" type="text" placeholder="Ex: Itaú, Nubank, Bradesco…" autocomplete="off">
+          </div>
+          <div class="invite-flow-group">
+            <label class="invite-flow-label" for="colab-agencia">Agência</label>
+            <input class="invite-flow-input" id="colab-agencia" type="text" placeholder="0000" autocomplete="off">
+          </div>
+          <div class="invite-flow-group">
+            <label class="invite-flow-label" for="colab-conta">Conta</label>
+            <input class="invite-flow-input" id="colab-conta" type="text" placeholder="00000-0" autocomplete="off">
+          </div>
+          <div class="invite-flow-group">
+            <label class="invite-flow-label" for="colab-tipo-conta">Tipo de Conta</label>
+            <select class="invite-flow-input" id="colab-tipo-conta">
+              <option value="corrente">Corrente</option>
+              <option value="poupanca">Poupança</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <button type="button" class="invite-flow-btn" id="inviteSubmitBtn" onclick="submitInviteAccept()">
         Criar minha conta <span class="invite-arrow">→</span>
       </button>
@@ -3928,6 +3990,14 @@ select.login-input{cursor:pointer}
         <label class="form-label">Nome do destinatário *</label>
         <input id="payNome" type="text" placeholder="Ex.: João (Freelancer) / Nubank / Receita Federal" style="width:100%">
       </div>
+      <div class="form-group" id="payColabRow" style="grid-column:1/-1;display:none">
+        <label class="form-label">Colaborador *</label>
+        <select id="payColabSelect" style="width:100%" onchange="onPayColabSelectChange()">
+          <option value="">Selecione o colaborador…</option>
+        </select>
+        <div id="payColabBankWarn" style="display:none;font-size:10px;color:#d97706;margin-top:6px;font-family:var(--font-m)">⚠️ Este colaborador ainda não cadastrou dados bancários.</div>
+      </div>
+      <input type="hidden" id="payColabUsername" value="">
       <div class="form-group">
         <label class="form-label">Tipo de destinatário *</label>
         <select id="payTipo" style="width:100%" onchange="onPayTipoChanged()">
@@ -5456,6 +5526,7 @@ async function persistBootstrapAccountIfNeeded(row, plainPassword) {
 async function applyLoginSessionFromRow(row) {
   if(!row || !row.username) {
     currentUser = null;
+    try { _myColabIdCache = undefined; } catch(e) {}
     return { ok: false, msg: 'Dados de usuário inválidos.' };
   }
   const u = String(row.username).toLowerCase();
@@ -5485,6 +5556,7 @@ async function applyLoginSessionFromRow(row) {
     referred_by: row.referred_by || null,
     permissions: {}
   };
+  try { _myColabIdCache = undefined; } catch(e) {}
   await mergeCurrentUserFromSupabase();
   await linkAdminCompanyFromOwnerRow();
   await ensureDefaultCompanyForPrivilegedUser();
@@ -6427,6 +6499,21 @@ async function loadInviteByToken(token) {
     document.getElementById('invBirth').value = '';
     document.getElementById('invPass').value = '';
     document.getElementById('invPass2').value = '';
+    const fr = document.getElementById('colab-forma-recebimento');
+    if(fr) fr.value = 'pix';
+    const pxt = document.getElementById('colab-pix-tipo');
+    if(pxt) pxt.value = 'cpf';
+    const pxk = document.getElementById('colab-pix-chave');
+    if(pxk) pxk.value = '';
+    const tb = document.getElementById('colab-banco');
+    if(tb) tb.value = '';
+    const ta = document.getElementById('colab-agencia');
+    if(ta) ta.value = '';
+    const tc = document.getElementById('colab-conta');
+    if(tc) tc.value = '';
+    const ttc = document.getElementById('colab-tipo-conta');
+    if(ttc) ttc.value = 'corrente';
+    try { initInviteBankUI(); } catch(e) {}
     if(errBox) errBox.textContent = '';
   } catch(e) {
     if(headline) headline.textContent = 'Convite';
@@ -6447,6 +6534,14 @@ function cancelInviteFlow() {
   try { setLoginTab('login'); } catch(e) {}
   const errBox = document.getElementById('inviteFlowErr');
   if(errBox) errBox.textContent = '';
+}
+
+function initInviteBankUI() {
+  const forma = document.getElementById('colab-forma-recebimento')?.value || 'pix';
+  const gp = document.getElementById('grupo-pix');
+  const gt = document.getElementById('grupo-ted');
+  if(gp) gp.style.display = forma === 'pix' ? '' : 'none';
+  if(gt) gt.style.display = forma === 'ted' ? '' : 'none';
 }
 
 async function submitInviteAccept() {
@@ -6473,6 +6568,20 @@ async function submitInviteAccept() {
   if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('Informe um email válido.'); return; }
   if(p1.length < 6) { show('Senha mínimo 6 caracteres.'); return; }
   if(p1 !== p2) { show('Senhas não conferem.'); return; }
+
+  const formaRec = document.getElementById('colab-forma-recebimento')?.value || 'pix';
+  let pixTipo = '', pixChave = '', banco = '', agencia = '', conta = '', tipoConta = 'corrente';
+  if(formaRec === 'pix') {
+    pixTipo = document.getElementById('colab-pix-tipo')?.value || '';
+    pixChave = document.getElementById('colab-pix-chave')?.value?.trim() || '';
+    if(!pixChave) { show('Informe sua chave PIX.'); return; }
+  } else {
+    banco = document.getElementById('colab-banco')?.value?.trim() || '';
+    agencia = document.getElementById('colab-agencia')?.value?.trim() || '';
+    conta = document.getElementById('colab-conta')?.value?.trim() || '';
+    tipoConta = document.getElementById('colab-tipo-conta')?.value || 'corrente';
+    if(!banco || !agencia || !conta) { show('Preencha banco, agência e conta para receber por TED.'); return; }
+  }
 
   const btn = document.getElementById('inviteSubmitBtn');
   if(btn) btn.disabled = true;
@@ -6513,12 +6622,25 @@ async function submitInviteAccept() {
         cpf: cpfDigits,
         company_id: cid,
         created_by: 'system',
-        status: 'ativo'
+        status: 'ativo',
+        forma_recebimento: formaRec,
+        pix_tipo: formaRec === 'pix' ? pixTipo : null,
+        pix_chave: formaRec === 'pix' ? pixChave : null,
+        banco: formaRec === 'ted' ? banco : null,
+        agencia: formaRec === 'ted' ? agencia : null,
+        conta: formaRec === 'ted' ? conta : null,
+        tipo_conta: formaRec === 'ted' ? tipoConta : null,
+        usuario_username: username
       };
       window.__tenantScopeSuspended = true;
       try {
         await apiPost('age_colaboradores', colabBody);
       } catch(ec) {
+        try {
+          const b2 = { ...colabBody };
+          delete b2.usuario_username;
+          await apiPost('age_colaboradores', b2);
+        } catch(ecB) {
         try {
           await apiPost('age_colaboradores', {
             nome: fullName,
@@ -6531,6 +6653,7 @@ async function submitInviteAccept() {
           try {
             await apiPost('age_colaboradores', { nome: fullName, contato_email: email, company_id: cid });
           } catch(ec3) { console.warn('[invite colaboradores]', ec3); }
+        }
         }
       } finally {
         try { window.__tenantScopeSuspended = false; } catch(_) {}
@@ -7742,7 +7865,8 @@ async function apiDel(table, id)           { return api('DELETE', table, id); }
 const NOTIF_TYPE_META = {
   tarefa_atribuida:    { icon: '📋', color: '#3b82f6' },
   prazo_proximo:       { icon: '⏰', color: '#f59e0b' },
-  pagamento_pendente:  { icon: '💰', color: '#22c55e' },
+  pagamento_pendente:  { icon: '💰', color: '#fbbf24' },
+  pagamento_confirmado:{ icon: '✅', color: '#22c55e' },
   trial_expirando:     { icon: '⚠️', color: '#f97316' },
   indicacao_convertida:{ icon: '🎁', color: '#8b5cf6' },
   novo_colaborador:    { icon: '👤', color: '#06b6d4' },
@@ -15278,9 +15402,100 @@ function renderColabKpis() {
     </div>`).join('');
 }
 
+async function loadColabDetailPanel(colabId) {
+  const el = document.getElementById('colabDetail_' + colabId);
+  if(!el) return;
+  const c = _colabCache.find(x => String(x.id) === String(colabId));
+  if(!c) {
+    el.textContent = '—';
+    return;
+  }
+  el.innerHTML = '<div style="color:#94a3b8;font-size:11px;font-family:var(--font-m)">Carregando…</div>';
+  try {
+    const d = await apiGet('age_payments', `?colaborador_id=eq.${encodeURIComponent(String(colabId))}&limit=250&order=created_at.desc`);
+    const raw = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    const pays = raw.map(_payRowNormalize);
+    const pago = pays.filter(p => _normStatus(p.status) === 'pago');
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const y = String(now.getFullYear());
+    let totMes = 0;
+    let totAno = 0;
+    for(const p of pago) {
+      const pd = String(p.data_pagamento || (p.paid_at ? String(p.paid_at).slice(0, 10) : '') || '').slice(0, 10);
+      const v = parseFloat(p.valor) || 0;
+      if(!pd) continue;
+      if(pd.slice(0, 7) === ym) totMes += v;
+      if(pd.slice(0, 4) === y) totAno += v;
+    }
+    pago.sort((a, b) => String(b.data_pagamento || b.paid_at || '').localeCompare(String(a.data_pagamento || a.paid_at || '')));
+    const last = pago[0];
+    const lastLine = last
+      ? `Último pagamento: ${fmtBRL(last.valor)} — ${fmtDate(last.data_pagamento || last.paid_at)}`
+      : 'Último pagamento: —';
+    const isTed = String(c.forma_recebimento || 'pix').toLowerCase() === 'ted';
+    const bankHtml = isTed
+      ? `Forma: TED<br/>Banco: ${escHtml(c.banco || '—')}<br/>Ag: ${escHtml(c.agencia || '—')} · Cc: ${escHtml(c.conta || '—')} <span style="color:#94a3b8">(${escHtml(c.tipo_conta || 'corrente')})</span>`
+      : `Forma: PIX<br/>Tipo: ${escHtml(c.pix_tipo || '—')}<br/>Chave: ${escHtml(c.pix_chave || '—')}`;
+    const stLab = (String(c.status || '').toLowerCase() === 'inativo') ? 'Inativo' : 'Ativo';
+    el.innerHTML = `
+      <div class="sec">👤 DADOS DO COLABORADOR</div>
+      <div>Cargo: ${escHtml(c.funcao || '—')}</div>
+      <div>E-mail: ${escHtml(c.contato_email || '—')}</div>
+      <div>Telefone: ${escHtml(c.contato_whatsapp || '—')}</div>
+      <div>Status: ${escHtml(stLab)}</div>
+      <div class="sec">💳 DADOS BANCÁRIOS</div>
+      <div style="line-height:1.55">${bankHtml}</div>
+      <div class="sec">💰 HISTÓRICO DE PAGAMENTOS</div>
+      <div>${lastLine}</div>
+      <div>Total recebido (mês): <b style="color:#2563eb;font-family:var(--font-h)">${fmtBRL(totMes)}</b></div>
+      <div>Total recebido (ano): <b style="color:#7c3aed;font-family:var(--font-h)">${fmtBRL(totAno)}</b></div>`;
+  } catch(e) {
+    console.error('[loadColabDetailPanel]', e);
+    el.textContent = 'Erro ao carregar histórico.';
+  }
+}
+
+async function toggleColabDetail(id, ev) {
+  if(ev) {
+    ev.stopPropagation();
+    ev.preventDefault();
+  }
+  const panel = document.getElementById('colabDetail_' + id);
+  if(!panel) return;
+  if(_colabOpenDetailId && _colabOpenDetailId !== id) {
+    const p0 = document.getElementById('colabDetail_' + _colabOpenDetailId);
+    const ch0 = document.getElementById('colabChev_' + _colabOpenDetailId);
+    if(p0) p0.style.display = 'none';
+    if(ch0) {
+      ch0.classList.remove('fa-chevron-down');
+      ch0.classList.add('fa-chevron-right');
+    }
+  }
+  if(_colabOpenDetailId === id) {
+    panel.style.display = 'none';
+    const ch = document.getElementById('colabChev_' + id);
+    if(ch) {
+      ch.classList.remove('fa-chevron-down');
+      ch.classList.add('fa-chevron-right');
+    }
+    _colabOpenDetailId = null;
+    return;
+  }
+  _colabOpenDetailId = id;
+  panel.style.display = 'block';
+  const ch = document.getElementById('colabChev_' + id);
+  if(ch) {
+    ch.classList.remove('fa-chevron-right');
+    ch.classList.add('fa-chevron-down');
+  }
+  await loadColabDetailPanel(id);
+}
+
 function renderColaboradores() {
   const el = document.getElementById('teamGrid');
   if(!el) return;
+  _colabOpenDetailId = null;
   const filtroFunc = document.getElementById('colabFiltroFunc')?.value || '';
   const filtroDisp = document.getElementById('colabFiltroDisp')?.value || '';
   let lista = [..._colabCache];
@@ -15308,8 +15523,10 @@ function renderColaboradores() {
     const stars    = c.avaliacao ? '★'.repeat(Math.round(c.avaliacao)) + '☆'.repeat(5-Math.round(c.avaliacao)) : '—';
     const specs    = (c.especialidades||'').split(',').filter(Boolean).slice(0,3);
     const tags     = (c.tags||'').split(',').filter(Boolean).slice(0,2);
+    const cidJs = String(c.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     return `
-    <div onclick="openColabModal('${c.id}')"
+    <div class="team-card-wrap">
+    <div onclick="openColabModal('${cidJs}')"
       style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:16px;cursor:pointer;
              transition:all .2s;position:relative;${!c.disponivel?'opacity:.75':''}"
       onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.15)'"
@@ -15323,6 +15540,9 @@ function renderColaboradores() {
 
       <!-- Avatar + nome -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <button type="button" class="colab-chev-btn" onclick="toggleColabDetail('${cidJs}',event)" title="Detalhes">
+          <i class="fas fa-chevron-right" id="colabChev_${c.id}"></i>
+        </button>
         <div style="width:44px;height:44px;border-radius:8px;background:${nivelCor}22;border:2px solid ${nivelCor}44;
                     display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <span style="font-family:var(--font-h);font-size:18px;font-weight:800;color:${nivelCor}">${inicial}</span>
@@ -15368,6 +15588,8 @@ function renderColaboradores() {
 
       <!-- Projetos feitos -->
       ${c.projetos_feitos ? `<div style="font-size:8px;color:#94a3b8;margin-top:6px;text-align:right">${c.projetos_feitos} projeto${c.projetos_feitos!==1?'s':''} realizados</div>` : ''}
+    </div>
+    <div id="colabDetail_${c.id}" class="colab-detail-panel" style="display:none"></div>
     </div>`;
   }).join('');
 }
@@ -16602,6 +16824,24 @@ async function deleteTask(id) {
 /* ═══════════════════════════════════════════
    FINANCEIRO PESSOAL
 ═══════════════════════════════════════════ */
+async function getMyColaboradorId() {
+  if(_myColabIdCache !== undefined) return _myColabIdCache;
+  const cid = currentUser?.company_id;
+  const email = (currentUser?.email || '').trim().toLowerCase();
+  if(!email || !cid) {
+    _myColabIdCache = null;
+    return null;
+  }
+  try {
+    const d = await apiGet('age_colaboradores', `?contato_email=eq.${encodeURIComponent(email)}&company_id=eq.${encodeURIComponent(String(cid))}&limit=1`);
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    _myColabIdCache = rows[0]?.id || null;
+  } catch(e) {
+    _myColabIdCache = null;
+  }
+  return _myColabIdCache;
+}
+
 function _payStatusMeta(row) {
   if(!row || typeof row !== 'object') return { label:'—', emoji:'⚪', kind:'unknown' };
   const today = new Date().toISOString().slice(0, 10);
@@ -16638,25 +16878,52 @@ async function loadFinance() {
     if(fmp) {
       try {
         const u = encodeURIComponent(currentUser.username);
-        const d = await apiGet('age_payments', `?colaborador_username=eq.${u}&limit=120`);
-        const pays = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible)
-          .sort((a,b)=> String(b.due_date||'').localeCompare(String(a.due_date||'')));
-        fmp.innerHTML = pays.length ? pays.map(p=>{
-          const meta = _payStatusMeta(p);
-          const proj = escHtml(p.project_name || p.projeto || '—');
-          const badge = meta.kind === 'pago'
-            ? `<span style="font-family:var(--font-m);font-size:9px;padding:3px 10px;border-radius:4px;background:rgba(22,163,74,.2);color:#4ade80;border:1px solid rgba(34,197,94,.4)">Pago em ${fmtDate(p.paid_at)}</span>`
-            : `<span style="font-family:var(--font-m);font-size:9px;padding:3px 10px;border-radius:4px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35)">Pendente</span>`;
-          return `<div class="task-item" style="align-items:flex-start">
-            <div style="font-size:16px;line-height:1;margin-right:8px">${meta.emoji}</div>
-            <div style="flex:1">
-              <div class="task-text">${proj}</div>
-              <div class="task-meta">${escHtml(p.description||p.desc||'—')} · Venc. ${fmtDate(p.due_date)} · ${escHtml(p.payment_method||'—')}</div>
-              <div style="margin-top:6px">${badge}</div>
-            </div>
-            <span style="font-family:var(--font-h);font-size:13px;font-weight:700;white-space:nowrap">${fmtBRL(p.amount||p.valor||0)}</span>
-          </div>`;
-        }).join('') : `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:12px;text-align:center">Nenhum pagamento corporativo registrado para você.</div>`;
+        const myColId = await getMyColaboradorId();
+        const d1 = await apiGet('age_payments', `?colaborador_username=eq.${u}&limit=150`);
+        let pays = (Array.isArray(d1?.data) ? d1.data : []).filter(_sbIsRowVisible);
+        if(myColId) {
+          const d2 = await apiGet('age_payments', `?colaborador_id=eq.${encodeURIComponent(String(myColId))}&limit=150`);
+          const p2 = (Array.isArray(d2?.data) ? d2.data : []).filter(_sbIsRowVisible);
+          const seen = new Set(pays.map(x => x.id));
+          for(const r of p2) {
+            if(r?.id && !seen.has(r.id)) { pays.push(r); seen.add(r.id); }
+          }
+        }
+        pays = pays.map(_payRowNormalize).sort((a,b)=>
+          String(b.data_vencimento||b.due_date||'').localeCompare(String(a.data_vencimento||a.due_date||''))
+        );
+        fmp.innerHTML = pays.length ? `
+          <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-family:var(--font-b);font-size:12px">
+            <thead>
+              <tr style="background:rgba(0,0,0,.04);font-family:var(--font-h);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b">
+                <th style="text-align:left;padding:8px 10px">Mês</th>
+                <th style="text-align:right;padding:8px 10px">Valor</th>
+                <th style="text-align:left;padding:8px 10px">Status</th>
+                <th style="text-align:left;padding:8px 10px">Vencimento</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pays.map(p => {
+                const venc = p.data_vencimento || p.due_date;
+                const mesRaw = venc ? String(venc).slice(0, 10) : '';
+                const mesLab = mesRaw
+                  ? new Date(mesRaw + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                  : '—';
+                const st = _normStatus(p.status);
+                const stLabel = st === 'pago' ? 'Pago ✅' : st === 'atrasado' ? 'Atrasado' : st === 'cancelado' ? 'Cancelado' : 'Pendente';
+                const stColor = st === 'pago' ? '#16a34a' : st === 'pendente' ? '#d97706' : st === 'atrasado' ? '#dc2626' : '#64748b';
+                const amt = fmtBRL(p.valor ?? p.amount ?? 0);
+                return `<tr style="border-bottom:1px solid rgba(0,0,0,.06)">
+                  <td style="padding:8px 10px;text-transform:capitalize">${escHtml(mesLab)}</td>
+                  <td style="padding:8px 10px;text-align:right;font-family:var(--font-h);font-weight:800">${amt}</td>
+                  <td style="padding:8px 10px;color:${stColor};font-weight:700">${escHtml(stLabel)}</td>
+                  <td style="padding:8px 10px">${escHtml(venc ? fmtDate(venc) : '—')}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          </div>` : `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:12px;text-align:center">Nenhum pagamento corporativo registrado para você.</div>`;
       } catch(e2) {
         fmp.innerHTML = `<div style="color:var(--textsub);font-size:11px">Não foi possível carregar pagamentos.</div>`;
       }
@@ -16886,6 +17153,10 @@ let _pagamentosAll = [];
 let _pagamentosView = [];
 let _pagamentosFilters = { status:'', tipo:'', ym:'' };
 let _payProjectsCache = [];
+let _payColabListCache = [];
+/** cache do id em age_colaboradores para o usuário logado (área pessoal) */
+let _myColabIdCache;
+let _colabOpenDetailId = null;
 
 function _payToday() { return new Date().toISOString().slice(0,10); }
 function _ymFromDate(d) { const s = String(d||'').slice(0,10); return s ? s.slice(0,7) : ''; }
@@ -16935,6 +17206,7 @@ function _payRowNormalize(p) {
     '—';
   const projeto_id = p.projeto_id || p.project_id || '';
   const projeto_nome = p.project_name || p.projeto || '';
+  const colaborador_id = p.colaborador_id ? String(p.colaborador_id) : '';
   return {
     ...p,
     id,
@@ -16944,6 +17216,9 @@ function _payRowNormalize(p) {
     status,
     tipo_destinatario,
     nome_destinatario,
+    colaborador_id,
+    colaborador_nome: p.colaborador_nome || '',
+    colaborador_username: p.colaborador_username || '',
     projeto_id: projeto_id ? String(projeto_id) : '',
     projeto_nome: String(projeto_nome||''),
     categoria: p.categoria || '',
@@ -17144,7 +17419,135 @@ function onPayRecorrenteChanged() {
   const box = document.getElementById('payPeriodicidadeBox');
   if(box) box.style.display = on ? '' : 'none';
 }
-function onPayTipoChanged() { /* reservado para futuras regras por tipo */ }
+
+async function _resolveColabNotifyUsername(colabId) {
+  if(!colabId) return null;
+  try {
+    const row = await apiGet('age_colaboradores', `/${colabId}`);
+    if(row?.usuario_username) return String(row.usuario_username).toLowerCase();
+    const em = row?.contato_email;
+    if(em) {
+      const u = await fetchAgeUserByEmail(String(em).toLowerCase());
+      if(u?.username) return String(u.username).toLowerCase();
+    }
+  } catch(e) { console.warn('[_resolveColabNotifyUsername]', e); }
+  return null;
+}
+
+async function _notifyColaboradorPay(event, pay) {
+  const cid = pay?.colaborador_id;
+  if(!cid) return;
+  const un = await _resolveColabNotifyUsername(cid);
+  if(!un) return;
+  const v = parseFloat(pay.valor ?? pay.amount) || 0;
+  const val = fmtBRL(v);
+  const venc = pay.data_vencimento || pay.due_date;
+  if(event === 'registrado') {
+    await createNotification({
+      username: un,
+      company_id: currentUser?.company_id || null,
+      type: 'pagamento_pendente',
+      title: 'Pagamento registrado',
+      message: `Um pagamento de ${val} foi registrado para você com vencimento em ${fmtDate(venc)}. Status: Pendente.`,
+      link: 'myfinance',
+      dedupe_key: `pay_pend_${pay.id}`
+    });
+  } else if(event === 'pago') {
+    const dp = pay.data_pagamento || pay.paid_at;
+    await createNotification({
+      username: un,
+      company_id: currentUser?.company_id || null,
+      type: 'pagamento_confirmado',
+      title: 'Pagamento confirmado! ✅',
+      message: `Seu pagamento de ${val} foi confirmado em ${fmtDate(dp)}.`,
+      link: 'myfinance',
+      dedupe_key: `pay_ok_${pay.id}_${String(dp || '').slice(0, 10)}`
+    });
+  }
+  try { await loadNotifications(20); updateNotifBadge(); if(!document.getElementById('notifDropdown')?.classList.contains('hidden')) renderNotifDropdown(); } catch(e) {}
+}
+
+async function loadPayColaboradoresForSelect() {
+  const sel = document.getElementById('payColabSelect');
+  if(!sel) return;
+  const cid = currentUser?.company_id;
+  if(!cid) {
+    _payColabListCache = [];
+    sel.innerHTML = '<option value="">—</option>';
+    return;
+  }
+  try {
+    const d = await apiGet('age_colaboradores', `?company_id=eq.${encodeURIComponent(String(cid))}&limit=400&order=nome.asc`);
+    _payColabListCache = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+  } catch(e) {
+    const all = await fetchAll('age_colaboradores', 400).catch(()=>[]);
+    _payColabListCache = (all || []).filter(c => String(c.company_id) === String(cid));
+  }
+  sel.innerHTML = '<option value="">Selecione o colaborador…</option>' + _payColabListCache.map(c => {
+    const id = String(c.id);
+    const nome = c.nome || '—';
+    const forma = String(c.forma_recebimento || 'pix').toLowerCase() === 'ted' ? 'ted' : 'pix';
+    const sub = forma === 'ted'
+      ? (c.banco ? `TED: ${c.banco}` : 'TED')
+      : (c.pix_chave ? `PIX: ${c.pix_chave}` : 'PIX');
+    return `<option value="${escAttr(id)}">${escHtml(nome + ' — ' + sub)}</option>`;
+  }).join('');
+}
+
+function onPayColabSelectChange() {
+  const sel = document.getElementById('payColabSelect');
+  const id = sel?.value || '';
+  const warn = document.getElementById('payColabBankWarn');
+  const hiddenU = document.getElementById('payColabUsername');
+  if(hiddenU) hiddenU.value = '';
+  if(!id) {
+    if(warn) warn.style.display = 'none';
+    return;
+  }
+  const c = _payColabListCache.find(x => String(x.id) === String(id));
+  if(!c) return;
+  const nomeEl = document.getElementById('payNome');
+  if(nomeEl) nomeEl.value = c.nome || '';
+  const forma = String(c.forma_recebimento || 'pix').toLowerCase() === 'ted' ? 'ted' : 'pix';
+  const pf = document.getElementById('payForma');
+  if(pf) pf.value = forma;
+  onPayFormaChanged();
+  const pk = document.getElementById('payChavePix');
+  const bk = document.getElementById('payBanco');
+  if(forma === 'pix') {
+    if(pk) pk.value = c.pix_chave || '';
+    if(bk) bk.value = '';
+  } else {
+    if(bk) bk.value = c.banco || '';
+    if(pk) pk.value = (c.agencia || c.conta) ? `Ag ${c.agencia || ''} · Cc ${c.conta || ''}` : '';
+  }
+  if(hiddenU && c.usuario_username) {
+    hiddenU.value = String(c.usuario_username).toLowerCase();
+  } else if(hiddenU && c.contato_email) {
+    fetchAgeUserByEmail(String(c.contato_email).toLowerCase()).then(u => {
+      if(u?.username) hiddenU.value = String(u.username).toLowerCase();
+    }).catch(()=>{});
+  }
+  const missPix = forma === 'pix' && !String(c.pix_chave || '').trim();
+  const missTed = forma === 'ted' && (!String(c.banco||'').trim() || !String(c.agencia||'').trim() || !String(c.conta||'').trim());
+  if(warn) warn.style.display = (missPix || missTed) ? '' : 'none';
+}
+
+async function onPayTipoChanged() {
+  const tipo = _normTipo(document.getElementById('payTipo')?.value);
+  const row = document.getElementById('payColabRow');
+  if(row) row.style.display = tipo === 'colaborador' ? '' : 'none';
+  if(tipo === 'colaborador') {
+    await loadPayColaboradoresForSelect();
+  } else {
+    const sel = document.getElementById('payColabSelect');
+    if(sel) sel.value = '';
+    const w = document.getElementById('payColabBankWarn');
+    if(w) w.style.display = 'none';
+    const hu = document.getElementById('payColabUsername');
+    if(hu) hu.value = '';
+  }
+}
 
 async function _ensurePayProjects() {
   try {
@@ -17219,6 +17622,18 @@ async function openPagamentoModal(editId) {
     document.getElementById('payVenc').value = _payToday();
   }
 
+  await onPayTipoChanged();
+  const editRow = editId ? _pagamentosAll.find(r => String(r.id) === String(editId)) : null;
+  if(editRow?.colaborador_id) {
+    const s = document.getElementById('payColabSelect');
+    if(s) {
+      s.value = String(editRow.colaborador_id);
+      onPayColabSelectChange();
+    }
+    const hu = document.getElementById('payColabUsername');
+    if(hu && editRow.colaborador_username) hu.value = String(editRow.colaborador_username);
+  }
+
   openModal('modalPagamento');
 }
 
@@ -17237,6 +17652,17 @@ async function savePagamento() {
   if(!nome_destinatario) { toast('Informe o nome do destinatário.', 'warn'); return; }
   if(!valor || valor <= 0) { toast('Informe o valor.', 'warn'); return; }
   if(!data_vencimento) { toast('Informe a data de vencimento.', 'warn'); return; }
+
+  const selColab = document.getElementById('payColabSelect');
+  const colabSelId = (tipo_destinatario === 'colaborador' && selColab?.value) ? String(selColab.value).trim() : '';
+  if(tipo_destinatario === 'colaborador' && !colabSelId) {
+    toast('Selecione o colaborador.', 'warn');
+    return;
+  }
+  const colabPick = colabSelId ? _payColabListCache.find(c => String(c.id) === String(colabSelId)) : null;
+  const colaborador_nome = colabPick?.nome || nome_destinatario || null;
+  let colaborador_username = document.getElementById('payColabUsername')?.value?.trim().toLowerCase() || null;
+  if(!colabSelId) colaborador_username = null;
 
   const categoria     = document.getElementById('payCategoria').value || null;
   const subcategoria  = document.getElementById('paySubcategoria').value.trim() || null;
@@ -17278,12 +17704,27 @@ async function savePagamento() {
     periodicidade,
     valor,
     amount: valor,                    // compat: colunas antigas
-    deleted: false
+    deleted: false,
+    colaborador_id: colabSelId || null,
+    colaborador_nome: colaborador_nome || null,
+    colaborador_username: colaborador_username
   };
 
   try {
+    let created = null;
     if(editId) await apiPatch('age_payments', editId, payload);
-    else await apiPost('age_payments', payload);
+    else created = await apiPost('age_payments', payload);
+    const saved = Array.isArray(created) ? created[0] : created;
+    const payId = editId || saved?.id;
+    if(payId && colabSelId && !editId && _normStatus(status) === 'pendente') {
+      await _notifyColaboradorPay('registrado', {
+        id: payId,
+        colaborador_id: colabSelId,
+        valor,
+        data_vencimento,
+        status: 'pendente'
+      });
+    }
     closeModal('modalPagamento');
     toast(editId ? 'Pagamento atualizado.' : 'Pagamento criado.');
     await loadPagamentosPage();
@@ -17344,6 +17785,7 @@ async function confirmMarkAsPaid() {
 
 async function marcarComoPago(id, dataPagamento, comprovante) {
   if(!hasModuleEditForPage('pagamentos')) return;
+  const prev = _pagamentosAll.find(p => String(p.id) === String(id));
   const patch = {
     status: 'pago',
     data_pagamento: dataPagamento,
@@ -17351,6 +17793,15 @@ async function marcarComoPago(id, dataPagamento, comprovante) {
     comprovante_url: comprovante || null
   };
   await apiPatch('age_payments', id, patch);
+  if(prev?.colaborador_id) {
+    await _notifyColaboradorPay('pago', {
+      id,
+      colaborador_id: prev.colaborador_id,
+      valor: prev.valor ?? prev.amount,
+      data_pagamento: dataPagamento,
+      paid_at: patch.paid_at
+    });
+  }
 }
 
 /* ═══════════════════════════════════════════
