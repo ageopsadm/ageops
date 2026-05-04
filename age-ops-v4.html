@@ -7710,6 +7710,64 @@ function _sbHeaders(extra = {}, anonKey = null) {
     ...extra
   };
 }
+/** Alias — mesmo header que `api()` / PostgREST (anon em apikey + Bearer). */
+function sbHeaders(extra, anonKey) {
+  return _sbHeaders(extra || {}, anonKey);
+}
+
+/**
+ * Após ALTER TABLE, o PostgREST pode servir schema cache antigo. Um GET leve na tabela
+ * força atualização antes de INSERT/PATCH (best-effort; ignora falhas).
+ */
+async function _warmupPostgrestTableCache(table) {
+  const sbUrl = String(SUPABASE_URL || '').trim();
+  const sbKey = String(SUPABASE_ANON_KEY || '').trim();
+  if(!sbUrl || sbUrl === 'COLE_AQUI_SUA_SUPABASE_URL' || !sbKey || sbKey === 'COLE_AQUI_SUA_SUPABASE_ANON_KEY') return;
+  const base = sbUrl.replace(/\/+$/, '') + '/rest/v1/' + String(table || '').replace(/^\/+/, '');
+  const q = new URLSearchParams({ limit: '1', select: 'id' });
+  const cid = _tenantCidForScope();
+  if(cid && _tenantShouldFilterTable(table)) q.set('company_id', `eq.${cid}`);
+  const url = `${base}?${q.toString()}`;
+  try {
+    const r = await fetch(url, { method: 'GET', headers: sbHeaders() });
+    await r.text().catch(() => {});
+  } catch(e) { /* ignore */ }
+}
+
+/**
+ * POST/PATCH em age_payments com headers explícitos (apikey + Bearer anon) — alinhado ao restante do app.
+ */
+async function _fetchSaveAgePayment(method, rowId, payload) {
+  const sbUrl = String(SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  const key = String(SUPABASE_ANON_KEY || '').trim();
+  if(!sbUrl || sbUrl === 'COLE_AQUI_SUA_SUPABASE_URL' || !key || key === 'COLE_AQUI_SUA_SUPABASE_ANON_KEY') {
+    throw new Error('Supabase não configurado (SUPABASE_URL / SUPABASE_ANON_KEY).');
+  }
+  let url = `${sbUrl}/rest/v1/age_payments`;
+  if(method === 'PATCH' && rowId) {
+    url += `?id=eq.${encodeURIComponent(String(rowId))}`;
+  }
+  const headers = {
+    'apikey': key,
+    'Authorization': `Bearer ${key}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+  const r = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+  if(!r.ok && r.status !== 204) {
+    if(r.status === 401 || r.status === 403) {
+      const msg = 'Erro de permissão no banco — contate o administrador';
+      try { if(typeof toast === 'function') toast(msg, 'err'); } catch(e) {}
+      throw new Error(msg);
+    }
+    let detail = '';
+    try { detail = await r.text(); } catch(e) {}
+    throw new Error(`age_payments ${method} (${r.status}) ${detail}`);
+  }
+  if(r.status === 204) return null;
+  const json = await r.json();
+  return Array.isArray(json) ? json : (json != null ? [json] : []);
+}
 
 function _sbNormalizeQuery(qs = '') {
   const q = new URLSearchParams((qs || '').startsWith('?') ? (qs || '').slice(1) : (qs || ''));
@@ -17697,7 +17755,7 @@ async function savePagamento() {
   let colaborador_username = document.getElementById('payColabUsername')?.value?.trim().toLowerCase() || null;
   if(!colabSelId) colaborador_username = null;
 
-  const categoria     = document.getElementById('payCategoria').value || null;
+  const categoria     = (document.getElementById('payCategoria')?.value || '').trim() || null;
   const subcategoria  = document.getElementById('paySubcategoria').value.trim() || null;
   const descricao     = document.getElementById('payDescricao').value.trim() || null;
   const forma_pagamento = (document.getElementById('payForma').value || 'pix').toLowerCase();
@@ -17719,38 +17777,53 @@ async function savePagamento() {
   const recorrente    = document.getElementById('payRecorrente').checked === true;
   const periodicidade = recorrente ? (document.getElementById('payPeriodicidade').value || 'mensal') : null;
 
-  const payload = {
-    tipo_destinatario,
-    nome_destinatario,
+  const companyId = _tenantCidForScope();
+  const payload = {};
+  if(companyId) payload.company_id = companyId;
+
+  /* Obrigatórios (já validados acima) — nomes de coluna alinhados ao Supabase (ex.: chave_pix, não pix_chave). */
+  payload.nome_destinatario = nome_destinatario;
+  payload.tipo_destinatario = tipo_destinatario;
+  payload.valor = valor;
+  payload.status = status;
+  payload.data_vencimento = data_vencimento;
+  payload.forma_pagamento = forma_pagamento;
+
+  const opcional = {
+    descricao,
     categoria,
     subcategoria,
-    descricao,
-    numero_nota,
-    forma_pagamento,
-    banco,
     chave_pix,
-    data_vencimento,
-    status,
-    projeto_id,
-    projeto_nome: projeto_nome || null,
-    project_id: projeto_id || null,   // compat: caso a tabela ainda use project_id em integrações antigas
-    project_name: projeto_nome || null,
+    banco,
+    numero_nota,
     observacoes,
-    comprovante_url: null,
-    recorrente,
-    periodicidade,
-    valor,
-    amount: valor,                    // compat: colunas antigas
-    deleted: false,
     colaborador_id: colabSelId || null,
     colaborador_nome: colaborador_nome || null,
-    colaborador_username: colaborador_username
+    colaborador_username: colaborador_username || null,
+    projeto_id: projeto_id || null,
+    projeto_nome: projeto_nome || null,
+    project_id: projeto_id || null,
+    project_name: projeto_nome || null
   };
+  Object.entries(opcional).forEach(([key, value]) => {
+    if(value === null || value === undefined || value === '') return;
+    payload[key] = typeof value === 'string' ? value.trim() : value;
+  });
+
+  if(recorrente) {
+    payload.recorrente = true;
+    payload.periodicidade = periodicidade || 'mensal';
+  }
 
   try {
+    await _warmupPostgrestTableCache('age_payments');
+    console.log('[savePagamento] payload:', JSON.stringify(payload, null, 2));
     let created = null;
-    if(editId) await apiPatch('age_payments', editId, payload);
-    else created = await apiPost('age_payments', payload);
+    if(editId) {
+      await _fetchSaveAgePayment('PATCH', editId, payload);
+    } else {
+      created = await _fetchSaveAgePayment('POST', null, payload);
+    }
     const saved = Array.isArray(created) ? created[0] : created;
     const payId = editId || saved?.id;
     if(payId && colabSelId && !editId && _normStatus(status) === 'pendente') {
