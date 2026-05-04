@@ -3367,12 +3367,11 @@ select.login-input{cursor:pointer}
                 <th style="text-align:right">Valor</th>
                 <th>Vencimento</th>
                 <th>Status</th>
-                <th>Projeto</th>
                 <th style="text-align:right">Ações</th>
               </tr>
             </thead>
             <tbody id="payTableBody">
-              <tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</td></tr>
+              <tr><td colspan="7" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -3990,6 +3989,12 @@ select.login-input{cursor:pointer}
         <label class="form-label">Nome do destinatário *</label>
         <input id="payNome" type="text" placeholder="Ex.: João (Freelancer) / Nubank / Receita Federal" style="width:100%">
       </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Projeto relacionado <span style="opacity:0.5;font-size:11px;">(opcional)</span></label>
+        <select id="pay-projeto-id" style="width:100%">
+          <option value="">— Nenhum projeto —</option>
+        </select>
+      </div>
       <div class="form-group" id="payColabRow" style="grid-column:1/-1;display:none">
         <label class="form-label">Colaborador *</label>
         <select id="payColabSelect" style="width:100%" onchange="onPayColabSelectChange()">
@@ -4079,10 +4084,6 @@ select.login-input{cursor:pointer}
             <div class="form-group">
               <label class="form-label">NF / Nota fiscal</label>
               <input id="payNF" type="text" placeholder="Número da NF" style="width:100%">
-            </div>
-            <div class="form-group" style="grid-column:1/-1">
-              <label class="form-label">Projeto vinculado (opcional)</label>
-              <select id="payProjeto" style="width:100%"></select>
             </div>
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label">Observações</label>
@@ -17205,7 +17206,7 @@ function _payRowNormalize(p) {
     (p.destinatario ? String(p.destinatario) : '') ||
     '—';
   const projeto_id = p.projeto_id || p.project_id || '';
-  const projeto_nome = p.project_name || p.projeto || '';
+  const projeto_nome = p.projeto_nome || p.project_name || p.projeto || '';
   const colaborador_id = p.colaborador_id ? String(p.colaborador_id) : '';
   return {
     ...p,
@@ -17342,11 +17343,11 @@ function renderTabelaPagamentos(list) {
   const tbody = document.getElementById('payTableBody');
   if(!tbody) return;
   if(!canViewPage('pagamentos')) {
-    tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Sem permissão para esta área.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Sem permissão para esta área.</td></tr>`;
     return;
   }
   if(!list.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum pagamento encontrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhum pagamento encontrado.</td></tr>`;
     return;
   }
 
@@ -17354,13 +17355,15 @@ function renderTabelaPagamentos(list) {
   const rows = [...list].sort((a,b)=>String(a.data_vencimento||'').localeCompare(String(b.data_vencimento||'')));
   tbody.innerHTML = rows.map(p => {
     const id = String(p.id||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const nome = escHtml(p.nome_destinatario || '—');
+    const pn = String(p.projeto_nome || p.project_name || '').trim();
+    const nomeCell = `<span>${escHtml(p.nome_destinatario || '—')}</span>` + (pn
+      ? `<br><span style="font-size:11px;background:rgba(0,0,0,0.07);padding:2px 8px;border-radius:20px;opacity:0.75;display:inline-block;margin-top:4px;font-family:var(--font-m)">📁 ${escHtml(pn)}</span>`
+      : '');
     const tipo = _payTipoBadge(p.tipo_destinatario);
     const cat  = escHtml(p.categoria || '—');
     const val  = fmtBRL(p.valor ?? p.amount ?? 0);
     const venc = p.data_vencimento ? fmtDate(p.data_vencimento) : '—';
     const st   = _payStatusBadge(p.status);
-    const proj = escHtml(p.projeto_nome || p.project_name || '—');
 
     const btnPay = canEdit && _normStatus(p.status) !== 'pago'
       ? `<button type="button" class="btn btn-primary btn-sm" style="background:#16a34a" onclick="openMarkAsPaid('${id}')"><i class="fas fa-check"></i></button>`
@@ -17372,13 +17375,12 @@ function renderTabelaPagamentos(list) {
       ? `<button type="button" class="btn btn-danger btn-sm" onclick="deletePagamento('${id}')"><i class="fas fa-trash"></i></button>`
       : '';
     return `<tr>
-      <td>${nome}</td>
+      <td>${nomeCell}</td>
       <td>${tipo}</td>
       <td>${cat}</td>
       <td class="pay2-amt">${val}</td>
       <td>${escHtml(venc)}</td>
       <td>${st}</td>
-      <td>${proj}</td>
       <td><div class="pay2-actions">${btnPay}${btnEdit}${btnDel}</div></td>
     </tr>`;
   }).join('');
@@ -17390,13 +17392,13 @@ async function loadPagamentosPage() {
   const tbody = document.getElementById('payTableBody');
   if(!tbody) return;
   initPayMonthSelect();
-  tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</td></tr>`;
   try {
     await loadPagamentos();
     aplicarFiltrosPagamentos();
   } catch(e) {
     console.error('[loadPagamentosPage]', e);
-    tbody.innerHTML = `<tr><td colspan="8" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Erro ao carregar pagamentos.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:22px 12px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Erro ao carregar pagamentos.</td></tr>`;
   }
 }
 
@@ -17553,12 +17555,16 @@ async function _ensurePayProjects() {
   try {
     if(!_payProjectsCache.length) _payProjectsCache = await fetchAgeProjectsScoped(900);
   } catch(e) { _payProjectsCache = []; }
-  const sel = document.getElementById('payProjeto');
+  const sel = document.getElementById('pay-projeto-id');
   if(!sel) return;
-  sel.innerHTML = '<option value="">— Nenhum —</option>' + _payProjectsCache.map(p => {
+  const rows = [..._payProjectsCache].sort((a, b) =>
+    (_ageProjDbTitle(a) || '').localeCompare(_ageProjDbTitle(b) || '', 'pt-BR', { sensitivity: 'base' }));
+  sel.innerHTML = '<option value="">— Nenhum projeto —</option>' + rows.map(p => {
     const tid = escAttr(String(p.id));
-    const title = escHtml(_ageProjDbTitle(p) || '(sem nome)');
-    return `<option value="${tid}">${title}</option>`;
+    const title = _ageProjDbTitle(p) || '(sem nome)';
+    const st = p.status ? String(p.status).trim() : '';
+    const label = st ? `${title} — ${st}` : title;
+    return `<option value="${tid}">${escHtml(label)}</option>`;
   }).join('');
 }
 
@@ -17590,7 +17596,7 @@ async function openPagamentoModal(editId) {
   onPayRecorrenteChanged();
 
   await _ensurePayProjects();
-  const selProj = document.getElementById('payProjeto');
+  const selProj = document.getElementById('pay-projeto-id');
   if(selProj) selProj.value = '';
 
   if(editId) {
@@ -17671,17 +17677,20 @@ async function savePagamento() {
   const chave_pix     = document.getElementById('payChavePix').value.trim() || null;
   const banco         = document.getElementById('payBanco').value.trim() || null;
   const numero_nota   = document.getElementById('payNF').value.trim() || null;
-  const projeto_id    = document.getElementById('payProjeto')?.value?.trim() || null;
+  const projetoSelect = document.getElementById('pay-projeto-id');
+  const projeto_id    = projetoSelect?.value?.trim() || null;
+  let projeto_nome = null;
+  if(projeto_id && projetoSelect && projetoSelect.selectedIndex >= 0) {
+    const optText = projetoSelect.options[projetoSelect.selectedIndex]?.text?.trim();
+    if(optText) projeto_nome = optText;
+  }
+  if(projeto_id && !projeto_nome && _payProjectsCache.length) {
+    const p = _payProjectsCache.find(x => String(x.id) === String(projeto_id));
+    projeto_nome = p ? ((_ageProjDbTitle(p) || '') + (p.status ? ` — ${p.status}` : '')) : null;
+  }
   const observacoes   = document.getElementById('payObs').value.trim() || null;
   const recorrente    = document.getElementById('payRecorrente').checked === true;
   const periodicidade = recorrente ? (document.getElementById('payPeriodicidade').value || 'mensal') : null;
-
-  // projeto_nome opcional (para render rápido)
-  let projeto_nome = '';
-  if(projeto_id && _payProjectsCache.length) {
-    const p = _payProjectsCache.find(x => String(x.id) === String(projeto_id));
-    projeto_nome = p ? (_ageProjDbTitle(p) || '') : '';
-  }
 
   const payload = {
     tipo_destinatario,
@@ -17696,6 +17705,7 @@ async function savePagamento() {
     data_vencimento,
     status,
     projeto_id,
+    projeto_nome: projeto_nome || null,
     project_id: projeto_id || null,   // compat: caso a tabela ainda use project_id em integrações antigas
     project_name: projeto_nome || null,
     observacoes,
