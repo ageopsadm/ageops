@@ -100,7 +100,7 @@ table th{
 [class*="nav-label"],
 [class*="menu-label"],
 #sidebar .nav-item{
-  font-family:var(--font-ui);
+  font-family:'Plus Jakarta Sans',sans-serif;
   font-size:11px;
   font-weight:500;
   letter-spacing:1px;
@@ -253,7 +253,7 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
 .nav-item{
   display:flex;align-items:center;gap:11px;
   padding:8px 16px;
-  font-family:var(--font-b);font-size:11px;font-weight:500;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:500;
   color:rgba(255,255,255,.45);letter-spacing:.02em;
   border-left:2px solid transparent;
   transition:all .12s;cursor:pointer;white-space:nowrap;
@@ -1626,6 +1626,88 @@ select.login-input{cursor:pointer}
   display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:#64748b;
 }
 .colab-chev-btn:hover{background:rgba(0,0,0,.04);color:#0f172a}
+
+/* ── LOGIN RESET (sempre claro) ─────────────────────────────
+   Corrige regressões visuais: fundo branco, logo preta e inputs legíveis.
+   Escopo restrito ao container do login (#loginPage) e seletores genéricos
+   para evitar herança de tema escuro em telas de auth/onboarding. */
+.login-container,
+.login-page,
+.login-wrapper,
+.auth-container,
+.auth-page,
+#login-screen,
+#tela-login,
+#loginPage,
+[id*="login"],
+[class*="login-bg"],
+[class*="auth-bg"]{
+  background:#ffffff !important;
+  color:#111111 !important;
+}
+
+#login-screen .logo,
+#login-screen [class*="logo"],
+#login-screen h1,
+#login-screen [class*="brand"],
+.login-container .logo,
+.login-container h1,
+.login-logo,
+[id*="login"] .logo,
+[id*="login"] h1{
+  color:#111111 !important;
+  -webkit-text-fill-color:#111111 !important;
+}
+
+#login-screen input,
+.login-container input,
+.login-form input,
+[id*="login"] input,
+[class*="login"] input{
+  background:#ffffff !important;
+  color:#111111 !important;
+  border:1px solid #e0e0e0 !important;
+}
+#login-screen input::placeholder,
+.login-container input::placeholder,
+[id*="login"] input::placeholder{
+  color:#aaaaaa !important;
+}
+
+#login-screen label,
+.login-container label,
+.login-form label,
+[id*="login"] label,
+[id*="login"] p,
+[id*="login"] span{
+  color:#333333 !important;
+}
+
+#loginPage .login-box,
+#loginPage .login-main-card,
+#loginPage .login-card,
+#loginPage .register-card,
+[id*="login"] .login-box,
+[id*="login"] .login-main-card{
+  background:#ffffff !important;
+  color:#111111 !important;
+  border:1px solid #e0e0e0 !important;
+}
+
+/* Botão principal do login permanece preto */
+#login-screen button[type="submit"],
+#loginPage #panelLogin #loginBtn,
+#loginPage #panelLogin .login-btn{
+  background:#111111 !important;
+  color:#ffffff !important;
+  font-family:'Orbitron',sans-serif !important;
+}
+
+body.login-active,
+body:has(#login-screen:not([style*="display:none"])),
+body:has(#login-screen.visible){
+  background:#ffffff;
+}
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
 <script>
