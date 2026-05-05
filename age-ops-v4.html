@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://assets.pagar.me/pagarme-js/4/pagarme.js"></script>
@@ -39,10 +40,11 @@
   --text:   #111111;
   --textsub:#888888;
 
-  --font-title: 'Orbitron', sans-serif;
+  --font-title:   'Plus Jakarta Sans', sans-serif;
   --font-ui: 'Inter', sans-serif;
   --font-section: 'Plus Jakarta Sans', sans-serif;
   --font-data: 'Rajdhani', sans-serif;
+  --font-logo:    'Orbitron', sans-serif;
 
   --text-xs: 11px;
   --text-sm: 13px;
@@ -110,8 +112,8 @@ table th{
 #sidebar .nav-item{
   font-family:'Plus Jakarta Sans',sans-serif;
   font-size:11px;
-  font-weight:500;
-  letter-spacing:1px;
+  font-weight:600;
+  letter-spacing:0.5px;
 }
 #sidebar .nav-group-label{
   font-family:var(--font-ui);
@@ -119,7 +121,7 @@ table th{
   font-weight:500;
   letter-spacing:0.22em;
 }
-.modal-title{font-family:var(--font-title)}
+.modal-title{font-family:var(--font-title);font-weight:800;letter-spacing:0.5px}
 .modal-subtitle{font-family:var(--font-ui);font-size:13px}
 .modal-label{font-family:var(--font-ui);font-size:12px;font-weight:500}
 .modal-body{font-family:var(--font-ui);font-size:14px}
@@ -128,8 +130,8 @@ table th{
 button[class*="primary"]:not([class*="ghost"]):not([class*="secondary"]),
 .action-btn{
   font-family:var(--font-title);
-  font-size:11px;
-  letter-spacing:1.5px;
+  font-size:13px;
+  letter-spacing:0.3px;
   font-weight:700;
 }
 .btn-secondary,
@@ -247,7 +249,7 @@ select option{background:#fff;color:#111}
   white-space:nowrap;overflow:hidden;
 }
 .logo-text{
-  font-family:var(--font-h);font-size:16px;font-weight:800;
+  font-family:var(--font-logo);font-size:16px;font-weight:800;
   color:#ffffff;letter-spacing:.06em;text-transform:uppercase;
 }
 .logo-sub{
@@ -261,8 +263,8 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
 .nav-item{
   display:flex;align-items:center;gap:11px;
   padding:8px 16px;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:500;
-  color:rgba(255,255,255,.45);letter-spacing:.02em;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;
+  color:rgba(255,255,255,.45);letter-spacing:0.5px;
   border-left:2px solid transparent;
   transition:all .12s;cursor:pointer;white-space:nowrap;
   border:none;background:none;width:100%;text-align:left;
@@ -381,8 +383,8 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
   border-bottom:1px solid rgba(0,0,0,.07);
 }
 .page-title{
-  font-family:var(--font-h);font-size:13px;font-weight:700;
-  color:#111111;letter-spacing:.08em;
+  font-family:var(--font-title);font-size:22px;font-weight:800;
+  color:#111111;letter-spacing:0.5px;
   display:flex;align-items:center;gap:10px;
   text-transform:uppercase;
 }
@@ -431,9 +433,10 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
   padding: 20px;
 }
 .orc-section-header {
-  font-family: 'Orbitron', var(--font-h), sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 11px;
-  letter-spacing: 2px;
+  letter-spacing: 0.5px;
+  font-weight: 800;
   opacity: 0.6;
   margin-bottom: 16px;
   display: flex;
@@ -991,11 +994,11 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   flex-wrap: wrap;
 }
 .cal-title {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 800;
   color: #111;
-  letter-spacing: 2px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 .cal-nav-btn {
@@ -1023,10 +1026,10 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   cursor: pointer;
 }
 .cal-new-btn {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 11px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.3px;
   background: #111;
   color: #fff;
   border: none;
@@ -1841,6 +1844,8 @@ select.login-input{cursor:pointer}
   background:#111111 !important;
   color:#ffffff !important;
   font-family:'Orbitron',sans-serif !important;
+  font-size:11px !important;
+  letter-spacing:0.5px !important;
 }
 
 body.login-active,
@@ -15229,7 +15234,7 @@ function gerarPDFInterno() {
     <td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${diarias}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL(m.diaria * m.quantidade * diarias)}</td></tr>
   `).join('');
   wrap.innerHTML = `
-    <div style="font-family:Orbitron,sans-serif;font-size:11px;letter-spacing:3px;margin-bottom:16px;color:#666">DOCUMENTO INTERNO — NÃO ENVIAR AO CLIENTE</div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;letter-spacing:0.5px;margin-bottom:16px;color:#666">DOCUMENTO INTERNO — NÃO ENVIAR AO CLIENTE</div>
     <h1 style="font-size:20px;margin-bottom:8px">Breakdown — ${escHtml(document.getElementById('orc-titulo')?.value || 'Projeto')}</h1>
     <p style="opacity:.75;margin-bottom:20px">Cliente: ${escHtml(client)}</p>
     <h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Equipe</h2>
