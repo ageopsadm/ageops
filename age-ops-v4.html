@@ -904,6 +904,138 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .sched-event.company{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);color:#666666}
 .sched-event.deadline{background:rgba(180,60,60,.07);border-color:rgba(180,60,60,.2);color:rgba(150,50,50,.8)}
 
+/* ── CALENDÁRIO (Cronograma) — grid moderno ── */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: #e5e5e5;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cal-weekday {
+  background: #111;
+  color: #fff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-align: center;
+  padding: 10px 0;
+}
+.cal-day {
+  background: #fff;
+  min-height: 110px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.cal-day:hover { background: #f5f5f5; }
+.cal-day.other-month {
+  background: #fafafa;
+  color: #ccc;
+}
+.cal-day.today {
+  background: #f0f0f0;
+  border: 2px solid #111;
+}
+.cal-day-num {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 4px;
+}
+.cal-day.other-month .cal-day-num { color: #ccc; }
+.cal-day.today .cal-day-num {
+  background: #111;
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.cal-event-pill {
+  display: block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.cal-event-pill:hover { opacity: 0.85; }
+.cal-more {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+}
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cal-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.cal-nav-btn {
+  background: #f5f5f5;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.cal-nav-btn:hover { background: #e5e5e5; }
+.cal-today-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f5f5f5;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.cal-new-btn {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.cal-new-btn:hover{filter:brightness(1.05)}
+
 /* ── HISTORICO ── */
 .year-tabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap}
 .year-tab{
@@ -3254,21 +3386,26 @@ body:has(#login-screen.visible){
            CRONOGRAMA PAGE
       ══════════════════════════════════ -->
       <div id="page-cronograma" class="page">
-        <div class="page-header">
-          <div class="page-title"><i class="fas fa-calendar-alt"></i> CRONOGRAMA DA EMPRESA</div>
-          <div class="page-actions">
-            <button class="btn btn-ghost btn-sm" onclick="schedPrev()"><i class="fas fa-chevron-left"></i></button>
-            <span id="schedWeekLabel" style="font-family:var(--font-m);font-size:10px;color:var(--text);padding:0 8px"></span>
-            <button class="btn btn-ghost btn-sm" onclick="schedNext()"><i class="fas fa-chevron-right"></i></button>
-            <button class="btn btn-primary btn-sm" onclick="openSchedEventModal()"><i class="fas fa-plus"></i> Evento</button>
+        <div class="cal-header">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="cal-nav-btn" type="button" onclick="calPrevMonth()" aria-label="Mês anterior">←</button>
+            <div class="cal-title" id="calTitle">—</div>
+            <button class="cal-nav-btn" type="button" onclick="calNextMonth()" aria-label="Próximo mês">→</button>
+            <button class="cal-today-btn" type="button" onclick="calGoToday()">HOJE</button>
           </div>
+          <button class="cal-new-btn" type="button" onclick="openNewEventModal(new Date().toISOString().slice(0,10))">+ NOVO EVENTO</button>
         </div>
-        <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-bottom:10px">
-          <span style="color:rgba(255,255,255,.4)">■</span> Empresa &nbsp;
-          <span style="color:rgba(255,255,255,.7)">■</span> Pessoal &nbsp;
-          <span style="color:rgba(200,100,100,.7)">■</span> Deadline
+
+        <div class="cal-grid" id="calGrid">
+          <div class="cal-weekday">DOM</div>
+          <div class="cal-weekday">SEG</div>
+          <div class="cal-weekday">TER</div>
+          <div class="cal-weekday">QUA</div>
+          <div class="cal-weekday">QUI</div>
+          <div class="cal-weekday">SEX</div>
+          <div class="cal-weekday">SÁB</div>
+          <!-- Células do mês (42) são renderizadas via JS -->
         </div>
-        <div class="sched-grid" id="schedGrid"></div>
       </div>
 
       <!-- ══════════════════════════════════
@@ -4092,30 +4229,37 @@ body:has(#login-screen.visible){
       <span id="modalSchedTitle">NOVO EVENTO</span>
       <button onclick="closeModal('modalSchedEvent')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
-    <input type="hidden" id="seId">
+    <input type="hidden" id="calEventId" value="">
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">TÍTULO *</label><input id="seTitle" type="text"></div>
-      <div class="form-group"><label class="form-label">DATA *</label><input id="seDate" type="date"></div>
+      <div class="form-group" style="grid-column:1/-1"><label class="form-label">TÍTULO *</label><input id="calTitulo" type="text" placeholder="Título do evento"></div>
+      <div class="form-group"><label class="form-label">DATA *</label><input id="calDataInicio" type="date"></div>
+      <div class="form-group"><label class="form-label">DATA FIM</label><input id="calDataFim" type="date"></div>
+      <div class="form-group"><label class="form-label">HORA INÍCIO</label><input id="calHoraInicio" type="time"></div>
+      <div class="form-group"><label class="form-label">HORA FIM</label><input id="calHoraFim" type="time"></div>
       <div class="form-group"><label class="form-label">TIPO</label>
-        <select id="seType">
-          <option value="company">Empresa</option>
-          <option value="personal">Pessoal</option>
-          <option value="deadline">Deadline</option>
+        <select id="calTipo">
+          <option value="gravacao">Gravação</option>
+          <option value="reuniao">Reunião</option>
+          <option value="entrega">Entrega</option>
+          <option value="prazo">Prazo</option>
+          <option value="edicao">Edição</option>
+          <option value="deslocamento">Deslocamento</option>
+          <option value="outro">Outro</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">RESPONSÁVEL</label><input id="seOwner" type="text" placeholder="Nome ou todos"></div>
+      <div class="form-group"><label class="form-label">RESPONSÁVEL</label>
+        <select id="calResponsavel">
+          <option value="">— Selecione —</option>
+        </select>
+      </div>
     </div>
-    <div class="form-group" style="margin-top:10px"><label class="form-label">NOTAS</label><textarea id="seNotes" rows="2" style="width:100%"></textarea></div>
-    <div class="form-group" style="margin-top:4px">
-      <label class="form-label">Atribuir para</label>
-      <select id="seAssignTo" style="width:100%;padding:8px;border-radius:5px;border:1px solid var(--bd);font-family:var(--font-m);font-size:11px">
-        <option value="">— Ninguém (sem tarefa atribuída) —</option>
-      </select>
-      <div style="font-size:8px;color:var(--textsub);margin-top:4px">Cria uma tarefa em <b>age_assigned_tasks</b> para o colaborador (aparece em Minhas Tarefas).</div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
-      <button class="btn btn-ghost" onclick="closeModal('modalSchedEvent')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveSchedEvent()"><i class="fas fa-save"></i> Salvar</button>
+    <div class="form-group" style="margin-top:10px"><label class="form-label">DESCRIÇÃO</label><textarea id="calDescricao" rows="3" style="width:100%" placeholder="Detalhes (opcional)"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:space-between;flex-wrap:wrap">
+      <button class="btn btn-danger btn-sm" id="calDeleteBtn" onclick="deleteCalendarEvent()" style="display:none"><i class="fas fa-trash"></i> Apagar</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-ghost" onclick="closeModal('modalSchedEvent')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveCalendarEvent()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -7876,7 +8020,11 @@ function navigate(page) {
   if(page==='contratos')    loadContratosPage();
   if(page==='pagamentos')   loadPagamentosPage();
   if(page==='colaboradores') loadColaboradores();
-  if(page==='cronograma')   loadCronograma();
+  if(page==='cronograma')  {
+    calYear = new Date().getFullYear();
+    calMonth = new Date().getMonth();
+    loadCalendarEvents();
+  }
   if(page==='myday')        loadMyDay();
   if(page==='mytasks')      loadTasks();
   if(page==='myfinance')    loadFinance();
@@ -17449,6 +17597,235 @@ function openTeamModal() { openColabModal(); }
 let _schedWeekOffset = 0;
 let _schedEvents = [];
 
+// ═══════════════════════════════════════════
+// CRONOGRAMA — Calendário mensal (grid 42 células)
+// ═══════════════════════════════════════════
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-11
+let calEvents = []; // eventos do mês
+const coresTipo = {
+  'gravacao':    '#111111',
+  'reuniao':     '#2563eb',
+  'entrega':     '#16a34a',
+  'prazo':       '#dc2626',
+  'edicao':      '#9333ea',
+  'deslocamento':'#ea580c',
+  'outro':       '#6b7280'
+};
+
+function _pad2(n){ return String(n).padStart(2,'0'); }
+function _monthTitle(y, m){
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  return `${meses[m]} ${y}`;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  const titleEl = document.getElementById('calTitle');
+  if(titleEl) titleEl.textContent = _monthTitle(calYear, calMonth);
+  if(!grid) return;
+
+  // mantém os 7 cabeçalhos fixos, recria as 42 células
+  const head = Array.from(grid.querySelectorAll('.cal-weekday'));
+  grid.innerHTML = '';
+  head.forEach(h => grid.appendChild(h));
+
+  const first = new Date(calYear, calMonth, 1);
+  const startDow = first.getDay(); // 0=dom
+  const start = new Date(calYear, calMonth, 1 - startDow);
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  for(let i=0;i<42;i++){
+    const d = new Date(start);
+    d.setDate(start.getDate()+i);
+    const ds = d.toISOString().slice(0,10);
+    const isOther = d.getMonth() !== calMonth;
+    const isToday = ds === todayStr;
+
+    const dayEvts = (Array.isArray(calEvents)?calEvents:[])
+      .filter(e => (e.data_inicio||'').slice(0,10) === ds)
+      .sort((a,b)=> String(a.hora_inicio||'').localeCompare(String(b.hora_inicio||'')));
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-day' + (isOther?' other-month':'') + (isToday?' today':'');
+    cell.setAttribute('data-date', ds);
+    cell.onclick = () => openNewEventModal(ds);
+
+    const num = document.createElement('div');
+    num.className = 'cal-day-num';
+    num.textContent = String(d.getDate());
+    cell.appendChild(num);
+
+    const maxShow = 3;
+    dayEvts.slice(0, maxShow).forEach(ev=>{
+      const pill = document.createElement('span');
+      pill.className = 'cal-event-pill';
+      pill.textContent = (ev.titulo || '').toString();
+      pill.style.background = ev.cor || coresTipo[ev.tipo] || '#6b7280';
+      pill.onclick = (e) => { e.stopPropagation(); openEditEventModal(ev.id); };
+      cell.appendChild(pill);
+    });
+    if(dayEvts.length > maxShow) {
+      const more = document.createElement('div');
+      more.className = 'cal-more';
+      more.textContent = `+${dayEvts.length - maxShow} mais`;
+      more.onclick = (e) => { e.stopPropagation(); openNewEventModal(ds); };
+      cell.appendChild(more);
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+function calPrevMonth() {
+  calMonth--;
+  if(calMonth < 0) { calMonth = 11; calYear--; }
+  loadCalendarEvents();
+}
+function calNextMonth() {
+  calMonth++;
+  if(calMonth > 11) { calMonth = 0; calYear++; }
+  loadCalendarEvents();
+}
+function calGoToday() {
+  calYear = new Date().getFullYear();
+  calMonth = new Date().getMonth();
+  loadCalendarEvents();
+}
+
+async function _loadCalendarResponsaveis() {
+  const sel = document.getElementById('calResponsavel');
+  if(!sel) return;
+  const cid = currentUser?.company_id;
+  const rows = await fetchAll('age_colaboradores', 400).catch(()=>[]);
+  const scoped = rows.filter(r => !cid || !r.company_id || String(r.company_id) === String(cid));
+  const names = scoped
+    .map(r => (r.nome || r.name || r.full_name || r.username || '').toString().trim())
+    .filter(Boolean);
+  const uniq = Array.from(new Set(names)).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    uniq.map(n => `<option value="${escAttr(n)}">${escHtml(n)}</option>`).join('');
+}
+
+async function loadCalendarEvents() {
+  const cid = currentUser?.company_id || (typeof currentCompanyId !== 'undefined' ? currentCompanyId : null);
+  const startDate = `${calYear}-${_pad2(calMonth+1)}-01`;
+  const lastDay = new Date(calYear, calMonth+1, 0).getDate();
+  const endDate = `${calYear}-${_pad2(calMonth+1)}-${_pad2(lastDay)}`;
+
+  try {
+    const isAdmin = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
+      || ['admin','gestor'].includes(String(currentUser?.role||'').toLowerCase());
+
+    if(!cid) throw new Error('company_id não definido');
+
+    let qs = `?company_id=eq.${encodeURIComponent(String(cid))}`
+      + `&data_inicio=gte.${encodeURIComponent(startDate)}`
+      + `&data_inicio=lte.${encodeURIComponent(endDate)}`
+      + `&order=data_inicio.asc,hora_inicio.asc`;
+
+    if(!isAdmin) {
+      const nm = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
+      if(nm) qs += `&responsavel_nome=eq.${encodeURIComponent(nm)}`;
+    }
+
+    const d = await apiGet('age_team_calendar', qs);
+    const rows = Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []);
+    calEvents = rows.filter(_sbIsRowVisible);
+    renderCalendar();
+  } catch(err) {
+    console.warn('Erro ao carregar calendário:', err);
+    calEvents = [];
+    renderCalendar();
+  }
+}
+
+function openNewEventModal(dateStr) {
+  document.getElementById('modalSchedTitle').textContent = 'NOVO EVENTO';
+  const delBtn = document.getElementById('calDeleteBtn');
+  if(delBtn) delBtn.style.display = 'none';
+  document.getElementById('calEventId').value = '';
+  document.getElementById('calTitulo').value = '';
+  document.getElementById('calDescricao').value = '';
+  document.getElementById('calDataInicio').value = dateStr || new Date().toISOString().slice(0,10);
+  document.getElementById('calDataFim').value = '';
+  document.getElementById('calHoraInicio').value = '';
+  document.getElementById('calHoraFim').value = '';
+  document.getElementById('calTipo').value = 'outro';
+  _loadCalendarResponsaveis();
+  document.getElementById('calResponsavel').value = '';
+  openModal('modalSchedEvent');
+}
+
+function openEditEventModal(eventId) {
+  const ev = (Array.isArray(calEvents)?calEvents:[]).find(e => String(e.id) === String(eventId));
+  if(!ev) return;
+  document.getElementById('modalSchedTitle').textContent = 'EDITAR EVENTO';
+  const delBtn = document.getElementById('calDeleteBtn');
+  if(delBtn) delBtn.style.display = '';
+  document.getElementById('calEventId').value = ev.id || '';
+  document.getElementById('calTitulo').value = (ev.titulo || '').toString();
+  document.getElementById('calDescricao').value = (ev.descricao || '').toString();
+  document.getElementById('calDataInicio').value = (ev.data_inicio || '').toString().slice(0,10);
+  document.getElementById('calDataFim').value = (ev.data_fim || '').toString().slice(0,10);
+  document.getElementById('calHoraInicio').value = (ev.hora_inicio || '').toString().slice(0,5);
+  document.getElementById('calHoraFim').value = (ev.hora_fim || '').toString().slice(0,5);
+  document.getElementById('calTipo').value = (ev.tipo || 'outro').toString();
+  _loadCalendarResponsaveis();
+  document.getElementById('calResponsavel').value = (ev.responsavel_nome || '').toString();
+  openModal('modalSchedEvent');
+}
+
+async function saveCalendarEvent() {
+  const id = document.getElementById('calEventId').value;
+  const tipo = document.getElementById('calTipo').value || 'outro';
+  const payload = {
+    company_id: currentUser?.company_id || (typeof currentCompanyId !== 'undefined' ? currentCompanyId : null),
+    titulo: document.getElementById('calTitulo').value.trim(),
+    descricao: document.getElementById('calDescricao').value.trim() || null,
+    data_inicio: document.getElementById('calDataInicio').value,
+    data_fim: document.getElementById('calDataFim').value || null,
+    hora_inicio: document.getElementById('calHoraInicio').value ? (document.getElementById('calHoraInicio').value + ':00') : null,
+    hora_fim: document.getElementById('calHoraFim').value ? (document.getElementById('calHoraFim').value + ':00') : null,
+    tipo: tipo || 'outro',
+    responsavel_nome: document.getElementById('calResponsavel').value || null,
+    cor: coresTipo[tipo] || '#6b7280',
+    dia_inteiro: false,
+    status: 'confirmado',
+    updated_at: Date.now()
+  };
+
+  if(!payload.titulo) { alert('Título obrigatório'); return; }
+  if(!payload.data_inicio) { alert('Data obrigatória'); return; }
+
+  try {
+    if(id) {
+      await apiPut('age_team_calendar', id, payload);
+    } else {
+      payload.created_at = Date.now();
+      await apiPost('age_team_calendar', payload);
+    }
+    closeModal('modalSchedEvent');
+    loadCalendarEvents();
+  } catch(err) {
+    console.error('Erro ao salvar evento:', err);
+    alert('Erro ao salvar evento. Tente novamente.');
+  }
+}
+
+async function deleteCalendarEvent() {
+  const id = document.getElementById('calEventId').value;
+  if(!id) return;
+  if(!confirm('Apagar este evento?')) return;
+  try {
+    await apiDel('age_team_calendar', id);
+    closeModal('modalSchedEvent');
+    loadCalendarEvents();
+  } catch(err) {
+    console.error('Erro ao apagar:', err);
+  }
+}
+
 function getWeekDates(offset=0) {
   const today=new Date();
   const dow=today.getDay();
@@ -17668,11 +18045,11 @@ async function loadMyDay() {
 
     /* Buscar eventos do cronograma de HOJE */
     const schedEvts = await fetchAll('age_team_calendar',500);
-    const todayEvts = schedEvts.filter(e=>(e.event_date||e.date||'').slice(0,10)===today);
+    const todayEvts = schedEvts.filter(e=>(e.data_inicio||e.event_date||e.date||'').slice(0,10)===today);
 
     /* Combinar: eventos da empresa + tarefas pessoais */
     const allItems = [
-      ...todayEvts.map(e=>({ id:'sched_'+e.id, text:e.title, done:false, source:'empresa', type:e.type||'company', notes:e.notes, owner:e.owner })),
+      ...todayEvts.map(e=>({ id:'sched_'+e.id, text:(e.titulo||e.title||''), done:false, source:'empresa', type:(e.tipo||e.type||'company'), notes:(e.descricao||e.notes), owner:(e.responsavel_nome||e.owner) })),
       ...myTasks.map(t=>({ id:t.id, text:t.task_text||t.text||'', done:t.done===true||t.done==='true', source:'pessoal', type:'personal', prio:t.priority||'normal' }))
     ];
 
