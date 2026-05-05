@@ -622,13 +622,13 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   font-size: 12px;
   color: #555;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 .ai-suggestion-btn:hover {
   background: #111;
   color: #fff;
 }
-@keyframes aiSpin {
+@keyframes ai-spin {
   to { transform: rotate(360deg); }
 }
 
@@ -2531,15 +2531,19 @@ body:has(#login-screen.visible){
       <button class="btn-icon-top" onclick="toggleSidebar()" id="menuBtn"><i class="fas fa-bars"></i></button>
       <div id="topbarTitle">DASHBOARD</div>
       <div class="topbar-clock" id="topbarClock"></div>
-      <button type="button" onclick="openAICommand()" 
-        style="display:flex; align-items:center; gap:8px; 
-               background:#f5f5f5; border:none; padding:8px 16px; 
-               border-radius:8px; cursor:pointer; 
-               font-family:'Inter',sans-serif; font-size:12px; color:#555;">
-        <span>✦</span>
-        <span>Assistente IA</span>
-        <span style="background:#e5e5e5; padding:2px 6px; 
-                     border-radius:4px; font-size:10px;">⌘K</span>
+      <button type="button" onclick="openAICommand()"
+        title="Assistente IA (Cmd+K)"
+        style="display:flex; align-items:center; gap:8px;
+               background:#f5f5f5; border:none; padding:8px 16px;
+               border-radius:8px; cursor:pointer; transition:background 0.15s;">
+        <span style="font-size:14px;">✦</span>
+        <span style="font-family:'Inter',sans-serif;
+                     font-size:12px; color:#555; font-weight:500;">
+          Assistente
+        </span>
+        <span style="background:#e5e5e5; color:#888; padding:2px 7px;
+                     border-radius:4px; font-size:10px;
+                     font-family:'Inter',sans-serif;">⌘K</span>
       </button>
       <div class="notif-bell-root" id="notifBellRoot">
         <button type="button" class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown(event)" title="Notificações" aria-expanded="false" aria-haspopup="true">
@@ -4644,95 +4648,6 @@ body:has(#login-screen.visible){
 
 <!-- Toast -->
 <div id="toast"><i class="fas fa-check-circle toast-icon" id="toastIcon"></i><span id="toastMsg"></span></div>
-
-<div id="ai-command-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:99999; align-items:flex-start; justify-content:center; padding-top:15vh;">
-  <div style="background:#fff; border-radius:16px; width:100%; max-width:600px; margin:0 20px; box-shadow:0 24px 80px rgba(0,0,0,0.3); overflow:hidden;">
-    
-    <!-- Input principal -->
-    <div style="display:flex; align-items:center; gap:12px; padding:20px 24px; border-bottom:1px solid #f0f0f0;">
-      <span style="font-size:18px;">✦</span>
-      <input 
-        type="text" 
-        id="ai-command-input"
-        placeholder="O que você quer fazer? Ex: Novo projeto Nike R$80k prazo junho..."
-        style="flex:1; border:none; outline:none; font-family:'Inter',sans-serif; font-size:15px; color:#111; background:transparent;"
-        oninput="aiCommandTyping(this.value)"
-        onkeydown="aiCommandKeyDown(event)"
-      />
-      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#ccc; background:#f5f5f5; padding:3px 8px; border-radius:4px;">ESC</span>
-    </div>
-
-    <!-- Sugestões de exemplo -->
-    <div id="ai-suggestions" style="padding:12px 24px; border-bottom:1px solid #f5f5f5;">
-      <p style="font-family:'Inter',sans-serif; font-size:11px; color:#999; margin-bottom:8px; letter-spacing:0.5px;">EXEMPLOS DE COMANDOS</p>
-      <div style="display:flex; flex-wrap:wrap; gap:8px;">
-        <button type="button" onclick="aiSetCommand('Novo projeto Campanha Nike, cliente Nike BR, R$80.000, prazo 30 de junho')" class="ai-suggestion-btn">📁 Novo projeto</button>
-        <button type="button" onclick="aiSetCommand('Adicionar cliente Globo Comunicações, contato Ana Lima')" class="ai-suggestion-btn">👤 Novo cliente</button>
-        <button type="button" onclick="aiSetCommand('Orçamento de R$45.000 para Petrobras, validade 15 dias')" class="ai-suggestion-btn">📄 Novo orçamento</button>
-        <button type="button" onclick="aiSetCommand('Reunião sexta 14h com equipe de edição')" class="ai-suggestion-btn">📅 Novo evento</button>
-        <button type="button" onclick="aiSetCommand('Registrar gasto de R$3.200 com equipamento')" class="ai-suggestion-btn">💸 Novo gasto</button>
-        <button type="button" onclick="aiSetCommand('Criar tarefa editar vídeo Heineken para João, prazo amanhã')" class="ai-suggestion-btn">✅ Nova tarefa</button>
-      </div>
-    </div>
-
-    <!-- Resultado / Loading -->
-    <div id="ai-result" style="display:none; padding:20px 24px;">
-      
-      <!-- Loading state -->
-      <div id="ai-loading" style="display:none; text-align:center; padding:20px 0;">
-        <div style="display:inline-block; width:20px; height:20px; border:2px solid #eee; border-top-color:#111; border-radius:50%; animation:aiSpin 0.8s linear infinite;"></div>
-        <p style="font-family:'Inter',sans-serif; font-size:13px; color:#888; margin-top:12px;">Interpretando comando...</p>
-      </div>
-
-      <!-- Confirmação de ação -->
-      <div id="ai-confirm-block" style="display:none;">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-          <span id="ai-action-icon" style="font-size:24px;">✦</span>
-          <div>
-            <p id="ai-confirm-text" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:600; color:#111; margin:0;"></p>
-            <p style="font-family:'Inter',sans-serif; font-size:12px; color:#888; margin:4px 0 0;">Age Ops vai criar isso automaticamente</p>
-          </div>
-        </div>
-        
-        <!-- Preview dos dados -->
-        <div id="ai-data-preview" style="background:#f8f8f8; border-radius:10px; padding:14px; margin-bottom:16px; font-family:'Inter',sans-serif; font-size:13px; color:#555; line-height:1.8;"></div>
-        
-        <!-- Botões -->
-        <div style="display:flex; gap:10px;">
-          <button type="button" onclick="aiExecuteAction()" style="flex:1; background:#111; color:#fff; border:none; padding:12px; border-radius:8px; font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">
-            ✓ CONFIRMAR E CRIAR
-          </button>
-          <button type="button" onclick="aiReset()" style="background:#f5f5f5; color:#555; border:none; padding:12px 20px; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; cursor:pointer;">
-            Cancelar
-          </button>
-        </div>
-      </div>
-
-      <!-- Resposta de consulta -->
-      <div id="ai-response-block" style="display:none;">
-        <div style="display:flex; gap:12px; align-items:flex-start;">
-          <span style="font-size:20px; flex-shrink:0;">✦</span>
-          <p id="ai-response-text" style="font-family:'Inter',sans-serif; font-size:14px; color:#333; line-height:1.7; margin:0;"></p>
-        </div>
-      </div>
-
-      <!-- Sucesso -->
-      <div id="ai-success-block" style="display:none; text-align:center; padding:10px 0;">
-        <span style="font-size:32px;">✅</span>
-        <p id="ai-success-text" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:600; color:#16a34a; margin:12px 0 4px;"></p>
-        <p style="font-family:'Inter',sans-serif; font-size:12px; color:#888;">Criado com sucesso e adicionado à lista</p>
-      </div>
-
-    </div>
-
-    <!-- Footer -->
-    <div style="padding:10px 24px; background:#fafafa; display:flex; align-items:center; justify-content:space-between;">
-      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#bbb;">✦ Assistente Age Ops — powered by Claude AI</span>
-      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#bbb;">↵ para executar</span>
-    </div>
-
-  </div>
-</div>
 
 <!-- ══════════════════════════════════════════
      SCRIPTS
@@ -7333,12 +7248,13 @@ document.getElementById('loginForm')?.addEventListener('submit', function(e){ e.
 document.getElementById('login-password')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); } });
 document.getElementById('login-email')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); } });
 
-/* ═══════════════════════════════════════════
-   AI COMMAND (Claude via Edge Function)
-═══════════════════════════════════════════ */
+// ══════════════════════════════════════════════════
+// AI COMMAND BAR
+// ══════════════════════════════════════════════════
 
-// ── ESTADO DO AI COMMAND ──────────────────────────────────
 let aiCurrentResult = null;
+
+const AI_EDGE_URL = `${String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '')}/functions/v1/ai-command`;
 
 const aiActionIcons = {
   criar_projeto:   '📁',
@@ -7351,6 +7267,17 @@ const aiActionIcons = {
   desconhecido:    '❓'
 };
 
+const aiLabels = {
+  nome: 'Nome', titulo: 'Título', cliente_nome: 'Cliente',
+  valor_total: 'Valor', valor: 'Valor', data_entrega: 'Prazo',
+  data_inicio: 'Data', data: 'Data', hora_inicio: 'Horário', hora_fim: 'Até',
+  tipo: 'Tipo', responsavel_nome: 'Responsável',
+  prioridade: 'Prioridade', validade_dias: 'Validade',
+  descricao: 'Descrição', contato: 'Contato',
+  email: 'E-mail', telefone: 'Telefone',
+  categoria: 'Categoria', empresa: 'Empresa', prazo: 'Prazo'
+};
+
 const _aiCoresTipoCal = {
   'gravacao':    '#111111',
   'reuniao':     '#2563eb',
@@ -7360,14 +7287,6 @@ const _aiCoresTipoCal = {
   'deslocamento':'#ea580c',
   'outro':       '#6b7280'
 };
-
-function _aiShellIsVisible() {
-  const sh = document.getElementById('shell');
-  if(!sh) return false;
-  const st = (sh.style && sh.style.display) ? String(sh.style.display) : '';
-  if(st && st !== 'none') return true;
-  return sh.classList.contains('visible');
-}
 
 function _aiMapProjectStatus(raw) {
   const s = String(raw || '').toLowerCase().trim();
@@ -7460,18 +7379,12 @@ function _aiRefreshListsAfterAction(acao) {
   } catch(e) { console.warn('[ai refresh]', e); }
 }
 
-// Abrir/fechar
 function openAICommand() {
-  if(!currentUser) {
-    try { if(typeof toast === 'function') toast('Faça login para usar o assistente.', 'warn'); } catch(e) {}
-    return;
-  }
   const overlay = document.getElementById('ai-command-overlay');
   if(!overlay) return;
   overlay.style.display = 'flex';
   setTimeout(() => {
-    const inp = document.getElementById('ai-command-input');
-    if(inp) inp.focus();
+    document.getElementById('ai-command-input')?.focus();
   }, 100);
   aiReset();
 }
@@ -7482,22 +7395,17 @@ function closeAICommand() {
   aiReset();
 }
 
-// Reset para estado inicial
 function aiReset() {
-  const inp = document.getElementById('ai-command-input');
-  if(inp) inp.value = '';
-  const res = document.getElementById('ai-result');
-  if(res) res.style.display = 'none';
-  const sug = document.getElementById('ai-suggestions');
-  if(sug) sug.style.display = 'block';
-  const ld = document.getElementById('ai-loading');
-  if(ld) ld.style.display = 'none';
-  const cf = document.getElementById('ai-confirm-block');
-  if(cf) cf.style.display = 'none';
-  const rb = document.getElementById('ai-response-block');
-  if(rb) rb.style.display = 'none';
-  const sb = document.getElementById('ai-success-block');
-  if(sb) sb.style.display = 'none';
+  const input = document.getElementById('ai-command-input');
+  if(input) input.value = '';
+  const result = document.getElementById('ai-result');
+  if(result) result.style.display = 'none';
+  const suggestions = document.getElementById('ai-suggestions');
+  if(suggestions) suggestions.style.display = 'block';
+  ['ai-loading','ai-confirm-block','ai-response-block','ai-success-block'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
   aiCurrentResult = null;
 }
 
@@ -7510,12 +7418,16 @@ function aiSetCommand(texto) {
 
 // Teclas
 function aiCommandKeyDown(e) {
-  if(e.key === 'Escape') closeAICommand();
+  if(e.key === 'Escape') {
+    closeAICommand();
+    return;
+  }
   if(e.key === 'Enter') {
     e.preventDefault();
-    if(aiCurrentResult?.acao &&
+    if(aiCurrentResult &&
         aiCurrentResult.acao !== 'consultar' &&
-        aiCurrentResult.acao !== 'desconhecido') {
+        aiCurrentResult.acao !== 'desconhecido' &&
+        aiCurrentResult.acao !== 'erro') {
       aiExecuteAction();
     } else {
       aiProcessCommand();
@@ -7525,100 +7437,86 @@ function aiCommandKeyDown(e) {
 
 // Processar comando com Claude
 async function aiProcessCommand() {
-  const inputEl = document.getElementById('ai-command-input');
-  const input = (inputEl && inputEl.value) ? inputEl.value.trim() : '';
-  if(!input) return;
+  const input = document.getElementById('ai-command-input');
+  const comando = input?.value?.trim();
+  if(!comando) return;
 
-  const sug = document.getElementById('ai-suggestions');
-  if(sug) sug.style.display = 'none';
-  const res = document.getElementById('ai-result');
-  if(res) res.style.display = 'block';
-  const ld = document.getElementById('ai-loading');
-  if(ld) ld.style.display = 'block';
-  const cf = document.getElementById('ai-confirm-block');
-  if(cf) cf.style.display = 'none';
-  const rb = document.getElementById('ai-response-block');
-  if(rb) rb.style.display = 'none';
+  document.getElementById('ai-suggestions').style.display = 'none';
+  document.getElementById('ai-result').style.display = 'block';
+  document.getElementById('ai-loading').style.display = 'block';
+  document.getElementById('ai-confirm-block').style.display = 'none';
+  document.getElementById('ai-response-block').style.display = 'none';
+  document.getElementById('ai-success-block').style.display = 'none';
 
   try {
     const contexto = {
       empresa: currentUser?.company_name || '',
-      usuario: currentUser?.name || currentUser?.username || '',
+      usuario: currentUser?.nome || currentUser?.name || '',
       data_hoje: new Date().toLocaleDateString('pt-BR'),
-      dia_semana: ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][new Date().getDay()]
+      dia_semana: ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][new Date().getDay()],
+      ano: new Date().getFullYear(),
+      mes: new Date().getMonth() + 1
     };
 
-    const base = String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '');
     const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
-    const response = await fetch(`${base}/functions/v1/ai-command`, {
+    const response = await fetch(AI_EDGE_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${anon}`,
         'apikey': anon
       },
-      body: JSON.stringify({ comando: input, contexto })
+      body: JSON.stringify({ comando, contexto })
     });
 
     const resultado = await response.json();
     aiCurrentResult = resultado;
 
-    if(ld) ld.style.display = 'none';
+    document.getElementById('ai-loading').style.display = 'none';
 
     if(resultado.acao === 'consultar' ||
         resultado.acao === 'desconhecido' ||
         resultado.acao === 'erro') {
-      const rb2 = document.getElementById('ai-response-block');
-      if(rb2) rb2.style.display = 'block';
-      const rt = document.getElementById('ai-response-text');
-      if(rt) rt.textContent = resultado.resposta || 'Não entendi o comando.';
+      document.getElementById('ai-response-block').style.display = 'block';
+      document.getElementById('ai-response-text').textContent =
+        resultado.resposta || 'Não entendi o comando.';
     } else {
-      const cf2 = document.getElementById('ai-confirm-block');
-      if(cf2) cf2.style.display = 'block';
-      const ic = document.getElementById('ai-action-icon');
-      if(ic) ic.textContent = aiActionIcons[resultado.acao] || '✦';
-      const ct = document.getElementById('ai-confirm-text');
-      if(ct) ct.textContent = resultado.confirmacao || 'Confirmar ação?';
+      document.getElementById('ai-confirm-block').style.display = 'block';
+      document.getElementById('ai-action-icon').textContent =
+        aiActionIcons[resultado.acao] || '✦';
+      document.getElementById('ai-confirm-text').textContent =
+        resultado.confirmacao || 'Confirmar ação?';
 
       const dados = resultado.dados || {};
       const linhas = Object.entries(dados)
         .filter(([, v]) => v !== null && v !== undefined && v !== '')
         .map(([k, v]) => {
-          const label = {
-            nome: 'Nome', titulo: 'Título',
-            cliente_nome: 'Cliente', valor_total: 'Valor',
-            valor: 'Valor', data_entrega: 'Prazo',
-            data_inicio: 'Data', data: 'Data', hora_inicio: 'Horário',
-            tipo: 'Tipo', responsavel_nome: 'Responsável',
-            prioridade: 'Prioridade', validade_dias: 'Validade',
-            descricao: 'Descrição', contato: 'Contato',
-            email: 'E-mail', telefone: 'Telefone',
-            categoria: 'Categoria', empresa: 'Empresa'
-          }[k] || k;
-
+          const label = aiLabels[k] || k;
           let valor = v;
           if(k === 'valor_total' || k === 'valor') {
             valor = `R$ ${Number(v).toLocaleString('pt-BR')}`;
           }
           if(k === 'validade_dias') valor = `${v} dias`;
-
-          const safe = (x) => String(x).replace(/</g,'&lt;').replace(/>/g,'&gt;');
-          return `<div style="display:flex; gap:8px;">
-            <span style="color:#999; min-width:100px;">${safe(label)}</span>
-            <span style="color:#111; font-weight:500;">${safe(valor)}</span>
+          return `<div style="display:flex; gap:8px; padding:2px 0;">
+            <span style="color:#999; min-width:110px; font-size:12px;">
+              ${escHtml(String(label))}
+            </span>
+            <span style="color:#111; font-weight:600; font-size:13px;">
+              ${escHtml(String(valor))}
+            </span>
           </div>`;
         }).join('');
 
-      const pv = document.getElementById('ai-data-preview');
-      if(pv) pv.innerHTML = linhas || '<span style="color:#999">Dados extraídos do comando</span>';
+      document.getElementById('ai-data-preview').innerHTML =
+        linhas || '<span style="color:#999">Dados extraídos do comando</span>';
     }
 
   } catch (err) {
-    if(ld) ld.style.display = 'none';
-    const rb3 = document.getElementById('ai-response-block');
-    if(rb3) rb3.style.display = 'block';
-    const rt2 = document.getElementById('ai-response-text');
-    if(rt2) rt2.textContent = 'Erro ao processar. Verifique sua conexão.';
+    console.error('AI Command erro:', err);
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('ai-response-block').style.display = 'block';
+    document.getElementById('ai-response-text').textContent =
+      'Erro ao conectar com o assistente. Tente novamente.';
   }
 }
 
@@ -7747,8 +7645,10 @@ async function aiExecuteAction() {
     } else if(acao === 'criar_gasto') {
       const valor = parseFloat(d.valor);
       if(!d.descricao || !(valor > 0)) throw new Error('Descrição e valor válidos são obrigatórios.');
+      let desc = String(d.descricao).trim();
+      if(d.data) desc += ` [ref. ${String(d.data).slice(0, 10)}]`;
       await apiPost('age_gastos', {
-        descricao: String(d.descricao).trim(),
+        descricao: desc,
         valor,
         categoria: (d.categoria != null && String(d.categoria).trim()) ? String(d.categoria).trim() : null,
         tipo: 'real'
@@ -7788,26 +7688,24 @@ async function aiExecuteAction() {
 
   } catch (err) {
     console.error('Erro ao executar ação AI:', err);
-    try { if(typeof toast === 'function') toast(String(err.message || err || 'Erro'), 'err'); } catch(e2) {}
-    alert('Erro ao executar. Tente novamente.');
+    alert('Erro ao executar. Verifique o console.');
   }
 }
 
-// Atualizar ao digitar (debounce)
 let aiTypingTimer;
 function aiCommandTyping(valor) {
   clearTimeout(aiTypingTimer);
-  if(!valor) { aiReset(); return; }
-  aiTypingTimer = setTimeout(() => {}, 500);
+  if(!valor.trim()) {
+    aiReset();
+    return;
+  }
 }
 
 document.addEventListener('keydown', function(e) {
-  if(!(e.metaKey && String(e.key).toLowerCase() === 'k')) return;
-  const lp = document.getElementById('loginPage');
-  const loggingIn = lp && !lp.classList.contains('hidden') && lp.style.display !== 'none';
-  if(loggingIn || !_aiShellIsVisible()) return;
-  e.preventDefault();
-  openAICommand();
+  if((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === 'k') {
+    e.preventDefault();
+    openAICommand();
+  }
 });
 
 /* ═══════════════════════════════════════════
@@ -21096,12 +20994,6 @@ async function deleteLead() {
 ═══════════════════════════════════════════ */
 function _ageInit() {
   setupResponsive();
-  const aiOv = document.getElementById('ai-command-overlay');
-  if(aiOv) {
-    aiOv.addEventListener('click', function(e) {
-      if(e.target === this) closeAICommand();
-    });
-  }
   /* Fechar modal ao clicar fora */
   document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
@@ -21138,6 +21030,141 @@ if(document.readyState === 'loading') {
   _ageBootstrap();
 }
 </script>
+
+<div id="ai-command-overlay"
+  style="display:none; position:fixed; inset:0;
+         background:rgba(0,0,0,0.6); z-index:99999;
+         align-items:flex-start; justify-content:center;
+         padding-top:15vh;"
+  onclick="if(event.target===this) closeAICommand()">
+
+  <div style="background:#fff; border-radius:16px; width:100%;
+              max-width:600px; margin:0 20px;
+              box-shadow:0 24px 80px rgba(0,0,0,0.3); overflow:hidden;">
+
+    <!-- Input -->
+    <div style="display:flex; align-items:center; gap:12px;
+                padding:20px 24px; border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:18px; color:#111;">✦</span>
+      <input
+        type="text"
+        id="ai-command-input"
+        placeholder="O que você quer fazer? Ex: Novo projeto Nike R$80k prazo junho..."
+        style="flex:1; border:none; outline:none;
+               font-family:'Inter',sans-serif; font-size:15px;
+               color:#111; background:transparent;"
+        oninput="aiCommandTyping(this.value)"
+        onkeydown="aiCommandKeyDown(event)"
+      />
+      <span style="font-family:'Inter',sans-serif; font-size:11px;
+                   color:#ccc; background:#f5f5f5;
+                   padding:3px 8px; border-radius:4px;">ESC</span>
+    </div>
+
+    <!-- Sugestões -->
+    <div id="ai-suggestions" style="padding:16px 24px; border-bottom:1px solid #f5f5f5;">
+      <p style="font-family:'Inter',sans-serif; font-size:11px;
+                color:#999; margin:0 0 10px; letter-spacing:0.5px;">
+        EXEMPLOS DE COMANDOS
+      </p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <button type="button" onclick="aiSetCommand('Novo projeto Campanha Nike, cliente Nike BR, R$80.000, prazo 30 de junho')"
+          class="ai-suggestion-btn">📁 Novo projeto</button>
+        <button type="button" onclick="aiSetCommand('Adicionar cliente Globo Comunicações, contato Ana Lima')"
+          class="ai-suggestion-btn">👤 Novo cliente</button>
+        <button type="button" onclick="aiSetCommand('Orçamento de R$45.000 para Petrobras, validade 15 dias')"
+          class="ai-suggestion-btn">📄 Novo orçamento</button>
+        <button type="button" onclick="aiSetCommand('Reunião sexta 14h com equipe de edição')"
+          class="ai-suggestion-btn">📅 Novo evento</button>
+        <button type="button" onclick="aiSetCommand('Registrar gasto de R$3.200 com equipamento')"
+          class="ai-suggestion-btn">💸 Novo gasto</button>
+        <button type="button" onclick="aiSetCommand('Criar tarefa editar vídeo Heineken para João, prazo amanhã')"
+          class="ai-suggestion-btn">✅ Nova tarefa</button>
+      </div>
+    </div>
+
+    <!-- Resultado -->
+    <div id="ai-result" style="display:none; padding:20px 24px;">
+
+      <div id="ai-loading" style="display:none; text-align:center; padding:20px 0;">
+        <div style="display:inline-block; width:20px; height:20px;
+                    border:2px solid #eee; border-top-color:#111;
+                    border-radius:50%;
+                    animation:ai-spin 0.8s linear infinite;"></div>
+        <p style="font-family:'Inter',sans-serif; font-size:13px;
+                  color:#888; margin-top:12px;">Interpretando comando...</p>
+      </div>
+
+      <div id="ai-confirm-block" style="display:none;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <span id="ai-action-icon" style="font-size:28px;">✦</span>
+          <div>
+            <p id="ai-confirm-text"
+               style="font-family:'Plus Jakarta Sans',sans-serif;
+                      font-size:15px; font-weight:600; color:#111; margin:0;"></p>
+            <p style="font-family:'Inter',sans-serif; font-size:12px;
+                      color:#888; margin:4px 0 0;">
+              Age Ops vai criar isso automaticamente
+            </p>
+          </div>
+        </div>
+        <div id="ai-data-preview"
+          style="background:#f8f8f8; border-radius:10px; padding:14px;
+                 margin-bottom:16px; font-family:'Inter',sans-serif;
+                 font-size:13px; color:#555; line-height:2;"></div>
+        <div style="display:flex; gap:10px;">
+          <button type="button" onclick="aiExecuteAction()"
+            style="flex:1; background:#111; color:#fff; border:none;
+                   padding:13px; border-radius:8px;
+                   font-family:'Plus Jakarta Sans',sans-serif;
+                   font-size:13px; font-weight:700; cursor:pointer;">
+            ✓ CONFIRMAR E CRIAR
+          </button>
+          <button type="button" onclick="aiReset()"
+            style="background:#f5f5f5; color:#555; border:none;
+                   padding:13px 20px; border-radius:8px;
+                   font-family:'Inter',sans-serif;
+                   font-size:13px; cursor:pointer;">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <div id="ai-response-block" style="display:none;">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:20px; flex-shrink:0;">✦</span>
+          <p id="ai-response-text"
+             style="font-family:'Inter',sans-serif; font-size:14px;
+                    color:#333; line-height:1.7; margin:0;"></p>
+        </div>
+      </div>
+
+      <div id="ai-success-block" style="display:none; text-align:center; padding:10px 0;">
+        <span style="font-size:36px;">✅</span>
+        <p id="ai-success-text"
+           style="font-family:'Plus Jakarta Sans',sans-serif;
+                  font-size:15px; font-weight:700;
+                  color:#16a34a; margin:12px 0 4px;"></p>
+        <p style="font-family:'Inter',sans-serif; font-size:12px; color:#888;">
+          Criado com sucesso e adicionado à lista
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:10px 24px; background:#fafafa;
+                display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#bbb;">
+        ✦ Assistente Age Ops — powered by Claude AI
+      </span>
+      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#bbb;">
+        ↵ confirmar
+      </span>
+    </div>
+
+  </div>
+</div>
 
 </body>
 </html>

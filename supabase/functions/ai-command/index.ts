@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const CLAUDE_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const CLAUDE_MODEL = 'claude-haiku-20240307';
 
-const SYSTEM_PROMPT = `Você é o assistente de comando do Age Ops, 
+const SYSTEM_PROMPT = `Você é o assistente de comando do Age Ops,
 um sistema de gestão para produtoras audiovisuais brasileiras.
 
 Quando o usuário digitar um comando em linguagem natural, você deve:
@@ -12,16 +12,16 @@ Quando o usuário digitar um comando em linguagem natural, você deve:
 3. Retornar um JSON estruturado com a ação e os dados
 
 AÇÕES DISPONÍVEIS:
-- criar_projeto: criar novo projeto
-- criar_cliente: adicionar novo cliente
-- criar_orcamento: gerar orçamento
-- criar_evento: adicionar evento no cronograma
-- criar_gasto: registrar gasto/despesa
-- criar_tarefa: criar nova tarefa
-- consultar: responder pergunta sobre dados
-- desconhecido: quando não entender o comando
+- criar_projeto
+- criar_cliente
+- criar_orcamento
+- criar_evento
+- criar_gasto
+- criar_tarefa
+- consultar
+- desconhecido
 
-FORMATO DE RESPOSTA (sempre JSON válido):
+FORMATO DE RESPOSTA (sempre JSON válido, sem markdown):
 
 Para criar_projeto:
 {
@@ -106,21 +106,21 @@ Para criar_tarefa:
 Para consultar:
 {
   "acao": "consultar",
-  "resposta": "Resposta em português brasileiro, clara e direta"
+  "resposta": "Resposta em português brasileiro clara e direta"
 }
 
 Para desconhecido:
 {
   "acao": "desconhecido",
-  "resposta": "Não entendi o comando. Tente por exemplo: 'Novo projeto Nike R$50k prazo junho'"
+  "resposta": "Não entendi. Tente: 'Novo projeto Nike R$50k prazo junho'"
 }
 
-REGRAS IMPORTANTES:
+REGRAS:
 - Sempre responda em português brasileiro
-- Datas relativas: "sexta" = próxima sexta, "amanhã" = dia seguinte, etc.
-- Valores: "50k" = 50000, "R$1.200" = 1200
-- Retorne APENAS o JSON, sem markdown, sem explicações fora do JSON
-- Se faltar informação importante, inclua null no campo`;
+- Datas relativas: 'sexta' = próxima sexta, 'amanhã' = dia seguinte
+- Valores: '50k' = 50000, 'R$1.200' = 1200
+- Retorne APENAS o JSON, sem markdown
+- Se faltar informação importante, use null`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -149,16 +149,14 @@ serve(async (req) => {
         system: SYSTEM_PROMPT,
         messages: [{
           role: 'user',
-          content: `Contexto atual do usuário: ${JSON.stringify(contexto)}
-          
-Comando do usuário: "${comando}"`
+          content: `Contexto atual: ${JSON.stringify(contexto)}\n\nComando: "${comando}"`
         }]
       })
     });
 
     const claudeData = await response.json();
     const texto = claudeData.content[0].text;
-    
+
     let resultado;
     try {
       resultado = JSON.parse(texto);
@@ -174,9 +172,9 @@ Comando do usuário: "${comando}"`
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ 
-      acao: 'erro', 
-      resposta: 'Erro ao processar comando.' 
+    return new Response(JSON.stringify({
+      acao: 'erro',
+      resposta: 'Erro ao processar comando.'
     }), {
       status: 500,
       headers: {
