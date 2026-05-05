@@ -613,6 +613,25 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 }
 @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
 
+.ai-suggestion-btn {
+  background: #f5f5f5;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ai-suggestion-btn:hover {
+  background: #111;
+  color: #fff;
+}
+@keyframes aiSpin {
+  to { transform: rotate(360deg); }
+}
+
 /* flash escuro ao salvar */
 @keyframes flash-save{
   0%{box-shadow:inset 0 0 0 2px rgba(0,0,0,.35)}
@@ -2512,6 +2531,16 @@ body:has(#login-screen.visible){
       <button class="btn-icon-top" onclick="toggleSidebar()" id="menuBtn"><i class="fas fa-bars"></i></button>
       <div id="topbarTitle">DASHBOARD</div>
       <div class="topbar-clock" id="topbarClock"></div>
+      <button type="button" onclick="openAICommand()" 
+        style="display:flex; align-items:center; gap:8px; 
+               background:#f5f5f5; border:none; padding:8px 16px; 
+               border-radius:8px; cursor:pointer; 
+               font-family:'Inter',sans-serif; font-size:12px; color:#555;">
+        <span>✦</span>
+        <span>Assistente IA</span>
+        <span style="background:#e5e5e5; padding:2px 6px; 
+                     border-radius:4px; font-size:10px;">⌘K</span>
+      </button>
       <div class="notif-bell-root" id="notifBellRoot">
         <button type="button" class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown(event)" title="Notificações" aria-expanded="false" aria-haspopup="true">
           🔔
@@ -4615,6 +4644,95 @@ body:has(#login-screen.visible){
 
 <!-- Toast -->
 <div id="toast"><i class="fas fa-check-circle toast-icon" id="toastIcon"></i><span id="toastMsg"></span></div>
+
+<div id="ai-command-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:99999; align-items:flex-start; justify-content:center; padding-top:15vh;">
+  <div style="background:#fff; border-radius:16px; width:100%; max-width:600px; margin:0 20px; box-shadow:0 24px 80px rgba(0,0,0,0.3); overflow:hidden;">
+    
+    <!-- Input principal -->
+    <div style="display:flex; align-items:center; gap:12px; padding:20px 24px; border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:18px;">✦</span>
+      <input 
+        type="text" 
+        id="ai-command-input"
+        placeholder="O que você quer fazer? Ex: Novo projeto Nike R$80k prazo junho..."
+        style="flex:1; border:none; outline:none; font-family:'Inter',sans-serif; font-size:15px; color:#111; background:transparent;"
+        oninput="aiCommandTyping(this.value)"
+        onkeydown="aiCommandKeyDown(event)"
+      />
+      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#ccc; background:#f5f5f5; padding:3px 8px; border-radius:4px;">ESC</span>
+    </div>
+
+    <!-- Sugestões de exemplo -->
+    <div id="ai-suggestions" style="padding:12px 24px; border-bottom:1px solid #f5f5f5;">
+      <p style="font-family:'Inter',sans-serif; font-size:11px; color:#999; margin-bottom:8px; letter-spacing:0.5px;">EXEMPLOS DE COMANDOS</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <button type="button" onclick="aiSetCommand('Novo projeto Campanha Nike, cliente Nike BR, R$80.000, prazo 30 de junho')" class="ai-suggestion-btn">📁 Novo projeto</button>
+        <button type="button" onclick="aiSetCommand('Adicionar cliente Globo Comunicações, contato Ana Lima')" class="ai-suggestion-btn">👤 Novo cliente</button>
+        <button type="button" onclick="aiSetCommand('Orçamento de R$45.000 para Petrobras, validade 15 dias')" class="ai-suggestion-btn">📄 Novo orçamento</button>
+        <button type="button" onclick="aiSetCommand('Reunião sexta 14h com equipe de edição')" class="ai-suggestion-btn">📅 Novo evento</button>
+        <button type="button" onclick="aiSetCommand('Registrar gasto de R$3.200 com equipamento')" class="ai-suggestion-btn">💸 Novo gasto</button>
+        <button type="button" onclick="aiSetCommand('Criar tarefa editar vídeo Heineken para João, prazo amanhã')" class="ai-suggestion-btn">✅ Nova tarefa</button>
+      </div>
+    </div>
+
+    <!-- Resultado / Loading -->
+    <div id="ai-result" style="display:none; padding:20px 24px;">
+      
+      <!-- Loading state -->
+      <div id="ai-loading" style="display:none; text-align:center; padding:20px 0;">
+        <div style="display:inline-block; width:20px; height:20px; border:2px solid #eee; border-top-color:#111; border-radius:50%; animation:aiSpin 0.8s linear infinite;"></div>
+        <p style="font-family:'Inter',sans-serif; font-size:13px; color:#888; margin-top:12px;">Interpretando comando...</p>
+      </div>
+
+      <!-- Confirmação de ação -->
+      <div id="ai-confirm-block" style="display:none;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+          <span id="ai-action-icon" style="font-size:24px;">✦</span>
+          <div>
+            <p id="ai-confirm-text" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:600; color:#111; margin:0;"></p>
+            <p style="font-family:'Inter',sans-serif; font-size:12px; color:#888; margin:4px 0 0;">Age Ops vai criar isso automaticamente</p>
+          </div>
+        </div>
+        
+        <!-- Preview dos dados -->
+        <div id="ai-data-preview" style="background:#f8f8f8; border-radius:10px; padding:14px; margin-bottom:16px; font-family:'Inter',sans-serif; font-size:13px; color:#555; line-height:1.8;"></div>
+        
+        <!-- Botões -->
+        <div style="display:flex; gap:10px;">
+          <button type="button" onclick="aiExecuteAction()" style="flex:1; background:#111; color:#fff; border:none; padding:12px; border-radius:8px; font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">
+            ✓ CONFIRMAR E CRIAR
+          </button>
+          <button type="button" onclick="aiReset()" style="background:#f5f5f5; color:#555; border:none; padding:12px 20px; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; cursor:pointer;">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Resposta de consulta -->
+      <div id="ai-response-block" style="display:none;">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:20px; flex-shrink:0;">✦</span>
+          <p id="ai-response-text" style="font-family:'Inter',sans-serif; font-size:14px; color:#333; line-height:1.7; margin:0;"></p>
+        </div>
+      </div>
+
+      <!-- Sucesso -->
+      <div id="ai-success-block" style="display:none; text-align:center; padding:10px 0;">
+        <span style="font-size:32px;">✅</span>
+        <p id="ai-success-text" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:600; color:#16a34a; margin:12px 0 4px;"></p>
+        <p style="font-family:'Inter',sans-serif; font-size:12px; color:#888;">Criado com sucesso e adicionado à lista</p>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:10px 24px; background:#fafafa; display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#bbb;">✦ Assistente Age Ops — powered by Claude AI</span>
+      <span style="font-family:'Inter',sans-serif; font-size:11px; color:#bbb;">↵ para executar</span>
+    </div>
+
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════
      SCRIPTS
@@ -7214,6 +7332,483 @@ async function doLogout() {
 document.getElementById('loginForm')?.addEventListener('submit', function(e){ e.preventDefault(); handleLogin(); });
 document.getElementById('login-password')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); } });
 document.getElementById('login-email')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); } });
+
+/* ═══════════════════════════════════════════
+   AI COMMAND (Claude via Edge Function)
+═══════════════════════════════════════════ */
+
+// ── ESTADO DO AI COMMAND ──────────────────────────────────
+let aiCurrentResult = null;
+
+const aiActionIcons = {
+  criar_projeto:   '📁',
+  criar_cliente:   '👤',
+  criar_orcamento: '📄',
+  criar_evento:    '📅',
+  criar_gasto:     '💸',
+  criar_tarefa:    '✅',
+  consultar:       '🔍',
+  desconhecido:    '❓'
+};
+
+const _aiCoresTipoCal = {
+  'gravacao':    '#111111',
+  'reuniao':     '#2563eb',
+  'entrega':     '#16a34a',
+  'prazo':       '#dc2626',
+  'edicao':      '#9333ea',
+  'deslocamento':'#ea580c',
+  'outro':       '#6b7280'
+};
+
+function _aiShellIsVisible() {
+  const sh = document.getElementById('shell');
+  if(!sh) return false;
+  const st = (sh.style && sh.style.display) ? String(sh.style.display) : '';
+  if(st && st !== 'none') return true;
+  return sh.classList.contains('visible');
+}
+
+function _aiMapProjectStatus(raw) {
+  const s = String(raw || '').toLowerCase().trim();
+  const map = {
+    em_producao: 'em_andamento',
+    producao: 'em_andamento',
+    andamento: 'em_andamento',
+    em_andamento: 'em_andamento',
+    pendente: 'pendente',
+    concluido: 'concluido',
+    concluído: 'concluido',
+    cancelado: 'cancelado'
+  };
+  const v = map[s];
+  if(v) return v;
+  if(['pendente','em_andamento','concluido','cancelado'].includes(s)) return s;
+  return 'em_andamento';
+}
+
+function _aiTaskPriority(p) {
+  const s = String(p || '').toLowerCase();
+  if(s === 'alta') return 'alta';
+  if(s === 'baixa') return 'baixa';
+  if(s === 'media' || s === 'média' || s === 'normal') return 'normal';
+  return 'normal';
+}
+
+function _aiCalTimeToHMS(t) {
+  if(t == null || t === '') return null;
+  const s = String(t).trim();
+  if(!s) return null;
+  const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if(!m) return null;
+  const hh = String(m[1]).padStart(2,'0');
+  const mm = m[2];
+  const ss = m[3] != null ? m[3] : '00';
+  return `${hh}:${mm}:${ss}`;
+}
+
+function _aiCalTipo(raw) {
+  const allowed = ['gravacao','reuniao','entrega','prazo','edicao','deslocamento','outro'];
+  const s = String(raw || '').toLowerCase().trim();
+  if(allowed.includes(s)) return s;
+  return 'outro';
+}
+
+function _aiAddDaysISO(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + (parseInt(days, 10) || 0));
+  return d.toISOString().slice(0, 10);
+}
+
+function _aiNextOrcamentoNumero(allRows) {
+  const maxNum = (allRows || []).reduce((mx, r) => {
+    const m = String(r.numero || '').match(/(\d+)$/);
+    return m ? Math.max(mx, parseInt(m[1], 10)) : mx;
+  }, 0);
+  return 'ORC-' + String(new Date().getFullYear()) + '-' + String(maxNum + 1).padStart(3, '0');
+}
+
+function _aiRefreshListsAfterAction(acao) {
+  const pageActive = (id) => {
+    const el = document.getElementById(id);
+    return !!(el && el.classList.contains('active'));
+  };
+  try {
+    if(acao === 'criar_projeto') {
+      if(pageActive('page-projects') && typeof _loadProjectsWithAutoSync === 'function') _loadProjectsWithAutoSync();
+      else if(typeof loadProjects === 'function') loadProjects();
+      if(pageActive('page-dashboard') && typeof loadDashboard === 'function') loadDashboard();
+    }
+    if(acao === 'criar_cliente') {
+      if(pageActive('page-clientes') && typeof loadClientes === 'function') loadClientes();
+    }
+    if(acao === 'criar_orcamento') {
+      if(pageActive('page-orcamentos') && typeof loadOrcamentos === 'function') loadOrcamentos();
+    }
+    if(acao === 'criar_evento') {
+      if(pageActive('page-cronograma') && typeof loadCalendarEvents === 'function') loadCalendarEvents();
+    }
+    if(acao === 'criar_gasto') {
+      if(pageActive('page-cashflow') && typeof loadCashflow === 'function') loadCashflow();
+    }
+    if(acao === 'criar_tarefa') {
+      const my = document.getElementById('page-myday');
+      const tk = document.getElementById('page-mytasks');
+      if(my?.classList.contains('active') && typeof loadMyDay === 'function') loadMyDay();
+      if(tk?.classList.contains('active') && typeof loadTasks === 'function') loadTasks();
+    }
+  } catch(e) { console.warn('[ai refresh]', e); }
+}
+
+// Abrir/fechar
+function openAICommand() {
+  if(!currentUser) {
+    try { if(typeof toast === 'function') toast('Faça login para usar o assistente.', 'warn'); } catch(e) {}
+    return;
+  }
+  const overlay = document.getElementById('ai-command-overlay');
+  if(!overlay) return;
+  overlay.style.display = 'flex';
+  setTimeout(() => {
+    const inp = document.getElementById('ai-command-input');
+    if(inp) inp.focus();
+  }, 100);
+  aiReset();
+}
+
+function closeAICommand() {
+  const overlay = document.getElementById('ai-command-overlay');
+  if(overlay) overlay.style.display = 'none';
+  aiReset();
+}
+
+// Reset para estado inicial
+function aiReset() {
+  const inp = document.getElementById('ai-command-input');
+  if(inp) inp.value = '';
+  const res = document.getElementById('ai-result');
+  if(res) res.style.display = 'none';
+  const sug = document.getElementById('ai-suggestions');
+  if(sug) sug.style.display = 'block';
+  const ld = document.getElementById('ai-loading');
+  if(ld) ld.style.display = 'none';
+  const cf = document.getElementById('ai-confirm-block');
+  if(cf) cf.style.display = 'none';
+  const rb = document.getElementById('ai-response-block');
+  if(rb) rb.style.display = 'none';
+  const sb = document.getElementById('ai-success-block');
+  if(sb) sb.style.display = 'none';
+  aiCurrentResult = null;
+}
+
+// Preencher sugestão
+function aiSetCommand(texto) {
+  const el = document.getElementById('ai-command-input');
+  if(el) el.value = texto;
+  if(el) el.focus();
+}
+
+// Teclas
+function aiCommandKeyDown(e) {
+  if(e.key === 'Escape') closeAICommand();
+  if(e.key === 'Enter') {
+    e.preventDefault();
+    if(aiCurrentResult?.acao &&
+        aiCurrentResult.acao !== 'consultar' &&
+        aiCurrentResult.acao !== 'desconhecido') {
+      aiExecuteAction();
+    } else {
+      aiProcessCommand();
+    }
+  }
+}
+
+// Processar comando com Claude
+async function aiProcessCommand() {
+  const inputEl = document.getElementById('ai-command-input');
+  const input = (inputEl && inputEl.value) ? inputEl.value.trim() : '';
+  if(!input) return;
+
+  const sug = document.getElementById('ai-suggestions');
+  if(sug) sug.style.display = 'none';
+  const res = document.getElementById('ai-result');
+  if(res) res.style.display = 'block';
+  const ld = document.getElementById('ai-loading');
+  if(ld) ld.style.display = 'block';
+  const cf = document.getElementById('ai-confirm-block');
+  if(cf) cf.style.display = 'none';
+  const rb = document.getElementById('ai-response-block');
+  if(rb) rb.style.display = 'none';
+
+  try {
+    const contexto = {
+      empresa: currentUser?.company_name || '',
+      usuario: currentUser?.name || currentUser?.username || '',
+      data_hoje: new Date().toLocaleDateString('pt-BR'),
+      dia_semana: ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][new Date().getDay()]
+    };
+
+    const base = String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '');
+    const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
+    const response = await fetch(`${base}/functions/v1/ai-command`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anon}`,
+        'apikey': anon
+      },
+      body: JSON.stringify({ comando: input, contexto })
+    });
+
+    const resultado = await response.json();
+    aiCurrentResult = resultado;
+
+    if(ld) ld.style.display = 'none';
+
+    if(resultado.acao === 'consultar' ||
+        resultado.acao === 'desconhecido' ||
+        resultado.acao === 'erro') {
+      const rb2 = document.getElementById('ai-response-block');
+      if(rb2) rb2.style.display = 'block';
+      const rt = document.getElementById('ai-response-text');
+      if(rt) rt.textContent = resultado.resposta || 'Não entendi o comando.';
+    } else {
+      const cf2 = document.getElementById('ai-confirm-block');
+      if(cf2) cf2.style.display = 'block';
+      const ic = document.getElementById('ai-action-icon');
+      if(ic) ic.textContent = aiActionIcons[resultado.acao] || '✦';
+      const ct = document.getElementById('ai-confirm-text');
+      if(ct) ct.textContent = resultado.confirmacao || 'Confirmar ação?';
+
+      const dados = resultado.dados || {};
+      const linhas = Object.entries(dados)
+        .filter(([, v]) => v !== null && v !== undefined && v !== '')
+        .map(([k, v]) => {
+          const label = {
+            nome: 'Nome', titulo: 'Título',
+            cliente_nome: 'Cliente', valor_total: 'Valor',
+            valor: 'Valor', data_entrega: 'Prazo',
+            data_inicio: 'Data', data: 'Data', hora_inicio: 'Horário',
+            tipo: 'Tipo', responsavel_nome: 'Responsável',
+            prioridade: 'Prioridade', validade_dias: 'Validade',
+            descricao: 'Descrição', contato: 'Contato',
+            email: 'E-mail', telefone: 'Telefone',
+            categoria: 'Categoria', empresa: 'Empresa'
+          }[k] || k;
+
+          let valor = v;
+          if(k === 'valor_total' || k === 'valor') {
+            valor = `R$ ${Number(v).toLocaleString('pt-BR')}`;
+          }
+          if(k === 'validade_dias') valor = `${v} dias`;
+
+          const safe = (x) => String(x).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          return `<div style="display:flex; gap:8px;">
+            <span style="color:#999; min-width:100px;">${safe(label)}</span>
+            <span style="color:#111; font-weight:500;">${safe(valor)}</span>
+          </div>`;
+        }).join('');
+
+      const pv = document.getElementById('ai-data-preview');
+      if(pv) pv.innerHTML = linhas || '<span style="color:#999">Dados extraídos do comando</span>';
+    }
+
+  } catch (err) {
+    if(ld) ld.style.display = 'none';
+    const rb3 = document.getElementById('ai-response-block');
+    if(rb3) rb3.style.display = 'block';
+    const rt2 = document.getElementById('ai-response-text');
+    if(rt2) rt2.textContent = 'Erro ao processar. Verifique sua conexão.';
+  }
+}
+
+// Executar a ação confirmada
+async function aiExecuteAction() {
+  if(!aiCurrentResult) return;
+  const { acao, dados } = aiCurrentResult;
+  const d = dados || {};
+
+  try {
+    let mensagemSucesso = '';
+
+    if(acao === 'criar_projeto') {
+      const clientName = String(d.cliente_nome || '').trim();
+      const projName = String(d.nome || '').trim();
+      if(!clientName || !projName) throw new Error('Cliente e nome do projeto são obrigatórios.');
+      const fat = d.valor_total != null ? parseFloat(d.valor_total) : 0;
+      const delivery = d.data_entrega ? String(d.data_entrega).slice(0, 10) : null;
+      const payload = {
+        client_name: clientName,
+        project_name: projName,
+        title: projName,
+        category: 'Vídeo',
+        segment: '',
+        project_date: null,
+        payment_date: null,
+        total_value: fat,
+        cost: 0,
+        profit_pct: 0,
+        nps: 0,
+        is_new_client: false,
+        status: _aiMapProjectStatus(d.status),
+        created_by: currentUser?.username || 'unknown',
+        delivery_date: delivery
+      };
+      await apiPost('age_projects', payload);
+      mensagemSucesso = `Projeto "${projName}" criado com sucesso!`;
+
+    } else if(acao === 'criar_cliente') {
+      const nome = String(d.nome || '').trim();
+      if(!nome) throw new Error('Nome do cliente é obrigatório.');
+      const y = new Date().getFullYear();
+      const bits = [];
+      if(d.contato) bits.push(`Contato: ${d.contato}`);
+      if(d.email) bits.push(`E-mail: ${d.email}`);
+      if(d.telefone) bits.push(`Telefone: ${d.telefone}`);
+      if(d.empresa) bits.push(`Empresa: ${d.empresa}`);
+      const notesExtra = bits.length ? `\n\n${bits.join(' | ')}` : '';
+      await apiPost('age_clients_db', {
+        client_name: nome,
+        first_year: y,
+        last_year: y,
+        total_projects: 0,
+        total_value: 0,
+        avg_nps: null,
+        status: 'ativo',
+        notes: (`Criado pelo Assistente IA.${notesExtra}`).trim(),
+        years_active: String(y)
+      });
+      mensagemSucesso = `Cliente "${nome}" adicionado!`;
+
+    } else if(acao === 'criar_orcamento') {
+      const client = String(d.cliente_nome || '').trim() || 'Cliente';
+      const titulo = String(d.titulo || '').trim() || 'Orçamento';
+      const total = d.valor_total != null ? parseFloat(d.valor_total) : 0;
+      const v = Math.max(total, 1);
+      const validadeDias = parseInt(d.validade_dias, 10);
+      const dias = (Number.isFinite(validadeDias) && validadeDias > 0) ? validadeDias : 15;
+      const builder = {
+        version: 2,
+        titulo,
+        descricao: String(d.descricao || '').trim(),
+        diarias: 1,
+        margemPct: 0,
+        equipe: [],
+        catalogo: [{ nome: 'Serviços', descricao: 'Item gerado pelo Assistente IA', valorUnit: v, quantidade: 1 }],
+        despesas: []
+      };
+      const all = await fetchAll('age_orcamentos', 500).catch(() => []);
+      const numero = _aiNextOrcamentoNumero(all);
+      const payload = {
+        numero,
+        client_name: client,
+        project_name: titulo,
+        client_contact: '',
+        date: new Date().toISOString().slice(0, 10),
+        validity: _aiAddDaysISO(dias),
+        items_json: JSON.stringify(builder),
+        discounts_json: JSON.stringify([]),
+        subtotal: v,
+        total_discounts: 0,
+        imposto_pct: 0,
+        imposto_valor: 0,
+        total_value: v,
+        payment_terms: 'À vista',
+        notes: String(d.descricao || '').trim(),
+        status: 'rascunho',
+        created_by: currentUser?.username || 'unknown'
+      };
+      await apiPost('age_orcamentos', payload);
+      mensagemSucesso = `Orçamento "${titulo}" criado!`;
+
+    } else if(acao === 'criar_evento') {
+      const tipo = _aiCalTipo(d.tipo);
+      const payload = {
+        company_id: currentUser?.company_id || null,
+        titulo: String(d.titulo || '').trim(),
+        descricao: (d.descricao != null && String(d.descricao).trim()) ? String(d.descricao).trim() : null,
+        data_inicio: String(d.data_inicio || '').slice(0, 10),
+        data_fim: null,
+        hora_inicio: _aiCalTimeToHMS(d.hora_inicio),
+        hora_fim: _aiCalTimeToHMS(d.hora_fim),
+        tipo,
+        responsavel_nome: (d.responsavel_nome != null && String(d.responsavel_nome).trim()) ? String(d.responsavel_nome).trim() : null,
+        cor: _aiCoresTipoCal[tipo] || '#6b7280',
+        dia_inteiro: false,
+        status: 'confirmado',
+        created_at: Date.now(),
+        updated_at: Date.now()
+      };
+      if(!payload.company_id) throw new Error('Empresa não definida.');
+      if(!payload.titulo || !payload.data_inicio) throw new Error('Título e data são obrigatórios.');
+      await apiPost('age_team_calendar', payload);
+      mensagemSucesso = `Evento "${payload.titulo}" adicionado ao cronograma!`;
+
+    } else if(acao === 'criar_gasto') {
+      const valor = parseFloat(d.valor);
+      if(!d.descricao || !(valor > 0)) throw new Error('Descrição e valor válidos são obrigatórios.');
+      await apiPost('age_gastos', {
+        descricao: String(d.descricao).trim(),
+        valor,
+        categoria: (d.categoria != null && String(d.categoria).trim()) ? String(d.categoria).trim() : null,
+        tipo: 'real'
+      });
+      mensagemSucesso = `Gasto de R$${Number(valor).toLocaleString('pt-BR')} registrado!`;
+
+    } else if(acao === 'criar_tarefa') {
+      const titulo = String(d.titulo || '').trim();
+      if(!titulo) throw new Error('Título da tarefa é obrigatório.');
+      const owner = String(d.responsavel_nome || '').trim() || (currentUser?.username || 'unknown');
+      const day = d.prazo ? String(d.prazo).slice(0, 10) : new Date().toISOString().slice(0, 10);
+      const textParts = [titulo];
+      if(d.descricao) textParts.push(String(d.descricao));
+      await apiPost('age_tasks', {
+        task_text: textParts.join(' — '),
+        day_date: day,
+        priority: _aiTaskPriority(d.prioridade),
+        done: false,
+        owner,
+        created_by: currentUser?.username || 'unknown'
+      });
+      mensagemSucesso = `Tarefa "${titulo}" criada!`;
+    } else {
+      return;
+    }
+
+    const cf3 = document.getElementById('ai-confirm-block');
+    if(cf3) cf3.style.display = 'none';
+    const sb2 = document.getElementById('ai-success-block');
+    if(sb2) sb2.style.display = 'block';
+    const st = document.getElementById('ai-success-text');
+    if(st) st.textContent = mensagemSucesso;
+
+    _aiRefreshListsAfterAction(acao);
+
+    setTimeout(() => closeAICommand(), 2000);
+
+  } catch (err) {
+    console.error('Erro ao executar ação AI:', err);
+    try { if(typeof toast === 'function') toast(String(err.message || err || 'Erro'), 'err'); } catch(e2) {}
+    alert('Erro ao executar. Tente novamente.');
+  }
+}
+
+// Atualizar ao digitar (debounce)
+let aiTypingTimer;
+function aiCommandTyping(valor) {
+  clearTimeout(aiTypingTimer);
+  if(!valor) { aiReset(); return; }
+  aiTypingTimer = setTimeout(() => {}, 500);
+}
+
+document.addEventListener('keydown', function(e) {
+  if(!(e.metaKey && String(e.key).toLowerCase() === 'k')) return;
+  const lp = document.getElementById('loginPage');
+  const loggingIn = lp && !lp.classList.contains('hidden') && lp.style.display !== 'none';
+  if(loggingIn || !_aiShellIsVisible()) return;
+  e.preventDefault();
+  openAICommand();
+});
 
 /* ═══════════════════════════════════════════
    CLOCK
@@ -20501,6 +21096,12 @@ async function deleteLead() {
 ═══════════════════════════════════════════ */
 function _ageInit() {
   setupResponsive();
+  const aiOv = document.getElementById('ai-command-overlay');
+  if(aiOv) {
+    aiOv.addEventListener('click', function(e) {
+      if(e.target === this) closeAICommand();
+    });
+  }
   /* Fechar modal ao clicar fora */
   document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
