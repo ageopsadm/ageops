@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGE SOCIALS — Sistema Operacional</title>
+<!-- PNG -->
+<link rel="icon" type="image/png" href="favicon.png" />
+
+<!-- SVG (melhor qualidade em qualquer tamanho) -->
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+<!-- Fallback para navegadores antigos -->
+<link rel="shortcut icon" href="favicon.ico" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -1707,6 +1715,28 @@ body.login-active,
 body:has(#login-screen:not([style*="display:none"])),
 body:has(#login-screen.visible){
   background:#ffffff;
+}
+
+/* Força direta no seletor real do container (garantia máxima) */
+#loginPage{
+  background:#ffffff !important;
+  color:#111111 !important;
+}
+#loginPage .login-logo{
+  color:#111111 !important;
+  -webkit-text-fill-color:#111111 !important;
+}
+#loginPage .login-input{
+  background:#ffffff !important;
+  color:#111111 !important;
+  border:1px solid #e0e0e0 !important;
+}
+#loginPage .login-input::placeholder{
+  color:#aaaaaa !important;
+}
+#loginPage .login-label,
+#loginPage .login-sub{
+  color:#333333 !important;
 }
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
@@ -17455,8 +17485,8 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
     const posted = await apiPost('age_assigned_tasks', {
       assigned_to: assignTo,
       assigned_by: currentUser.username,
-      title: title || saved.title || '',
-      due_date: (dueDate || (saved.event_date || saved.date || '')).toString().slice(0, 10),
+      title: title || saved.titulo || saved.title || '',
+      due_date: (dueDate || (saved.data_inicio || saved.event_date || saved.date || '')).toString().slice(0, 10),
       status: 'pendente',
       notes: notes || '',
       calendar_event_id: saved.id,
@@ -17464,7 +17494,7 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
     });
     try {
       if(assignTo && String(assignTo).toLowerCase() !== String(currentUser.username || '').toLowerCase()) {
-        const dueStr = (dueDate || (saved.event_date || saved.date || '')).toString().slice(0, 10);
+        const dueStr = (dueDate || (saved.data_inicio || saved.event_date || saved.date || '')).toString().slice(0, 10);
         const niceDue = dueStr ? new Date(dueStr + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
         const byL = displayNameForUsername(currentUser.username);
         const tid = posted?.id || saved?.id || '';
@@ -17472,7 +17502,7 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
           username: assignTo,
           type: 'tarefa_atribuida',
           title: 'Nova tarefa atribuída',
-          message: `${byL} atribuiu '${(title || saved.title || '').replace(/'/g, '′')}' para você — vence em ${niceDue}`,
+          message: `${byL} atribuiu '${(title || saved.titulo || saved.title || '').replace(/'/g, '′')}' para você — vence em ${niceDue}`,
           link: 'mytasks',
           dedupe_key: tid ? `asgt_${tid}_${assignTo}` : undefined
         });
@@ -17522,7 +17552,7 @@ function renderSched() {
   el.innerHTML=days.map(d=>{
     const ds=d.toISOString().slice(0,10);
     const isToday=ds===today;
-    const dayEvents=_schedEvents.filter(e=>(e.event_date||e.date||'').slice(0,10)===ds);
+    const dayEvents=_schedEvents.filter(e=>(e.data_inicio||e.event_date||e.date||'').slice(0,10)===ds);
     const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     const addBtn = showAdd ? `<button onclick="openSchedEventModal('${ds}')" style="width:100%;margin-top:4px;padding:3px;font-size:8px;font-family:var(--font-m);color:var(--textsub);background:transparent;border:1px dashed var(--bd);border-radius:3px;cursor:pointer" onmouseover="this.style.borderColor='var(--bdm)'" onmouseout="this.style.borderColor='var(--bd)'">+</button>` : '';
     return `<div class="sched-day${isToday?' today':''}">
@@ -17531,8 +17561,8 @@ function renderSched() {
       </div>
       ${dayEvents.map(ev=>`
         <div class="sched-event ${ev.type||'company'}" onclick="viewSchedEvent('${ev.id}')">
-          ${escHtml(ev.title||'')}
-          ${ev.owner?`<div style="font-size:7px;opacity:.7;margin-top:1px">${escHtml(ev.owner)}</div>`:''}
+          ${escHtml(ev.titulo||ev.title||'')}
+          ${(ev.responsavel_nome||ev.owner)?`<div style="font-size:7px;opacity:.7;margin-top:1px">${escHtml(ev.responsavel_nome||ev.owner)}</div>`:''}
         </div>`).join('')}
       ${colab && !dayEvents.length ? `<div style="font-size:8px;color:var(--textsub);padding:6px 2px;font-family:var(--font-m)">Sem eventos atribuídos</div>` : ''}
       ${addBtn}
@@ -17558,11 +17588,11 @@ async function viewSchedEvent(id) {
   const ev=_schedEvents.find(e=>e.id===id);
   if(!ev) return;
   document.getElementById('seId').value    = ev.id;
-  document.getElementById('seTitle').value = ev.title||'';
-  document.getElementById('seDate').value  = (ev.event_date||ev.date||'').slice(0,10);
-  document.getElementById('seType').value  = ev.type||'company';
-  document.getElementById('seOwner').value = ev.owner||'';
-  document.getElementById('seNotes').value = ev.notes||'';
+  document.getElementById('seTitle').value = ev.titulo||ev.title||'';
+  document.getElementById('seDate').value  = (ev.data_inicio||ev.event_date||ev.date||'').slice(0,10);
+  document.getElementById('seType').value  = ev.tipo||ev.type||'company';
+  document.getElementById('seOwner').value = ev.responsavel_nome||ev.owner||'';
+  document.getElementById('seNotes').value = ev.descricao||ev.notes||'';
   document.getElementById('modalSchedTitle').textContent = 'EDITAR EVENTO';
   openModal('modalSchedEvent');
   await populateSchedAssignSelect();
@@ -17582,19 +17612,36 @@ async function saveSchedEvent() {
     return;
   }
   const id=document.getElementById('seId').value;
+  const dateStr = (document.getElementById('seDate').value || '').toString().slice(0,10);
+  const tipoStr = (document.getElementById('seType').value || 'evento').toString();
+  const corByTipo = {
+    company:  '#111111',
+    personal: '#2563eb',
+    deadline: '#dc2626'
+  };
   const payload={
-    title:      document.getElementById('seTitle').value.trim(),
-    event_date: document.getElementById('seDate').value,
-    type:       document.getElementById('seType').value,
-    owner:      document.getElementById('seOwner').value.trim(),
-    notes:      document.getElementById('seNotes').value,
-    created_by: currentUser?.username||'unknown'
+    company_id: currentUser?.company_id || null,
+    titulo: document.getElementById('seTitle').value.trim(),
+    descricao: (document.getElementById('seNotes').value || '').trim() || null,
+    data_inicio: dateStr,
+    data_fim: null,
+    hora_inicio: null,
+    hora_fim: null,
+    tipo: tipoStr || 'evento',
+    responsavel_nome: (document.getElementById('seOwner').value || '').trim() || null,
+    cor: corByTipo[tipoStr] || '#111111',
+    dia_inteiro: false,
+    status: 'confirmado',
+    created_at: Date.now(),
+    updated_at: Date.now()
   };
   const assignTo = document.getElementById('seAssignTo')?.value?.trim() || '';
-  if(!payload.title){ toast('Preencha o título','warn'); return; }
+  if(!payload.company_id){ toast('Empresa não definida','err'); return; }
+  if(!payload.titulo){ toast('Preencha o título','warn'); return; }
+  if(!payload.data_inicio){ toast('Preencha a data','warn'); return; }
   try {
     const saved=id?await apiPut('age_team_calendar',id,payload):await apiPost('age_team_calendar',payload);
-    await syncAssignedTaskFromCalendar(saved, assignTo, payload.title, payload.event_date, payload.notes);
+    await syncAssignedTaskFromCalendar(saved, assignTo, payload.titulo, payload.data_inicio, payload.descricao || '');
     closeModal('modalSchedEvent');
     toast(id?'Evento atualizado!':'Evento criado!');
     await loadCronograma();
