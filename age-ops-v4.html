@@ -8838,18 +8838,67 @@ function _dashResolveMesAno(p) {
   return { mes: d.getMonth() + 1, ano: d.getFullYear() };
 }
 
+/** age_projects: colunas reais — total_value, cost, project_name, status, deleted */
+function _projRowNotDeleted(p) {
+  if(!p) return false;
+  const d = p.deleted;
+  if(d === true || d === 1) return false;
+  if(typeof d === 'string') {
+    const t = d.trim().toLowerCase();
+    if(t === 'true' || t === 't' || t === '1' || t === 'yes') return false;
+  }
+  return true;
+}
+
+function _projStatusNormDash(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, '_');
+}
+
+function _projExcludedFromReceitaSum(p) {
+  const st = _projStatusNormDash(p.status);
+  return st === 'cancelado' || st === 'arquivado';
+}
+
+/** Mesma prioridade que loadProjects: fechamento.custo_total → age_projects.cost */
+function _projResolveCostRaw(p, fechByProjectId) {
+  if(!p) return 0;
+  const fech = fechByProjectId && p.id != null ? fechByProjectId.get(p.id) : null;
+  if(fech && fech.custo_total != null && fech.custo_total !== '') return parseFloat(fech.custo_total) || 0;
+  return parseFloat(p.cost) || 0;
+}
+
+function calcularReceitaProjetos(projetos) {
+  return (projetos || [])
+    .filter(p =>
+      _projRowNotDeleted(p) &&
+      !_projExcludedFromReceitaSum(p)
+    )
+    .reduce((sum, p) => {
+      const val = parseFloat(p.total_value || 0);
+      return sum + (Number.isFinite(val) ? val : 0);
+    }, 0);
+}
+
+function calcularLucroProjetos(projetos, fechByProjectId) {
+  return (projetos || [])
+    .filter(p => _projRowNotDeleted(p) && !_projExcludedFromReceitaSum(p))
+    .reduce((sum, p) => {
+      const receita = parseFloat(p.total_value || 0);
+      const custo = fechByProjectId
+        ? _projResolveCostRaw(p, fechByProjectId)
+        : (parseFloat(p.cost) || 0);
+      const r = Number.isFinite(receita) ? receita : 0;
+      const c = Number.isFinite(custo) ? custo : 0;
+      return sum + (r - c);
+    }, 0);
+}
+
 /**
  * Mapeia age_projects + age_fechamento → formato usado pelos gráficos/tabelas do dashboard.
  */
 function _dashRowFromSupabase(p, fechByProjectId) {
-  const fech = (p && p.id != null) ? fechByProjectId.get(p.id) : null;
-  const fat = parseFloat(p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
-  let cost = 0;
-  if(fech && fech.custo_total != null && fech.custo_total !== '') {
-    cost = parseFloat(fech.custo_total) || 0;
-  } else {
-    cost = parseFloat(p.cost) || 0;
-  }
+  const fat = parseFloat(p.total_value || 0) || 0;
+  const cost = _projResolveCostRaw(p, fechByProjectId);
   const lucro = fat - cost;
   const margin = fat > 0 ? Math.round((lucro / fat) * 100) : 0;
   const cliente = String(p.client_name || p.client || '').trim();
@@ -8874,9 +8923,7 @@ function _dashRowFromSupabase(p, fechByProjectId) {
     created_at: p.created_at || null,
     updated_at: p.updated_at || null,
     id: p.id,
-    total_value: p.total_value,
-    contract_value: p.contract_value,
-    value: p.value
+    total_value: p.total_value
   };
   const ma = _dashResolveMesAno({ ...row, mes: p.mes, ano: p.ano });
   if(ma) {
@@ -8899,6 +8946,13 @@ function _dashRowFromSupabase(p, fechByProjectId) {
     }
   }
   return row;
+}
+
+function _projRawInDashboardPeriod(p, fechByProjectId, mesesFiltro) {
+  if(!mesesFiltro) return true;
+  const row = _dashRowFromSupabase(p, fechByProjectId);
+  const ma = _dashResolveMesAno(row);
+  return !!(ma && mesesFiltro.includes(ma.mes));
 }
 
 function refreshDashboardManual() {
@@ -8928,7 +8982,7 @@ function _dashIntelMonthFatMap(mappedAll) {
   (mappedAll || []).forEach(p => {
     const ma = _dashResolveMesAno(p);
     if(!ma || ma.ano !== 2026) return;
-    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     bm[ma.mes] = (bm[ma.mes] || 0) + f;
   });
   return bm;
@@ -8941,7 +8995,7 @@ function _dashIntelMonthTicketMap(mappedAll) {
     const ma = _dashResolveMesAno(p);
     if(!ma || ma.ano !== 2026) return;
     const m = ma.mes;
-    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     fatm[m] = (fatm[m] || 0) + f;
     cnt[m] = (cnt[m] || 0) + 1;
   });
@@ -8997,7 +9051,7 @@ function analisarDashboard(projetos, kpis) {
   let tf = 0;
   (projetos || []).forEach(p => {
     const c = String(p.cliente || '').trim() || '(sem nome)';
-    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     byCli[c] = (byCli[c] || 0) + f;
     tf += f;
   });
@@ -9184,7 +9238,7 @@ function _dashIntelTopClients(filtered, n) {
   const map = {};
   (filtered || []).forEach(p => {
     const c = String(p.cliente || '').trim() || '(sem nome)';
-    const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     map[c] = (map[c] || 0) + f;
   });
   return Object.entries(map)
@@ -9283,7 +9337,7 @@ async function loadDashboard() {
   _dashSetKpisLoading(true);
   try {
     try { updateTrialBanner(); ensureReferralTokenAndUi(); } catch(e) {}
-    /* Planilha 2026 + projetos do Supabase que não estão na planilha */
+    /* Fonte única: Supabase (evita oscilar entre planilha embutida e DB) */
     const [dbProjects, dbFechs] = await Promise.all([
       fetchAll('age_projects', 500).catch(()=>[]),
       fetchAll('age_fechamento', 300).catch(()=>[])
@@ -9295,30 +9349,32 @@ async function loadDashboard() {
       if(f && f.project_id != null) fechByProjectId.set(f.project_id, f);
     });
 
-    function _dashSheetKey(cliente, projeto) {
-      return String(cliente || '').trim().toLowerCase() + '||' + String(projeto || '').trim().toLowerCase();
-    }
-    const sheetKeys = new Set(PROJ_2026_SHEET.map(s => _dashSheetKey(s.cliente, s.projeto)));
-
-    const fromSheet = PROJ_2026_SHEET.map(s => {
-      let ano = 2026;
-      if(s.sale_date) {
-        const dx = new Date(s.sale_date);
-        if(!isNaN(dx.getTime())) ano = dx.getFullYear();
-      }
-      return { ...s, ano };
-    });
-
-    const extras = [];
-    for(const p of dbProjects || []) {
-      const cliente = String(p.client_name || p.client || '').trim();
-      const projeto = String(p.project_name || p.title || '').trim();
-      if(!cliente && !projeto) continue;
-      if(sheetKeys.has(_dashSheetKey(cliente, projeto))) continue;
-      extras.push(_dashRowFromSupabase(p, fechByProjectId));
-    }
-
-    const allProjects = [...fromSheet, ...extras];
+    const allProjects = SUPABASE_IS_SOURCE_OF_TRUTH
+      ? (dbProjects || []).map(p => _dashRowFromSupabase(p, fechByProjectId))
+      : (() => {
+          // fallback legado: planilha embutida + extras do banco
+          function _dashSheetKey(cliente, projeto) {
+            return String(cliente || '').trim().toLowerCase() + '||' + String(projeto || '').trim().toLowerCase();
+          }
+          const sheetKeys = new Set(PROJ_2026_SHEET.map(s => _dashSheetKey(s.cliente, s.projeto)));
+          const fromSheet = PROJ_2026_SHEET.map(s => {
+            let ano = 2026;
+            if(s.sale_date) {
+              const dx = new Date(s.sale_date);
+              if(!isNaN(dx.getTime())) ano = dx.getFullYear();
+            }
+            return { ...s, ano };
+          });
+          const extras = [];
+          for(const p of dbProjects || []) {
+            const cliente = String(p.client_name || p.client || '').trim();
+            const projeto = String(p.project_name || p.title || '').trim();
+            if(!cliente && !projeto) continue;
+            if(sheetKeys.has(_dashSheetKey(cliente, projeto))) continue;
+            extras.push(_dashRowFromSupabase(p, fechByProjectId));
+          }
+          return [...fromSheet, ...extras];
+        })();
 
     const mappedAll = allProjects.filter(p => {
       const ma = _dashResolveMesAno(p);
@@ -9334,22 +9390,65 @@ async function loadDashboard() {
         })
       : mappedAll;
 
-    try {
-      console.log('[DASH] projetos no filtered:', filtered.length);
-      console.log('[DASH] meses encontrados:', [...new Set(filtered.map(p => p.mes || new Date(p.created_at || '').getMonth() + 1))]);
-    } catch(_) {}
+    let inPeriodRaw = null;
 
-    /* KPIs do período filtrado */
-    const fat    = filtered.reduce((s,p)=>s+p.fat,0);
-    const cost   = filtered.reduce((s,p)=>s+(p.cost||0),0);
-    const lucro  = fat - cost;
-    const margem = fat>0?(lucro/fat*100):0;
-    const nTotal = filtered.length;
-    const nNovos = filtered.filter(p=>p.novo).length;
+    /* KPIs — Supabase: mesmas colunas e mesmas somas que a aba Projetos (total_value / cost) */
+    let fat;
+    let cost;
+    let lucro;
+    let margem;
+    let nTotal;
+
+    if(SUPABASE_IS_SOURCE_OF_TRUTH && dbProjects) {
+      const projetosFiltrados = dbProjects.filter(p => _projRowNotDeleted(p));
+      const inPeriod = projetosFiltrados.filter(p => _projRawInDashboardPeriod(p, fechByProjectId, mesesFiltro));
+      inPeriodRaw = inPeriod;
+      fat = calcularReceitaProjetos(inPeriod);
+      lucro = calcularLucroProjetos(inPeriod, fechByProjectId);
+      cost = fat - lucro;
+      margem = fat > 0 ? (lucro / fat * 100) : 0;
+      nTotal = inPeriod.filter(p => _projRowNotDeleted(p) && !_projExcludedFromReceitaSum(p)).length;
+
+      const emAndamento = projetosFiltrados.filter(p =>
+        ['em_andamento', 'in_progress'].includes(_projStatusNormDash(p.status))).length;
+      const concluidos = projetosFiltrados.filter(p =>
+        ['concluido', 'completed'].includes(_projStatusNormDash(p.status))).length;
+
+      try {
+        console.log('[DASHBOARD SYNC]', {
+          totalProjetos: projetosFiltrados.length,
+          noPeriodoComReceita: nTotal,
+          receitaTotal: fat,
+          lucroTotal: lucro,
+          emAndamento,
+          concluidos,
+          projetos: projetosFiltrados.slice(0, 40).map(p => ({
+            nome: p.project_name,
+            valor: p.total_value,
+            custo: p.cost,
+            status: p.status
+          }))
+        });
+      } catch(_) {}
+    } else {
+      fat    = filtered.reduce((s,p)=>s+p.fat,0);
+      cost   = filtered.reduce((s,p)=>s+(p.cost||0),0);
+      lucro  = fat - cost;
+      margem = fat>0?(lucro/fat*100):0;
+      nTotal = filtered.length;
+    }
+
+    const nProjKpi = inPeriodRaw
+      ? inPeriodRaw.filter(p => _projRowNotDeleted(p)).length
+      : filtered.length;
+
+    const nNovos = inPeriodRaw
+      ? inPeriodRaw.filter(p => p.is_new_client === true || p.is_new_client === 'true').length
+      : filtered.filter(p=>p.novo).length;
     const ticket = nTotal>0?fat/nTotal:0;
 
-    const npsAll = filtered.filter(p=>(p._nps||p.nps)>0).map(p=>p._nps||p.nps);
-    const avgNps = npsAll.length ? npsAll.reduce((s,n)=>s+n,0)/npsAll.length : 0;
+    const npsNums = (inPeriodRaw || filtered).map(p => parseFloat(p._nps ?? p.nps ?? 0)).filter(n => n > 0);
+    const avgNps = npsNums.length ? npsNums.reduce((s,n)=>s+n,0)/npsNums.length : 0;
     const custoTotal = cost;
 
     const periodLabel = _dashPeriodLabel();
@@ -9366,7 +9465,7 @@ async function loadDashboard() {
     }
 
     set('dFat',   fmtBRL(fat));
-    setSub('dFatSub', nTotal+' proj · '+periodLabel);
+    setSub('dFatSub', nProjKpi+' proj · '+periodLabel);
     const fatEl = document.getElementById('dFat');
     if(fatEl) fatEl.title = fmtBRL(fat);
 
@@ -9384,7 +9483,7 @@ async function loadDashboard() {
     if(custoEl) custoEl.title = fmtBRL(custoTotal);
     setSub('dCustoSub', custoTotal>0?Math.round(custoTotal/fat*100)+'% do fat.':'sem custo');
 
-    set('dProj',  nTotal);
+    set('dProj',  nProjKpi);
     setSub('dProjSub', nNovos+' novos clientes');
 
     set('dNps', avgNps>0?avgNps.toFixed(1)+' ★':'—');
@@ -9401,7 +9500,7 @@ async function loadDashboard() {
       filtered.forEach(p => {
         const ma = _dashResolveMesAno(p);
         if(!ma) return;
-        const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+        const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
         if(!bm[ma.mes]) bm[ma.mes] = 0;
         bm[ma.mes] += f;
       });
@@ -9417,7 +9516,7 @@ async function loadDashboard() {
     filtered.forEach(p => {
       const ma = _dashResolveMesAno(p);
       if(!ma) return;
-      const f = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+      const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
       byMonthFat[ma.mes] = (byMonthFat[ma.mes] || 0) + f;
     });
     let bestM=0, bestV=0;
@@ -9591,7 +9690,7 @@ function renderDeepAnalysis(filtered2026, kpis) {
   filtered2026.forEach(p => {
     const ma = _dashResolveMesAno(p);
     const m = ma ? ma.mes : 1;
-    const pf = parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    const pf = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     const pc = parseFloat(p.cost ?? p.custo_total ?? 0) || 0;
     if(!byMes[m]) byMes[m] = { fat:0, n:0, lucro:0 };
     byMes[m].fat   += pf;
@@ -10898,7 +10997,7 @@ function renderDashCharts(chartProjects) {
     : (Array.isArray(chartProjects) ? chartProjects : []);
 
   function _dashChartFat(p) {
-    return parseFloat(p.fat ?? p.total_value ?? p.contract_value ?? p.value ?? 0) || 0;
+    return parseFloat(p.fat ?? p.total_value ?? 0) || 0;
   }
   function _dashChartCost(p) {
     return parseFloat(p.cost ?? p.custo_total ?? 0) || 0;
@@ -10918,7 +11017,7 @@ function renderDashCharts(chartProjects) {
     }
     if(!m) return;
     if(!bm[m]) bm[m] = { fat: 0, cost: 0 };
-    bm[m].fat  += parseFloat(p.fat || p.total_value || p.contract_value || p.value || 0) || 0;
+    bm[m].fat  += parseFloat(p.fat || p.total_value || 0) || 0;
     bm[m].cost += parseFloat(p.cost || p.custo_total || 0) || 0;
   });
 
@@ -11159,6 +11258,7 @@ async function loadProjects(opts) {
         const mesFromDate = payD ? parseInt(payD.substring(5, 7), 10) : (projD ? parseInt(projD.substring(5, 7), 10) : 1);
         _projAllCache.push({
           id: p.id,
+          deleted: p.deleted,
           client_name: _ageProjDbClient(p),
           project_name: _ageProjDbTitle(p),
           category: p.category || 'Vídeo',
@@ -11415,15 +11515,16 @@ function renderProjRow(p, rowNum) {
 function renderProjKpis(rows) {
   let fat, lucro, margin, nTotal, ticket, avgNps, novos;
   if(SUPABASE_IS_SOURCE_OF_TRUTH && Array.isArray(rows) && rows.length) {
-    fat = rows.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
-    const costSum = rows.reduce((s, p) => s + (parseFloat(p.cost) || 0), 0);
-    lucro = fat - costSum;
+    const active = rows.filter(p => _projRowNotDeleted(p));
+    fat = calcularReceitaProjetos(active);
+    lucro = calcularLucroProjetos(active, null);
     margin = fat > 0 ? (lucro / fat * 100) : 0;
-    nTotal = rows.length;
-    ticket = nTotal > 0 ? fat / nTotal : 0;
-    const npsRows = rows.filter(p => (parseFloat(p.nps) || 0) > 0);
+    const nFatRows = active.filter(p => !_projExcludedFromReceitaSum(p)).length;
+    nTotal = active.length;
+    ticket = nFatRows > 0 ? fat / nFatRows : 0;
+    const npsRows = active.filter(p => (parseFloat(p.nps) || 0) > 0);
     avgNps = npsRows.length ? npsRows.reduce((s, p) => s + (parseFloat(p.nps) || 0), 0) / npsRows.length : 0;
-    novos = rows.filter(p => p.is_new_client === true || p.is_new_client === 'true').length;
+    novos = active.filter(p => p.is_new_client === true || p.is_new_client === 'true').length;
   } else {
     fat = PLAN_2026.fat;
     lucro = PLAN_2026.lucro;
@@ -11733,18 +11834,27 @@ function _recheckPlan2026() {
 
 /* Atualiza KPIs do dashboard sem reload da página */
 function _syncDashboardKpis() {
+  // Evita sobrescrever KPIs do dashboard com uma base diferente (ex.: cache parcial),
+  // o que causava oscilação visual. Se dashboard estiver ativo, o cálculo correto é loadDashboard().
+  const dp = document.getElementById('page-dashboard');
+  if(dp?.classList.contains('active')) {
+    try { loadDashboard(); } catch(e) {}
+    return;
+  }
+
   let fat, custo, lucro, margem, nTotal, nNovos, ticket, avgNps;
 
   if(SUPABASE_IS_SOURCE_OF_TRUTH && Array.isArray(_liveProjectsKpiCache)) {
-    const rows = _liveProjectsKpiCache;
+    const rows = _liveProjectsKpiCache.filter(p => _projRowNotDeleted(p));
     if(rows.length) {
-      fat = rows.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
-      custo = rows.reduce((s, p) => s + (parseFloat(p.cost) || 0), 0);
-      lucro = fat - custo;
+      fat = calcularReceitaProjetos(rows);
+      lucro = calcularLucroProjetos(rows, null);
+      custo = fat - lucro;
       margem = fat > 0 ? (lucro / fat * 100) : 0;
       nTotal = rows.length;
       nNovos = rows.filter(p => p.is_new_client === true || p.is_new_client === 'true').length;
-      ticket = nTotal > 0 ? fat / nTotal : 0;
+      const nFat = rows.filter(p => !_projExcludedFromReceitaSum(p)).length;
+      ticket = nFat > 0 ? fat / nFat : 0;
       const npsArr = rows.filter(p => (parseFloat(p.nps) || 0) > 0);
       avgNps = npsArr.length ? npsArr.reduce((s, p) => s + (parseFloat(p.nps) || 0), 0) / npsArr.length : 0;
     } else {
@@ -11794,8 +11904,7 @@ function _syncDashboardKpis() {
   /* Atualizar badges dos gráficos */
   const b1=document.getElementById('chBadgeFat'); if(b1) b1.textContent=fmtBRL(fat);
   /* Redesenhar gráficos se dashboard ativo */
-  const dp=document.getElementById('page-dashboard');
-  if(dp?.classList.contains('active')) renderDashCharts();
+  // (obs: dashboard ativo retorna no início desta função)
 }
 
 /* ═══════════════════════════════════════════
