@@ -4,18 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGE SOCIALS — Sistema Operacional</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://assets.pagar.me/pagarme-js/4/pagarme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════
    AGE SOCIALS — DESIGN SYSTEM · LIGHT EDITORIAL
 ═══════════════════════════════════════════ */
 :root {
-  --bg:     #f5f5f5;
+  --bg:     #f8f8f8;
   --bg2:    #ffffff;
   --bg3:    #f0f0f0;
   --bd:     rgba(0,0,0,.09);
@@ -28,19 +30,188 @@
   --yellow: #d97706;
   --text:   #111111;
   --textsub:#888888;
-  --font-h: 'Orbitron', monospace;
-  --font-m: 'Share Tech Mono', monospace;
-  --font-b: 'Rajdhani', sans-serif;
+
+  --font-title: 'Orbitron', sans-serif;
+  --font-ui: 'Inter', sans-serif;
+  --font-section: 'Plus Jakarta Sans', sans-serif;
+  --font-data: 'Rajdhani', sans-serif;
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 16px;
+
+  /* Compatibilidade com regras existentes */
+  --font-h: var(--font-title);
+  --font-m: var(--font-ui);
+  --font-b: var(--font-ui);
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:14px;letter-spacing:-.01em}
+html{height:100%;overflow:hidden;background:var(--bg);color:var(--text)}
+body{
+  height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:var(--font-ui);
+  font-size:var(--text-base);
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  letter-spacing:0;
+}
 a{color:inherit;text-decoration:none}
-button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none;font-family:var(--font-ui);color:inherit}
 input,select,textarea{
-  font-family:inherit;color:var(--text);background:#ffffff;
+  font-family:var(--font-ui);color:var(--text);background:#ffffff;
   border:1px solid rgba(0,0,0,.14);border-radius:4px;
-  padding:7px 10px;font-size:13px;outline:none;transition:border .15s;
+  padding:7px 10px;font-size:var(--text-sm);outline:none;transition:border .15s;
+}
+input::placeholder,textarea::placeholder{color:#64748b;font-family:var(--font-ui)}
+table td{
+  font-family:var(--font-ui);
+  font-size:var(--text-sm);
+}
+table th{
+  font-family:var(--font-section);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.8px;
+  text-transform:uppercase;
+}
+.section-title,
+.card-title,
+.widget-title,
+.panel-title{
+  font-family:var(--font-section);
+  font-weight:600;
+}
+.kpi-value,
+.kpi-val,
+.valor-monetario,
+.metric-number,
+.total-value,
+.cf-kpi-val,
+.cf-summary-val{
+  font-family:var(--font-data);
+  font-weight:700;
+}
+.sidebar-nav-label,
+.nav-item-text,
+[class*="nav-label"],
+[class*="menu-label"],
+#sidebar .nav-item{
+  font-family:var(--font-ui);
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:1px;
+}
+#sidebar .nav-group-label{
+  font-family:var(--font-ui);
+  font-size:7px;
+  font-weight:500;
+  letter-spacing:0.22em;
+}
+.modal-title{font-family:var(--font-title)}
+.modal-subtitle{font-family:var(--font-ui);font-size:13px}
+.modal-label{font-family:var(--font-ui);font-size:12px;font-weight:500}
+.modal-body{font-family:var(--font-ui);font-size:14px}
+.modal-box .form-label{font-family:var(--font-ui);font-size:11px;font-weight:500;letter-spacing:0.06em}
+.btn-primary,
+button[class*="primary"]:not([class*="ghost"]):not([class*="secondary"]),
+.action-btn{
+  font-family:var(--font-title);
+  font-size:11px;
+  letter-spacing:1.5px;
+  font-weight:700;
+}
+.btn-secondary,
+.btn-ghost,
+.btn-outline,
+button[class*="secondary"],
+button[class*="cancel"],
+button[class*="ghost"]{
+  font-family:var(--font-ui);
+  font-size:13px;
+  font-weight:500;
+}
+.sidebar,
+[class*="sidebar"],
+aside#sidebar{
+  background:#111111;
+  color:#ffffff;
+}
+#topbar,
+.topbar,
+.app-header,
+[class*="topbar"]:not(.topbar-clock),
+header#topbar{
+  background:#111111;
+  border-bottom:1px solid #1e1e1e;
+  color:#ffffff;
+}
+#content,
+.app-content,
+.main-content,
+[class*="main-content"],
+[class*="page-content"]{
+  background:#f8f8f8;
+}
+.card,
+.widget,
+.table-container,
+[class*="-card"]:not(.ref-card-dash),
+[class*="-widget"],
+.panel,
+.kpi-card,
+.chart-box,
+.table-wrap{
+  background:#ffffff;
+  border:1px solid #eeeeee;
+}
+.login-page,
+.register-page,
+.plan-select-page,
+[class*="auth-page"],
+[class*="onboarding"],
+#loginPage{
+  background:#0a0a0a;
+  color:#ffffff;
+}
+.login-card,
+.register-card,
+[class*="auth-card"],
+.login-box,
+.login-main-card{
+  background:#111111;
+  border:1px solid #222222;
+  border-radius:16px;
+  color:#e5e5e5;
+}
+.login-card input,
+.register-card input,
+.login-box .login-input,
+.login-main-card .login-input,
+#loginPage .login-input,
+#loginPage select.login-input{
+  background:#1a1a1a;
+  border:1px solid #2a2a2a;
+  color:#ffffff;
+  font-family:var(--font-ui);
+}
+.login-card input::placeholder,
+.register-card input::placeholder,
+#loginPage .login-input::placeholder{
+  color:#555555;
+}
+.login-card label,
+.register-card label,
+#loginPage .login-label,
+#loginPage .reg-field-label{
+  font-family:var(--font-ui);
+  color:#999999;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:0.5px;
 }
 input:focus,select:focus,textarea:focus{border-color:rgba(0,0,0,.5);box-shadow:0 0 0 2px rgba(0,0,0,.06)}
 select option{background:#fff;color:#111}
@@ -124,38 +295,38 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
 
 /* ── TOPBAR ── */
 #topbar{
-  height:48px;background:#ffffff;
-  border-bottom:1px solid rgba(0,0,0,.08);
+  height:48px;background:#111111;
+  border-bottom:1px solid #1e1e1e;
   display:flex;align-items:center;gap:12px;padding:0 20px;
-  flex-shrink:0;
+  flex-shrink:0;color:#ffffff;
 }
 #topbarTitle{
   font-family:var(--font-h);font-size:11px;font-weight:700;
-  color:#999999;letter-spacing:.18em;flex:1;
+  color:rgba(255,255,255,.55);letter-spacing:.18em;flex:1;
   text-transform:uppercase;
 }
-.topbar-clock{font-family:var(--font-m);font-size:10px;color:#bbbbbb}
-#topbarUser{font-family:var(--font-m);font-size:10px;color:#aaaaaa}
+.topbar-clock{font-family:var(--font-m);font-size:10px;color:rgba(255,255,255,.45)}
+#topbarUser{font-family:var(--font-m);font-size:10px;color:rgba(255,255,255,.5)}
 .btn-icon-top{
   width:30px;height:30px;border-radius:4px;
   display:flex;align-items:center;justify-content:center;
-  background:transparent;border:1px solid rgba(0,0,0,.1);
-  color:#aaaaaa;font-size:12px;transition:all .12s;
+  background:transparent;border:1px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.55);font-size:12px;transition:all .12s;
 }
-.btn-icon-top:hover{color:#111;border-color:rgba(0,0,0,.3)}
+.btn-icon-top:hover{color:#ffffff;border-color:rgba(255,255,255,.35)}
 
 /* ── Notificações (header + dropdown) ── */
 .notif-bell-root{position:relative;margin-left:auto;margin-right:4px}
 .notif-bell-btn{
   width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-  background:transparent;border:1px solid rgba(0,0,0,.1);font-size:18px;line-height:1;
-  color:#475569;transition:background .12s,border-color .12s;
+  background:transparent;border:1px solid rgba(255,255,255,.15);font-size:18px;line-height:1;
+  color:rgba(255,255,255,.6);transition:background .12s,border-color .12s;
 }
-.notif-bell-btn:hover{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.18);color:#0f172a}
+.notif-bell-btn:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.25);color:#ffffff}
 .notif-badge{
   position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;
   background:#dc2626;color:#fff;font-family:var(--font-m);font-size:10px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2);
+  display:flex;align-items:center;justify-content:center;border:2px solid #111111;
 }
 .notif-dropdown{
   position:absolute;right:0;top:calc(100% + 8px);width:min(380px,calc(100vw - 24px));max-height:min(420px,70vh);
@@ -306,7 +477,7 @@ button.perm-disabled,.btn.perm-disabled{
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px}
 .kpi-card{
   background:#ffffff;
-  border:1px solid rgba(0,0,0,.08);
+  border:1px solid #eeeeee;
   border-radius:6px;
   padding:12px 14px;
   transition:border-color .15s,box-shadow .15s;
@@ -322,7 +493,7 @@ button.perm-disabled,.btn.perm-disabled{
   margin-bottom:8px;text-transform:uppercase;
 }
 .kpi-val{
-  font-family:var(--font-h);font-size:15px;font-weight:700;
+  font-family:var(--font-data);font-size:15px;font-weight:700;
   color:#111111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   letter-spacing:-.02em;line-height:1.2;max-width:100%;
 }
@@ -338,31 +509,31 @@ button.perm-disabled,.btn.perm-disabled{
 
 /* ── PANEL ── */
 .panel{
-  background:#ffffff;border:1px solid rgba(0,0,0,.08);
+  background:#ffffff;border:1px solid #eeeeee;
   border-radius:6px;padding:16px;margin-bottom:12px;
 }
 .panel-title{
-  font-family:var(--font-b);font-size:10px;font-weight:600;
-  color:#aaaaaa;letter-spacing:.14em;
+  font-family:var(--font-section);font-size:10px;font-weight:600;
+  color:#888888;letter-spacing:.14em;
   margin-bottom:14px;display:flex;align-items:center;gap:8px;
   text-transform:uppercase;
 }
 .panel-title i{font-size:11px;opacity:.6}
 
 /* ── TABLE ── */
-.table-wrap{overflow-x:auto;border-radius:6px;border:1px solid rgba(0,0,0,.09)}
+.table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #eeeeee}
 .hud-table{width:100%;border-collapse:collapse;min-width:700px}
 .hud-table thead tr{
   background:#f8f8f8;
   border-bottom:1px solid rgba(0,0,0,.09);
 }
 .hud-table th{
-  padding:10px 12px;font-family:var(--font-m);font-size:8px;
-  font-weight:500;color:#aaaaaa;letter-spacing:.16em;
+  padding:10px 12px;font-family:var(--font-section);font-size:11px;
+  font-weight:600;color:#888888;letter-spacing:0.8px;
   text-align:left;white-space:nowrap;text-transform:uppercase;
 }
 .hud-table th.sortable{cursor:pointer}
-.hud-table th.sortable:hover{color:#333}
+.hud-table th.sortable:hover{color:#333333}
 .hud-table td{
   padding:9px 12px;font-family:var(--font-b);font-size:13px;
   color:#222222;border-bottom:1px solid rgba(0,0,0,.05);
@@ -375,7 +546,7 @@ button.perm-disabled,.btn.perm-disabled{
 /* ── BADGES ── */
 .badge{
   display:inline-block;padding:2px 8px;border-radius:2px;
-  font-family:var(--font-m);font-size:8px;font-weight:500;
+  font-family:var(--font-section);font-size:8px;font-weight:500;
   letter-spacing:.1em;border:1px solid;white-space:nowrap;
   text-transform:uppercase;
 }
@@ -506,16 +677,16 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:14px}
 .chart-grid-4{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
 .chart-box{
-  background:#ffffff;border:1px solid rgba(0,0,0,.08);
+  background:#ffffff;border:1px solid #eeeeee;
   border-radius:6px;padding:16px;min-width:0;
 }
 .chart-box-title{
-  font-family:var(--font-m);font-size:8px;color:#aaaaaa;
+  font-family:var(--font-section);font-size:8px;color:#888888;
   letter-spacing:.16em;margin-bottom:12px;text-transform:uppercase;
   display:flex;align-items:center;gap:6px;
 }
 .chart-box-title .ch-badge{
-  margin-left:auto;font-size:9px;font-family:var(--font-h);font-weight:700;
+  margin-left:auto;font-size:9px;font-family:var(--font-section);font-weight:700;
   padding:2px 7px;border-radius:3px;letter-spacing:0;
 }
 .chart-wrap{position:relative;height:190px}
@@ -790,7 +961,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 /* ── LOGIN PAGE ── */
 #loginPage{
   position:fixed;inset:0;
-  background:#eeeeee !important;
+  background:#0a0a0a;
   z-index:9000;
   display:flex;align-items:center;justify-content:center;
   padding:24px 16px;
@@ -799,16 +970,18 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 #loginPage.hidden { display:none !important; }
 #shell.visible    { display:flex !important; }
 .login-box{
-  background:#ffffff;border:1px solid rgba(0,0,0,.1);
-  border-radius:8px;padding:44px 40px;
+  background:#111111;border:1px solid #222222;
+  border-radius:16px;padding:44px 40px;
   width:100%;max-width:360px;
-  box-shadow:0 16px 48px rgba(0,0,0,.1);
+  box-shadow:0 16px 48px rgba(0,0,0,.4);
+  color:#e5e5e5;
 }
 .login-main-card{
-  background:#ffffff;border:1px solid rgba(0,0,0,.08);
-  border-radius:8px;padding:36px 32px;
+  background:#111111;border:1px solid #222222;
+  border-radius:16px;padding:36px 32px;
   width:100%;max-width:400px;
-  box-shadow:0 8px 32px rgba(0,0,0,.08);
+  box-shadow:0 8px 32px rgba(0,0,0,.35);
+  color:#e5e5e5;
 }
 .login-main-card.reg-mode-wide{max-width:560px}
 .login-min-links{
@@ -816,36 +989,36 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 }
 .login-min-links button{
   background:none;border:none;padding:0;cursor:pointer;
-  font-family:var(--font-m);font-size:10px;color:#64748b;
+  font-family:var(--font-m);font-size:10px;color:#94a3b8;
   letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px;
 }
-.login-min-links button:hover{color:#111111}
+.login-min-links button:hover{color:#ffffff}
 .reg-progress{
   display:flex;align-items:center;gap:8px;margin-bottom:28px;
 }
 .reg-progress-step{
-  flex:1;height:4px;border-radius:4px;background:rgba(0,0,0,.08);
+  flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.12);
   transition:background .25s;
 }
 .reg-progress-step.done{background:#22c55e}
 .reg-progress-step.active{background:#86efac}
 .reg-progress-label{
-  font-family:var(--font-m);font-size:9px;color:#94a3b8;letter-spacing:.12em;
+  font-family:var(--font-m);font-size:9px;color:#64748b;letter-spacing:.12em;
   text-align:center;margin-bottom:10px;text-transform:uppercase;
 }
 .reg-step-title{
-  font-family:var(--font-h);font-size:17px;font-weight:800;color:#0f172a;
+  font-family:var(--font-h);font-size:17px;font-weight:800;color:#f8fafc;
   margin:0 0 6px;text-align:center;
 }
 .reg-step-sub{
-  font-family:var(--font-m);font-size:10px;color:#64748b;text-align:center;margin:0 0 22px;line-height:1.45;
+  font-family:var(--font-m);font-size:10px;color:#94a3b8;text-align:center;margin:0 0 22px;line-height:1.45;
 }
 .reg-step-panel{display:none}
 .reg-step-panel.active{display:block}
 .reg-field{margin-bottom:14px}
 .reg-field-label{
   display:flex;align-items:center;gap:6px;
-  font-family:var(--font-m);font-size:8px;color:#64748b;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;
+  font-family:var(--font-m);font-size:8px;color:#999999;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;
 }
 .reg-field-label i{width:14px;text-align:center;color:#22c55e;font-size:11px}
 .reg-input-wrap{position:relative;display:flex;align-items:center}
@@ -862,8 +1035,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .reg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:520px){.reg-grid-2{grid-template-columns:1fr}}
 .reg-address-title{
-  font-family:var(--font-h);font-size:10px;font-weight:700;color:#0f172a;letter-spacing:.1em;
-  margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(0,0,0,.08);
+  font-family:var(--font-h);font-size:10px;font-weight:700;color:#e2e8f0;letter-spacing:.1em;
+  margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);
 }
 .reg-btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
 .reg-btn-row .btn{flex:1;min-width:120px}
@@ -877,10 +1050,10 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   display:flex;align-items:center;justify-content:center;font-size:28px;
 }
 .reg-summary{
-  text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin:18px 0;
-  font-family:var(--font-m);font-size:11px;color:#334155;line-height:1.65;
+  text-align:left;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin:18px 0;
+  font-family:var(--font-m);font-size:11px;color:#cbd5e1;line-height:1.65;
 }
-.reg-summary strong{color:#0f172a}
+.reg-summary strong{color:#f1f5f9}
 .reg-trial-note{
   font-family:var(--font-m);font-size:11px;color:#15803d;text-align:center;margin:12px 0 20px;padding:12px;
   background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;
@@ -897,7 +1070,7 @@ select.login-input{cursor:pointer}
 .plans-overlay,.plans-overlay *{box-sizing:border-box}
 .plans-overlay{
   position:fixed;inset:0;z-index:9100;display:none;flex-direction:column;
-  background:var(--bg);color:var(--text);
+  background:#0a0a0a;color:#e5e5e5;
   font-family:var(--font-b);overflow:auto;padding:32px 18px 48px;
 }
 .plans-overlay.open{display:flex}
@@ -905,21 +1078,21 @@ select.login-input{cursor:pointer}
 .plans-header{text-align:center;margin-bottom:32px}
 .plans-header h1{
   font-family:var(--font-h);font-size:clamp(18px,3vw,22px);font-weight:700;margin:0 0 10px;
-  letter-spacing:.08em;text-transform:uppercase;color:#111;
+  letter-spacing:.08em;text-transform:uppercase;color:#ffffff;
 }
-.plans-header > p{font-family:var(--font-b);font-size:13px;color:var(--textsub);margin:0;line-height:1.5}
+.plans-header > p{font-family:var(--font-b);font-size:13px;color:#94a3b8;margin:0;line-height:1.5}
 .plans-toggle{
-  display:inline-flex;margin:24px auto 8px;border:1px solid var(--bd);border-radius:4px;
-  padding:3px;background:#fff;gap:0;
+  display:inline-flex;margin:24px auto 8px;border:1px solid #333333;border-radius:4px;
+  padding:3px;background:#1a1a1a;gap:0;
 }
 .plans-toggle button{
   padding:10px 26px;font-family:var(--font-m);font-size:10px;font-weight:600;
   letter-spacing:.12em;text-transform:uppercase;border:none;background:transparent;
-  color:var(--textsub);cursor:pointer;border-radius:2px;transition:background .15s,color .15s;
+  color:#94a3b8;cursor:pointer;border-radius:2px;transition:background .15s,color .15s;
 }
-.plans-toggle button.active{background:#111;color:#fff}
+.plans-toggle button.active{background:#ffffff;color:#111111}
 .plans-economy-hint{
-  text-align:center;font-family:var(--font-b);font-size:11px;color:#888;margin:0 0 8px;line-height:1.4;
+  text-align:center;font-family:var(--font-b);font-size:11px;color:#94a3b8;margin:0 0 8px;line-height:1.4;
 }
 .plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:20px;margin-bottom:32px}
 .plan-card{
@@ -943,7 +1116,7 @@ select.login-input{cursor:pointer}
   font-family:var(--font-b);
 }
 .plan-price-now{
-  font-family:var(--font-h);font-size:36px;font-weight:700;color:#111;line-height:1;letter-spacing:.02em;
+  font-family:var(--font-data);font-size:36px;font-weight:700;color:#111;line-height:1;letter-spacing:.02em;
 }
 .plan-price-sub{
   font-family:var(--font-b);font-size:11px;color:#777;margin-top:8px;line-height:1.45;
@@ -965,7 +1138,7 @@ select.login-input{cursor:pointer}
 .plan-cta--outline{background:#fff;color:#111}
 .plan-cta--outline:hover{background:#f5f5f5}
 .plans-footer{
-  display:flex;flex-wrap:wrap;justify-content:center;gap:12px 28px;font-size:11px;color:#888;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:12px 28px;font-size:11px;color:#94a3b8;
   margin-top:12px;font-family:var(--font-b);
 }
 .plans-footer span{opacity:.9}
@@ -1093,8 +1266,8 @@ select.login-input{cursor:pointer}
 .cf-kpi.cf-pos { border-left-color: #16a34a; }
 .cf-kpi.cf-neg { border-left-color: #dc2626; }
 .cf-kpi.cf-neu { border-left-color: #2563eb; }
-.cf-kpi-lbl { font-family: var(--font-h); font-size: 8px; font-weight: 700; color: #999; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; }
-.cf-kpi-val { font-family: var(--font-h); font-size: 16px; font-weight: 700; color: #111; }
+.cf-kpi-lbl { font-family: var(--font-section); font-size: 8px; font-weight: 600; color: #999; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; }
+.cf-kpi-val { font-family: var(--font-data); font-size: 16px; font-weight: 700; color: #111; }
 .cf-table-wrap { overflow-x: auto; border: 1px solid rgba(0,0,0,.08); border-radius: 8px; background: #fff; }
 .cf-btn-mini { background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 8px; font-size: 13px; }
 .cf-btn-mini:hover { color: #dc2626; }
@@ -1130,18 +1303,18 @@ select.login-input{cursor:pointer}
 .plan-gate-link{margin-top:18px;font-family:var(--font-m);font-size:9px;color:var(--textsub);letter-spacing:.06em;text-decoration:underline;background:none;border:none;cursor:pointer}
 .login-logo{
   font-family:var(--font-h);font-size:26px;font-weight:800;
-  color:#111111;letter-spacing:.06em;
+  color:#ffffff;letter-spacing:.06em;
   text-align:center;margin-bottom:4px;
   text-transform:uppercase;
 }
 .login-sub{
-  font-family:var(--font-m);font-size:8px;color:#aaaaaa;
+  font-family:var(--font-m);font-size:8px;color:#94a3b8;
   letter-spacing:.22em;text-align:center;margin-bottom:32px;
   text-transform:uppercase;
 }
 .login-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .login-label{
-  font-family:var(--font-m);font-size:8px;color:#aaaaaa;
+  font-family:var(--font-m);font-size:8px;color:#999999;
   letter-spacing:.14em;text-transform:uppercase;
 }
 .login-input{width:100%;padding:11px 14px;font-size:13px}
@@ -1563,14 +1736,18 @@ select.login-input{cursor:pointer}
     <div id="panelLogin" class="login-panel active">
       <form id="loginForm" autocomplete="on" onsubmit="return false">
         <div class="login-group">
-          <label class="login-label" for="loginUser">USUÁRIO</label>
-          <input class="login-input" id="loginUser" type="text" placeholder="email ou usuário" autocomplete="username">
+          <label class="login-label" for="login-email">USUÁRIO</label>
+          <input class="login-input" id="login-email" type="text" placeholder="email ou usuário" autocomplete="username">
         </div>
         <div class="login-group">
-          <label class="login-label" for="loginPass">SENHA</label>
-          <input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+          <label class="login-label" for="login-password">SENHA</label>
+          <input class="login-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
         </div>
-        <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="doLogin()">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+          <input type="checkbox" id="remember-me-checkbox" style="width:16px;height:16px;accent-color:#111;cursor:pointer" />
+          <label for="remember-me-checkbox" style="font-family:'Rajdhani',sans-serif;font-size:14px;color:#555;cursor:pointer;letter-spacing:0.5px">Lembrar de mim</label>
+        </div>
+        <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="handleLogin()">
           <i class="fas fa-spinner fa-spin" id="loginBtnIcon" style="display:none;margin-right:8px;vertical-align:middle" aria-hidden="true"></i>
           <span id="loginBtnText">ENTRAR</span>
         </button>
@@ -4190,6 +4367,25 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 /** Alias da chave anon (PostgREST / sbFetch) */
 const SUPABASE_KEY = SUPABASE_ANON_KEY;
 
+/** Cliente Supabase Auth (sessão persistente / refresh) — UMD expõe createClient em window.supabase */
+let supabase = null;
+try {
+  const _create = window.supabase && typeof window.supabase.createClient === 'function'
+    ? window.supabase.createClient
+    : null;
+  if(_create) {
+    supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+  }
+} catch(e) {
+  console.warn('[supabase] cliente auth não inicializado:', e);
+}
+
 /** Colar a ek_live_… (Pagar.me → Minha Conta → Contas → Produção). Não usar a chave secreta sk_/ak_ aqui. */
 const PAGARME_EK = 'ek_live_SUA_ENCRYPTION_KEY_AQUI';
 const PAGARME_PLANS = {
@@ -6559,65 +6755,163 @@ function initInviteFromUrl() {
   } catch(e) {}
 }
 
-function doLogin() {
-  const uEl  = document.getElementById('loginUser');
-  const pEl  = document.getElementById('loginPass');
-  const btn  = document.getElementById('loginBtn');
+/* ─── LEMBRAR DE MIM (Supabase Auth + sessão age_users) ─── */
+
+async function checkRememberedSession() {
+  const remembered = localStorage.getItem('ageops_remember');
+  if(remembered !== 'true') return false;
+  if(!supabase || !supabase.auth) {
+    localStorage.removeItem('ageops_remember');
+    localStorage.removeItem('ageops_email');
+    return false;
+  }
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if(session && !error && session.user) {
+    const mail = String(session.user.email || '').trim().toLowerCase();
+    const row = mail ? await fetchAgeUserByEmail(mail) : null;
+    if(row && _sbIsRowVisible(row)) {
+      const res = await applyLoginSessionFromRow(row);
+      if(res.ok) {
+        try { await initApp(); } catch(_) {}
+        return true;
+      }
+    }
+  }
+  localStorage.removeItem('ageops_remember');
+  localStorage.removeItem('ageops_email');
+  return false;
+}
+
+function showLoginError(msg) {
+  const err = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
   const icon = document.getElementById('loginBtnIcon');
-  const txt  = document.getElementById('loginBtnText');
-  const err  = document.getElementById('loginErr');
+  const txt = document.getElementById('loginBtnText');
+  if(btn) btn.disabled = false;
+  if(icon) { icon.style.display = 'none'; icon.className = 'fas fa-spinner fa-spin'; }
+  if(txt) txt.textContent = 'ENTRAR';
+  if(err) { err.textContent = msg || ''; setTimeout(()=>{ if(err) err.textContent=''; }, 8000); }
+}
 
-  const u = (uEl?.value || '').trim();
-  const p = (pEl?.value || '');
-
-  function showErr(msg) {
-    if(btn)  { btn.disabled = false; }
+function showLoginLoading(on) {
+  const btn = document.getElementById('loginBtn');
+  const icon = document.getElementById('loginBtnIcon');
+  const txt = document.getElementById('loginBtnText');
+  if(on) {
+    if(btn) btn.disabled = true;
+    if(icon) { icon.style.display = 'inline-block'; icon.className = 'fas fa-spinner fa-spin'; }
+    if(txt) txt.textContent = 'ENTRANDO...';
+  } else {
+    if(btn) btn.disabled = false;
     if(icon) { icon.style.display = 'none'; icon.className = 'fas fa-spinner fa-spin'; }
-    if(txt)  { txt.textContent = 'ENTRAR'; }
-    if(err)  { err.textContent = msg; setTimeout(()=>{ if(err) err.textContent=''; }, 5000); }
+    if(txt) txt.textContent = 'ENTRAR';
+  }
+}
+
+function mostrarTelaLogin() {
+  const lp = document.getElementById('loginPage');
+  const sh = document.getElementById('shell');
+  if(sh) { sh.classList.remove('visible'); sh.style.display = 'none'; }
+  if(lp) { lp.classList.remove('hidden'); lp.style.display = 'flex'; }
+}
+
+function preencherEmailSalvo() {
+  const savedEmail = localStorage.getItem('ageops_email');
+  const remembered = localStorage.getItem('ageops_remember');
+  if(!savedEmail || remembered !== 'true') return;
+  const emailInput = document.getElementById('login-email');
+  const checkbox = document.getElementById('remember-me-checkbox');
+  if(emailInput) emailInput.value = savedEmail;
+  if(checkbox) checkbox.checked = true;
+}
+
+async function initApp() {
+  /* Pós-login já tratado por applyLoginSessionFromRow; hook para extensões futuras */
+}
+
+async function handleLogin() {
+  const emailEl = document.getElementById('login-email');
+  const passEl = document.getElementById('login-password');
+  const rememberChk = document.getElementById('remember-me-checkbox');
+  const email = (emailEl?.value || '').trim();
+  const password = passEl?.value || '';
+  const rememberMe = !!rememberChk?.checked;
+
+  if(!email || !password) {
+    showLoginError('Preencha e-mail e senha.');
+    return;
   }
 
-  if(!u || !p) { showErr('Preencha email/usuário e senha.'); return; }
+  try {
+    showLoginLoading(true);
 
-  if(btn)  btn.disabled = true;
-  if(icon) { icon.style.display = 'inline-block'; icon.className = 'fas fa-spinner fa-spin'; }
-  if(txt)  txt.textContent = 'ENTRANDO...';
-
-  setTimeout(async () => {
-    try {
-      const auth = await authenticateDatabase(u, p);
-      if(!auth.ok) {
-        showErr(auth.msg || 'Falha no login.');
-        return;
-      }
-      let sessionRow = auth.row;
-      try {
-        sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, p);
-      } catch(e) {
-        console.warn('Bootstrap ignorado:', e);
-      }
-      const res = await applyLoginSessionFromRow(sessionRow);
-      if(!res.ok) showErr(res.msg || 'Acesso negado.');
-    } catch(e) {
-      console.error('[AGE] Erro no login:', e);
-      showErr('Erro ao conectar. Tente novamente.');
-    } finally {
-      if(btn)  btn.disabled = false;
-      if(icon) { icon.style.display = 'none'; icon.className = 'fas fa-spinner fa-spin'; }
-      if(txt)  txt.textContent = 'ENTRAR';
+    const auth = await authenticateDatabase(email, password);
+    if(!auth.ok) {
+      showLoginError(auth.msg || 'Usuário ou senha incorretos.');
+      return;
     }
-  }, 80);
+    let sessionRow = auth.row;
+    try {
+      sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, password);
+    } catch(e) {
+      console.warn('Bootstrap ignorado:', e);
+    }
+
+    const rowEmail = String((sessionRow && sessionRow.email) || '').trim().toLowerCase();
+    const loginEmailForAuth = rowEmail || (email.includes('@') ? email.trim().toLowerCase() : '');
+
+    if(rememberMe) {
+      localStorage.setItem('ageops_remember', 'true');
+      localStorage.setItem('ageops_email', loginEmailForAuth || email);
+      if(supabase && supabase.auth && loginEmailForAuth) {
+        try {
+          const { error: authErr } = await supabase.auth.signInWithPassword({
+            email: loginEmailForAuth,
+            password
+          });
+          if(authErr) console.warn('[auth] signInWithPassword (lembrar):', authErr.message);
+          else {
+            try { await supabase.auth.updateUser({}); } catch(_) {}
+          }
+        } catch(e) {
+          console.warn('[auth] lembrar — Auth opcional:', e);
+        }
+      }
+    } else {
+      localStorage.removeItem('ageops_remember');
+      localStorage.removeItem('ageops_email');
+      try {
+        if(supabase && supabase.auth) await supabase.auth.signOut();
+      } catch(_) {}
+    }
+
+    const res = await applyLoginSessionFromRow(sessionRow);
+    if(!res.ok) showLoginError(res.msg || 'Acesso negado.');
+  } catch(err) {
+    console.error('[login]', err);
+    showLoginError(err?.message || 'Erro ao fazer login.');
+  } finally {
+    showLoginLoading(false);
+  }
+}
+
+function doLogin() {
+  handleLogin();
 }
 
 function emergencyReset() {
   try { localStorage.removeItem('age_ops_remember'); } catch(e){}
+  try { localStorage.removeItem('ageops_remember'); } catch(e){}
+  try { localStorage.removeItem('ageops_email'); } catch(e){}
   try { sessionStorage.clear(); } catch(e){}
   const err = document.getElementById('loginErr');
   if(err) { err.style.color='#16a34a'; err.textContent = '✓ Cache limpo! Tente logar agora.'; }
-  const u = document.getElementById('loginUser');
-  const p = document.getElementById('loginPass');
+  const u = document.getElementById('login-email');
+  const p = document.getElementById('login-password');
+  const chk = document.getElementById('remember-me-checkbox');
   if(u) u.value = '';
   if(p) p.value = '';
+  if(chk) chk.checked = false;
   const btn = document.getElementById('loginBtn');
   const icon = document.getElementById('loginBtnIcon');
   const txt  = document.getElementById('loginBtnText');
@@ -6626,11 +6920,19 @@ function emergencyReset() {
   if(txt)  txt.textContent = 'ENTRAR';
 }
 
-function doLogout() {
+async function doLogout() {
+  const remembered = localStorage.getItem('ageops_remember');
   stopNotificationsPolling();
   _notifCache = [];
   updateNotifBadge();
   closeNotifDropdown();
+  try {
+    if(supabase && supabase.auth) await supabase.auth.signOut();
+  } catch(e) { console.warn('[logout auth]', e); }
+  if(remembered !== 'true') {
+    localStorage.removeItem('ageops_remember');
+    localStorage.removeItem('ageops_email');
+  }
   currentUser = null;
   _pendingInviteRow = null;
   _pendingInviteToken = null;
@@ -6638,22 +6940,19 @@ function doLogout() {
   const sh = document.getElementById('shell');
   if(sh) { sh.classList.remove('visible'); sh.style.display = 'none'; }
   if(lp) { lp.classList.remove('hidden');  lp.style.display = 'flex'; }
-  const lu = document.getElementById('loginUser');
-  const lps = document.getElementById('loginPass');
-  if(lu) lu.value = '';
+  const lu = document.getElementById('login-email');
+  const lps = document.getElementById('login-password');
   if(lps) lps.value = '';
+  if(lu) lu.value = (remembered === 'true') ? (localStorage.getItem('ageops_email') || '') : '';
   try {
     document.getElementById('loginInviteFlow').style.display = 'none';
     document.getElementById('loginMainFlow').style.display = 'block';
   } catch(e) {}
 }
 
-document.getElementById('loginForm')?.addEventListener('submit', function(e){ e.preventDefault(); doLogin(); });
-document.getElementById('loginPass')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } });
-document.getElementById('loginUser')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } });
-
-/* Limpar qualquer lembrar-me salvo anteriormente */
-try { localStorage.removeItem('age_ops_remember'); } catch(e){}
+document.getElementById('loginForm')?.addEventListener('submit', function(e){ e.preventDefault(); handleLogin(); });
+document.getElementById('login-password')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); } });
+document.getElementById('login-email')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); } });
 
 /* ═══════════════════════════════════════════
    CLOCK
@@ -19706,10 +20005,25 @@ function _ageInit() {
   initRefFromUrl();
 }
 
-if(document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', _ageInit);
-} else {
+async function _ageBootstrap() {
+  try {
+    const autoLogado = await checkRememberedSession();
+    if(!autoLogado) {
+      mostrarTelaLogin();
+      preencherEmailSalvo();
+    }
+  } catch(e) {
+    console.warn('[AGE] bootstrap sessão:', e);
+    mostrarTelaLogin();
+    preencherEmailSalvo();
+  }
   _ageInit();
+}
+
+if(document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _ageBootstrap);
+} else {
+  _ageBootstrap();
 }
 </script>
 
