@@ -4655,7 +4655,7 @@ body:has(#login-screen.visible){
 <script>
 'use strict';
 
-/* Supabase + Pagar.me — JWT anon + encryption key são públicos por desenho (RLS / tokenização). Nunca incluir ak_live / PAGARME_API_KEY aqui — só Edge Functions / servidor. */
+/* Supabase + Pagar.me — JWT anon + public key (PAGARME_PK / pk_live) no front para tokenizar cartão. Nunca incluir acc_live / sk_ / PAGARME_API_KEY aqui — só Edge Functions / servidor. */
 const SUPABASE_URL      = 'https://wiiewucszdbbcxzivnyo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
 /** Alias da chave anon (PostgREST / sbFetch) */
@@ -4680,8 +4680,8 @@ try {
   console.warn('[supabase] cliente auth não inicializado:', e);
 }
 
-/** Colar a ek_live_… (Pagar.me → Minha Conta → Contas → Produção). Não usar a chave secreta sk_/ak_ aqui. */
-const PAGARME_EK = 'ek_live_SUA_ENCRYPTION_KEY_AQUI';
+/** Colar pk_live_… (Pagar.me → chave pública de produção). Não usar sk_/acc_live ou outras chaves secretas aqui. */
+const PAGARME_PK = 'pk_02w97yDHmfRAqkgL';
 const PAGARME_PLANS = {
   solo_mensal:      '6901539',
   solo_anual:       '6901540',
@@ -7723,7 +7723,7 @@ function startClock() {
 
 /* ═══════════════════════════════════════════
    PLANOS · PAGAR.ME · TRIAL · REFERRAL
-   (PAGARME_EK e PAGARME_PLANS definidos junto a SUPABASE_* — encryption key no front; API key só na Edge Function)
+   (PAGARME_PK e PAGARME_PLANS definidos junto a SUPABASE_* — public key no front; API key só na Edge Function)
 ═══════════════════════════════════════════ */
 const WHATSAPP_ENTERPRISE_NUM = '5511999999999';
 
@@ -7737,15 +7737,15 @@ function _pagarmePlansConfigured() {
   }
 }
 
-/** Produção: EK real + pagarme.js + IDs de planos no Pagar.me preenchidos em PAGARME_PLANS */
+/** Produção: PK real + pagarme.js + IDs de planos no Pagar.me preenchidos em PAGARME_PLANS */
 function _pagarmeLiveReady() {
-  const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '').trim();
-  if(!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) return false;
+  const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '').trim();
+  if(!pk || pk.includes('SUA_PUBLIC') || pk.includes('XXXX')) return false;
   if(typeof pagarme === 'undefined') return false;
   return _pagarmePlansConfigured();
 }
 
-/** Trial simulado só com window.__PAGARME_DEMO === true (console). Sem EK real nunca finge assinatura. */
+/** Trial simulado só com window.__PAGARME_DEMO === true (console). Sem PK real nunca finge assinatura. */
 function _pagarmeIsDemoMode() {
   try {
     return typeof window !== 'undefined' && window.__PAGARME_DEMO === true;
@@ -7972,9 +7972,9 @@ function selectPlanOffer(key) {
       `<div style="margin-top:10px;color:#666;line-height:1.5">Sem cobrança agora. Trial de 7 dias.</div>`;
   }
   try {
-    const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '');
-    if (!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) {
-      toast('Configure a Encryption Key do Pagar.me para continuar', 'warn');
+    const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '');
+    if (!pk || pk.includes('SUA_PUBLIC') || pk.includes('XXXX')) {
+      toast('Configure a Public Key (pk_live_…) do Pagar.me para continuar', 'warn');
     }
   } catch (e) {}
   try {
@@ -8115,18 +8115,18 @@ async function tokenizarCartao(dadosCartao) {
   if (typeof pagarme === 'undefined') {
     throw new Error('Biblioteca Pagar.me não carregou. Recarregue a página.');
   }
-  const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '').trim();
-  if (!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) {
-    throw new Error('Configure a Encryption Key (ek_live_…) do Pagar.me no arquivo (PAGARME_EK).');
+  const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '').trim();
+  if (!pk || pk.includes('SUA_PUBLIC') || pk.includes('XXXX')) {
+    throw new Error('Configure a Public Key (pk_live_…) do Pagar.me no arquivo (PAGARME_PK).');
   }
   return new Promise((resolve, reject) => {
     pagarme.client
-      .connect({ encryption_key: ek })
+      .connect({ encryption_key: pk })
       .then((client) => client.security.encrypt(dadosCartao))
       .then((cardHash) => resolve(cardHash))
       .catch((err) => {
         const raw = String(err?.message || err || '').trim();
-        if (/encryption|ek_live|chave|configur/i.test(raw)) reject(err instanceof Error ? err : new Error(raw));
+        if (/encryption|pk_live|chave|configur/i.test(raw)) reject(err instanceof Error ? err : new Error(raw));
         else reject(new Error(raw ? `Cartão inválido: ${raw}` : 'Cartão inválido ou recusado. Tente outro cartão.'));
       });
   });
@@ -8203,9 +8203,9 @@ async function confirmPagarmeTrial() {
       setPgModalError('Dados do cartão incompletos. Verifique número (13–16 dígitos), nome, validade e CVV.');
       return;
     }
-    const ek = String(typeof PAGARME_EK !== 'undefined' ? PAGARME_EK : '').trim();
-    if (!ek || ek.includes('SUA_ENCRYPTION') || ek.includes('XXXX')) {
-      setPgModalError('Configure a Encryption Key (ek_live_…) do Pagar.me no código (PAGARME_EK) para tokenizar o cartão.');
+    const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '').trim();
+    if (!pk || pk.includes('SUA_PUBLIC') || pk.includes('XXXX')) {
+      setPgModalError('Configure a Public Key (pk_live_…) do Pagar.me no código (PAGARME_PK) para tokenizar o cartão.');
       return;
     }
     if (typeof pagarme === 'undefined') {
