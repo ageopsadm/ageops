@@ -554,6 +554,12 @@ button.perm-disabled,.btn.perm-disabled{
 .hud-table tbody tr:last-child td{border-bottom:none}
 .table-empty{text-align:center;color:#aaaaaa;padding:36px;font-family:var(--font-m);font-size:11px;letter-spacing:.08em}
 
+/* Projetos — data de pagamento (evita texto branco em inputs date) */
+#projTable td.proj-payment-date input.ie-input[type="date"],
+#projTable input.ie-input[type="date"][data-f="payment_date"]{
+  color:#111111 !important;
+}
+
 /* ── BADGES ── */
 .badge{
   display:inline-block;padding:2px 8px;border-radius:2px;
@@ -2909,13 +2915,13 @@ body:has(#login-screen.visible){
             <thead><tr>
               <th style="width:28px;padding:0"></th>
               <th style="width:22px;text-align:center">#</th>
-              <th style="width:70px">MÊS</th>
-              <th style="width:110px">DATA PGTO</th>
               <th>CLIENTE</th>
               <th>PROJETO</th>
+              <th style="width:110px">DATA PGTO</th>
+              <th class="sortable" onclick="sortProj('total_value')" style="width:110px">FATURAMENTO <i class="fas fa-sort" id="siVal" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
+              <th style="width:110px">CUSTO</th>
+              <th style="width:70px">MÊS</th>
               <th style="width:90px">SEGMENTO</th>
-              <th class="sortable" onclick="sortProj('total_value')" style="width:90px">VALOR <i class="fas fa-sort" id="siVal" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
-              <th style="width:90px">CUSTO</th>
               <th style="width:52px">MARGEM</th>
               <th style="width:52px">NPS</th>
               <th style="width:105px">STATUS</th>
@@ -2923,7 +2929,7 @@ body:has(#login-screen.visible){
               <th style="width:38px"></th>
             </tr></thead>
             <tbody id="projBody">
-              <tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
+              <tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -9333,6 +9339,12 @@ function _ownGuard(record) {
 function fmtBRL(v) {
   return 'R$ ' + (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
+function formatBRL(valor) {
+  return 'R$ ' + Number(valor || 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
 function fmtBRLk(v) {
   const n=parseFloat(v)||0;
   return n>=1000?'R$'+(n/1000).toFixed(1)+'k':'R$'+n.toFixed(0);
@@ -12128,7 +12140,7 @@ async function _loadProjectsWithAutoSync() {
     /* Com Supabase como fonte: nunca rodar purge/sync da planilha embutida ao abrir a página */
     if(!SUPABASE_IS_SOURCE_OF_TRUTH) {
       const tbody = document.getElementById('projBody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos...</td></tr>`;
+      if(tbody) tbody.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos...</td></tr>`;
       try {
         await purgeProjectsNotInSheet();
       } catch(e) {
@@ -12144,7 +12156,7 @@ async function loadProjects(opts) {
   const tbody = document.getElementById('projBody');
   if(!tbody) return;
   if(!quiet) {
-    tbody.innerHTML = `<tr><td colspan="13" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
   }
 
   try {
@@ -12291,7 +12303,7 @@ async function loadProjects(opts) {
 
   } catch(e) {
     console.error('loadProjects error:',e);
-    tbody.innerHTML = `<tr><td colspan="13" class="table-empty">Erro ao carregar projetos.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" class="table-empty">Erro ao carregar projetos.</td></tr>`;
   }
 }
 
@@ -12314,7 +12326,7 @@ function renderProjTable() {
   });
 
   if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="13" class="table-empty">Nenhum projeto. Clique em "+ Novo Projeto" para adicionar.</td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="14" class="table-empty">Nenhum projeto. Clique em "+ Novo Projeto" para adicionar.</td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map((p,i)=>renderProjRow(p,i+1)).join('');
@@ -12349,22 +12361,13 @@ function renderProjRow(p, rowNum) {
   const dbOnly = p._dbOnly === true;
   const dragTitle = dbOnly ? 'Só no banco — arraste desativado' : 'Arrastar para reordenar';
 
+  const costNum = parseFloat(p.cost) || 0;
   return `<tr class="proj-row${dbOnly?' proj-row-dbonly':''}" data-pid="${p.id}" data-sidx="${sid}" data-db-only="${dbOnly?'1':''}" draggable="${dbOnly?'false':'true'}" style="${cancelado?'opacity:.4':isFut?'background:rgba(37,99,235,.04);':''}" title="${isFut?'Projeto futuro — contrato assinado, ainda não realizado':''}">
     <td style="width:28px;text-align:center;padding:0 2px">
       <span class="drag-handle" title="${dragTitle}" style="${dbOnly?'opacity:.25':''}"><i class="fas fa-grip-vertical"></i></span>
     </td>
     <td style="font-family:var(--font-h);font-size:10px;font-weight:700;color:var(--textsub);text-align:center;width:22px">
       ${dbOnly ? '<span style="font-size:7px;font-weight:800;background:#e0e7ff;color:#4338ca;border-radius:3px;padding:1px 4px;letter-spacing:.5px">BD</span>' : (isFut ? '<span style="font-size:7px;font-weight:800;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 4px;letter-spacing:.5px">FUT</span>' : (rowNum||''))}
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" title="Clique para editar mês" style="width:70px">
-      <select class="ie-input" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px;color:rgba(255,255,255,.6)">
-        ${mesOpts}
-      </select>
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}" title="Data de pagamento — altera mês automaticamente" style="width:110px">
-      <input class="ie-input" type="date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}"
-        value="${escAttr(payDateVal)}" style="font-size:10px;color:rgba(255,255,255,.7);width:100%"
-        onblur="saveSheetCell(this)" onchange="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
     </td>
     <td class="ie-cell" data-pid="${p.id}" data-f="client_name" data-sidx="${sid}" title="Clique para editar cliente" style="min-width:100px">
       <input class="ie-input" data-pid="${p.id}" data-f="client_name" data-sidx="${sid}"
@@ -12376,29 +12379,43 @@ function renderProjRow(p, rowNum) {
         value="${escAttr(p.project_name)}" style="color:var(--textsub)"
         onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
     </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="segment" data-sidx="${sid}" title="Clique para editar segmento" style="width:90px">
-      <input class="ie-input" data-pid="${p.id}" data-f="segment" data-sidx="${sid}"
-        value="${escAttr(p.segment)}" style="font-size:10px;color:var(--textsub)"
-        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+    <td class="ie-cell proj-payment-date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}" title="Data de pagamento — altera mês automaticamente" style="width:110px">
+      <input class="ie-input" type="date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}"
+        value="${escAttr(payDateVal)}" style="font-size:10px;color:#111111 !important;width:100%"
+        onblur="saveSheetCell(this)" onchange="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
     </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}" title="Clique para editar valor" style="width:90px">
-      <input class="ie-input" type="number" min="0" step="100" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}"
-        value="${val}" style="font-family:var(--font-h);font-size:12px;font-weight:700;color:var(--green)"
-        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+    <td class="ie-cell proj-money-cell proj-money-fat" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}" title="Faturamento (${formatBRL(val)}) — clique para editar" style="width:110px">
+      <div style="display:flex;align-items:center;gap:4px;min-width:0">
+        <span style="font-size:11px;font-weight:700;color:#111111;flex-shrink:0;font-family:var(--font-h)">R$</span>
+        <input class="ie-input" type="number" min="0" step="100" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}"
+          value="${val}" style="flex:1;min-width:0;font-family:var(--font-h);font-size:12px;font-weight:700;color:var(--green)"
+          onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+      </div>
     </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="cost" data-sidx="${sid}"
-        title="${p._hasFech?'Custo vem do Fechamento — edite na aba Fechamento para propagar aqui':'Custo manual — crie um Fechamento para vincular'}"
-        style="width:90px;${p._hasFech?'background:rgba(220,38,38,.04);':''}">
+    <td class="ie-cell proj-money-cell proj-money-cost" data-pid="${p.id}" data-f="cost" data-sidx="${sid}"
+        title="${p._hasFech ? 'Custo '+formatBRL(costNum)+' — vem do Fechamento — edite na aba Fechamento para propagar aqui' : 'Custo '+formatBRL(costNum)+' — manual — crie um Fechamento para vincular'}"
+        style="width:110px;${p._hasFech?'background:rgba(220,38,38,.04);':''}">
       <div style="display:flex;align-items:center;gap:3px">
+        <span style="font-size:11px;font-weight:600;color:#111111;flex-shrink:0;font-family:var(--font-h)">R$</span>
         <input class="ie-input" type="number" min="0" step="100" data-pid="${p.id}" data-f="cost" data-sidx="${sid}"
-          value="${parseFloat(p.cost)||0}"
-          style="font-family:var(--font-h);font-size:11px;font-weight:600;color:var(--red);${p._hasFech?'background:transparent;':''}"
+          value="${costNum}"
+          style="flex:1;min-width:0;font-family:var(--font-h);font-size:11px;font-weight:600;color:var(--red);${p._hasFech?'background:transparent;':''}"
           onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
         ${p._hasFech
           ? '<i class="fas fa-link" style="font-size:8px;color:#2563eb;flex-shrink:0;opacity:.7" title="Vinculado ao Fechamento — alterações aqui propagam para o fechamento"></i>'
           : '<i class="fas fa-pen" style="font-size:7px;color:#aaa;flex-shrink:0;opacity:.5" title="Custo manual — sem fechamento vinculado"></i>'
         }
       </div>
+    </td>
+    <td class="ie-cell" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" title="Clique para editar mês" style="width:70px">
+      <select class="ie-input" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px;color:rgba(255,255,255,.6)">
+        ${mesOpts}
+      </select>
+    </td>
+    <td class="ie-cell" data-pid="${p.id}" data-f="segment" data-sidx="${sid}" title="Clique para editar segmento" style="width:90px">
+      <input class="ie-input" data-pid="${p.id}" data-f="segment" data-sidx="${sid}"
+        value="${escAttr(p.segment)}" style="font-size:10px;color:var(--textsub)"
+        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
     </td>
     <td style="width:52px;text-align:center">
       <span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:${mCol}">${val>0&&pct>0?pct.toFixed(0)+'%':'—'}</span>
