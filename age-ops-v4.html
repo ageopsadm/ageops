@@ -560,16 +560,9 @@ button.perm-disabled,.btn.perm-disabled{
   color:#111111 !important;
 }
 
-/* Fix cor mês na tabela de projetos */
-.projects-table td,
-.projects-table td span,
-.projects-table td input,
-.projects-table td select,
-.project-month,
-.mes-projeto,
-.projects-table [class*="month"],
-.projects-table [class*="mes"],
-#page-projects [class*="month"] {
+/* Fix cor mês — só coluna MÊS (não sobrescreve faturamento/custo/NPS etc.) */
+#projTable td.proj-col-mes select.mes-projeto,
+#projTable td[data-f="mes"] select.ie-input {
   color: #111111 !important;
 }
 
@@ -2859,7 +2852,7 @@ body:has(#login-screen.visible){
         <div class="page-header">
           <div class="page-title">
             <i class="fas fa-folder-open"></i> PROJETOS
-            <span style="font-family:var(--font-m);font-size:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#111111;padding:3px 9px;border-radius:3px;letter-spacing:.1em">2026</span>
+            <span style="font-family:var(--font-m);font-size:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:3px 9px;border-radius:3px;letter-spacing:.1em">2026</span>
           </div>
           <div class="page-actions">
             <button type="button" class="btn btn-ghost btn-sm" onclick="purgeProjectsNotInSheet({ showToast: true }).then(()=>loadProjects())" title="Legado: sync com planilha embutida (desativado se Supabase for fonte)"><i class="fas fa-sync-alt"></i> Sync planilha</button>
@@ -2872,7 +2865,7 @@ body:has(#login-screen.visible){
         <div class="proj-panel">
           <div class="proj-panel-title">
             <span><span class="live-dot"></span>DASHBOARD 2026 — AO VIVO</span>
-            <span class="sync-indicator" id="projSyncStatus" style="color:#111111"><i class="fas fa-circle" style="font-size:5px"></i> LIVE</span>
+            <span class="sync-indicator" id="projSyncStatus" style="color:rgba(255,255,255,.35)"><i class="fas fa-circle" style="font-size:5px"></i> LIVE</span>
           </div>
           <div class="kpi-grid" style="margin-bottom:10px">
             <div class="kpi-card"><div class="kpi-label">FATURAMENTO</div><div class="kpi-val" id="pkFat">—</div></div>
@@ -2881,7 +2874,7 @@ body:has(#login-screen.visible){
             <div class="kpi-card"><div class="kpi-label">MARGEM</div><div class="kpi-val" id="pkMargem">—</div></div>
             <div class="kpi-card"><div class="kpi-label">PROJETOS</div><div class="kpi-val yellow" id="pkN">—</div></div>
             <div class="kpi-card"><div class="kpi-label">NPS MÉDIO</div><div class="kpi-val" id="pkNps">—</div></div>
-            <div class="kpi-card"><div class="kpi-label">NOVOS CLIENTES</div><div class="kpi-val" style="color:#111111" id="pkNovos">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">NOVOS CLIENTES</div><div class="kpi-val" style="color:rgba(255,255,255,.65)" id="pkNovos">—</div></div>
             <div class="kpi-card"><div class="kpi-label">TICKET MÉDIO</div><div class="kpi-val" id="pkTicket">—</div></div>
           </div>
           <!-- Mini bar chart mensal -->
@@ -2920,8 +2913,8 @@ body:has(#login-screen.visible){
 
         <!-- Dica de edição -->
         <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;margin-bottom:7px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:4px;font-size:10px;color:var(--textsub);font-family:var(--font-m);letter-spacing:.03em">
-          <i class="fas fa-table" style="color:#111111;font-size:9px"></i>
-          <span><b style="color:#111111">Modo planilha</b> — clique em qualquer célula para editar · Enter ou Tab para avançar · arraste <i class="fas fa-grip-vertical"></i> para reordenar</span>
+          <i class="fas fa-table" style="color:rgba(255,255,255,.3);font-size:9px"></i>
+          <span><b style="color:rgba(255,255,255,.55)">Modo planilha</b> — clique em qualquer célula para editar · Enter ou Tab para avançar · arraste <i class="fas fa-grip-vertical"></i> para reordenar</span>
         </div>
         <div class="table-wrap">
           <table class="hud-table projects-table" id="projTable">
@@ -2931,7 +2924,7 @@ body:has(#login-screen.visible){
               <th>CLIENTE</th>
               <th>PROJETO</th>
               <th style="width:110px">DATA PGTO</th>
-              <th class="sortable" onclick="sortProj('total_value')" style="width:110px">FATURAMENTO <i class="fas fa-sort" id="siVal" style="font-size:7px;color:#111111"></i></th>
+              <th class="sortable" onclick="sortProj('total_value')" style="width:110px">FATURAMENTO <i class="fas fa-sort" id="siVal" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
               <th style="width:110px">CUSTO</th>
               <th style="width:70px">MÊS</th>
               <th style="width:90px">SEGMENTO</th>
@@ -12141,7 +12134,7 @@ function sortProj(field) {
 
 function updateProjSortIcons() {
   const sv = document.getElementById('siVal');
-  if(sv)  { sv.className='fas fa-sort'+((_projSort.field==='total_value')?' fa-sort-amount-'+_projSort.dir:''); sv.style.color=_projSort.field==='total_value'?'var(--acc)':'#111111'; }
+  if(sv)  { sv.className='fas fa-sort'+((_projSort.field==='total_value')?' fa-sort-amount-'+_projSort.dir:''); sv.style.color=_projSort.field==='total_value'?'var(--acc)':'rgba(255,255,255,.25)'; }
 }
 
 /* Controla se o auto-sync já rodou nesta sessão */
@@ -12522,7 +12515,7 @@ function renderProjMonthBars(rows) {
   const maxI = vals.indexOf(Math.max(...vals));
 
   barEl.innerHTML = vals.map((v,i)=>`<div class="month-bar" style="background:${i===maxI?'rgba(255,255,255,.7)':v>0?'rgba(255,255,255,.2)':'rgba(255,255,255,.04)'};height:${Math.max(v/maxV*100,2)}%" data-tip="${MONTHS[i]}: ${fmtBRL(v)}"></div>`).join('');
-  lblEl.innerHTML = MONTHS.map((m,i)=>`<div class="month-label" style="color:${vals[i]>0?'var(--textsub)':'rgba(17,17,17,.35)'}">${m}</div>`).join('');
+  lblEl.innerHTML = MONTHS.map((m,i)=>`<div class="month-label" style="color:${vals[i]>0?'var(--textsub)':'rgba(255,255,255,.12)'}">${m}</div>`).join('');
 }
 
 /* ── Inline Edit ── */
