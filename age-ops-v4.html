@@ -960,7 +960,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 }
 .cal-day {
   background: #fff;
-  min-height: 110px;
+  min-height: 140px;
   padding: 8px;
   cursor: pointer;
   transition: background 0.15s;
@@ -1010,6 +1010,15 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   transition: opacity 0.15s;
 }
 .cal-event-pill:hover { opacity: 0.85; }
+.cal-event-card {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.cal-events-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 .cal-more {
   font-family: 'Inter', sans-serif;
   font-size: 10px;
@@ -3446,6 +3455,16 @@ body:has(#login-screen.visible){
           <button class="cal-new-btn" type="button" onclick="openNewEventModal(new Date().toISOString().slice(0,10))">+ NOVO EVENTO</button>
         </div>
 
+        <div id="calLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;font-family:var(--font-m)">
+          <span style="background:#2563eb;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">📁 Projeto</span>
+          <span style="background:#111111;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">🎬 Gravação</span>
+          <span style="background:#7c3aed;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">📋 Reunião</span>
+          <span style="background:#16a34a;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">📦 Entrega</span>
+          <span style="background:#dc2626;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">⏰ Prazo</span>
+          <span style="background:#9333ea;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">✂️ Edição</span>
+          <span style="background:#ea580c;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">🚗 Deslocamento</span>
+          <span style="background:#6b7280;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px">📌 Outro</span>
+        </div>
         <div class="cal-grid" id="calGrid">
           <div class="cal-weekday">DOM</div>
           <div class="cal-weekday">SEG</div>
@@ -4146,6 +4165,15 @@ body:has(#login-screen.visible){
           <option value="cancelado">Cancelado</option>
         </select>
       </div>
+      <div class="form-group" id="projAssignRow" style="grid-column:1/-1;display:none">
+        <label class="form-label">COLABORADOR (missão — cronograma + tarefas)</label>
+        <select id="pAssignColab" style="width:100%">
+          <option value="">— Nenhum —</option>
+        </select>
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:4px;line-height:1.35">
+          Ao salvar, cria evento em <b>Cronograma</b> e tarefa para o colaborador (admin/gestor).
+        </div>
+      </div>
     </div>
 
     <!-- Custos do projeto -->
@@ -4272,44 +4300,89 @@ body:has(#login-screen.visible){
   </div>
 </div>
 
-<!-- Modal Sched Event -->
+<!-- Modal Sched Event — calendário mensal + visão semanal (campos alinhados ao age_team_calendar) -->
 <div class="modal" id="modalSchedEvent">
-  <div class="modal-box" style="max-width:440px">
-    <div class="modal-title">
-      <span id="modalSchedTitle">NOVO EVENTO</span>
-      <button onclick="closeModal('modalSchedEvent')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+  <div class="modal-box" style="max-width:520px;max-height:90vh;overflow-y:auto;background:#fff;color:#111">
+    <div class="modal-title" style="border-bottom:1px solid rgba(0,0,0,.08);padding-bottom:12px;margin-bottom:16px">
+      <span id="modalSchedTitle" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800">NOVO EVENTO</span>
+      <button type="button" onclick="closeSchedModal()" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1" aria-label="Fechar">✕</button>
     </div>
     <input type="hidden" id="calEventId" value="">
-    <div class="form-grid">
-      <div class="form-group" style="grid-column:1/-1"><label class="form-label">TÍTULO *</label><input id="calTitulo" type="text" placeholder="Título do evento"></div>
-      <div class="form-group"><label class="form-label">DATA *</label><input id="calDataInicio" type="date"></div>
-      <div class="form-group"><label class="form-label">DATA FIM</label><input id="calDataFim" type="date"></div>
-      <div class="form-group"><label class="form-label">HORA INÍCIO</label><input id="calHoraInicio" type="time"></div>
-      <div class="form-group"><label class="form-label">HORA FIM</label><input id="calHoraFim" type="time"></div>
-      <div class="form-group"><label class="form-label">TIPO</label>
-        <select id="calTipo">
-          <option value="gravacao">Gravação</option>
-          <option value="reuniao">Reunião</option>
-          <option value="entrega">Entrega</option>
-          <option value="prazo">Prazo</option>
-          <option value="edicao">Edição</option>
-          <option value="deslocamento">Deslocamento</option>
-          <option value="outro">Outro</option>
-        </select>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">TIPO</label>
+      <select id="seTipo" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="projeto">📁 Projeto</option>
+        <option value="gravacao">🎬 Gravação</option>
+        <option value="reuniao">📋 Reunião</option>
+        <option value="entrega">📦 Entrega</option>
+        <option value="prazo">⏰ Prazo</option>
+        <option value="edicao">✂️ Edição</option>
+        <option value="deslocamento">🚗 Deslocamento</option>
+        <option value="outro">📌 Outro</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">TÍTULO *</label>
+      <input id="seTitle" type="text" placeholder="Ex.: Gravação Nike Campanha Verão" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+    </div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;color:#888">DATA INÍCIO *</label>
+        <input id="seDate" type="date" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
       </div>
-      <div class="form-group"><label class="form-label">RESPONSÁVEL</label>
-        <select id="calResponsavel">
-          <option value="">— Selecione —</option>
-        </select>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;color:#888">DATA FIM</label>
+        <input id="seEndDate" type="date" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;color:#888">HORA INÍCIO</label>
+        <input id="seStartTime" type="time" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;color:#888">HORA FIM</label>
+        <input id="seEndTime" type="time" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
       </div>
     </div>
-    <div class="form-group" style="margin-top:10px"><label class="form-label">DESCRIÇÃO</label><textarea id="calDescricao" rows="3" style="width:100%" placeholder="Detalhes (opcional)"></textarea></div>
-    <div style="display:flex;gap:8px;margin-top:14px;justify-content:space-between;flex-wrap:wrap">
-      <button class="btn btn-danger btn-sm" id="calDeleteBtn" onclick="deleteCalendarEvent()" style="display:none"><i class="fas fa-trash"></i> Apagar</button>
-      <div style="display:flex;gap:8px;margin-left:auto">
-        <button class="btn btn-ghost" onclick="closeModal('modalSchedEvent')">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveCalendarEvent()"><i class="fas fa-save"></i> Salvar</button>
-      </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">RESPONSÁVEL</label>
+      <select id="seOwner" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="">Selecionar colaborador…</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">PROJETO RELACIONADO</label>
+      <select id="seProjectId" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="">Selecionar projeto…</option>
+      </select>
+      <div style="font-family:var(--font-m);font-size:9px;color:#888;margin-top:4px">Vinculado na descrição como referência (sem coluna extra no banco).</div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <input id="seDiaInteiro" type="checkbox" style="width:18px;height:18px;accent-color:#111">
+      <label for="seDiaInteiro" style="font-size:13px;color:#111;cursor:pointer;margin:0">Dia inteiro</label>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">DESCRIÇÃO</label>
+      <textarea id="seNotes" rows="3" placeholder="Detalhes do evento…" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;resize:vertical"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">STATUS</label>
+      <select id="seStatus" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="confirmado">Confirmado</option>
+        <option value="pendente">Pendente</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+    <div id="schedAssignRow" class="form-group" style="margin-bottom:14px;display:none">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">ATRIBUIR TAREFA (usuário)</label>
+      <select id="seAssignTo" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="">— Ninguém —</option>
+      </select>
+      <div style="font-family:var(--font-m);font-size:9px;color:#888;margin-top:4px">Opcional — cria vínculo em tarefas atribuídas (visão semanal).</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center">
+      <button type="button" class="btn btn-primary" onclick="saveCalendarEvent()" style="flex:1;min-width:140px;padding:12px;border-radius:8px;font-weight:700"><i class="fas fa-save"></i> Salvar evento</button>
+      <button type="button" class="btn btn-ghost" onclick="closeSchedModal()">Cancelar</button>
+      <button type="button" class="btn btn-danger btn-sm" id="seDeleteBtn" onclick="deleteCalendarEvent()" style="display:none"><i class="fas fa-trash"></i> Excluir</button>
     </div>
   </div>
 </div>
@@ -5976,6 +6049,34 @@ function displayNameForUsername(un) {
   return (r && r.name) ? r.name : (un || '—');
 }
 
+/** Preenche o select de colaborador no modal de projeto (missão). */
+async function _populateProjectAssignSelect() {
+  const sel = document.getElementById('pAssignColab');
+  if(!sel) return;
+  const prev = sel.value;
+  await refreshAgeUsersCache();
+  const cid = currentUser?.company_id;
+  const cols = _ageUsersCache.filter(u =>
+    _normalizeRole(u.role) === 'colaborador' && u.active !== false && u.active !== 'false' &&
+    (!cid || !u.company_id || String(u.company_id) === String(cid))
+  );
+  sel.innerHTML = '<option value="">— Nenhum —</option>' +
+    cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('');
+  if(prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+}
+
+function _projPickDateIso(p, keys, allowEmpty) {
+  if(!p) return allowEmpty ? null : new Date().toISOString().slice(0, 10);
+  for(const k of keys) {
+    const v = p[k];
+    if(v != null && String(v).trim() !== '') {
+      const s = String(v).slice(0, 10);
+      if(s.length >= 10) return s;
+    }
+  }
+  return allowEmpty ? null : new Date().toISOString().slice(0, 10);
+}
+
 let _regWizardStep = 1;
 let _regPendingSessionRow = null;
 
@@ -7291,13 +7392,14 @@ const aiLabels = {
 };
 
 const _aiCoresTipoCal = {
-  'gravacao':    '#111111',
-  'reuniao':     '#2563eb',
-  'entrega':     '#16a34a',
-  'prazo':       '#dc2626',
-  'edicao':      '#9333ea',
-  'deslocamento':'#ea580c',
-  'outro':       '#6b7280'
+  'projeto':      '#2563eb',
+  'gravacao':     '#111111',
+  'reuniao':      '#7c3aed',
+  'entrega':      '#16a34a',
+  'prazo':        '#dc2626',
+  'edicao':       '#9333ea',
+  'deslocamento': '#ea580c',
+  'outro':        '#6b7280'
 };
 
 function _aiMapProjectStatus(raw) {
@@ -7339,7 +7441,7 @@ function _aiCalTimeToHMS(t) {
 }
 
 function _aiCalTipo(raw) {
-  const allowed = ['gravacao','reuniao','entrega','prazo','edicao','deslocamento','outro'];
+  const allowed = ['projeto','gravacao','reuniao','entrega','prazo','edicao','deslocamento','outro'];
   const s = String(raw || '').toLowerCase().trim();
   if(allowed.includes(s)) return s;
   return 'outro';
@@ -13170,8 +13272,13 @@ function openProjectModal(proj=null) {
   document.getElementById('pNps').value      = proj?.nps||'';
   document.getElementById('pNovo').value     = (proj?.is_new_client===true||proj?.is_new_client==='true')?'true':'false';
   document.getElementById('pStatus').value   = proj?.status||'pendente';
+  const par = document.getElementById('projAssignRow');
+  const pas = document.getElementById('pAssignColab');
+  if(pas) pas.value = '';
+  if(par) par.style.display = _userIsAdminLike() ? '' : 'none';
   loadProjectCosts(proj?.id).catch(()=>{});
   openModal('modalProject');
+  _populateProjectAssignSelect().catch(()=>{});
 }
 
 function calcProjMargin() {
@@ -13316,13 +13423,49 @@ async function saveProject() {
         } catch(eN) { console.warn('[notif projeto]', eN); }
       }
     }
+
+    /* Integração Projetos → Cronograma + Tarefas (missão atribuída por admin/gestor) */
+    const assigneeUser = document.getElementById('pAssignColab')?.value?.trim() || '';
+    let integrationOk = false;
+    let integrationTried = false;
+    if(assigneeUser && _userIsAdminLike() && savedId) {
+      integrationTried = true;
+      try {
+        const srowOne = Array.isArray(saved) ? saved[0] : saved;
+        const projetoMerged = {
+          ...payload,
+          id: savedId,
+          ...(srowOne && typeof srowOne === 'object' ? srowOne : {})
+        };
+        await integrarProjetoColaboradorAposAtribuicao(projetoMerged, assigneeUser);
+        integrationOk = true;
+      } catch(eInt) {
+        console.warn('[integrarProjetoColaborador]', eInt);
+      }
+    }
+
     closeModal('modalProject');
-    toast(costsOk ? 'Projeto e custos salvos com sucesso!' : 'Projeto salvo, mas houve erro ao salvar os custos. Tente novamente.', costsOk ? 'ok' : 'warn');
+    if(integrationOk) {
+      toast('✅ Colaborador atribuído — cronograma e tarefa criados!', 'ok');
+    } else if(integrationTried && !integrationOk) {
+      toast('Projeto salvo, mas falhou a integração com cronograma/tarefas. Verifique permissões no Supabase.', 'warn');
+    } else {
+      toast(costsOk ? 'Projeto e custos salvos com sucesso!' : 'Projeto salvo, mas houve erro ao salvar os custos. Tente novamente.', costsOk ? 'ok' : 'warn');
+    }
     _fechAllProjects = [];
     _projAllCache = [];
     await loadProjects();
     if(SUPABASE_IS_SOURCE_OF_TRUTH) await refreshLiveProjectsKpiCache().catch(()=>{});
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
+
+    if(integrationOk) {
+      try {
+        const pg = (id) => document.getElementById(id)?.classList.contains('active');
+        if(pg('page-cronograma') && typeof loadCalendarEvents === 'function') loadCalendarEvents();
+        if(pg('page-mytasks') && typeof loadTasks === 'function') loadTasks();
+        if(pg('page-myday') && typeof loadMyDay === 'function') loadMyDay();
+      } catch(eR) { console.warn('[integração refresh]', eR); }
+    }
   } catch(e) {
     console.error('[saveProject]', e);
     toast('Erro ao salvar projeto. Tente novamente.', 'err');
@@ -18125,14 +18268,87 @@ let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth(); // 0-11
 let calEvents = []; // eventos do mês
 const coresTipo = {
-  'gravacao':    '#111111',
-  'reuniao':     '#2563eb',
-  'entrega':     '#16a34a',
-  'prazo':       '#dc2626',
-  'edicao':      '#9333ea',
-  'deslocamento':'#ea580c',
-  'outro':       '#6b7280'
+  'projeto':      '#2563eb',
+  'gravacao':     '#111111',
+  'reuniao':      '#7c3aed',
+  'entrega':      '#16a34a',
+  'prazo':        '#dc2626',
+  'edicao':       '#9333ea',
+  'deslocamento': '#ea580c',
+  'outro':        '#6b7280'
 };
+
+function _calHexOrFallback(c, fb) {
+  const s = String(c || '').trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(s)) return s;
+  if(/^#[0-9a-fA-F]{3}$/.test(s)) return s;
+  return fb || '#6b7280';
+}
+
+/** Separa descrição visível e UUID de projeto embutido (sem coluna extra na tabela). */
+function _calParseDescricao(raw) {
+  const s = String(raw || '');
+  const m = s.match(/\[projeto_ref:([a-f0-9-]{36})\]/i);
+  const projetoId = m ? m[1] : '';
+  const descLimpa = s.replace(/\s*\[projeto_ref:[a-f0-9-]{36}\]\s*$/i, '').trim();
+  return { projetoId, descLimpa };
+}
+
+function _calMergeProjetoRef(descLimpa, projetoId) {
+  let d = String(descLimpa || '').trim();
+  const id = String(projetoId || '').trim();
+  if(id) d = (d ? d + '\n\n' : '') + `[projeto_ref:${id}]`;
+  return d || null;
+}
+
+function renderEventCardHtml(ev) {
+  const tipoKey = (ev.tipo || 'outro').toString();
+  const fallback = coresTipo[tipoKey] || '#6b7280';
+  const bg = _calHexOrFallback(ev.cor, fallback);
+  const hi = (ev.hora_inicio || '').toString();
+  const hf = (ev.hora_fim || '').toString();
+  const hora = hi.length >= 5 ? hi.substring(0, 5) : '';
+  const horaFim = hf.length >= 5 ? (' → ' + hf.substring(0, 5)) : '';
+  const diaInt = ev.dia_inteiro === true || ev.dia_inteiro === 'true';
+  const horaRow = !diaInt && hora
+    ? `<span style="color:rgba(255,255,255,0.6);font-size:9px;">${hora}${horaFim}</span>`
+    : '';
+  const tipoLbl = escHtml(tipoKey);
+  const titulo = escHtml((ev.titulo || '').toString());
+  const parsed = _calParseDescricao(ev.descricao);
+  const descShort = parsed.descLimpa.length > 90 ? (parsed.descLimpa.slice(0, 90) + '…') : parsed.descLimpa;
+  const descShow = escHtml(descShort);
+  const resp = (ev.responsavel_nome || '').toString().trim();
+  const respInitial = resp ? escHtml(resp.charAt(0).toUpperCase()) : '';
+  const respFull = escHtml(resp);
+  const st = (ev.status || '').toString().toLowerCase();
+  const statusHtml = st && st !== 'confirmado'
+    ? `<div style="margin-top:4px;"><span style="background:rgba(255,255,255,0.15);color:#ffffff;font-size:8px;padding:1px 6px;border-radius:10px;">${escHtml((ev.status || '').toString())}</span></div>`
+    : '';
+  const respBlock = resp ? `
+      <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+        <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:#ffffff;font-weight:700;flex-shrink:0;">${respInitial}</div>
+        <span style="color:rgba(255,255,255,0.8);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${respFull}</span>
+      </div>` : '';
+  const descBlock = parsed.descLimpa ? `
+      <div style="color:rgba(255,255,255,0.6);font-size:9px;margin-top:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${descShow}</div>` : '';
+
+  return `
+    <div class="cal-event-card" style="background:${bg};border-left:3px solid rgba(255,255,255,0.3);border-radius:6px;padding:6px 8px;margin:2px 0;cursor:pointer;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:4px;">
+        <span style="color:rgba(255,255,255,0.7);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">${tipoLbl}</span>
+        ${horaRow}
+      </div>
+      <div style="color:#ffffff;font-size:11px;font-weight:700;line-height:1.3;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${titulo}</div>
+      ${respBlock}
+      ${descBlock}
+      ${statusHtml}
+    </div>`;
+}
+
+function closeSchedModal() {
+  closeModal('modalSchedEvent');
+}
 
 function _pad2(n){ return String(n).padStart(2,'0'); }
 function _monthTitle(y, m){
@@ -18177,14 +18393,15 @@ function renderCalendar() {
     num.textContent = String(d.getDate());
     cell.appendChild(num);
 
-    const maxShow = 3;
+    const maxShow = 2;
     dayEvts.slice(0, maxShow).forEach(ev=>{
-      const pill = document.createElement('span');
-      pill.className = 'cal-event-pill';
-      pill.textContent = (ev.titulo || '').toString();
-      pill.style.background = ev.cor || coresTipo[ev.tipo] || '#6b7280';
-      pill.onclick = (e) => { e.stopPropagation(); openEditEventModal(ev.id); };
-      cell.appendChild(pill);
+      const wrap = document.createElement('div');
+      wrap.innerHTML = renderEventCardHtml(ev).trim();
+      const card = wrap.firstElementChild;
+      if(card) {
+        card.addEventListener('click', e => { e.stopPropagation(); openEditEventModal(ev.id); });
+        cell.appendChild(card);
+      }
     });
     if(dayEvts.length > maxShow) {
       const more = document.createElement('div');
@@ -18214,18 +18431,41 @@ function calGoToday() {
   loadCalendarEvents();
 }
 
-async function _loadCalendarResponsaveis() {
-  const sel = document.getElementById('calResponsavel');
-  if(!sel) return;
-  const cid = currentUser?.company_id;
-  const rows = await fetchAll('age_colaboradores', 400).catch(()=>[]);
-  const scoped = rows.filter(r => !cid || !r.company_id || String(r.company_id) === String(cid));
-  const names = scoped
-    .map(r => (r.nome || r.name || r.full_name || r.username || '').toString().trim())
-    .filter(Boolean);
-  const uniq = Array.from(new Set(names)).sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  sel.innerHTML = '<option value="">— Selecione —</option>' +
-    uniq.map(n => `<option value="${escAttr(n)}">${escHtml(n)}</option>`).join('');
+/** Popula responsável (age_colaboradores) e projeto relacionado (age_projects) no modal do calendário. */
+async function popularSelectsModal() {
+  const cid = currentUser?.company_id || (typeof currentCompanyId !== 'undefined' ? currentCompanyId : null);
+  if(!cid) return;
+  const prevOwn = document.getElementById('seOwner')?.value || '';
+  const prevProj = document.getElementById('seProjectId')?.value || '';
+  try {
+    const d = await apiGet('age_colaboradores', `?company_id=eq.${encodeURIComponent(String(cid))}&limit=400`);
+    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    const names = [...new Set(rows.map(r => (r.nome || r.name || r.full_name || '').toString().trim()).filter(Boolean))]
+      .sort((a,b) => a.localeCompare(b, 'pt-BR'));
+    const seOwner = document.getElementById('seOwner');
+    if(seOwner) {
+      seOwner.innerHTML = '<option value="">Selecionar colaborador…</option>' +
+        names.map(n => `<option value="${escAttr(n)}">${escHtml(n)}</option>`).join('');
+      if(prevOwn && [...seOwner.options].some(o => o.value === prevOwn)) seOwner.value = prevOwn;
+    }
+  } catch(e) {
+    console.warn('[popularSelectsModal] colaboradores', e);
+  }
+  try {
+    const projs = await fetchAgeProjectsScoped(400);
+    const sel = document.getElementById('seProjectId');
+    if(sel) {
+      sel.innerHTML = '<option value="">Selecionar projeto…</option>' +
+        projs.map(p => {
+          const id = p.id;
+          const label = `${_ageProjDbClient(p)} — ${_ageProjDbTitle(p)}`.trim() || String(id);
+          return `<option value="${escAttr(id)}">${escHtml(label)}</option>`;
+        }).join('');
+      if(prevProj && [...sel.options].some(o => o.value === prevProj)) sel.value = prevProj;
+    }
+  } catch(e2) {
+    console.warn('[popularSelectsModal] projetos', e2);
+  }
 }
 
 async function loadCalendarEvents() {
@@ -18261,76 +18501,111 @@ async function loadCalendarEvents() {
   }
 }
 
-function openNewEventModal(dateStr) {
+async function openNewEventModal(dateStr) {
+  await popularSelectsModal();
   document.getElementById('modalSchedTitle').textContent = 'NOVO EVENTO';
-  const delBtn = document.getElementById('calDeleteBtn');
+  const delBtn = document.getElementById('seDeleteBtn');
   if(delBtn) delBtn.style.display = 'none';
+  const assignRow = document.getElementById('schedAssignRow');
+  if(assignRow) assignRow.style.display = 'none';
   document.getElementById('calEventId').value = '';
-  document.getElementById('calTitulo').value = '';
-  document.getElementById('calDescricao').value = '';
-  document.getElementById('calDataInicio').value = dateStr || new Date().toISOString().slice(0,10);
-  document.getElementById('calDataFim').value = '';
-  document.getElementById('calHoraInicio').value = '';
-  document.getElementById('calHoraFim').value = '';
-  document.getElementById('calTipo').value = 'outro';
-  _loadCalendarResponsaveis();
-  document.getElementById('calResponsavel').value = '';
+  document.getElementById('seTitle').value = '';
+  document.getElementById('seNotes').value = '';
+  document.getElementById('seDate').value = dateStr || new Date().toISOString().slice(0, 10);
+  document.getElementById('seEndDate').value = '';
+  document.getElementById('seStartTime').value = '';
+  document.getElementById('seEndTime').value = '';
+  document.getElementById('seTipo').value = 'outro';
+  document.getElementById('seOwner').value = '';
+  document.getElementById('seProjectId').value = '';
+  document.getElementById('seStatus').value = 'confirmado';
+  document.getElementById('seDiaInteiro').checked = false;
   openModal('modalSchedEvent');
 }
 
-function openEditEventModal(eventId) {
-  const ev = (Array.isArray(calEvents)?calEvents:[]).find(e => String(e.id) === String(eventId));
+async function openEditEventModal(eventId) {
+  const ev = (Array.isArray(calEvents) ? calEvents : []).find(e => String(e.id) === String(eventId));
   if(!ev) return;
+  await popularSelectsModal();
   document.getElementById('modalSchedTitle').textContent = 'EDITAR EVENTO';
-  const delBtn = document.getElementById('calDeleteBtn');
+  const delBtn = document.getElementById('seDeleteBtn');
   if(delBtn) delBtn.style.display = '';
+  const assignRow = document.getElementById('schedAssignRow');
+  if(assignRow) assignRow.style.display = 'none';
   document.getElementById('calEventId').value = ev.id || '';
-  document.getElementById('calTitulo').value = (ev.titulo || '').toString();
-  document.getElementById('calDescricao').value = (ev.descricao || '').toString();
-  document.getElementById('calDataInicio').value = (ev.data_inicio || '').toString().slice(0,10);
-  document.getElementById('calDataFim').value = (ev.data_fim || '').toString().slice(0,10);
-  document.getElementById('calHoraInicio').value = (ev.hora_inicio || '').toString().slice(0,5);
-  document.getElementById('calHoraFim').value = (ev.hora_fim || '').toString().slice(0,5);
-  document.getElementById('calTipo').value = (ev.tipo || 'outro').toString();
-  _loadCalendarResponsaveis();
-  document.getElementById('calResponsavel').value = (ev.responsavel_nome || '').toString();
+  document.getElementById('seTitle').value = (ev.titulo || '').toString();
+  const parsed = _calParseDescricao(ev.descricao);
+  document.getElementById('seNotes').value = parsed.descLimpa;
+  document.getElementById('seProjectId').value = parsed.projetoId || '';
+  document.getElementById('seDate').value = (ev.data_inicio || '').toString().slice(0, 10);
+  document.getElementById('seEndDate').value = (ev.data_fim || '').toString().slice(0, 10);
+  document.getElementById('seStartTime').value = (ev.hora_inicio || '').toString().slice(0, 5);
+  document.getElementById('seEndTime').value = (ev.hora_fim || '').toString().slice(0, 5);
+  document.getElementById('seTipo').value = (ev.tipo || 'outro').toString();
+  document.getElementById('seOwner').value = (ev.responsavel_nome || '').toString();
+  document.getElementById('seStatus').value = (ev.status || 'confirmado').toString();
+  document.getElementById('seDiaInteiro').checked = ev.dia_inteiro === true || ev.dia_inteiro === 'true';
   openModal('modalSchedEvent');
 }
 
 async function saveCalendarEvent() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('cronograma')) {
+    toast('Sem permissão para editar o cronograma.', 'warn');
+    return;
+  }
   const id = document.getElementById('calEventId').value;
-  const tipo = document.getElementById('calTipo').value || 'outro';
+  const tipo = document.getElementById('seTipo').value || 'outro';
+  const diaInt = document.getElementById('seDiaInteiro').checked;
+  const tIni = document.getElementById('seStartTime').value;
+  const tFim = document.getElementById('seEndTime').value;
+  const rawNotes = document.getElementById('seNotes').value.trim();
+  const projetoSel = document.getElementById('seProjectId').value.trim();
+  const descricao = _calMergeProjetoRef(rawNotes, projetoSel);
+
   const payload = {
     company_id: currentUser?.company_id || (typeof currentCompanyId !== 'undefined' ? currentCompanyId : null),
-    titulo: document.getElementById('calTitulo').value.trim(),
-    descricao: document.getElementById('calDescricao').value.trim() || null,
-    data_inicio: document.getElementById('calDataInicio').value,
-    data_fim: document.getElementById('calDataFim').value || null,
-    hora_inicio: document.getElementById('calHoraInicio').value ? (document.getElementById('calHoraInicio').value + ':00') : null,
-    hora_fim: document.getElementById('calHoraFim').value ? (document.getElementById('calHoraFim').value + ':00') : null,
+    titulo: document.getElementById('seTitle').value.trim(),
+    descricao,
+    data_inicio: document.getElementById('seDate').value,
+    data_fim: document.getElementById('seEndDate').value || null,
+    hora_inicio: !diaInt && tIni ? (tIni + ':00') : null,
+    hora_fim: !diaInt && tFim ? (tFim + ':00') : null,
     tipo: tipo || 'outro',
-    responsavel_nome: document.getElementById('calResponsavel').value || null,
+    responsavel_nome: document.getElementById('seOwner').value.trim() || null,
     cor: coresTipo[tipo] || '#6b7280',
-    dia_inteiro: false,
-    status: 'confirmado',
+    dia_inteiro: diaInt,
+    status: document.getElementById('seStatus').value || 'confirmado',
     updated_at: Date.now()
   };
 
-  if(!payload.titulo) { alert('Título obrigatório'); return; }
-  if(!payload.data_inicio) { alert('Data obrigatória'); return; }
+  if(!payload.titulo) { toast('Título obrigatório', 'warn'); return; }
+  if(!payload.data_inicio) { toast('Data de início obrigatória', 'warn'); return; }
 
   try {
+    let savedRow = null;
     if(id) {
-      await apiPut('age_team_calendar', id, payload);
+      savedRow = await apiPut('age_team_calendar', id, payload);
     } else {
       payload.created_at = Date.now();
-      await apiPost('age_team_calendar', payload);
+      savedRow = await apiPost('age_team_calendar', payload);
     }
-    closeModal('modalSchedEvent');
+    const row = Array.isArray(savedRow) ? savedRow[0] : savedRow;
+    const assignTo = document.getElementById('seAssignTo')?.value?.trim() || '';
+    if(assignTo && row?.id) {
+      const notesSync = _calParseDescricao(payload.descricao).descLimpa || '';
+      await syncAssignedTaskFromCalendar(row, assignTo, payload.titulo, payload.data_inicio, notesSync);
+    }
+    closeSchedModal();
     loadCalendarEvents();
+    await loadCronograma().catch(()=>{});
+    const mp = document.getElementById('page-myday');
+    if(mp?.classList.contains('active')) loadMyDay();
+    const tk = document.getElementById('page-mytasks');
+    if(tk?.classList.contains('active')) loadTasks();
+    try { if(typeof SYNC !== 'undefined' && SYNC?.emit) SYNC.emit('schedule:saved', row); } catch(eS) {}
   } catch(err) {
     console.error('Erro ao salvar evento:', err);
-    alert('Erro ao salvar evento. Tente novamente.');
+    toast('Erro ao salvar evento. Tente novamente.', 'err');
   }
 }
 
@@ -18340,7 +18615,7 @@ async function deleteCalendarEvent() {
   if(!confirm('Apagar este evento?')) return;
   try {
     await apiDel('age_team_calendar', id);
-    closeModal('modalSchedEvent');
+    closeSchedModal();
     loadCalendarEvents();
   } catch(err) {
     console.error('Erro ao apagar:', err);
@@ -18411,6 +18686,77 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
   }
 }
 
+/**
+ * Integração Projetos → age_team_calendar (+ tarefa atribuída + age_tasks).
+ * Chamado após salvar projeto quando admin/gestor escolhe um colaborador em #pAssignColab.
+ */
+async function criarEventoCronograma(projeto, colaboradorNome, dataInicio, dataFim) {
+  const cid = currentUser?.company_id || (typeof currentCompanyId !== 'undefined' ? currentCompanyId : null);
+  if(!cid) throw new Error('company_id ausente');
+  const tituloBase = `${_ageProjDbClient(projeto)} — ${_ageProjDbTitle(projeto)}`.trim() || 'Projeto';
+  const di = (dataInicio || '').toString().slice(0, 10) || new Date().toISOString().split('T')[0];
+  const df = dataFim ? String(dataFim).slice(0, 10) : null;
+  const nm = (colaboradorNome || '').toString().trim();
+  try {
+    const dup = await apiGet('age_team_calendar',
+      `?company_id=eq.${encodeURIComponent(String(cid))}&titulo=eq.${encodeURIComponent(tituloBase)}&data_inicio=eq.${encodeURIComponent(di)}&responsavel_nome=eq.${encodeURIComponent(nm)}&limit=1`);
+    const dr = Array.isArray(dup?.data) ? dup.data : [];
+    if(dr.length && dr[0]?.id) return dr[0];
+  } catch(e) { /* segue para criar */ }
+
+  const payload = {
+    company_id: cid,
+    titulo: tituloBase,
+    descricao: 'Atribuído automaticamente via Projetos',
+    data_inicio: di,
+    data_fim: df,
+    hora_inicio: null,
+    hora_fim: null,
+    tipo: 'projeto',
+    responsavel_nome: nm || null,
+    cor: '#2563eb',
+    dia_inteiro: true,
+    status: 'confirmado',
+    created_at: Date.now(),
+    updated_at: Date.now()
+  };
+  const posted = await apiPost('age_team_calendar', payload);
+  return Array.isArray(posted) ? posted[0] : posted;
+}
+
+async function criarTarefaAutomatica(projeto, assigneeUsername, prazo) {
+  const titulo = 'Projeto: ' + (_ageProjDbTitle(projeto) || projeto?.name || projeto?.nome || 'Projeto');
+  const day = (prazo || '').toString().slice(0, 10) || new Date().toISOString().slice(0, 10);
+  const descLine = 'Tarefa criada automaticamente ao ser atribuído ao projeto.';
+  try {
+    await apiPost('age_tasks', {
+      task_text: `${titulo} — ${descLine}`,
+      day_date: day,
+      priority: 'alta',
+      done: false,
+      owner: assigneeUsername,
+      created_by: currentUser?.username || 'unknown'
+    });
+  } catch(e) {
+    /* age_assigned_tasks já é criado por syncAssignedTaskFromCalendar; não duplicar aqui */
+    console.warn('[criarTarefaAutomatica] age_tasks não criado (tarefa atribuída já veio do cronograma ou erro):', e?.message || e);
+  }
+}
+
+async function integrarProjetoColaboradorAposAtribuicao(projetoSalvo, assigneeUsername) {
+  const colabNome = displayNameForUsername(assigneeUsername);
+  const dataInicio = _projPickDateIso(projetoSalvo, ['project_date', 'payment_date'], false);
+  const dataFim = _projPickDateIso(projetoSalvo, ['delivery_date', 'due_date'], true);
+  const prazo = _projPickDateIso(projetoSalvo, ['delivery_date', 'due_date', 'payment_date'], false);
+
+  const ev = await criarEventoCronograma(projetoSalvo, colabNome, dataInicio, dataFim);
+  if(ev?.id) {
+    const tituloEv = (ev.titulo || `${_ageProjDbClient(projetoSalvo)} — ${_ageProjDbTitle(projetoSalvo)}`).trim();
+    await syncAssignedTaskFromCalendar(ev, assigneeUsername, tituloEv, dataInicio, 'Atribuído via Projetos');
+  }
+  await criarTarefaAutomatica(projetoSalvo, assigneeUsername, prazo);
+}
+
 async function loadCronograma() {
   try {
     let evts = await fetchAll('age_team_calendar',500);
@@ -18422,7 +18768,12 @@ async function loadCronograma() {
       rows.forEach(r => {
         if(r.calendar_event_id) allowed.add(String(r.calendar_event_id));
       });
-      evts = evts.filter(e => allowed.has(String(e.id)));
+      const myNm = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
+      evts = evts.filter(e => {
+        if(allowed.has(String(e.id))) return true;
+        const rn = (e.responsavel_nome || '').toString().trim();
+        return !!(myNm && rn && rn.toLowerCase() === myNm.toLowerCase());
+      });
     }
     _schedEvents = evts;
   } catch(e){ _schedEvents=[]; }
@@ -18469,13 +18820,24 @@ function renderSched() {
 }
 
 async function openSchedEventModal(date='') {
+  await popularSelectsModal();
   document.getElementById('modalSchedTitle').textContent = 'NOVO EVENTO';
-  document.getElementById('seId').value     = '';
-  document.getElementById('seTitle').value  = '';
-  document.getElementById('seDate').value   = date||new Date().toISOString().slice(0,10);
-  document.getElementById('seType').value   = 'company';
-  document.getElementById('seOwner').value  = currentUser?.name||'';
-  document.getElementById('seNotes').value  = '';
+  document.getElementById('calEventId').value = '';
+  document.getElementById('seTitle').value = '';
+  document.getElementById('seDate').value = date || new Date().toISOString().slice(0, 10);
+  document.getElementById('seEndDate').value = '';
+  document.getElementById('seStartTime').value = '';
+  document.getElementById('seEndTime').value = '';
+  document.getElementById('seTipo').value = 'reuniao';
+  document.getElementById('seOwner').value = (currentUser?.name || currentUser?.nome || '').toString();
+  document.getElementById('seNotes').value = '';
+  document.getElementById('seProjectId').value = '';
+  document.getElementById('seStatus').value = 'confirmado';
+  document.getElementById('seDiaInteiro').checked = false;
+  const assignRow = document.getElementById('schedAssignRow');
+  if(assignRow) assignRow.style.display = '';
+  const delBtn = document.getElementById('seDeleteBtn');
+  if(delBtn) delBtn.style.display = 'none';
   openModal('modalSchedEvent');
   await populateSchedAssignSelect();
   const as = document.getElementById('seAssignTo');
@@ -18483,15 +18845,27 @@ async function openSchedEventModal(date='') {
 }
 
 async function viewSchedEvent(id) {
-  const ev=_schedEvents.find(e=>e.id===id);
+  const ev = _schedEvents.find(e => e.id === id);
   if(!ev) return;
-  document.getElementById('seId').value    = ev.id;
-  document.getElementById('seTitle').value = ev.titulo||ev.title||'';
-  document.getElementById('seDate').value  = (ev.data_inicio||ev.event_date||ev.date||'').slice(0,10);
-  document.getElementById('seType').value  = ev.tipo||ev.type||'company';
-  document.getElementById('seOwner').value = ev.responsavel_nome||ev.owner||'';
-  document.getElementById('seNotes').value = ev.descricao||ev.notes||'';
+  await popularSelectsModal();
   document.getElementById('modalSchedTitle').textContent = 'EDITAR EVENTO';
+  document.getElementById('calEventId').value = ev.id;
+  document.getElementById('seTitle').value = ev.titulo || ev.title || '';
+  const parsed = _calParseDescricao(ev.descricao || ev.notes);
+  document.getElementById('seNotes').value = parsed.descLimpa;
+  document.getElementById('seProjectId').value = parsed.projetoId || '';
+  document.getElementById('seDate').value = (ev.data_inicio || ev.event_date || ev.date || '').toString().slice(0, 10);
+  document.getElementById('seEndDate').value = (ev.data_fim || '').toString().slice(0, 10);
+  document.getElementById('seStartTime').value = (ev.hora_inicio || '').toString().slice(0, 5);
+  document.getElementById('seEndTime').value = (ev.hora_fim || '').toString().slice(0, 5);
+  document.getElementById('seTipo').value = (ev.tipo || ev.type || 'reuniao').toString();
+  document.getElementById('seOwner').value = (ev.responsavel_nome || ev.owner || '').toString();
+  document.getElementById('seStatus').value = (ev.status || 'confirmado').toString();
+  document.getElementById('seDiaInteiro').checked = ev.dia_inteiro === true || ev.dia_inteiro === 'true';
+  const assignRow = document.getElementById('schedAssignRow');
+  if(assignRow) assignRow.style.display = '';
+  const delBtn = document.getElementById('seDeleteBtn');
+  if(delBtn) delBtn.style.display = '';
   openModal('modalSchedEvent');
   await populateSchedAssignSelect();
   let pre = '';
@@ -18505,50 +18879,7 @@ async function viewSchedEvent(id) {
 }
 
 async function saveSchedEvent() {
-  if(!hasModuleEditForPage('cronograma')) {
-    toast('Sem permissão para editar o cronograma.', 'warn');
-    return;
-  }
-  const id=document.getElementById('seId').value;
-  const dateStr = (document.getElementById('seDate').value || '').toString().slice(0,10);
-  const tipoStr = (document.getElementById('seType').value || 'evento').toString();
-  const corByTipo = {
-    company:  '#111111',
-    personal: '#2563eb',
-    deadline: '#dc2626'
-  };
-  const payload={
-    company_id: currentUser?.company_id || null,
-    titulo: document.getElementById('seTitle').value.trim(),
-    descricao: (document.getElementById('seNotes').value || '').trim() || null,
-    data_inicio: dateStr,
-    data_fim: null,
-    hora_inicio: null,
-    hora_fim: null,
-    tipo: tipoStr || 'evento',
-    responsavel_nome: (document.getElementById('seOwner').value || '').trim() || null,
-    cor: corByTipo[tipoStr] || '#111111',
-    dia_inteiro: false,
-    status: 'confirmado',
-    created_at: Date.now(),
-    updated_at: Date.now()
-  };
-  const assignTo = document.getElementById('seAssignTo')?.value?.trim() || '';
-  if(!payload.company_id){ toast('Empresa não definida','err'); return; }
-  if(!payload.titulo){ toast('Preencha o título','warn'); return; }
-  if(!payload.data_inicio){ toast('Preencha a data','warn'); return; }
-  try {
-    const saved=id?await apiPut('age_team_calendar',id,payload):await apiPost('age_team_calendar',payload);
-    await syncAssignedTaskFromCalendar(saved, assignTo, payload.titulo, payload.data_inicio, payload.descricao || '');
-    closeModal('modalSchedEvent');
-    toast(id?'Evento atualizado!':'Evento criado!');
-    await loadCronograma();
-    SYNC.emit('schedule:saved', saved);
-    const mp=document.getElementById('page-myday');
-    if(mp?.classList.contains('active')) loadMyDay();
-    const tk=document.getElementById('page-mytasks');
-    if(tk?.classList.contains('active')) loadTasks();
-  } catch(e){ toast('Erro ao salvar evento','err'); }
+  await saveCalendarEvent();
 }
 
 /* ═══════════════════════════════════════════
