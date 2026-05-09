@@ -2246,7 +2246,7 @@ body:has(#login-screen.visible){
             <button type="button" id="planBillMonthly" class="active" onclick="setPlanBillingToggle('monthly')">Mensal</button>
             <button type="button" id="planBillYearly" onclick="setPlanBillingToggle('yearly')">Anual</button>
           </div>
-          <p class="plans-economy-hint" id="plansEconomyHintSignup">Economize até R$2.400/ano no ciclo anual (ex.: Agência) frente ao mensal.</p>
+          <p class="plans-economy-hint" id="plansEconomyHintSignup">Preços de teste: R$0,01 — mensal e anual (pagamento real).</p>
         </div>
         <div class="plans-grid" id="plansCardsGrid">
           <!-- preenchido por refreshPlanCardsPricing() -->
@@ -2274,7 +2274,7 @@ body:has(#login-screen.visible){
         <button type="button" id="planBillMonthlyG" class="active" onclick="setPlanBillingToggleGlobal('monthly')">Mensal</button>
         <button type="button" id="planBillYearlyG" onclick="setPlanBillingToggleGlobal('yearly')">Anual</button>
       </div>
-      <p class="plans-economy-hint" id="plansEconomyHintGlobal">Economize até R$2.400/ano no ciclo anual (ex.: Agência) frente ao mensal.</p>
+      <p class="plans-economy-hint" id="plansEconomyHintGlobal">Preços de teste: R$0,01 — mensal e anual (pagamento real).</p>
     </div>
     <div class="plans-grid" id="plansCardsGridGlobal"></div>
     <div class="plans-footer">
@@ -7917,6 +7917,28 @@ function _fmtMoney(n) {
   }
 }
 
+/** Valores exibidos e usados no resumo do checkout — alinhados aos planos no Pagar.me (PAGARME_PLANS ids inalterados). */
+const planos = {
+  solo: {
+    mensal: { valor: 0.01, valorDisplay: 'R$0,01' },
+    anual:  { valor: 0.01, valorDisplay: 'R$0,01' }
+  },
+  produtora: {
+    mensal: { valor: 0.01, valorDisplay: 'R$0,01' },
+    anual:  { valor: 0.01, valorDisplay: 'R$0,01' }
+  },
+  agencia: {
+    mensal: { valor: 0.01, valorDisplay: 'R$0,01' },
+    anual:  { valor: 0.01, valorDisplay: 'R$0,01' }
+  }
+};
+
+function _planPrecoRow(planKey, yearly) {
+  const k = ['solo', 'produtora', 'agencia'].includes(planKey) ? planKey : 'produtora';
+  const per = yearly ? 'anual' : 'mensal';
+  return planos[k][per];
+}
+
 function _planPriceBlock(strikeMonth, zeroLabel, afterLine) {
   return `
     <div class="plan-price-block">
@@ -7929,15 +7951,15 @@ function _planPriceBlock(strikeMonth, zeroLabel, afterLine) {
 function buildPlanCardsHtml(ctx) {
   const bill = ctx === 'global' ? _planBillGlobal : _planBillSignup;
   const m = bill === 'yearly';
-  const pSolo = m ? 97 : 147;
-  const pProd = m ? 197 : 297;
-  const pAg = m ? 397 : 597;
-  const strikeSolo = `R$${pSolo}/mês`;
-  const strikeProd = `R$${pProd}/mês`;
-  const strikeAg = `R$${pAg}/mês`;
-  const depSolo = `por 7 dias · depois ${_fmtMoney(pSolo)}/${m ? 'mês (anual)' : 'mês'}`;
-  const depProd = `por 7 dias · depois ${_fmtMoney(pProd)}/${m ? 'mês (anual)' : 'mês'}`;
-  const depAg = `por 7 dias · depois ${_fmtMoney(pAg)}/${m ? 'mês (anual)' : 'mês'}`;
+  const soloR = _planPrecoRow('solo', m);
+  const prodR = _planPrecoRow('produtora', m);
+  const agR = _planPrecoRow('agencia', m);
+  const strikeSolo = `${soloR.valorDisplay}/mês`;
+  const strikeProd = `${prodR.valorDisplay}/mês`;
+  const strikeAg = `${agR.valorDisplay}/mês`;
+  const depSolo = `por 7 dias · depois ${soloR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depProd = `por 7 dias · depois ${prodR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depAg = `por 7 dias · depois ${agR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
 
   const soloFeat = [
     'Dashboard, projetos, orçamentos, pipeline, clientes',
@@ -7971,7 +7993,7 @@ function buildPlanCardsHtml(ctx) {
   return `
     <div class="plan-card plan-card--solo">
       <div class="plan-card-title">Solo</div>
-      ${_planPriceBlock(strikeSolo, _fmtMoney(0), depSolo)}
+      ${_planPriceBlock(strikeSolo, soloR.valorDisplay, depSolo)}
       <ul class="plan-features">${featList(soloFeat, 3)}</ul>
       <div class="plan-support-note">Suporte por e-mail</div>
       <button type="button" class="plan-cta" onclick="escolherPlano('solo_${suf}')">Escolher</button>
@@ -7979,14 +8001,14 @@ function buildPlanCardsHtml(ctx) {
     <div class="plan-card plan-card--featured">
       <span class="plan-badge-min">Mais popular</span>
       <div class="plan-card-title">Produtora</div>
-      ${_planPriceBlock(strikeProd, _fmtMoney(0), depProd)}
+      ${_planPriceBlock(strikeProd, prodR.valorDisplay, depProd)}
       <ul class="plan-features">${featList(prodFeat, 3)}</ul>
       <div class="plan-support-note">Suporte WhatsApp</div>
       <button type="button" class="plan-cta" onclick="escolherPlano('produtora_${suf}')">Escolher</button>
     </div>
     <div class="plan-card plan-card--ag">
       <div class="plan-card-title">Agência</div>
-      ${_planPriceBlock(strikeAg, _fmtMoney(0), depAg)}
+      ${_planPriceBlock(strikeAg, agR.valorDisplay, depAg)}
       <ul class="plan-features">${featList(agFeat, 99)}</ul>
       <div class="plan-support-note">Suporte prioritário</div>
       <button type="button" class="plan-cta" onclick="escolherPlano('agencia_${suf}')">Escolher</button>
@@ -8073,17 +8095,14 @@ function selectPlanOffer(key) {
   _planCheckoutCtx = document.getElementById('plansOverlayGlobal')?.classList.contains('open') ? 'app' : 'signup';
   const bill = _planCheckoutCtx === 'app' ? _planBillGlobal : _planBillSignup;
   const m = bill === 'yearly';
-  let after = 297;
-  if(key === 'solo') after = m ? 97 : 147;
-  else if(key === 'produtora') after = m ? 197 : 297;
-  else if(key === 'agencia') after = m ? 397 : 597;
+  const row = _planPrecoRow(key, m);
   const planNames = { solo: 'Solo', produtora: 'Produtora', agencia: 'Agência' };
   const ciclo = m ? 'Anual' : 'Mensal';
   const sum = document.getElementById('pgPlanSummary');
   if (sum) {
     sum.innerHTML =
-      `<strong>Plano ${planNames[key]} (${ciclo})</strong><br>${_fmtMoney(0)} hoje · depois <strong>${_fmtMoney(after)}/${m ? 'ano' : 'mês'}</strong>` +
-      `<div style="margin-top:10px;color:#666;line-height:1.5">Sem cobrança agora. Trial de 7 dias.</div>`;
+      `<strong>Plano ${planNames[key]} (${ciclo})</strong><br>${row.valorDisplay} hoje · depois <strong>${row.valorDisplay}/${m ? 'ano' : 'mês'}</strong>` +
+      `<div style="margin-top:10px;color:#666;line-height:1.5">Trial de 7 dias · valores de teste R$0,01.</div>`;
   }
   try {
     const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '');
@@ -8457,14 +8476,15 @@ function updateTrialBanner() {
   main.classList.add('has-trial-banner');
   bar.classList.remove('warn','danger');
   const pl = _effectiveUserPlan();
-  const after = pl === 'solo' ? 147 : pl === 'agencia' ? 597 : pl === 'produtora' ? 297 : 297;
+  const planSlug = ['solo', 'produtora', 'agencia'].includes(pl) ? pl : 'produtora';
+  const afterRow = _planPrecoRow(planSlug, false);
   const escolher = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Escolher plano</button>`;
   if(days > 3) {
     bar.className = '';
     bar.innerHTML = `Trial · <strong>${days}</strong> dias restantes · ${escolher}`;
   } else if(days > 0) {
     bar.classList.add('warn');
-    bar.innerHTML = `Trial · ${days} dia(s) restantes · cobrança ${_fmtMoney(after)} após ${ends.toLocaleDateString('pt-BR')} · ${escolher}`;
+    bar.innerHTML = `Trial · ${days} dia(s) restantes · cobrança ${afterRow.valorDisplay} após ${ends.toLocaleDateString('pt-BR')} · ${escolher}`;
   } else {
     bar.classList.add('danger');
     bar.innerHTML = `Trial encerrado · cobrança conforme plano · ${escolher}`;
