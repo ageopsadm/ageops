@@ -2949,8 +2949,13 @@ body:has(#login-screen.visible){
           <div id="projMonthLabels" class="month-labels"></div>
         </div>
 
-        <!-- Filtros -->
+        <!-- Filtros + organização -->
         <div class="filter-bar">
+          <span style="font-family:var(--font-m);font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-left:2px">Organizar</span>
+          <select id="fProjView" title="Como organizar a lista" onchange="onProjViewSelectChange()" style="min-width:220px">
+            <option value="flat">Lista (normal)</option>
+            <option value="by_month">Cronológico por mês (agrupado)</option>
+          </select>
           <select id="fCat" onchange="loadProjects()">
             <option value="">Todas categorias</option>
             <option value="Vídeo">Vídeo</option>
@@ -12431,12 +12436,31 @@ function initProjSortFromStorage() {
   sel.dataset.inited = '1';
 }
 
+function initProjViewFromStorage() {
+  const sel = document.getElementById('fProjView');
+  if(!sel) return;
+  if(sel.dataset.inited) return;
+  try {
+    const v = sessionStorage.getItem('age_proj_view');
+    if(v && [...sel.options].some(o => o.value === v)) sel.value = v;
+  } catch(e) {}
+  sel.dataset.inited = '1';
+}
+
 function onProjSortSelectChange() {
   const sel = document.getElementById('fProjSort');
   try {
     if(sel?.value) sessionStorage.setItem('age_proj_sort', sel.value);
   } catch(e) {}
   updateProjSortIcons();
+  renderProjTable();
+}
+
+function onProjViewSelectChange() {
+  const sel = document.getElementById('fProjView');
+  try {
+    if(sel?.value) sessionStorage.setItem('age_proj_view', sel.value);
+  } catch(e) {}
   renderProjTable();
 }
 
@@ -12504,6 +12528,7 @@ async function loadProjects(opts) {
   const tbody = document.getElementById('projBody');
   if(!tbody) return;
   initProjSortFromStorage();
+  initProjViewFromStorage();
   if(!quiet) {
     tbody.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
   }
@@ -12661,6 +12686,7 @@ function renderProjTable() {
   if(!tbody) return;
   let rows = [..._projCache];
   const mode = document.getElementById('fProjSort')?.value || 'date_asc';
+  const view = document.getElementById('fProjView')?.value || 'flat';
 
   rows.sort((a, b) => {
     let c = 0;
@@ -12684,7 +12710,31 @@ function renderProjTable() {
     updateProjSortIcons();
     return;
   }
-  tbody.innerHTML = rows.map((p,i)=>renderProjRow(p,i+1)).join('');
+
+  if(view === 'by_month') {
+    // Agrupar por mês (sem filtrar): insere separadores mantendo a ordenação atual.
+    const monthName = (m) => (MONTHS && MONTHS[m-1]) ? MONTHS[m-1] : `Mês ${m}`;
+    const getMonth = (p) => {
+      const raw = p.payment_date || p.project_date || '';
+      const d = String(raw).slice(0, 10);
+      const m = d.length >= 7 ? parseInt(d.substring(5, 7), 10) : (parseInt(p._sheetMes, 10) || 1);
+      return Math.max(1, Math.min(12, m || 1));
+    };
+    let html = '';
+    let curM = null;
+    let rn = 1;
+    rows.forEach((p) => {
+      const m = getMonth(p);
+      if(curM !== m) {
+        curM = m;
+        html += `<tr class="proj-month-sep"><td colspan="14" style="padding:10px 10px;background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--font-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55)">${monthName(m)}</td></tr>`;
+      }
+      html += renderProjRow(p, rn++);
+    });
+    tbody.innerHTML = html;
+  } else {
+    tbody.innerHTML = rows.map((p,i)=>renderProjRow(p,i+1)).join('');
+  }
   updateProjSortIcons();
   initProjDragDrop();
 }
