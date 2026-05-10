@@ -4166,12 +4166,13 @@ body:has(#login-screen.visible){
         </select>
       </div>
       <div class="form-group" id="projAssignRow" style="grid-column:1/-1;display:none">
-        <label class="form-label">COLABORADOR (missão — cronograma + tarefas)</label>
-        <select id="pAssignColab" style="width:100%">
-          <option value="">— Nenhum —</option>
+        <label class="form-label">COLABORADORES (missão — cronograma + tarefas)</label>
+        <select id="pAssignColabAdd" style="width:100%;margin-bottom:8px" onchange="onProjAssignColabAddChange()">
+          <option value="">— Adicionar colaborador à equipe —</option>
         </select>
+        <div id="pAssignColabChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;margin-bottom:6px"></div>
         <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:4px;line-height:1.35">
-          Ao salvar, cria evento em <b>Cronograma</b> e tarefa para o colaborador (admin/gestor).
+          Escolha um ou mais nomes na lista. Ao salvar, cria um evento em <b>Cronograma</b> e tarefa para <b>cada</b> colaborador (admin/gestor).
         </div>
       </div>
     </div>
@@ -6049,20 +6050,51 @@ function displayNameForUsername(un) {
   return (r && r.name) ? r.name : (un || '—');
 }
 
-/** Preenche o select de colaborador no modal de projeto (missão). */
-async function _populateProjectAssignSelect() {
-  const sel = document.getElementById('pAssignColab');
+/** Usuários escolhidos no modal de projeto (missão → cronograma). */
+let _projModalAssignees = [];
+
+function _clearProjAssignChips() {
+  _projModalAssignees = [];
+  _renderProjAssignChips();
+}
+
+function _renderProjAssignChips() {
+  const box = document.getElementById('pAssignColabChips');
+  if(!box) return;
+  box.innerHTML = _projModalAssignees.map((un, i) => {
+    const nm = displayNameForUsername(un);
+    return `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.35);font-family:var(--font-m);font-size:11px;color:#1e293b">${escHtml(nm)}<button type="button" onclick="_projAssignRemoveAt(${i})" style="border:none;background:transparent;cursor:pointer;padding:0;line-height:1;color:#64748b;font-size:14px" aria-label="Remover">×</button></span>`;
+  }).join('');
+}
+
+function _projAssignRemoveAt(i) {
+  if(i < 0 || i >= _projModalAssignees.length) return;
+  _projModalAssignees.splice(i, 1);
+  _renderProjAssignChips();
+}
+
+function onProjAssignColabAddChange() {
+  const sel = document.getElementById('pAssignColabAdd');
   if(!sel) return;
-  const prev = sel.value;
+  const v = sel.value.trim();
+  if(!v) return;
+  if(!_projModalAssignees.includes(v)) _projModalAssignees.push(v);
+  sel.value = '';
+  _renderProjAssignChips();
+}
+
+/** Preenche o select “adicionar colaborador” no modal de projeto (missão). */
+async function _populateProjectAssignSelect() {
+  const sel = document.getElementById('pAssignColabAdd');
+  if(!sel) return;
   await refreshAgeUsersCache();
   const cid = currentUser?.company_id;
   const cols = _ageUsersCache.filter(u =>
     _normalizeRole(u.role) === 'colaborador' && u.active !== false && u.active !== 'false' &&
     (!cid || !u.company_id || String(u.company_id) === String(cid))
   );
-  sel.innerHTML = '<option value="">— Nenhum —</option>' +
+  sel.innerHTML = '<option value="">— Adicionar colaborador à equipe —</option>' +
     cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('');
-  if(prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 
 function _projPickDateIso(p, keys, allowEmpty) {
@@ -13293,8 +13325,7 @@ function openProjectModal(proj=null) {
   document.getElementById('pNovo').value     = (proj?.is_new_client===true||proj?.is_new_client==='true')?'true':'false';
   document.getElementById('pStatus').value   = proj?.status||'pendente';
   const par = document.getElementById('projAssignRow');
-  const pas = document.getElementById('pAssignColab');
-  if(pas) pas.value = '';
+  _clearProjAssignChips();
   if(par) par.style.display = _userIsAdminLike() ? '' : 'none';
   loadProjectCosts(proj?.id).catch(()=>{});
   openModal('modalProject');
@@ -13444,29 +13475,37 @@ async function saveProject() {
       }
     }
 
-    /* Integração Projetos → Cronograma + Tarefas (missão atribuída por admin/gestor) */
-    const assigneeUser = document.getElementById('pAssignColab')?.value?.trim() || '';
+    /* Integração Projetos → Cronograma + Tarefas (missão: um ou mais colaboradores) */
+    const assignees = Array.isArray(_projModalAssignees) ? [..._projModalAssignees].filter(Boolean) : [];
     let integrationOk = false;
     let integrationTried = false;
-    if(assigneeUser && _userIsAdminLike() && savedId) {
+    let integrationOkCount = 0;
+    if(assignees.length && _userIsAdminLike() && savedId) {
       integrationTried = true;
-      try {
-        const srowOne = Array.isArray(saved) ? saved[0] : saved;
-        const projetoMerged = {
-          ...payload,
-          id: savedId,
-          ...(srowOne && typeof srowOne === 'object' ? srowOne : {})
-        };
-        await integrarProjetoColaboradorAposAtribuicao(projetoMerged, assigneeUser);
-        integrationOk = true;
-      } catch(eInt) {
-        console.warn('[integrarProjetoColaborador]', eInt);
+      const srowOne = Array.isArray(saved) ? saved[0] : saved;
+      const projetoMerged = {
+        ...payload,
+        id: savedId,
+        ...(srowOne && typeof srowOne === 'object' ? srowOne : {})
+      };
+      for(const assigneeUser of assignees) {
+        try {
+          await integrarProjetoColaboradorAposAtribuicao(projetoMerged, assigneeUser);
+          integrationOkCount++;
+        } catch(eInt) {
+          console.warn('[integrarProjetoColaborador]', assigneeUser, eInt);
+        }
       }
+      integrationOk = integrationOkCount === assignees.length;
     }
 
     closeModal('modalProject');
-    if(integrationOk) {
-      toast('✅ Colaborador atribuído — cronograma e tarefa criados!', 'ok');
+    if(integrationOk && assignees.length) {
+      toast(assignees.length > 1
+        ? `✅ ${assignees.length} colaboradores — eventos no cronograma e tarefas criados!`
+        : '✅ Colaborador atribuído — cronograma e tarefa criados!', 'ok');
+    } else if(integrationTried && integrationOkCount > 0 && !integrationOk) {
+      toast(`Projeto salvo. Integração parcial: ${integrationOkCount}/${assignees.length} colaboradores (cronograma/tarefas). Verifique permissões ou duplicados.`, 'warn');
     } else if(integrationTried && !integrationOk) {
       toast('Projeto salvo, mas falhou a integração com cronograma/tarefas. Verifique permissões no Supabase.', 'warn');
     } else {
@@ -18708,7 +18747,7 @@ async function syncAssignedTaskFromCalendar(saved, assignTo, title, dueDate, not
 
 /**
  * Integração Projetos → age_team_calendar (+ tarefa atribuída + age_tasks).
- * Chamado após salvar projeto quando admin/gestor escolhe um colaborador em #pAssignColab.
+ * Chamado após salvar projeto quando admin/gestor escolhe colaborador(es) em #pAssignColabAdd / chips.
  */
 async function criarEventoCronograma(projeto, colaboradorNome, dataInicio, dataFim) {
   const cid = currentUser?.company_id || (typeof currentCompanyId !== 'undefined' ? currentCompanyId : null);
