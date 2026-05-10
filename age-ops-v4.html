@@ -1420,6 +1420,16 @@ select.login-input{cursor:pointer}
   flex-wrap: wrap; gap: 8px;
 }
 .cf-year-lucro-strip strong { font-family: var(--font-data); font-size: 15px; font-weight: 700; }
+.cf-balanco-period-bar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 16px; padding: 12px 14px;
+  border: 1px solid rgba(0,0,0,.1); border-radius: 10px;
+  background: linear-gradient(135deg, #f8fafc, #fff);
+}
+.cf-balanco-period-lbl {
+  font-family: var(--font-h); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: #475569;
+}
 .cf-type-badge {
   display: inline-block; font-family: var(--font-h); font-size: 8px; font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;
@@ -2423,6 +2433,13 @@ body:has(#login-screen.visible){
           <label class="cf-label">Descrição</label>
           <input type="text" id="cfFormDesc" class="cf-input" placeholder="Ex.: Aluguel, honorários, recebimento cliente X">
         </div>
+        <div id="cfFormRecorrenteWrap" style="display:none;padding:10px;border-radius:8px;border:1px solid rgba(37,99,235,.2);background:#eff6ff">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-family:var(--font-m);font-size:12px;color:#1e40af;line-height:1.45">
+            <input type="checkbox" id="cfFormRecorrente" onchange="cfOnRecorrenteToggle()" style="margin-top:3px;accent-color:#2563eb">
+            <span><strong>Custo fixo em todo o ano</strong> — o mesmo valor entra em <strong>cada mês</strong> do ano selecionado (não só em um mês).</span>
+          </label>
+          <div style="font-family:var(--font-m);font-size:9px;color:#64748b;margin-top:8px">Desmarque para destinar o custo apenas ao mês escolhido abaixo.</div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <div>
             <label class="cf-label">Qtd</label>
@@ -2957,6 +2974,16 @@ body:has(#login-screen.visible){
             <option value="9">Setembro</option><option value="10">Outubro</option>
             <option value="11">Novembro</option><option value="12">Dezembro</option>
           </select>
+          <span style="font-family:var(--font-m);font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-left:4px">Ordenar</span>
+          <select id="fProjSort" title="Ordem da tabela" onchange="onProjSortSelectChange()" style="min-width:220px">
+            <option value="date_asc">Data · cronológico (antigo → novo)</option>
+            <option value="date_desc">Data · mais recente primeiro</option>
+            <option value="fat_desc">Faturamento · maior → menor</option>
+            <option value="fat_asc">Faturamento · menor → maior</option>
+            <option value="cost_asc">Custo · menor → maior</option>
+            <option value="cost_desc">Custo · maior → menor</option>
+            <option value="sheet_asc">Ordem manual / planilha (arrastar)</option>
+          </select>
           <input type="text" id="fSearch" placeholder="🔍 Cliente, projeto ou segmento..." oninput="loadProjects()">
           <button class="btn btn-ghost btn-sm" onclick="clearProjFilters()"><i class="fas fa-times"></i> Limpar</button>
         </div>
@@ -2973,8 +3000,8 @@ body:has(#login-screen.visible){
               <th style="width:22px;text-align:center">#</th>
               <th>CLIENTE</th>
               <th>PROJETO</th>
-              <th style="width:110px">DATA PGTO</th>
-              <th class="sortable" onclick="sortProj('total_value')" style="width:110px">FATURAMENTO <i class="fas fa-sort" id="siVal" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
+              <th class="sortable" onclick="sortProjCol('date')" style="width:110px">DATA PGTO <i class="fas fa-sort" id="siDate" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
+              <th class="sortable" onclick="sortProjCol('fat')" style="width:110px">FATURAMENTO <i class="fas fa-sort" id="siVal" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
               <th style="width:110px">CUSTO</th>
               <th style="width:70px">MÊS</th>
               <th style="width:90px">SEGMENTO</th>
@@ -3077,6 +3104,19 @@ body:has(#login-screen.visible){
         </div>
 
         <div id="cf-balanco">
+          <div class="cf-balanco-period-bar">
+            <span class="cf-balanco-period-lbl"><i class="fas fa-calendar-alt" style="opacity:.7;margin-right:6px"></i>Balanço mensal — escolha o período</span>
+            <select id="cfMesBalanco" class="cf-select" title="Mês do balanço" onchange="cfApplyPeriodFromPanel()">
+              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+              <option value="3">Março</option><option value="4">Abril</option>
+              <option value="5">Maio</option><option value="6">Junho</option>
+              <option value="7">Julho</option><option value="8">Agosto</option>
+              <option value="9">Setembro</option><option value="10">Outubro</option>
+              <option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+            <select id="cfAnoBalanco" class="cf-select" title="Ano do balanço" onchange="cfApplyPeriodFromPanel()"></select>
+            <span style="font-family:var(--font-m);font-size:9px;color:#94a3b8;max-width:260px;line-height:1.35">O mesmo período vale para custos fixos e para o gráfico anual do ano selecionado no topo.</span>
+          </div>
           <div id="cfHeroMes"></div>
           <div class="cf-kpi-row" id="cfKpiBalanco"></div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
@@ -3102,6 +3142,7 @@ body:has(#login-screen.visible){
         </div>
 
         <div id="cf-fixos" style="display:none">
+          <p style="font-family:var(--font-m);font-size:10px;color:#64748b;margin:0 0 12px;line-height:1.45;max-width:720px">Use o <b>mês e ano no topo da página</b> para o período. Marque <b>todo o ano</b> no lançamento para custos que repetem em todos os meses.</p>
           <div class="cf-kpi-row" id="cfKpiFixos"></div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
             <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'fixos')"><i class="fas fa-plus"></i> Custo fixo</button>
@@ -3112,6 +3153,7 @@ body:has(#login-screen.visible){
                 <tr>
                   <th>Descrição</th>
                   <th>Categoria</th>
+                  <th>Vigência</th>
                   <th>Valor (R$)</th>
                   <th style="text-align:right">Ações</th>
                 </tr>
@@ -3131,18 +3173,16 @@ body:has(#login-screen.visible){
               <thead>
                 <tr>
                   <th>Mês</th>
-                  <th>Rec. projetos</th>
-                  <th>Custo proj.</th>
-                  <th>Custos empresa (CF)</th>
-                  <th>Proj. manual Δ</th>
-                  <th>Integrado</th>
+                  <th>Receitas</th>
+                  <th>Custos totais</th>
+                  <th>Lucro líquido</th>
                 </tr>
               </thead>
               <tbody id="cfTbodyProjMes"></tbody>
             </table>
           </div>
-          <p style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin:-4px 0 14px;line-height:1.45;max-width:720px">Integrado = (receita − custo dos projetos) − custos fixos e variáveis lançados no fluxo + saldo das linhas de projeção manual. Projetos usam o mesmo mês/ano da aba Projetos.</p>
-          <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.12em;margin:18px 0 8px">DETALHE — PROJEÇÕES</div>
+          <p style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin:-4px 0 14px;line-height:1.45;max-width:720px">Os valores são os mesmos do gráfico anual e do balanço: receitas e custos (projetos + fluxo), incluindo custos fixos <b>por mês</b> ou <b>recorrentes em todo o ano</b>.</p>
+          <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.12em;margin:18px 0 8px">LINHAS MANUAIS DE CENÁRIO (OPCIONAL)</div>
           <div class="cf-table-wrap">
             <table class="cf-table cf-proj-table" id="cfTableProj">
               <thead>
@@ -12365,23 +12405,78 @@ function renderDashCharts(chartProjects) {
 ═══════════════════════════════════════════ */
 let _projCache = [];
 let _projAllCache = [];
-let _projSort = {field:'sheet_order', dir:'asc'}; /* ordem da planilha por padrão */
 
-function clearProjFilters() {
-  ['fCat','fStatus','fMonth','fSearch'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  loadProjects();
+/** Timestamp para ordenação por data: pagamento → data do projeto → mês da planilha. */
+function _projRefTime(p) {
+  if(!p) return 0;
+  const raw = p.payment_date || p.project_date || '';
+  const s = String(raw).slice(0, 10);
+  if(s && /^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const t = new Date(s + 'T12:00:00').getTime();
+    if(!isNaN(t)) return t;
+  }
+  const m = Math.max(1, Math.min(12, parseInt(p._sheetMes, 10) || 1));
+  const yRef = new Date().getFullYear();
+  return new Date(yRef, m - 1, 15, 12, 0, 0).getTime();
 }
 
-function sortProj(field) {
-  if(_projSort.field===field) _projSort.dir = _projSort.dir==='asc'?'desc':'asc';
-  else { _projSort.field=field; _projSort.dir='desc'; }
+function initProjSortFromStorage() {
+  const sel = document.getElementById('fProjSort');
+  if(!sel) return;
+  if(sel.dataset.inited) return;
+  try {
+    const s = sessionStorage.getItem('age_proj_sort');
+    if(s && [...sel.options].some(o => o.value === s)) sel.value = s;
+  } catch(e) {}
+  sel.dataset.inited = '1';
+}
+
+function onProjSortSelectChange() {
+  const sel = document.getElementById('fProjSort');
+  try {
+    if(sel?.value) sessionStorage.setItem('age_proj_sort', sel.value);
+  } catch(e) {}
   updateProjSortIcons();
   renderProjTable();
 }
 
+/** Alterna ordenação ao clicar nos cabeçalhos Data ou Faturamento. */
+function sortProjCol(kind) {
+  const sel = document.getElementById('fProjSort');
+  if(!sel) return;
+  if(kind === 'date') {
+    if(sel.value === 'date_asc') sel.value = 'date_desc';
+    else if(sel.value === 'date_desc') sel.value = 'date_asc';
+    else sel.value = 'date_asc';
+  } else if(kind === 'fat') {
+    if(sel.value === 'fat_desc') sel.value = 'fat_asc';
+    else if(sel.value === 'fat_asc') sel.value = 'fat_desc';
+    else sel.value = 'fat_desc';
+  }
+  onProjSortSelectChange();
+}
+
 function updateProjSortIcons() {
-  const sv = document.getElementById('siVal');
-  if(sv)  { sv.className='fas fa-sort'+((_projSort.field==='total_value')?' fa-sort-amount-'+_projSort.dir:''); sv.style.color=_projSort.field==='total_value'?'var(--acc)':'rgba(255,255,255,.25)'; }
+  const v = document.getElementById('fProjSort')?.value || 'date_asc';
+  const siVal = document.getElementById('siVal');
+  const siDate = document.getElementById('siDate');
+  const acc = 'var(--acc)';
+  const dim = 'rgba(255,255,255,.25)';
+  if(siDate) {
+    const on = v === 'date_asc' || v === 'date_desc';
+    siDate.className = 'fas fa-sort' + (on ? ' fa-sort-amount-' + (v === 'date_desc' ? 'down' : 'up') : '');
+    siDate.style.color = on ? acc : dim;
+  }
+  if(siVal) {
+    const on = v === 'fat_asc' || v === 'fat_desc';
+    siVal.className = 'fas fa-sort' + (on ? ' fa-sort-amount-' + (v === 'fat_desc' ? 'down' : 'up') : '');
+    siVal.style.color = on ? acc : dim;
+  }
+}
+
+function clearProjFilters() {
+  ['fCat','fStatus','fMonth','fSearch'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  loadProjects();
 }
 
 /* Controla se o auto-sync já rodou nesta sessão */
@@ -12408,6 +12503,7 @@ async function loadProjects(opts) {
   const quiet = opts && opts.quiet === true;
   const tbody = document.getElementById('projBody');
   if(!tbody) return;
+  initProjSortFromStorage();
   if(!quiet) {
     tbody.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
   }
@@ -12564,25 +12660,32 @@ function renderProjTable() {
   const tbody = document.getElementById('projBody');
   if(!tbody) return;
   let rows = [..._projCache];
-  rows.sort((a,b)=>{
-    let va,vb;
-    if(_projSort.field==='payment_date'){
-      va=new Date(a.payment_date||a.project_date||'2000-01-01');
-      vb=new Date(b.payment_date||b.project_date||'2000-01-01');
-    } else if(_projSort.field==='total_value') {
-      va=parseFloat(a.total_value)||0; vb=parseFloat(b.total_value)||0;
+  const mode = document.getElementById('fProjSort')?.value || 'date_asc';
+
+  rows.sort((a, b) => {
+    let c = 0;
+    if(mode === 'date_asc' || mode === 'date_desc') {
+      c = _projRefTime(a) - _projRefTime(b);
+      if(mode === 'date_desc') c = -c;
+    } else if(mode === 'fat_asc' || mode === 'fat_desc') {
+      c = (parseFloat(a.total_value) || 0) - (parseFloat(b.total_value) || 0);
+      if(mode === 'fat_desc') c = -c;
+    } else if(mode === 'cost_asc' || mode === 'cost_desc') {
+      c = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0);
+      if(mode === 'cost_desc') c = -c;
     } else {
-      /* ordem original da planilha */
-      va = a._sheetIdx ?? 999; vb = b._sheetIdx ?? 999;
+      c = (a._sheetIdx ?? 999) - (b._sheetIdx ?? 999);
     }
-    return _projSort.dir==='asc'?(va>vb?1:-1):(va<vb?1:-1);
+    return c;
   });
 
   if(!rows.length){
     tbody.innerHTML=`<tr><td colspan="14" class="table-empty">Nenhum projeto. Clique em "+ Novo Projeto" para adicionar.</td></tr>`;
+    updateProjSortIcons();
     return;
   }
   tbody.innerHTML = rows.map((p,i)=>renderProjRow(p,i+1)).join('');
+  updateProjSortIcons();
   initProjDragDrop();
 }
 
@@ -13160,6 +13263,11 @@ function initProjDragDrop() {
       };
     });
 
+    const fs = document.getElementById('fProjSort');
+    if(fs) {
+      fs.value = 'sheet_asc';
+      try { sessionStorage.setItem('age_proj_sort', 'sheet_asc'); } catch(e) {}
+    }
     renderProjTable();
     toast('Ordem atualizada');
   });
@@ -17717,24 +17825,37 @@ function _cfSyntheticProjectRows(mes, ano) {
   return rows;
 }
 
-/** Soma custos fixos + variáveis lançados no fluxo (age_cashflow), sem duplicar projetos. */
-function _cfEmpresaCustosCfMes(rows, mes, ano) {
-  let s = 0;
-  (rows || []).forEach(r => {
-    if(parseInt(r.mes, 10) !== mes || parseInt(r.ano, 10) !== ano) return;
-    const t = String(r.tipo);
-    if(t === 'custo_fixo' || t === 'custo_variavel') s += _cfVal(r);
-  });
-  return s;
+/** Custo fixo marcado como “todo o ano” no cadastro (coluna recorrente_mensal no Supabase). */
+function _cfIsRecorrente(r) {
+  if(!r) return false;
+  const x = r.recorrente_mensal;
+  return x === true || x === 'true' || x === 't' || x === 1 || x === '1';
 }
 
-/** Lucro integrado do mês na aba Projeção: net projetos − custos empresa (CF) + net projeção manual. */
-function _cfLucroIntegradoMes(rows, mes, ano, byM) {
-  const pf = _cfProjFinanceMonth(mes, ano);
-  const emp = _cfEmpresaCustosCfMes(rows, mes, ano);
-  const nm = byM[mes] || { rec: 0, cst: 0 };
-  const netMan = nm.rec - nm.cst;
-  return (pf.rec - pf.cst) - emp + netMan;
+/** Totais do fluxo (CF) para um mês: receitas e custos (fixos por mês ou recorrentes no ano + variáveis). */
+function _cfCashflowMonthTotals(rows, mes, ano) {
+  let rSum = 0;
+  let cSum = 0;
+  (rows || []).forEach(r => {
+    if(parseInt(r.ano, 10) !== ano) return;
+    const t = String(r.tipo);
+    const v = _cfVal(r);
+    if(t === 'receita') {
+      if(parseInt(r.mes, 10) === mes) rSum += v;
+    } else if(t === 'custo_variavel') {
+      if(parseInt(r.mes, 10) === mes) cSum += v;
+    } else if(t === 'custo_fixo') {
+      if(_cfIsRecorrente(r)) cSum += v;
+      else if(parseInt(r.mes, 10) === mes) cSum += v;
+    }
+  });
+  return { rSum, cSum };
+}
+
+/** Soma custos fixos + variáveis lançados no fluxo para o mês (fixos recorrentes contam em todo mês do ano). */
+function _cfEmpresaCustosCfMes(rows, mes, ano) {
+  const { cSum } = _cfCashflowMonthTotals(rows, mes, ano);
+  return cSum;
 }
 
 /**
@@ -17817,6 +17938,16 @@ function _cfCatLabel(c) {
   return m[c] || c || '—';
 }
 
+function _cfFixoVigenciaHtml(r) {
+  const ano = parseInt(r.ano, 10);
+  const anoStr = ano >= 1990 && ano <= 2100 ? String(ano) : '—';
+  if(_cfIsRecorrente(r)) {
+    return `<span style="font-family:var(--font-m);font-size:10px;color:#2563eb;font-weight:600">Todo o ano ${escHtml(anoStr)}</span>`;
+  }
+  const m = Math.max(1, Math.min(12, parseInt(r.mes, 10) || 1));
+  return `<span style="font-family:var(--font-m);font-size:11px">${escHtml(MONTHS[m - 1])} ${escHtml(anoStr)}</span>`;
+}
+
 function _cfVal(r) {
   const t = parseFloat(r.valor_total);
   if(!isNaN(t)) return t;
@@ -17842,6 +17973,11 @@ function cfPopulateHeaderYear() {
     anoSel.innerHTML = h;
     anoSel.dataset.ready = '1';
   }
+  const anoBal = document.getElementById('cfAnoBalanco');
+  if(anoBal && !anoBal.dataset.ready && anoSel) {
+    anoBal.innerHTML = anoSel.innerHTML;
+    anoBal.dataset.ready = '1';
+  }
   const mesEl = document.getElementById('cfMes');
   const anoEl = document.getElementById('cfAno');
   const now = new Date();
@@ -17853,6 +17989,38 @@ function cfPopulateHeaderYear() {
     anoEl.value = String(Math.max(2021, Math.min(2030, now.getFullYear())));
     anoEl.dataset.cfInit = '1';
   }
+}
+
+function cfApplyPeriodFromPanel() {
+  const m = document.getElementById('cfMesBalanco');
+  const a = document.getElementById('cfAnoBalanco');
+  const mH = document.getElementById('cfMes');
+  const aH = document.getElementById('cfAno');
+  if(m && mH) mH.value = m.value;
+  if(a && aH) aH.value = a.value;
+  loadCashflow();
+}
+
+function cfSyncBalancoPanelFromHeader() {
+  const m = document.getElementById('cfMesBalanco');
+  const a = document.getElementById('cfAnoBalanco');
+  const mH = document.getElementById('cfMes');
+  const aH = document.getElementById('cfAno');
+  if(m && mH) m.value = mH.value;
+  if(a && aH) {
+    if(!a.dataset.ready && aH.innerHTML) {
+      a.innerHTML = aH.innerHTML;
+      a.dataset.ready = '1';
+    }
+    a.value = aH.value;
+  }
+}
+
+function cfOnRecorrenteToggle() {
+  const chk = document.getElementById('cfFormRecorrente');
+  const mes = document.getElementById('cfFormMes');
+  if(!chk || !mes) return;
+  mes.disabled = chk.checked;
 }
 
 function cfFillFormSelects() {
@@ -17900,6 +18068,7 @@ function cfRowHtml(r, ctx) {
     return `<tr>
       <td>${escHtml(r.descricao || '—')}</td>
       <td>${escHtml(_cfCatLabel(r.categoria))}</td>
+      <td>${_cfFixoVigenciaHtml(r)}</td>
       <td style="font-weight:600">${fmtBRL(_cfVal(r))}</td>
       <td style="white-space:nowrap;text-align:right">${ed} ${del}</td>
     </tr>`;
@@ -17962,7 +18131,7 @@ function renderCustosFixos(fixosMes, mes, ano) {
   if(tbF) {
     tbF.innerHTML = fix.length
       ? fix.map(r => cfRowHtml(r, 'fixos')).join('')
-      : '<tr><td colspan="4" style="color:#64748b;padding:20px">Nenhum custo fixo neste mês.</td></tr>';
+      : '<tr><td colspan="5" style="color:#64748b;padding:20px">Nenhum custo fixo neste mês.</td></tr>';
   }
 }
 
@@ -18010,60 +18179,35 @@ function renderSummaryCards(receitas, variaveis, fixosMes, mes, ano) {
 }
 
 function renderCfProjecaoFromYear(ano) {
-  const rows = _cfYearRows || [];
   const y = parseInt(ano, 10) || new Date().getFullYear();
+  const rows = _cfYearRows || [];
   const proj = rows.filter(r => parseInt(r.ano, 10) === y && String(r.tipo) === 'projecao');
+  const series = _cfBuildYearSeries(y);
+  const { rec, cust, lucro, lucroAcumulado } = series;
+  let sumRec = 0;
+  let sumCust = 0;
+  for(let i = 0; i < 12; i++) {
+    sumRec += rec[i];
+    sumCust += cust[i];
+  }
 
-  const byM = {};
-  for(let m = 1; m <= 12; m++) byM[m] = { rec: 0, cst: 0 };
-  proj.forEach(r => {
-    const m = parseInt(r.mes, 10);
-    if(m < 1 || m > 12) return;
-    const v = _cfVal(r);
-    const cat = String(r.categoria || '');
-    if(['administrativo', 'pessoal', 'marketing', 'financeiro'].includes(cat)) byM[m].cst += v;
-    else byM[m].rec += v;
-  });
-  let yRec = 0, yCst = 0;
-  for(let m = 1; m <= 12; m++) {
-    yRec += byM[m].rec;
-    yCst += byM[m].cst;
-  }
-  const salP = yRec - yCst;
-  let yRecProj = 0, yCstProj = 0, intAno = 0;
-  for(let m = 1; m <= 12; m++) {
-    const pf = _cfProjFinanceMonth(m, y);
-    yRecProj += pf.rec;
-    yCstProj += pf.cst;
-    intAno += _cfLucroIntegradoMes(rows, m, y, byM);
-  }
   const kpiP = document.getElementById('cfKpiProj');
   if(kpiP) {
     kpiP.innerHTML = [
-      { l: `Faturamento projetos (${y})`, v: yRecProj, c: 'cf-neu' },
-      { l: `Custos projetos (${y})`, v: yCstProj, c: 'cf-neg' },
-      { l: 'Projeção manual (+)', v: yRec, c: 'cf-neu' },
-      { l: 'Projeção manual (−)', v: yCst, c: 'cf-neg' },
-      { l: 'Lucro só linhas proj. manual', v: salP, c: salP >= 0 ? 'cf-pos' : 'cf-neg' },
-      { l: 'Lucro integrado (ano)', v: intAno, c: intAno >= 0 ? 'cf-pos' : 'cf-neg' }
+      { l: `Receitas no ano (${y})`, v: sumRec, c: 'cf-neu' },
+      { l: `Custos no ano (${y})`, v: sumCust, c: 'cf-neg' },
+      { l: `Lucro líquido (${y})`, v: lucroAcumulado, c: lucroAcumulado >= 0 ? 'cf-pos' : 'cf-neg' }
     ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
   }
   const tbPM = document.getElementById('cfTbodyProjMes');
   if(tbPM) {
     tbPM.innerHTML = MONTHS.map((name, i) => {
-      const m = i + 1;
-      const pf = _cfProjFinanceMonth(m, y);
-      const emp = _cfEmpresaCustosCfMes(rows, m, y);
-      const netMan = byM[m].rec - byM[m].cst;
-      const integ = _cfLucroIntegradoMes(rows, m, y, byM);
-      const pos = integ >= 0;
+      const pos = lucro[i] >= 0;
       return `<tr>
         <td>${name}</td>
-        <td>${fmtBRL(pf.rec)}</td>
-        <td>${fmtBRL(pf.cst)}</td>
-        <td>${fmtBRL(emp)}</td>
-        <td style="color:${netMan >= 0 ? '#86efac' : '#fca5a5'}">${fmtBRL(netMan)}</td>
-        <td style="font-weight:700;color:${pos ? '#16a34a' : '#dc2626'}">${fmtBRL(integ)}</td>
+        <td>${fmtBRL(rec[i])}</td>
+        <td>${fmtBRL(cust[i])}</td>
+        <td style="font-weight:700;color:${pos ? '#16a34a' : '#dc2626'}">${fmtBRL(lucro[i])}</td>
       </tr>`;
     }).join('');
   }
@@ -18071,11 +18215,11 @@ function renderCfProjecaoFromYear(ano) {
   if(tbP) {
     tbP.innerHTML = proj.length
       ? proj.sort((a, b) => (parseInt(a.mes, 10) || 0) - (parseInt(b.mes, 10) || 0)).map(r => cfRowHtml(r, 'projecao')).join('')
-      : '<tr><td colspan="5" style="color:#64748b;padding:20px">Nenhuma linha de projeção para este ano.</td></tr>';
+      : '<tr><td colspan="5" style="color:#64748b;padding:20px">Nenhuma linha extra de cenário (tipo projeção). Opcional para simulações.</td></tr>';
   }
 }
 
-/** Séries mensais do ano (mesmo critério do lucro líquido no KPI do mês). */
+/** Séries mensais do ano — mesmo critério do balanço e do gráfico (CF + projetos; fixos recorrentes em todos os meses). */
 function _cfBuildYearSeries(ano) {
   const year = parseInt(ano, 10) || new Date().getFullYear();
   const rows = _cfYearRows || [];
@@ -18084,18 +18228,9 @@ function _cfBuildYearSeries(ano) {
   const lucro = [];
   let lucroAcumulado = 0;
   for(let m = 1; m <= 12; m++) {
-    const slice = rows.filter(r =>
-      parseInt(r.mes, 10) === m &&
-      parseInt(r.ano, 10) === year &&
-      ['receita', 'custo_fixo', 'custo_variavel'].includes(String(r.tipo))
-    );
-    let rSum = 0;
-    let cSum = 0;
-    slice.forEach(r => {
-      const v = _cfVal(r);
-      if(String(r.tipo) === 'receita') rSum += v;
-      else cSum += v;
-    });
+    const cm = _cfCashflowMonthTotals(rows, m, year);
+    let rSum = cm.rSum;
+    let cSum = cm.cSum;
     const pf = _cfProjFinanceMonth(m, year);
     rSum += pf.rec;
     cSum += pf.cst;
@@ -18254,7 +18389,8 @@ async function loadCashflow() {
   }
 
   const fixosMes = (fixos || []).filter(r =>
-    parseInt(r.mes, 10) === mes && parseInt(r.ano, 10) === ano
+    parseInt(r.ano, 10) === ano &&
+    (_cfIsRecorrente(r) || parseInt(r.mes, 10) === mes)
   );
 
   try {
@@ -18271,6 +18407,7 @@ async function loadCashflow() {
   renderCfProjecaoFromYear(ano);
   renderCfYearChart(ano);
   renderCfYearLucroStrip(ano);
+  cfSyncBalancoPanelFromHeader();
 }
 
 function openCfModal(id, context) {
@@ -18327,6 +18464,20 @@ function openCfModal(id, context) {
     document.getElementById('cfFormDRec').value = '';
     cfRecalcTotal();
   }
+
+  const fid = document.getElementById('cfFormId')?.value?.trim();
+  const editRow = fid ? _cfYearRows.find(x => String(x.id) === String(fid)) : null;
+  const recWrap = document.getElementById('cfFormRecorrenteWrap');
+  const recChk = document.getElementById('cfFormRecorrente');
+  if(recWrap) recWrap.style.display = ctx === 'fixos' ? '' : 'none';
+  if(recChk) {
+    if(ctx === 'fixos') {
+      recChk.checked = !!(editRow && _cfIsRecorrente(editRow));
+      cfOnRecorrenteToggle();
+    } else {
+      recChk.checked = false;
+    }
+  }
   openModal('modalCashflow');
 }
 
@@ -18338,12 +18489,15 @@ async function saveCfRow() {
   let tipo = document.getElementById('cfFormTipo')?.value;
   if(ctx === 'fixos') tipo = 'custo_fixo';
   if(ctx === 'projecao') tipo = 'projecao';
-  const mes = parseInt(document.getElementById('cfFormMes')?.value, 10) || 1;
+  let mes = parseInt(document.getElementById('cfFormMes')?.value, 10) || 1;
   const ano = parseInt(document.getElementById('cfFormAno')?.value, 10) || 2026;
   const q = parseFloat(document.getElementById('cfFormQtd')?.value) || 0;
   const u = parseFloat(document.getElementById('cfFormVUnit')?.value) || 0;
   let vt = parseFloat(document.getElementById('cfFormVTotal')?.value);
   if(isNaN(vt)) vt = q * u;
+
+  const recorrenteFixo = tipo === 'custo_fixo' && !!document.getElementById('cfFormRecorrente')?.checked;
+  if(recorrenteFixo) mes = 1;
 
   const payload = {
     mes,
@@ -18360,15 +18514,48 @@ async function saveCfRow() {
     data_recebimento: document.getElementById('cfFormDRec')?.value || null,
     updated_at: Date.now()
   };
+  if(tipo === 'custo_fixo') payload.recorrente_mensal = recorrenteFixo;
 
   try {
     if(id) {
-      await apiPatch('age_cashflow', id, payload);
-      toast('Lançamento atualizado.', 'ok');
+      let warned = false;
+      try {
+        await apiPatch('age_cashflow', id, payload);
+      } catch(e1) {
+        if(tipo === 'custo_fixo' && payload.recorrente_mensal !== undefined) {
+          delete payload.recorrente_mensal;
+          await apiPatch('age_cashflow', id, payload);
+          warned = true;
+        } else throw e1;
+      }
+      try {
+        toast(
+          warned
+            ? 'Atualizado. Rode supabase/sql/age_cashflow_recorrente_mensal.sql no Supabase para gravar “todo o ano”.'
+            : 'Lançamento atualizado.',
+          warned ? 'warn' : 'ok'
+        );
+      } catch(_) {}
     } else {
       payload.created_at = Date.now();
-      await apiPost('age_cashflow', payload);
-      toast('Lançamento criado.', 'ok');
+      let warned = false;
+      try {
+        await apiPost('age_cashflow', payload);
+      } catch(e1) {
+        if(tipo === 'custo_fixo' && payload.recorrente_mensal !== undefined) {
+          delete payload.recorrente_mensal;
+          await apiPost('age_cashflow', payload);
+          warned = true;
+        } else throw e1;
+      }
+      try {
+        toast(
+          warned
+            ? 'Criado. Rode supabase/sql/age_cashflow_recorrente_mensal.sql no Supabase para gravar “todo o ano”.'
+            : 'Lançamento criado.',
+          warned ? 'warn' : 'ok'
+        );
+      } catch(_) {}
     }
     closeModal('modalCashflow');
     await loadCashflow();
