@@ -7268,6 +7268,46 @@ async function initApp() {
   /* Pós-login já tratado por applyLoginSessionFromRow; hook para extensões futuras */
 }
 
+/** Auto-login gustavowng: localhost, file:// ou opt-in localStorage ageops_autologin_gustavo=1. Desligar: ageops_disable_autologin=1 ou logout nesta aba. */
+function _ageAllowAutologinGustavo() {
+  try {
+    if(localStorage.getItem('ageops_disable_autologin') === '1') return false;
+    if(sessionStorage.getItem('age_skip_autologin_gustavo') === '1') return false;
+    const h = (location.hostname || '').toLowerCase();
+    if(h === 'localhost' || h === '127.0.0.1') return true;
+    if(String(location.protocol || '') === 'file:') return true;
+    if(localStorage.getItem('ageops_autologin_gustavo') === '1') return true;
+    return false;
+  } catch(e) {
+    return false;
+  }
+}
+
+async function tryAutoLoginGustavowng() {
+  if(!_ageAllowAutologinGustavo()) return false;
+  const userKey = 'gustavowng';
+  const pass = USERS[userKey]?.pass;
+  if(!pass) return false;
+  try {
+    const auth = await authenticateDatabase(userKey, pass);
+    if(!auth.ok) return false;
+    let sessionRow = auth.row;
+    try {
+      sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, pass);
+    } catch(e) {
+      console.warn('[autologin bootstrap]', e);
+    }
+    const res = await applyLoginSessionFromRow(sessionRow);
+    if(!res.ok) return false;
+    try { await initApp(); } catch(_) {}
+    try { sessionStorage.removeItem('age_skip_autologin_gustavo'); } catch(_) {}
+    return true;
+  } catch(e) {
+    console.warn('[autologin gustavo]', e);
+    return false;
+  }
+}
+
 async function handleLogin() {
   const emailEl = document.getElementById('login-email');
   const passEl = document.getElementById('login-password');
@@ -7326,6 +7366,7 @@ async function handleLogin() {
 
     const res = await applyLoginSessionFromRow(sessionRow);
     if(!res.ok) showLoginError(res.msg || 'Acesso negado.');
+    else try { sessionStorage.removeItem('age_skip_autologin_gustavo'); } catch(_) {}
   } catch(err) {
     console.error('[login]', err);
     showLoginError(err?.message || 'Erro ao fazer login.');
@@ -7360,6 +7401,7 @@ function emergencyReset() {
 }
 
 async function doLogout() {
+  try { sessionStorage.setItem('age_skip_autologin_gustavo', '1'); } catch(e) {}
   const remembered = localStorage.getItem('ageops_remember');
   stopNotificationsPolling();
   _notifCache = [];
@@ -21426,13 +21468,24 @@ async function _ageBootstrap() {
   try {
     const autoLogado = await checkRememberedSession();
     if(!autoLogado) {
-      mostrarTelaLogin();
-      preencherEmailSalvo();
+      const gustavoOk = await tryAutoLoginGustavowng();
+      if(!gustavoOk) {
+        mostrarTelaLogin();
+        preencherEmailSalvo();
+      }
     }
   } catch(e) {
     console.warn('[AGE] bootstrap sessão:', e);
-    mostrarTelaLogin();
-    preencherEmailSalvo();
+    try {
+      const gustavoOk = await tryAutoLoginGustavowng();
+      if(!gustavoOk) {
+        mostrarTelaLogin();
+        preencherEmailSalvo();
+      }
+    } catch(_) {
+      mostrarTelaLogin();
+      preencherEmailSalvo();
+    }
   }
   _ageInit();
 }
