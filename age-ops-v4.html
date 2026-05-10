@@ -1438,6 +1438,8 @@ select.login-input{cursor:pointer}
 }
 .cf-table td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.05); color: #333; vertical-align: middle; }
 .cf-table tr:hover td { background: #fafafa; }
+.cf-table tr.cf-row-from-proj td { background: #f8fafc; }
+.cf-table tr.cf-row-from-proj:hover td { background: #f1f5f9; }
 .cf-table .total-row td { font-weight: 700; background: #f5f5f5; border-top: 2px solid rgba(0,0,0,0.1); }
 .cf-table .total-row td:first-child { font-family: var(--font-h); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
 
@@ -3056,7 +3058,7 @@ body:has(#login-screen.visible){
         </div>
 
         <div class="cf-chart-wrap">
-          <div class="cf-chart-title">VISÃO ANUAL (ANO DO SELETOR)</div>
+          <div class="cf-chart-title">VISÃO ANUAL · RECEITAS E CUSTOS INCLUEM PROJETOS (ABA PROJETOS) + LANÇAMENTOS CF</div>
           <div class="cf-chart-canvas">
             <canvas id="chartCashflowYear"></canvas>
           </div>
@@ -3096,6 +3098,7 @@ body:has(#login-screen.visible){
               <tbody id="cfTbodyBalanco"></tbody>
             </table>
           </div>
+          <p style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:10px;line-height:1.45;max-width:720px">Linhas com origem <b>Projetos</b> vêm de <code style="font-size:9px">age_projects</code> (aba Projetos). Não duplique o mesmo custo como custo variável manual.</p>
         </div>
 
         <div id="cf-fixos" style="display:none">
@@ -3127,12 +3130,18 @@ body:has(#login-screen.visible){
             <table class="cf-proj-table" id="cfTableProjMes">
               <thead>
                 <tr>
-                  <th>Mês</th><th>Receitas proj.</th><th>Custos proj.</th><th>Saldo proj.</th>
+                  <th>Mês</th>
+                  <th>Rec. projetos</th>
+                  <th>Custo proj.</th>
+                  <th>Custos empresa (CF)</th>
+                  <th>Proj. manual Δ</th>
+                  <th>Integrado</th>
                 </tr>
               </thead>
               <tbody id="cfTbodyProjMes"></tbody>
             </table>
           </div>
+          <p style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin:-4px 0 14px;line-height:1.45;max-width:720px">Integrado = (receita − custo dos projetos) − custos fixos e variáveis lançados no fluxo + saldo das linhas de projeção manual. Projetos usam o mesmo mês/ano da aba Projetos.</p>
           <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.12em;margin:18px 0 8px">DETALHE — PROJEÇÕES</div>
           <div class="cf-table-wrap">
             <table class="cf-table cf-proj-table" id="cfTableProj">
@@ -17637,6 +17646,96 @@ async function deleteColab() {
    FLUXO DE CAIXA — age_cashflow
 ══════════════════════════════════════════════════════ */
 let _cfYearRows = [];
+/** Snapshot da aba Projetos + fechamentos (mesmo critério do dashboard). */
+let _cfCashflowProjects = [];
+let _cfCashflowFechMap = new Map();
+
+function _cfProjectsForMonth(mes, ano) {
+  const fechMap = _cfCashflowFechMap;
+  return (_cfCashflowProjects || []).filter(p => {
+    if(!_projRowNotDeleted(p)) return false;
+    if(_projExcludedFromReceitaSum(p)) return false;
+    const row = _dashRowFromSupabase(p, fechMap);
+    const ma = _dashResolveMesAno(row);
+    return ma && ma.mes === mes && ma.ano === ano;
+  });
+}
+
+function _cfProjFinanceMonth(mes, ano) {
+  const list = _cfProjectsForMonth(mes, ano);
+  const fechMap = _cfCashflowFechMap;
+  let rec = 0;
+  let cst = 0;
+  for(const p of list) {
+    if(!_projExcludedFromReceitaSum(p)) rec += parseFloat(p.total_value || 0) || 0;
+    cst += _projResolveCostRaw(p, fechMap);
+  }
+  return { rec, cst };
+}
+
+function _cfSyntheticProjectRows(mes, ano) {
+  const list = _cfProjectsForMonth(mes, ano);
+  const fechMap = _cfCashflowFechMap;
+  const rows = [];
+  for(const p of list) {
+    const cliente = String(p.client_name || p.client || '').trim();
+    const projeto = String(p.project_name || p.title || '').trim();
+    const fat = parseFloat(p.total_value || 0) || 0;
+    const cost = _projResolveCostRaw(p, fechMap);
+    const sale = p.sale_date || null;
+    const pay = p.pay_date || p.payment_date || null;
+    if(!_projExcludedFromReceitaSum(p)) {
+      rows.push({
+        id: `cf-proj-rec-${p.id}`,
+        tipo: 'receita',
+        _cfFromProject: true,
+        _cfProjectId: p.id,
+        cliente,
+        projeto,
+        data_venda: sale,
+        data_recebimento: pay,
+        valor_total: fat,
+        quantidade: 1,
+        valor_unitario: fat
+      });
+    }
+    rows.push({
+      id: `cf-proj-cst-${p.id}`,
+      tipo: 'custo_variavel',
+      _cfFromProject: true,
+      _cfProjectId: p.id,
+      cliente,
+      projeto,
+      descricao: `Custo operacional · ${projeto || 'projeto'}`,
+      data_venda: null,
+      data_recebimento: null,
+      valor_total: cost,
+      quantidade: 1,
+      valor_unitario: cost
+    });
+  }
+  return rows;
+}
+
+/** Soma custos fixos + variáveis lançados no fluxo (age_cashflow), sem duplicar projetos. */
+function _cfEmpresaCustosCfMes(rows, mes, ano) {
+  let s = 0;
+  (rows || []).forEach(r => {
+    if(parseInt(r.mes, 10) !== mes || parseInt(r.ano, 10) !== ano) return;
+    const t = String(r.tipo);
+    if(t === 'custo_fixo' || t === 'custo_variavel') s += _cfVal(r);
+  });
+  return s;
+}
+
+/** Lucro integrado do mês na aba Projeção: net projetos − custos empresa (CF) + net projeção manual. */
+function _cfLucroIntegradoMes(rows, mes, ano, byM) {
+  const pf = _cfProjFinanceMonth(mes, ano);
+  const emp = _cfEmpresaCustosCfMes(rows, mes, ano);
+  const nm = byM[mes] || { rec: 0, cst: 0 };
+  const netMan = nm.rec - nm.cst;
+  return (pf.rec - pf.cst) - emp + netMan;
+}
 
 /**
  * GET/POST direto ao PostgREST (`endpoint` = `tabela` ou `tabela?filtros`).
@@ -17794,8 +17893,9 @@ function cfOnTotalManual() { /* total editável manualmente */ }
 
 function cfRowHtml(r, ctx) {
   const id = r.id;
-  const del = `<button type="button" class="cf-btn-mini perm-guard-edit" title="Excluir" onclick="deleteCfRow('${id}')"><i class="fas fa-trash"></i></button>`;
-  const ed = `<button type="button" class="cf-btn-mini perm-guard-edit" title="Editar" onclick="openCfModal('${id}','${ctx}')"><i class="fas fa-pen"></i></button>`;
+  const idJs = String(id == null ? '' : id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const del = `<button type="button" class="cf-btn-mini perm-guard-edit" title="Excluir" onclick="deleteCfRow('${idJs}')"><i class="fas fa-trash"></i></button>`;
+  const ed = `<button type="button" class="cf-btn-mini perm-guard-edit" title="Editar" onclick="openCfModal('${idJs}','${ctx}')"><i class="fas fa-pen"></i></button>`;
   if(ctx === 'fixos') {
     return `<tr>
       <td>${escHtml(r.descricao || '—')}</td>
@@ -17813,23 +17913,29 @@ function cfRowHtml(r, ctx) {
       <td style="white-space:nowrap">${ed} ${del}</td>
     </tr>`;
   }
-  return `<tr>
+  const fromProj = !!r._cfFromProject;
+  const actCell = fromProj
+    ? `<td style="white-space:nowrap;text-align:right"><button type="button" class="cf-btn-mini" title="Editar na aba Projetos" onclick="navigate('projects')" style="cursor:pointer"><i class="fas fa-folder-open"></i></button></td>`
+    : `<td style="white-space:nowrap;text-align:right">${ed} ${del}</td>`;
+  const trCls = fromProj ? ' class="cf-row-from-proj"' : '';
+  return `<tr${trCls}>
     <td>${_cfTipoBadgeHtml(r.tipo)}</td>
     <td>${escHtml(r.cliente || '—')}</td>
     <td>${escHtml(r.projeto || '—')}</td>
     <td>${_cfFmtDateCell(r.data_venda)}</td>
     <td>${_cfFmtDateCell(r.data_recebimento)}</td>
     <td style="font-weight:600">${fmtBRL(_cfVal(r))}</td>
-    <td style="white-space:nowrap;text-align:right">${ed} ${del}</td>
+    ${actCell}
   </tr>`;
 }
 
-function renderBalanco(receitas, variaveis, fixosMes) {
+function renderBalanco(receitas, variaveis, fixosMes, mes, ano) {
   const order = { receita: 0, custo_variavel: 1, custo_fixo: 2 };
+  const syn = _cfSyntheticProjectRows(mes, ano);
   const rec = receitas || [];
   const vari = variaveis || [];
   const fix = fixosMes || [];
-  const bal = [...rec, ...vari, ...fix].sort((a, b) =>
+  const bal = [...syn, ...rec, ...vari, ...fix].sort((a, b) =>
     (order[String(a.tipo)] ?? 9) - (order[String(b.tipo)] ?? 9)
   );
   const tbB = document.getElementById('cfTbodyBalanco');
@@ -17840,12 +17946,17 @@ function renderBalanco(receitas, variaveis, fixosMes) {
   }
 }
 
-function renderCustosFixos(fixosMes, mes) {
+function renderCustosFixos(fixosMes, mes, ano) {
   const fix = fixosMes || [];
   const totFix = fix.reduce((s, r) => s + _cfVal(r), 0);
+  const pf = _cfProjFinanceMonth(mes, ano);
   const fk = document.getElementById('cfKpiFixos');
   if(fk) {
-    fk.innerHTML = `<div class="cf-kpi cf-neu"><div class="cf-kpi-lbl">Total custos fixos (${MONTHS[mes - 1]})</div><div class="cf-kpi-val">${fmtBRL(totFix)}</div></div>`;
+    fk.innerHTML = [
+      { l: `Custos fixos (${MONTHS[mes - 1]} ${ano})`, v: totFix, c: 'cf-neu' },
+      { l: 'Custos dos projetos (mês)', v: pf.cst, c: 'cf-neu' },
+      { l: 'Fixos do mês + custos de projeto', v: totFix + pf.cst, c: 'cf-pos' }
+    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
   }
   const tbF = document.getElementById('cfTbodyFixos');
   if(tbF) {
@@ -17856,8 +17967,11 @@ function renderCustosFixos(fixosMes, mes) {
 }
 
 function renderCfHeroMes(receitas, variaveis, fixosMes, mes, ano) {
-  const rec = (receitas || []).reduce((s, r) => s + _cfVal(r), 0);
-  const cvar = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
+  const pf = _cfProjFinanceMonth(mes, ano);
+  const rec =
+    (receitas || []).reduce((s, r) => s + _cfVal(r), 0) + pf.rec;
+  const cvar =
+    (variaveis || []).reduce((s, r) => s + _cfVal(r), 0) + pf.cst;
   const cfix = (fixosMes || []).reduce((s, r) => s + _cfVal(r), 0);
   const lucro = rec - cfix - cvar;
   const hm = document.getElementById('cfHeroMes');
@@ -17867,14 +17981,17 @@ function renderCfHeroMes(receitas, variaveis, fixosMes, mes, ano) {
       <div class="cf-hero-mes">
         <div class="cf-hero-mes-label">Lucro líquido (${MONTHS[(mes || 1) - 1]} ${ano})</div>
         <div class="cf-hero-mes-val ${pos ? 'cf-positive' : 'cf-negative'}">${fmtBRL(lucro)}</div>
-        <div class="cf-hero-mes-formula">Mesmo cálculo da linha preta no gráfico anual: todas as receitas do mês menos todos os custos (fixos + variáveis) lançados para aquele mês.</div>
+        <div class="cf-hero-mes-formula">Receitas e custos da aba Projetos (por mês de referência) somados aos lançamentos manuais em fluxo de caixa. Igual à linha preta no gráfico anual.</div>
       </div>`;
   }
 }
 
 function renderSummaryCards(receitas, variaveis, fixosMes, mes, ano) {
-  const rec = (receitas || []).reduce((s, r) => s + _cfVal(r), 0);
-  const cvar = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
+  const pf = _cfProjFinanceMonth(mes, ano);
+  const recCf = (receitas || []).reduce((s, r) => s + _cfVal(r), 0);
+  const cvarCf = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
+  const rec = recCf + pf.rec;
+  const cvar = cvarCf + pf.cst;
   const cfix = (fixosMes || []).reduce((s, r) => s + _cfVal(r), 0);
   const lucro = rec - cfix - cvar;
   const margem = rec > 0 ? (lucro / rec) * 100 : null;
@@ -17882,9 +17999,9 @@ function renderSummaryCards(receitas, variaveis, fixosMes, mes, ano) {
   const kpiB = document.getElementById('cfKpiBalanco');
   if(kpiB) {
     const cards = [
-      { l: 'Receitas', v: fmtBRL(rec), c: 'cf-neu' },
-      { l: 'Custos fixos', v: fmtBRL(cfix), c: 'cf-neg' },
-      { l: 'Custos variáveis', v: fmtBRL(cvar), c: 'cf-neg' },
+      { l: 'Receitas (CF + projetos)', v: fmtBRL(rec), c: 'cf-neu' },
+      { l: 'Custos fixos (CF)', v: fmtBRL(cfix), c: 'cf-neg' },
+      { l: 'Custos variáveis (CF + proj.)', v: fmtBRL(cvar), c: 'cf-neg' },
       { l: 'Lucro líquido', v: fmtBRL(lucro), c: lucro >= 0 ? 'cf-pos' : 'cf-neg' },
       { l: 'Margem s/ receitas', v: margem == null ? '—' : `${margem.toFixed(1).replace('.', ',')}%`, c: margem == null ? 'cf-neu' : (margem >= 0 ? 'cf-pos' : 'cf-neg') }
     ];
@@ -17913,20 +18030,41 @@ function renderCfProjecaoFromYear(ano) {
     yCst += byM[m].cst;
   }
   const salP = yRec - yCst;
+  let yRecProj = 0, yCstProj = 0, intAno = 0;
+  for(let m = 1; m <= 12; m++) {
+    const pf = _cfProjFinanceMonth(m, y);
+    yRecProj += pf.rec;
+    yCstProj += pf.cst;
+    intAno += _cfLucroIntegradoMes(rows, m, y, byM);
+  }
   const kpiP = document.getElementById('cfKpiProj');
   if(kpiP) {
     kpiP.innerHTML = [
-      { l: 'Receitas projetadas (ano)', v: yRec, c: 'cf-neu' },
-      { l: 'Custos projetados (ano)', v: yCst, c: 'cf-neg' },
-      { l: 'Lucro líquido projetado', v: salP, c: salP >= 0 ? 'cf-pos' : 'cf-neg' }
+      { l: `Faturamento projetos (${y})`, v: yRecProj, c: 'cf-neu' },
+      { l: `Custos projetos (${y})`, v: yCstProj, c: 'cf-neg' },
+      { l: 'Projeção manual (+)', v: yRec, c: 'cf-neu' },
+      { l: 'Projeção manual (−)', v: yCst, c: 'cf-neg' },
+      { l: 'Lucro só linhas proj. manual', v: salP, c: salP >= 0 ? 'cf-pos' : 'cf-neg' },
+      { l: 'Lucro integrado (ano)', v: intAno, c: intAno >= 0 ? 'cf-pos' : 'cf-neg' }
     ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
   }
   const tbPM = document.getElementById('cfTbodyProjMes');
   if(tbPM) {
     tbPM.innerHTML = MONTHS.map((name, i) => {
       const m = i + 1;
-      const s = byM[m].rec - byM[m].cst;
-      return `<tr><td>${name}</td><td>${fmtBRL(byM[m].rec)}</td><td>${fmtBRL(byM[m].cst)}</td><td style="color:${s >= 0 ? '#86efac' : '#fca5a5'}">${fmtBRL(s)}</td></tr>`;
+      const pf = _cfProjFinanceMonth(m, y);
+      const emp = _cfEmpresaCustosCfMes(rows, m, y);
+      const netMan = byM[m].rec - byM[m].cst;
+      const integ = _cfLucroIntegradoMes(rows, m, y, byM);
+      const pos = integ >= 0;
+      return `<tr>
+        <td>${name}</td>
+        <td>${fmtBRL(pf.rec)}</td>
+        <td>${fmtBRL(pf.cst)}</td>
+        <td>${fmtBRL(emp)}</td>
+        <td style="color:${netMan >= 0 ? '#86efac' : '#fca5a5'}">${fmtBRL(netMan)}</td>
+        <td style="font-weight:700;color:${pos ? '#16a34a' : '#dc2626'}">${fmtBRL(integ)}</td>
+      </tr>`;
     }).join('');
   }
   const tbP = document.getElementById('cfTbodyProj');
@@ -17958,6 +18096,9 @@ function _cfBuildYearSeries(ano) {
       if(String(r.tipo) === 'receita') rSum += v;
       else cSum += v;
     });
+    const pf = _cfProjFinanceMonth(m, year);
+    rSum += pf.rec;
+    cSum += pf.cst;
     rec.push(rSum);
     cust.push(cSum);
     const L = rSum - cSum;
@@ -18087,13 +18228,23 @@ async function loadCashflow() {
   let fixos = [];
 
   try {
-    [receitas, variaveis, fixos] = await Promise.all([
+    let projs, fechs;
+    [receitas, variaveis, fixos, projs, fechs] = await Promise.all([
       _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&mes=eq.${mes}&ano=eq.${ano}&tipo=eq.receita`)),
       _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&mes=eq.${mes}&ano=eq.${ano}&tipo=eq.custo_variavel`)),
-      _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&tipo=eq.custo_fixo`))
+      _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&tipo=eq.custo_fixo`)),
+      fetchAgeProjectsScoped(1000),
+      fetchAll('age_fechamento', 500)
     ]);
+    _cfCashflowProjects = projs || [];
+    _cfCashflowFechMap = new Map();
+    (fechs || []).forEach(f => {
+      if(f && f.project_id != null) _cfCashflowFechMap.set(f.project_id, f);
+    });
   } catch(e) {
     console.warn('[loadCashflow]', e);
+    _cfCashflowProjects = [];
+    _cfCashflowFechMap = new Map();
     try { toast('Verifique a tabela age_cashflow e o Supabase.', 'err'); } catch(_) {}
   }
 
@@ -18114,8 +18265,8 @@ async function loadCashflow() {
     _cfYearRows = [];
   }
 
-  renderBalanco(receitas, variaveis, fixosMes);
-  renderCustosFixos(fixosMes, mes);
+  renderBalanco(receitas, variaveis, fixosMes, mes, ano);
+  renderCustosFixos(fixosMes, mes, ano);
   renderSummaryCards(receitas, variaveis, fixosMes, mes, ano);
   renderCfProjecaoFromYear(ano);
   renderCfYearChart(ano);
@@ -18228,6 +18379,10 @@ async function saveCfRow() {
 }
 
 async function deleteCfRow(id) {
+  if(String(id || '').startsWith('cf-proj-')) {
+    try { toast('Este lançamento vem da aba Projetos — edite ou exclua lá.', 'warn'); } catch(_) {}
+    return;
+  }
   if(!id || !confirm('Excluir este lançamento?')) return;
   try {
     await apiDel('age_cashflow', id);
