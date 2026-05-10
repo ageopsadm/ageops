@@ -1378,18 +1378,57 @@ select.login-input{cursor:pointer}
   background: #fff; color: #111; text-transform: uppercase;
 }
 .cf-tabs {
-  display: flex; gap: 0; border-bottom: 2px solid rgba(0,0,0,0.08);
-  margin-bottom: 24px; margin-top: 16px;
+  display: inline-flex; gap: 4px; padding: 4px;
+  border-radius: 10px; background: #f1f5f9;
+  margin-bottom: 20px; margin-top: 16px;
+  border: 1px solid rgba(0,0,0,.06);
 }
 .cf-tab {
-  font-family: var(--font-h); font-size: 10px; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase;
-  padding: 12px 20px; border: none; background: none;
-  color: #999; cursor: pointer; border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
+  font-family: var(--font-h); font-size: 9px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 10px 16px; border: none; border-radius: 8px;
+  background: transparent; color: #64748b; cursor: pointer;
+  margin-bottom: 0; transition: background .15s, color .15s, box-shadow .15s;
 }
-.cf-tab.active { color: #111; border-bottom-color: #111; }
-.cf-tab:hover { color: #333; }
+.cf-tab.active {
+  color: #0f172a; background: #fff;
+  box-shadow: 0 1px 4px rgba(15,23,42,.08);
+}
+.cf-tab:not(.active):hover { color: #334155; }
+
+.cf-hero-mes {
+  margin-bottom: 16px; padding: 18px 20px; border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: linear-gradient(145deg, #f8fafc 0%, #ffffff 55%);
+}
+.cf-hero-mes-label {
+  font-family: var(--font-h); font-size: 9px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: #64748b; margin-bottom: 6px;
+}
+.cf-hero-mes-val {
+  font-family: var(--font-data); font-size: 26px; font-weight: 800;
+  letter-spacing: -0.02em; line-height: 1.15; color: #0f172a;
+}
+.cf-hero-mes-formula {
+  font-family: var(--font-m); font-size: 10px; color: #94a3b8; margin-top: 8px;
+  max-width: 420px; line-height: 1.45;
+}
+.cf-year-lucro-strip {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,.06);
+  font-family: var(--font-m); font-size: 11px; color: #475569;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+}
+.cf-year-lucro-strip strong { font-family: var(--font-data); font-size: 15px; font-weight: 700; }
+.cf-type-badge {
+  display: inline-block; font-family: var(--font-h); font-size: 8px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;
+  white-space: nowrap;
+}
+.cf-badge-rec { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.cf-badge-var { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.cf-badge-fix { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.cf-badge-unk { background: #fafafa; color: #64748b; border: 1px solid #e5e7eb; }
 
 .cf-table { width: 100%; border-collapse: collapse; font-family: var(--font-b); font-size: 14px; }
 .cf-table th {
@@ -3000,7 +3039,7 @@ body:has(#login-screen.visible){
         <div class="page-header" style="align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px">
           <div>
             <div class="page-title"><i class="fas fa-chart-line"></i> FLUXO DE CAIXA</div>
-            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px">Balanço mensal · Custos fixos · Projeção anual</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.45">Lucro líquido do mês = receitas − custos fixos − custos variáveis · Balanço · Fixos · Projeção</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <select id="cfMes" class="cf-select" onchange="loadCashflow()">
@@ -3026,6 +3065,7 @@ body:has(#login-screen.visible){
             <span><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Custos totais</span>
             <span><span style="display:inline-block;width:14px;height:2px;background:#0a0a0a;vertical-align:middle;margin-right:6px"></span>Lucro líquido</span>
           </div>
+          <div id="cfYearLucroStrip" class="cf-year-lucro-strip" style="display:none" aria-live="polite"></div>
         </div>
 
         <div class="cf-tabs">
@@ -3035,6 +3075,7 @@ body:has(#login-screen.visible){
         </div>
 
         <div id="cf-balanco">
+          <div id="cfHeroMes"></div>
           <div class="cf-kpi-row" id="cfKpiBalanco"></div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
             <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'balanco')"><i class="fas fa-plus"></i> Novo lançamento</button>
@@ -3043,6 +3084,7 @@ body:has(#login-screen.visible){
             <table class="cf-table" id="cfTableBalanco">
               <thead>
                 <tr>
+                  <th style="width:110px">Tipo</th>
                   <th>Cliente</th>
                   <th>Projeto</th>
                   <th>Data venda</th>
@@ -17660,6 +17702,17 @@ function _cfTipoLabel(t) {
   return m[t] || t || '—';
 }
 
+function _cfTipoBadgeHtml(tipo) {
+  const t = String(tipo || '');
+  const cfg = {
+    receita: { l: 'Receita', cls: 'cf-badge-rec' },
+    custo_variavel: { l: 'Custo var.', cls: 'cf-badge-var' },
+    custo_fixo: { l: 'Custo fixo', cls: 'cf-badge-fix' }
+  };
+  const x = cfg[t] || { l: _cfTipoLabel(t), cls: 'cf-badge-unk' };
+  return `<span class="cf-type-badge ${x.cls}">${escHtml(x.l)}</span>`;
+}
+
 function _cfCatLabel(c) {
   const m = { pessoal: 'Pessoal', administrativo: 'Administrativo', marketing: 'Marketing', financeiro: 'Financeiro', projeto: 'Projeto' };
   return m[c] || c || '—';
@@ -17761,6 +17814,7 @@ function cfRowHtml(r, ctx) {
     </tr>`;
   }
   return `<tr>
+    <td>${_cfTipoBadgeHtml(r.tipo)}</td>
     <td>${escHtml(r.cliente || '—')}</td>
     <td>${escHtml(r.projeto || '—')}</td>
     <td>${_cfFmtDateCell(r.data_venda)}</td>
@@ -17771,15 +17825,18 @@ function cfRowHtml(r, ctx) {
 }
 
 function renderBalanco(receitas, variaveis, fixosMes) {
+  const order = { receita: 0, custo_variavel: 1, custo_fixo: 2 };
   const rec = receitas || [];
   const vari = variaveis || [];
   const fix = fixosMes || [];
-  const bal = [...rec, ...vari, ...fix];
+  const bal = [...rec, ...vari, ...fix].sort((a, b) =>
+    (order[String(a.tipo)] ?? 9) - (order[String(b.tipo)] ?? 9)
+  );
   const tbB = document.getElementById('cfTbodyBalanco');
   if(tbB) {
     tbB.innerHTML = bal.length
       ? bal.map(r => cfRowHtml(r, 'balanco')).join('')
-      : '<tr><td colspan="6" style="color:#64748b;padding:20px">Nenhum lançamento neste mês.</td></tr>';
+      : '<tr><td colspan="7" style="color:#64748b;padding:20px">Nenhum lançamento neste mês.</td></tr>';
   }
 }
 
@@ -17798,19 +17855,40 @@ function renderCustosFixos(fixosMes, mes) {
   }
 }
 
-function renderSummaryCards(receitas, variaveis, fixosMes) {
+function renderCfHeroMes(receitas, variaveis, fixosMes, mes, ano) {
   const rec = (receitas || []).reduce((s, r) => s + _cfVal(r), 0);
   const cvar = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
   const cfix = (fixosMes || []).reduce((s, r) => s + _cfVal(r), 0);
-  const saldo = rec - cfix - cvar;
+  const lucro = rec - cfix - cvar;
+  const hm = document.getElementById('cfHeroMes');
+  if(hm) {
+    const pos = lucro >= 0;
+    hm.innerHTML = `
+      <div class="cf-hero-mes">
+        <div class="cf-hero-mes-label">Lucro líquido (${MONTHS[(mes || 1) - 1]} ${ano})</div>
+        <div class="cf-hero-mes-val ${pos ? 'cf-positive' : 'cf-negative'}">${fmtBRL(lucro)}</div>
+        <div class="cf-hero-mes-formula">Mesmo cálculo da linha preta no gráfico anual: todas as receitas do mês menos todos os custos (fixos + variáveis) lançados para aquele mês.</div>
+      </div>`;
+  }
+}
+
+function renderSummaryCards(receitas, variaveis, fixosMes, mes, ano) {
+  const rec = (receitas || []).reduce((s, r) => s + _cfVal(r), 0);
+  const cvar = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
+  const cfix = (fixosMes || []).reduce((s, r) => s + _cfVal(r), 0);
+  const lucro = rec - cfix - cvar;
+  const margem = rec > 0 ? (lucro / rec) * 100 : null;
+  renderCfHeroMes(receitas, variaveis, fixosMes, mes, ano);
   const kpiB = document.getElementById('cfKpiBalanco');
   if(kpiB) {
-    kpiB.innerHTML = [
-      { l: 'Receitas', v: rec, c: 'cf-neu' },
-      { l: 'Custos fixos', v: cfix, c: 'cf-neg' },
-      { l: 'Custos variáveis', v: cvar, c: 'cf-neg' },
-      { l: 'Saldo', v: saldo, c: saldo >= 0 ? 'cf-pos' : 'cf-neg' }
-    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
+    const cards = [
+      { l: 'Receitas', v: fmtBRL(rec), c: 'cf-neu' },
+      { l: 'Custos fixos', v: fmtBRL(cfix), c: 'cf-neg' },
+      { l: 'Custos variáveis', v: fmtBRL(cvar), c: 'cf-neg' },
+      { l: 'Lucro líquido', v: fmtBRL(lucro), c: lucro >= 0 ? 'cf-pos' : 'cf-neg' },
+      { l: 'Margem s/ receitas', v: margem == null ? '—' : `${margem.toFixed(1).replace('.', ',')}%`, c: margem == null ? 'cf-neu' : (margem >= 0 ? 'cf-pos' : 'cf-neg') }
+    ];
+    kpiB.innerHTML = cards.map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${x.v}</div></div>`).join('');
   }
 }
 
@@ -17840,7 +17918,7 @@ function renderCfProjecaoFromYear(ano) {
     kpiP.innerHTML = [
       { l: 'Receitas projetadas (ano)', v: yRec, c: 'cf-neu' },
       { l: 'Custos projetados (ano)', v: yCst, c: 'cf-neg' },
-      { l: 'Saldo projetado', v: salP, c: salP >= 0 ? 'cf-pos' : 'cf-neg' }
+      { l: 'Lucro líquido projetado', v: salP, c: salP >= 0 ? 'cf-pos' : 'cf-neg' }
     ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
   }
   const tbPM = document.getElementById('cfTbodyProjMes');
@@ -17859,14 +17937,14 @@ function renderCfProjecaoFromYear(ano) {
   }
 }
 
-/** Barras agrupadas (receita / custos) + linha lucro — eixo Jan–Dez, tooltip em BRL */
-function renderCfYearChart(ano) {
+/** Séries mensais do ano (mesmo critério do lucro líquido no KPI do mês). */
+function _cfBuildYearSeries(ano) {
   const year = parseInt(ano, 10) || new Date().getFullYear();
   const rows = _cfYearRows || [];
   const rec = [];
   const cust = [];
   const lucro = [];
-
+  let lucroAcumulado = 0;
   for(let m = 1; m <= 12; m++) {
     const slice = rows.filter(r =>
       parseInt(r.mes, 10) === m &&
@@ -17882,8 +17960,25 @@ function renderCfYearChart(ano) {
     });
     rec.push(rSum);
     cust.push(cSum);
-    lucro.push(rSum - cSum);
+    const L = rSum - cSum;
+    lucro.push(L);
+    lucroAcumulado += L;
   }
+  return { rec, cust, lucro, lucroAcumulado, year };
+}
+
+function renderCfYearLucroStrip(ano) {
+  const strip = document.getElementById('cfYearLucroStrip');
+  if(!strip) return;
+  const { lucroAcumulado, year } = _cfBuildYearSeries(ano);
+  strip.style.display = '';
+  const pos = lucroAcumulado >= 0;
+  strip.innerHTML = `<span>Lucro líquido acumulado em <strong>${year}</strong> (soma dos 12 meses no gráfico)</span><strong class="${pos ? 'cf-positive' : 'cf-negative'}">${fmtBRL(lucroAcumulado)}</strong>`;
+}
+
+/** Barras agrupadas (receita / custos) + linha lucro — eixo Jan–Dez, tooltip em BRL */
+function renderCfYearChart(ano) {
+  const { rec, cust, lucro } = _cfBuildYearSeries(ano);
 
   _destroyChart('cashflow');
   const canvas = document.getElementById('chartCashflowYear');
@@ -18012,7 +18107,7 @@ async function loadCashflow() {
   );
 
   try {
-    const d = await apiGet('age_cashflow', `?ano=eq.${ano}&order=mes.asc&limit=500`);
+    const d = await apiGet('age_cashflow', `?company_id=eq.${enc}&ano=eq.${ano}&order=mes.asc&limit=500`);
     _cfYearRows = Array.isArray(d?.data) ? d.data.filter(_sbIsRowVisible) : [];
   } catch(e) {
     console.warn('[loadCashflow] ano', e);
@@ -18021,9 +18116,10 @@ async function loadCashflow() {
 
   renderBalanco(receitas, variaveis, fixosMes);
   renderCustosFixos(fixosMes, mes);
-  renderSummaryCards(receitas, variaveis, fixosMes);
+  renderSummaryCards(receitas, variaveis, fixosMes, mes, ano);
   renderCfProjecaoFromYear(ano);
   renderCfYearChart(ano);
+  renderCfYearLucroStrip(ano);
 }
 
 function openCfModal(id, context) {
