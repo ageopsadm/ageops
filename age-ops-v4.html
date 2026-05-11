@@ -4959,6 +4959,7 @@ body:has(#login-screen.visible){
       <button type="button" onclick="closeModal('modalPermissoes')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
     <input type="hidden" id="permModalUsername" value="">
+    <input type="hidden" id="permModalUserId" value="">
     <div id="permModalBody" style="overflow-y:auto;flex:1;font-family:var(--font-m);font-size:10px"></div>
     <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-shrink:0">
       <button type="button" class="btn btn-ghost" onclick="closeModal('modalPermissoes')">Cancelar</button>
@@ -5478,6 +5479,13 @@ function _roleDisplayLabel(roleNorm) {
   return roleNorm || '—';
 }
 
+/** Colaborador com pelo menos um módulo corporativo liberado: usa o menu lateral corporativo (filtrado por permissão). */
+function _colabShouldSeeCorpSidebar() {
+  if(!_userIsColaborador()) return false;
+  const keys = ['dashboard','projetos','pipeline','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma'];
+  return keys.some(k => currentUser.permissions?.[k]?.view === true);
+}
+
 const READONLY_TOOLTIP = 'Você tem acesso somente leitura';
 
 const PERM_ALL_MODULES = [
@@ -5658,7 +5666,7 @@ function _defaultLandingPage() {
   if(_userPermFullBypass() || _userGestorUnrestricted()) return 'dashboard';
   const r = _normalizeRole(currentUser?.role);
   const role = r || 'colaborador';
-  if(role === 'admin' || role === 'gestor') {
+  if(role === 'admin' || role === 'gestor' || _colabShouldSeeCorpSidebar()) {
     const corpPages = ['dashboard', 'projects', 'pipeline', 'pagamentos', 'colaboradores', 'mytasks', 'myfinance', 'profile'];
     for(const p of corpPages) {
       if(canViewPage(p)) return p;
@@ -5677,7 +5685,7 @@ function _postLoginLandingPage() {
   if(_userPermFullBypass() || _userGestorUnrestricted()) return 'dashboard';
   const r = _normalizeRole(currentUser?.role);
   const role = r || 'colaborador';
-  if(role === 'admin' || role === 'gestor') {
+  if(role === 'admin' || role === 'gestor' || _colabShouldSeeCorpSidebar()) {
     if(canViewPage('dashboard')) return 'dashboard';
     return _defaultLandingPage();
   }
@@ -5691,16 +5699,17 @@ function _refreshSidebarForRole() {
   const eq = document.getElementById('sidebarEquipe');
   const staff = document.getElementById('sidebarPersonalStaff');
   const colab = document.getElementById('sidebarColaborador');
-  if(_userIsColaborador()) {
-    if(corp) corp.style.display = 'none';
-    if(eq) eq.style.display = 'none';
-    if(staff) staff.style.display = 'none';
-    if(colab) colab.style.display = 'block';
-  } else {
+  const showCorpLike = !_userIsColaborador() || _colabShouldSeeCorpSidebar();
+  if(showCorpLike) {
     if(corp) corp.style.display = 'block';
     if(eq) eq.style.display = 'block';
     if(staff) staff.style.display = 'block';
     if(colab) colab.style.display = 'none';
+  } else {
+    if(corp) corp.style.display = 'none';
+    if(eq) eq.style.display = 'none';
+    if(staff) staff.style.display = 'none';
+    if(colab) colab.style.display = 'block';
   }
   _syncPermissionNav();
 }
@@ -5756,8 +5765,14 @@ async function openPermissoesModalFor(username) {
     else console.warn('[openPermissoesModalFor] Sem company_id após vínculo automático.');
     return;
   }
+  await refreshAgeUsersCache();
   const u = String(username || '').toLowerCase();
   document.getElementById('permModalUsername').value = u;
+  const userRow = _ageUsersCache.find(x => String(x.username || '').toLowerCase() === u);
+  const tgtRole = _normalizeRole(userRow?.role) || 'colaborador';
+  const uid = userRow?.id || '';
+  const hid = document.getElementById('permModalUserId');
+  if(hid) hid.value = uid ? String(uid) : '';
   document.getElementById('permModalTitle').textContent = 'Permissões — ' + (displayNameForUsername(u) || u);
 
   let existing = {};
@@ -5814,7 +5829,26 @@ async function openPermissoesModalFor(username) {
   });
   html += `</tbody></table>`;
 
-  document.getElementById('permModalBody').innerHTML = html;
+  let roleIntro = '';
+  if(tgtRole === 'admin') {
+    roleIntro = `<div style="margin-bottom:14px;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--bd)">
+      <div style="font-family:var(--font-b);font-size:10px;font-weight:700;color:#7c3aed">Administrador</div>
+      <div style="font-size:10px;color:var(--textsub);margin-top:6px;line-height:1.45">A função de administrador não é alterada por este painel.</div>
+    </div>`;
+  } else if(uid) {
+    const selCol = tgtRole === 'colaborador' ? 'selected' : '';
+    const selGest = tgtRole === 'gestor' ? 'selected' : '';
+    roleIntro = `<div style="margin-bottom:14px;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--bd)">
+      <div style="font-family:var(--font-b);font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:8px">FUNÇÃO NA EMPRESA</div>
+      <select id="permModalRoleSelect" data-prev-role="${escAttr(tgtRole)}" style="width:100%;max-width:280px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--text);font-size:11px;font-family:var(--font-m)">
+        <option value="colaborador" ${selCol}>Colaborador</option>
+        <option value="gestor" ${selGest}>Gestor</option>
+      </select>
+      <div style="font-size:9px;color:var(--textsub);margin-top:8px;line-height:1.45"><strong>Gestor</strong> usa o menu corporativo completo (respeitando as permissões abaixo). <strong>Colaborador</strong> foca na área pessoal e nos módulos liberados.</div>
+    </div>`;
+  }
+
+  document.getElementById('permModalBody').innerHTML = roleIntro + html;
 
   corpRows.forEach(([k]) => {
     const ex = existing[k];
@@ -5840,6 +5874,36 @@ async function savePermissoesModal() {
   const u = document.getElementById('permModalUsername')?.value?.trim().toLowerCase();
   const cid = currentUser.company_id;
   if(!u || !cid || !_userCanManagePermissionsUi()) return;
+
+  const uidStr = document.getElementById('permModalUserId')?.value?.trim();
+  const roleSel = document.getElementById('permModalRoleSelect');
+  if(uidStr && roleSel) {
+    const nr = _normalizeRole(roleSel.value);
+    const prev = _normalizeRole(roleSel.getAttribute('data-prev-role'));
+    if(nr && (nr === 'colaborador' || nr === 'gestor') && nr !== prev) {
+      const selfDemote = u === String(currentUser.username || '').toLowerCase() && prev === 'gestor' && nr === 'colaborador';
+      if(selfDemote && !confirm('Ao virar Colaborador, seu menu ficará limitado até que um administrador altere sua função novamente. Continuar?')) {
+        roleSel.value = 'gestor';
+        return;
+      }
+      try {
+        await apiPatch('age_users', uidStr, { role: nr });
+        const ix = _ageUsersCache.findIndex(x => String(x.id) === uidStr);
+        if(ix >= 0) _ageUsersCache[ix].role = nr;
+        if(u === String(currentUser.username || '').toLowerCase()) {
+          currentUser.role = nr;
+          const rl = document.getElementById('userRoleLabel');
+          if(rl) rl.textContent = _roleDisplayLabel(nr);
+          _refreshSidebarForRole();
+          await hydrateUserPermissions();
+        }
+      } catch(e) {
+        console.warn('[savePermissoesModal role]', e);
+        toast('Não foi possível atualizar a função.', 'err');
+        return;
+      }
+    }
+  }
 
   const mods = [...new Set(_permModalMatrix)];
   const payloadRows = [];
@@ -5870,7 +5934,10 @@ async function savePermissoesModal() {
     }
     closeModal('modalPermissoes');
     toast('Permissões salvas.');
-    if(String(currentUser.username).toLowerCase() === u) await hydrateUserPermissions();
+    if(String(currentUser.username).toLowerCase() === u) {
+      await hydrateUserPermissions();
+      _refreshSidebarForRole();
+    }
     loadEquipePermissoesPage();
   } catch(e) {
     console.error(e);
@@ -5960,6 +6027,47 @@ async function cancelCompanyInvite(inviteId) {
   }
 }
 
+async function equipePatchUserRoleFromCard(sel) {
+  if(!sel || !_userCanManagePermissionsUi()) return;
+  const uid = sel.getAttribute('data-user-id');
+  const unRaw = sel.getAttribute('data-username') || '';
+  const prev = _normalizeRole(sel.getAttribute('data-prev-role')) || 'colaborador';
+  const nr = _normalizeRole(sel.value);
+  if(!uid || (nr !== 'colaborador' && nr !== 'gestor')) return;
+  const un = String(unRaw).toLowerCase();
+  const row = _ageUsersCache.find(x => String(x.id) === String(uid));
+  if(_normalizeRole(row?.role) === 'admin') {
+    toast('Não é possível alterar a função do administrador.', 'warn');
+    sel.value = prev === 'gestor' ? 'gestor' : 'colaborador';
+    return;
+  }
+  if(nr === prev) return;
+  const selfDemote = un === String(currentUser.username || '').toLowerCase() && prev === 'gestor' && nr === 'colaborador';
+  if(selfDemote && !confirm('Ao virar Colaborador, seu menu ficará limitado até que um administrador altere sua função novamente. Continuar?')) {
+    sel.value = 'gestor';
+    return;
+  }
+  try {
+    await apiPatch('age_users', uid, { role: nr });
+    sel.setAttribute('data-prev-role', nr);
+    const ix = _ageUsersCache.findIndex(x => String(x.id) === String(uid));
+    if(ix >= 0) _ageUsersCache[ix].role = nr;
+    if(un === String(currentUser.username || '').toLowerCase()) {
+      currentUser.role = nr;
+      const rl = document.getElementById('userRoleLabel');
+      if(rl) rl.textContent = _roleDisplayLabel(nr);
+      _refreshSidebarForRole();
+      await hydrateUserPermissions();
+    }
+    toast('Função atualizada.');
+    await loadEquipePermissoesPage();
+  } catch(e) {
+    console.warn('[equipePatchUserRoleFromCard]', e);
+    toast('Não foi possível atualizar a função.', 'err');
+    sel.value = prev === 'gestor' ? 'gestor' : 'colaborador';
+  }
+}
+
 async function loadEquipePermissoesPage() {
   const host = document.getElementById('permTeamCards');
   if(!host || !_userCanManagePermissionsUi()) return;
@@ -5986,6 +6094,16 @@ async function loadEquipePermissoesPage() {
     const badge = _normalizeRole(r.role);
     const badgeColor = badge === 'admin' ? '#7c3aed' : badge === 'gestor' ? '#2563eb' : '#64748b';
     const ini = (r.name || r.username || '?')[0].toUpperCase();
+    const uid = r.id != null && String(r.id).trim() !== '' ? String(r.id) : '';
+    const eff = (badge === 'gestor' || badge === 'colaborador') ? badge : (badge ? badge : 'colaborador');
+    const selCol = eff === 'colaborador' ? 'selected' : '';
+    const selGest = eff === 'gestor' ? 'selected' : '';
+    const roleCtrl = (badge === 'admin' || !uid)
+      ? `<span style="font-size:9px;padding:2px 8px;border-radius:4px;background:${badgeColor}22;color:${badgeColor};font-weight:700">${badge === 'admin' ? 'Admin' : escHtml(badge || '—')}</span>`
+      : `<select data-user-id="${escAttr(uid)}" data-username="${un}" data-prev-role="${escAttr(eff)}" onchange="equipePatchUserRoleFromCard(this)" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--text);max-width:150px;font-family:var(--font-m)">
+          <option value="colaborador" ${selCol}>Colaborador</option>
+          <option value="gestor" ${selGest}>Gestor</option>
+        </select>`;
     return `<div class="panel" style="padding:14px;margin:0">
       <div style="display:flex;gap:12px;align-items:flex-start">
         <div style="width:44px;height:44px;border-radius:10px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-weight:800;flex-shrink:0">${ini}</div>
@@ -5993,7 +6111,7 @@ async function loadEquipePermissoesPage() {
           <div style="font-weight:800;font-size:13px">${nm}</div>
           <div style="font-size:10px;color:var(--textsub);word-break:break-all">${em}</div>
           <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-            <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:${badgeColor}22;color:${badgeColor};font-weight:700">${escHtml(badge || '—')}</span>
+            ${roleCtrl}
             <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:${active?'#dcfce7':'#fee2e2'};color:${active?'#16a34a':'#dc2626'}">${active?'Ativo':'Inativo'}</span>
           </div>
           <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
@@ -8284,7 +8402,8 @@ function _planAllowsPage(page) {
   const pl = _effectiveUserPlan();
   if (pl === 'enterprise' || pl === 'agencia') return true;
 
-  const agenciaOnly = new Set(['historico', 'relatorios', 'nps', 'equipe-permissoes']);
+  /* Relatórios: liberado em Produtora via permissões; Solo continua bloqueado em soloBlocked */
+  const agenciaOnly = new Set(['historico', 'nps', 'equipe-permissoes']);
   if (agenciaOnly.has(page)) return false;
 
   if (pl === 'produtora') return true;
@@ -8303,7 +8422,7 @@ function _planAllowsPage(page) {
 }
 
 function _planRequiredLabel(forPage) {
-  const agencia = new Set(['historico', 'relatorios', 'nps', 'equipe-permissoes']);
+  const agencia = new Set(['historico', 'nps', 'equipe-permissoes']);
   if (forPage && agencia.has(forPage)) return 'Agência';
   return 'Produtora';
 }
