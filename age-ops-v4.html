@@ -121,6 +121,13 @@ table th{
   font-weight:500;
   letter-spacing:0.22em;
 }
+#sidebar .nav-sector{margin-top:10px}
+#sidebar .nav-sector-label{
+  opacity:.55;
+  margin-top:2px;
+  text-transform:uppercase;
+}
+#sidebar.collapsed .nav-sector-label{display:none}
 .modal-title{font-family:var(--font-title);font-weight:800;letter-spacing:0.5px}
 .modal-subtitle{font-family:var(--font-ui);font-size:13px}
 .modal-label{font-family:var(--font-ui);font-size:12px;font-weight:500}
@@ -983,6 +990,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   margin-bottom: 4px;
 }
 .cal-day.other-month .cal-day-num { color: #ccc; }
+.cal-post-card:hover { filter: brightness(0.96); }
 .cal-day.today .cal-day-num {
   background: #111;
   color: #fff;
@@ -2506,48 +2514,79 @@ body:has(#login-screen.visible){
     <nav>
       <div id="sidebarCorp">
       <div class="nav-group-label">CORPORATIVO</div>
-      <button type="button" class="nav-item" data-page="dashboard" data-perm-module="dashboard" onclick="navigate('dashboard')">
-        <i class="fas fa-chart-line"></i><span>DASHBOARD</span>
-      </button>
-      <button type="button" class="nav-item" data-page="projects" data-perm-module="projetos" onclick="navigate('projects')">
-        <i class="fas fa-folder-open"></i><span>PROJETOS</span>
-      </button>
-      <button type="button" class="nav-item" data-page="pipeline" data-perm-module="pipeline" onclick="navigate('pipeline')">
-        <i class="fas fa-filter"></i><span>PIPELINE</span>
-      </button>
-      <button type="button" class="nav-item" data-page="gestao" data-perm-module="gestao" onclick="navigate('gestao')">
-        <i class="fas fa-project-diagram"></i><span>GESTÃO</span>
-      </button>
-      <button type="button" class="nav-item" data-page="orcamentos" data-perm-module="orcamentos" onclick="navigate('orcamentos')">
-        <i class="fas fa-file-alt"></i><span>ORÇAMENTOS</span>
-      </button>
-      <button type="button" class="nav-item" data-page="contratos" data-perm-module="contratos" onclick="navigate('contratos')">
-        <i class="fas fa-file-contract"></i><span>CONTRATOS</span>
-      </button>
-      <button type="button" class="nav-item" data-page="pagamentos" data-perm-module="pagamentos" onclick="navigate('pagamentos')">
-        <i class="fas fa-money-check-alt"></i><span>PAGAMENTOS</span>
-      </button>
-      <button type="button" class="nav-item" data-page="clientes" data-perm-module="clientes" onclick="navigate('clientes')">
-        <i class="fas fa-users"></i><span>CLIENTES</span>
-      </button>
-      <button type="button" class="nav-item" data-page="fechamento" data-perm-module="fechamento" onclick="navigate('fechamento')">
-        <i class="fas fa-file-invoice-dollar"></i><span>FECHAMENTO</span>
-      </button>
-      <button type="button" class="nav-item nav-admin-gestor-only" data-page="cashflow" onclick="navigate('cashflow')" style="display:none">
-        <i class="fas fa-chart-line"></i><span>FLUXO DE CAIXA</span>
-      </button>
-      <button type="button" class="nav-item" data-page="historico" data-perm-module="historico" onclick="navigate('historico')">
-        <i class="fas fa-archive"></i><span>HISTÓRICO</span>
-      </button>
-      <button type="button" class="nav-item" data-page="nps" data-perm-module="nps" onclick="navigate('nps')">
-        <i class="fas fa-star"></i><span>NPS</span>
-      </button>
-      <button type="button" class="nav-item" data-page="relatorios" data-perm-module="relatorios" onclick="navigate('relatorios')">
-        <i class="fas fa-clipboard-list"></i><span>RELATÓRIOS</span>
-      </button>
-      <button type="button" class="nav-item nav-admin-perm-page" data-page="equipe-permissoes" onclick="navigate('equipe-permissoes')" style="display:none">
-        <i class="fas fa-shield-alt"></i><span>EQUIPE &amp; PERMISSÕES</span>
-      </button>
+
+      <div class="nav-sector">
+        <div class="nav-group-label nav-sector-label">Visão geral</div>
+        <button type="button" class="nav-item" data-page="dashboard" data-perm-module="dashboard" onclick="navigate('dashboard')">
+          <i class="fas fa-chart-line"></i><span>DASHBOARD</span>
+        </button>
+        <button type="button" class="nav-item" data-page="historico" data-perm-module="historico" onclick="navigate('historico')">
+          <i class="fas fa-archive"></i><span>HISTÓRICO</span>
+        </button>
+      </div>
+
+      <div class="nav-sector">
+        <div class="nav-group-label nav-sector-label">Criativo</div>
+        <button type="button" class="nav-item" data-page="projects" data-perm-module="projetos" onclick="navigate('projects')">
+          <i class="fas fa-folder-open"></i><span>PROJETOS</span>
+        </button>
+        <button type="button" class="nav-item" data-page="gestao" data-perm-module="gestao" onclick="navigate('gestao')">
+          <i class="fas fa-project-diagram"></i><span>GESTÃO</span>
+        </button>
+        <button type="button" class="nav-item" data-page="relatorios" data-perm-module="relatorios" onclick="navigate('relatorios')">
+          <i class="fas fa-clipboard-list"></i><span>RELATÓRIOS</span>
+        </button>
+        <button type="button" class="nav-item" data-page="nps" data-perm-module="nps" onclick="navigate('nps')">
+          <i class="fas fa-star"></i><span>NPS</span>
+        </button>
+      </div>
+
+      <div class="nav-sector">
+        <div class="nav-group-label nav-sector-label">Marketing</div>
+        <button type="button" class="nav-item" data-page="pipeline" data-perm-module="pipeline" onclick="navigate('pipeline')">
+          <i class="fas fa-filter"></i><span>PIPELINE</span>
+        </button>
+        <button type="button" class="nav-item" data-page="postagens" data-perm-module="pipeline" onclick="navigate('postagens')">
+          <i class="fas fa-share-alt"></i><span>POSTAGENS</span>
+        </button>
+      </div>
+
+      <div class="nav-sector">
+        <div class="nav-group-label nav-sector-label">Administrativo</div>
+        <button type="button" class="nav-item" data-page="clientes" data-perm-module="clientes" onclick="navigate('clientes')">
+          <i class="fas fa-users"></i><span>CLIENTES</span>
+        </button>
+        <button type="button" class="nav-item" data-page="orcamentos" data-perm-module="orcamentos" onclick="navigate('orcamentos')">
+          <i class="fas fa-file-alt"></i><span>ORÇAMENTOS</span>
+        </button>
+      </div>
+
+      <div class="nav-sector">
+        <div class="nav-group-label nav-sector-label">Jurídico</div>
+        <button type="button" class="nav-item" data-page="contratos" data-perm-module="contratos" onclick="navigate('contratos')">
+          <i class="fas fa-file-contract"></i><span>CONTRATOS</span>
+        </button>
+      </div>
+
+      <div class="nav-sector">
+        <div class="nav-group-label nav-sector-label">Financeiro</div>
+        <button type="button" class="nav-item" data-page="pagamentos" data-perm-module="pagamentos" onclick="navigate('pagamentos')">
+          <i class="fas fa-money-check-alt"></i><span>PAGAMENTOS</span>
+        </button>
+        <button type="button" class="nav-item" data-page="fechamento" data-perm-module="fechamento" onclick="navigate('fechamento')">
+          <i class="fas fa-file-invoice-dollar"></i><span>FECHAMENTO</span>
+        </button>
+        <button type="button" class="nav-item nav-admin-gestor-only" data-page="cashflow" onclick="navigate('cashflow')" style="display:none">
+          <i class="fas fa-chart-line"></i><span>FLUXO DE CAIXA</span>
+        </button>
+      </div>
+
+      <div class="nav-sector">
+        <div class="nav-group-label nav-sector-label">Sistema</div>
+        <button type="button" class="nav-item nav-admin-perm-page" data-page="equipe-permissoes" onclick="navigate('equipe-permissoes')" style="display:none">
+          <i class="fas fa-shield-alt"></i><span>EQUIPE &amp; PERMISSÕES</span>
+        </button>
+      </div>
       </div>
 
       <div id="sidebarEquipe">
@@ -3560,6 +3599,82 @@ body:has(#login-screen.visible){
       </div>
 
       <!-- ══════════════════════════════════
+           POSTAGENS (cronograma editorial)
+      ══════════════════════════════════ -->
+      <div id="page-postagens" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-share-alt"></i> CRONOGRAMA DE POSTAGENS</div>
+          <div class="page-actions" style="gap:8px;flex-wrap:wrap">
+            <select id="postViewMode" class="cf-select" onchange="postSetViewMode(this.value)" title="Visão">
+              <option value="month">Calendário (mês)</option>
+              <option value="list">Lista do mês</option>
+            </select>
+            <select id="postFilterNetwork" class="cf-select" onchange="postApplyFiltersAndRender()">
+              <option value="">Todas redes</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="tiktok">TikTok</option>
+              <option value="youtube">YouTube</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="twitter">X / Twitter</option>
+              <option value="pinterest">Pinterest</option>
+              <option value="outro">Outro</option>
+            </select>
+            <select id="postFilterStatus" class="cf-select" onchange="postApplyFiltersAndRender()">
+              <option value="">Todos status</option>
+              <option value="planejado">Planejado</option>
+              <option value="agendado">Agendado</option>
+              <option value="postado">Postado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+            <select id="postFilterProject" class="cf-select" onchange="postApplyFiltersAndRender()">
+              <option value="">Todos projetos</option>
+            </select>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openPostagemModal(null)"><i class="fas fa-plus"></i> Nova postagem</button>
+          </div>
+        </div>
+        <div class="cal-header" style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="cal-nav-btn" type="button" onclick="postCalPrevMonth()" aria-label="Mês anterior">←</button>
+            <div class="cal-title" id="postCalTitle">—</div>
+            <button class="cal-nav-btn" type="button" onclick="postCalNextMonth()" aria-label="Próximo mês">→</button>
+            <button class="cal-today-btn" type="button" onclick="postCalGoToday()">HOJE</button>
+          </div>
+          <button type="button" class="cal-new-btn perm-guard-edit" onclick="openPostagemModal(null)">+ NOVA POSTAGEM</button>
+        </div>
+        <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:-4px 0 12px;line-height:1.45;max-width:820px">
+          Planeje por <b>data</b>, <b>projeto</b>, <b>material</b> e <b>rede social</b>. Dados em <code style="font-size:9px">age_social_posts</code> (execute o SQL em <code style="font-size:9px">supabase/sql/age_social_posts.sql</code> se a tabela ainda não existir).
+        </p>
+        <div id="postMonthWrap">
+          <div class="cal-grid" id="postCalGrid">
+            <div class="cal-weekday">DOM</div>
+            <div class="cal-weekday">SEG</div>
+            <div class="cal-weekday">TER</div>
+            <div class="cal-weekday">QUA</div>
+            <div class="cal-weekday">QUI</div>
+            <div class="cal-weekday">SEX</div>
+            <div class="cal-weekday">SÁB</div>
+          </div>
+        </div>
+        <div id="postListWrap" style="display:none">
+          <div class="table-wrap">
+            <table class="hud-table" style="font-size:11px">
+              <thead><tr>
+                <th style="width:110px">Data</th>
+                <th style="width:90px">Hora</th>
+                <th style="width:100px">Rede</th>
+                <th>Projeto</th>
+                <th>Material</th>
+                <th style="width:100px">Status</th>
+                <th style="width:90px;text-align:right">Ações</th>
+              </tr></thead>
+              <tbody id="postListTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
            CRONOGRAMA PAGE
       ══════════════════════════════════ -->
       <div id="page-cronograma" class="page">
@@ -4415,6 +4530,95 @@ body:has(#login-screen.visible){
     <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('modalTask')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTask()"><i class="fas fa-save"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal postagem (age_social_posts) -->
+<div class="modal" id="modalPostagem">
+  <div class="modal-box" style="max-width:520px;max-height:90vh;overflow-y:auto;background:#fff;color:#111">
+    <div class="modal-title" style="border-bottom:1px solid rgba(0,0,0,.08);padding-bottom:12px;margin-bottom:16px">
+      <span id="modalPostagemTitle" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800">NOVA POSTAGEM</span>
+      <button type="button" onclick="closeModal('modalPostagem')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1" aria-label="Fechar">✕</button>
+    </div>
+    <input type="hidden" id="postFormId" value="">
+    <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;color:#888">DATA *</label>
+        <input id="postFormDate" type="date" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;color:#888">HORA</label>
+        <input id="postFormTime" type="time" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">REDE SOCIAL *</label>
+      <select id="postFormNetwork" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="instagram">Instagram</option>
+        <option value="facebook">Facebook</option>
+        <option value="tiktok">TikTok</option>
+        <option value="youtube">YouTube</option>
+        <option value="linkedin">LinkedIn</option>
+        <option value="twitter">X / Twitter</option>
+        <option value="pinterest">Pinterest</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">FORMATO / TIPO</label>
+      <select id="postFormFormat" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="">—</option>
+        <option value="feed">Feed</option>
+        <option value="stories">Stories</option>
+        <option value="reels">Reels</option>
+        <option value="shorts">Shorts</option>
+        <option value="carrossel">Carrossel</option>
+        <option value="video">Vídeo</option>
+        <option value="foto">Foto</option>
+        <option value="live">Live</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">PROJETO</label>
+      <select id="postFormProjectId" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="">— Nenhum —</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">MATERIAL / PEÇA</label>
+      <input id="postFormMaterial" type="text" placeholder="Ex.: Reel 01 — bastidores gravação" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">LINK DO ARQUIVO</label>
+      <input id="postFormAssetUrl" type="url" placeholder="https://..." style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">LEGENDA / COPY</label>
+      <textarea id="postFormCaption" rows="3" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;resize:vertical"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">STATUS</label>
+      <select id="postFormStatus" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+        <option value="planejado">Planejado</option>
+        <option value="agendado">Agendado</option>
+        <option value="postado">Postado</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">RESPONSÁVEL (texto)</label>
+      <input id="postFormAssigned" type="text" placeholder="Nome ou @usuário" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">OBSERVAÇÕES</label>
+      <textarea id="postFormNotes" rows="2" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center">
+      <button type="button" class="btn btn-primary perm-guard-edit" onclick="savePostagem()" style="flex:1;min-width:140px;padding:12px;border-radius:8px;font-weight:700"><i class="fas fa-save"></i> Salvar</button>
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modalPostagem')">Cancelar</button>
+      <button type="button" class="btn btn-danger btn-sm perm-guard-edit" id="postFormDeleteBtn" onclick="deletePostagem()" style="display:none"><i class="fas fa-trash"></i> Excluir</button>
     </div>
   </div>
 </div>
@@ -5316,6 +5520,7 @@ const PAGE_PERM_KEYS = {
   dashboard: ['dashboard'],
   projects: ['projetos'],
   pipeline: ['pipeline'],
+  postagens: ['pipeline'],
   gestao: ['gestao'],
   orcamentos: ['orcamentos'],
   clientes: ['clientes'],
@@ -5440,6 +5645,13 @@ function _syncPermissionNav() {
     const any = [...el.querySelectorAll('.nav-item')].some(b => b.style.display !== 'none');
     el.style.display = any ? 'block' : 'none';
   });
+  const corp = document.getElementById('sidebarCorp');
+  if(corp) {
+    corp.querySelectorAll('.nav-sector').forEach(sec => {
+      const vis = [...sec.querySelectorAll('.nav-item')].some(b => b.style.display !== 'none' && b.offsetParent !== null);
+      sec.style.display = vis ? '' : 'none';
+    });
+  }
 }
 
 function _defaultLandingPage() {
@@ -6001,7 +6213,7 @@ async function migrateOwnageTenantForBootstrapAdmin() {
       'age_projects','age_fechamento','age_hist_projects','age_contracts','age_project_stages',
       'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
       'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
-      'age_relatorios','age_leads'
+      'age_relatorios','age_leads','age_social_posts'
     ];
     const byCreated = new Set(['gustavowng','system']);
 
@@ -8785,6 +8997,7 @@ const PAGE_TITLES = {
   'no-access':'ACESSO NEGADO',
   relatorios:'RELATÓRIOS DE PROJETOS',
   pipeline:'PIPELINE COMERCIAL',
+  postagens:'CRONOGRAMA DE POSTAGENS',
   nps:'NPS — AVALIAÇÃO DE CLIENTES',
   cashflow:'FLUXO DE CAIXA'
 };
@@ -8851,6 +9064,7 @@ function navigate(page) {
   if(page==='equipe-permissoes') loadEquipePermissoesPage();
   if(page==='relatorios')   loadRelatorios();
   if(page==='pipeline')     loadPipeline();
+  if(page==='postagens')   loadPostagens();
   if(page==='nps')          loadNps();
   if(page==='cashflow')     loadCashflow();
 
@@ -8909,7 +9123,7 @@ const TENANT_SCOPED_TABLES = new Set([
   'age_projects','age_fechamento','age_hist_projects','age_contracts','age_project_stages',
   'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
   'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
-  'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow'
+  'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow','age_social_posts'
 ]);
 
 function _tenantCidForScope() {
@@ -13803,6 +14017,7 @@ async function saveProject() {
       try {
         const pg = (id) => document.getElementById(id)?.classList.contains('active');
         if(pg('page-cronograma') && typeof loadCalendarEvents === 'function') loadCalendarEvents();
+        if(pg('page-postagens') && typeof loadPostagens === 'function') loadPostagens();
         if(pg('page-mytasks') && typeof loadTasks === 'function') loadTasks();
         if(pg('page-myday') && typeof loadMyDay === 'function') loadMyDay();
       } catch(eR) { console.warn('[integração refresh]', eR); }
@@ -19104,6 +19319,364 @@ function calGoToday() {
   calYear = new Date().getFullYear();
   calMonth = new Date().getMonth();
   loadCalendarEvents();
+}
+
+/* ═══ POSTAGENS — cronograma editorial (age_social_posts) ═══ */
+let _postagensCache = [];
+let _postCalMonth = new Date().getMonth();
+let _postCalYear = new Date().getFullYear();
+let _postagensView = 'month';
+
+function _postNetColor(net) {
+  const m = { instagram:'#db2777', facebook:'#1877f2', tiktok:'#111827', youtube:'#dc2626', linkedin:'#0a66c2', twitter:'#111', pinterest:'#bd081c', outro:'#64748b' };
+  return m[String(net || '').toLowerCase()] || '#64748b';
+}
+
+function postSetViewMode(v) {
+  _postagensView = v === 'list' ? 'list' : 'month';
+  const mw = document.getElementById('postMonthWrap');
+  const lw = document.getElementById('postListWrap');
+  if(mw) mw.style.display = _postagensView === 'month' ? '' : 'none';
+  if(lw) lw.style.display = _postagensView === 'list' ? '' : 'none';
+}
+
+function postApplyFiltersAndRender() {
+  postRenderFromCache();
+}
+
+function postFilteredRows() {
+  let rows = (Array.isArray(_postagensCache) ? _postagensCache : []).filter(_sbIsRowVisible);
+  const net = document.getElementById('postFilterNetwork')?.value || '';
+  const st = document.getElementById('postFilterStatus')?.value || '';
+  const pid = document.getElementById('postFilterProject')?.value || '';
+  if(net) rows = rows.filter(r => String(r.network || '').toLowerCase() === net);
+  if(st) rows = rows.filter(r => String(r.status || '').toLowerCase() === st);
+  if(pid) rows = rows.filter(r => String(r.project_id || '') === pid);
+  return rows.sort((a, b) => {
+    const da = String(a.post_date || '').localeCompare(String(b.post_date || ''));
+    if(da) return da;
+    return String(a.post_time || '').localeCompare(String(b.post_time || ''));
+  });
+}
+
+function postCalPrevMonth() {
+  _postCalMonth--;
+  if(_postCalMonth < 0) { _postCalMonth = 11; _postCalYear--; }
+  loadPostagens();
+}
+function postCalNextMonth() {
+  _postCalMonth++;
+  if(_postCalMonth > 11) { _postCalMonth = 0; _postCalYear++; }
+  loadPostagens();
+}
+function postCalGoToday() {
+  _postCalYear = new Date().getFullYear();
+  _postCalMonth = new Date().getMonth();
+  loadPostagens();
+}
+
+async function postPopulateProjectSelects() {
+  let projs = [];
+  try { projs = await fetchAgeProjectsScoped(500); } catch(_) { projs = []; }
+  const selF = document.getElementById('postFilterProject');
+  if(selF) {
+    const cur = selF.value;
+    selF.innerHTML = '<option value="">Todos projetos</option>';
+    projs.forEach(p => {
+      if(!p?.id) return;
+      const lab = `${_ageProjDbClient(p)} — ${_ageProjDbTitle(p)}`.trim() || p.id;
+      selF.insertAdjacentHTML('beforeend', `<option value="${escAttr(p.id)}">${escHtml(lab)}</option>`);
+    });
+    if(cur && [...selF.options].some(o => o.value === cur)) selF.value = cur;
+  }
+  const selM = document.getElementById('postFormProjectId');
+  if(selM) {
+    const curM = selM.value;
+    selM.innerHTML = '<option value="">— Nenhum —</option>';
+    projs.forEach(p => {
+      if(!p?.id) return;
+      const lab = `${_ageProjDbClient(p)} — ${_ageProjDbTitle(p)}`.trim() || p.id;
+      selM.insertAdjacentHTML('beforeend', `<option value="${escAttr(p.id)}">${escHtml(lab)}</option>`);
+    });
+    if(curM && [...selM.options].some(o => o.value === curM)) selM.value = curM;
+  }
+}
+
+async function loadPostagens() {
+  const tit = document.getElementById('postCalTitle');
+  if(tit) tit.textContent = _monthTitle(_postCalYear, _postCalMonth);
+  const vsel = document.getElementById('postViewMode');
+  if(vsel) _postagensView = vsel.value === 'list' ? 'list' : 'month';
+
+  const cid = currentUser?.company_id;
+  if(!cid) {
+    _postagensCache = [];
+    postRenderFromCache();
+    try { toast('Empresa não identificada.', 'warn'); } catch(_) {}
+    return;
+  }
+  const y = _postCalYear;
+  const m = _postCalMonth;
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  const startStr = `${y}-${_pad2(m + 1)}-01`;
+  const endStr = `${y}-${_pad2(m + 1)}-${_pad2(lastDay)}`;
+  const enc = encodeURIComponent(String(cid));
+  try {
+    const d = await apiGet('age_social_posts',
+      `?company_id=eq.${enc}&post_date=gte.${startStr}&post_date=lte.${endStr}&order=post_date.asc,post_time.asc&limit=500`);
+    _postagensCache = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+  } catch(e) {
+    console.warn('[loadPostagens]', e);
+    _postagensCache = [];
+    const msg = String(e?.message || e || '');
+    if(/42P01|does not exist|Could not find|relation/i.test(msg)) {
+      try { toast('Execute no Supabase: supabase/sql/age_social_posts.sql', 'warn'); } catch(_) {}
+    }
+  }
+  await postPopulateProjectSelects();
+  postRenderFromCache();
+}
+
+function postRenderFromCache() {
+  const vm = document.getElementById('postViewMode');
+  if(vm) _postagensView = vm.value === 'list' ? 'list' : 'month';
+  postSetViewMode(_postagensView);
+  if(_postagensView === 'list') postRenderList();
+  else postRenderCalendar();
+}
+
+function _postSmallCard(row) {
+  const bc = _postNetColor(row.network);
+  const mat = escHtml(String(row.material || row.format || row.network || '—').slice(0, 32));
+  const proj = escHtml(String(row.project_name || row.client_name || '').slice(0, 26) || '—');
+  const tid = escAttr(String(row.id || ''));
+  const tip = escAttr(String((row.caption || row.notes || '').replace(/\s+/g, ' ').trim()).slice(0, 200));
+  return `<div class="cal-post-card" data-post-id="${tid}" style="margin-top:3px;padding:3px 5px;border-radius:4px;font-size:9px;line-height:1.25;cursor:pointer;background:${bc}18;border-left:2px solid ${bc};color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${tip}"><b style="font-size:8px;text-transform:uppercase;color:${bc}">${escHtml(String(row.network || ''))}</b> · ${mat}<br><span style="opacity:.75">${proj}</span></div>`;
+}
+
+function postRenderCalendar() {
+  const grid = document.getElementById('postCalGrid');
+  if(!grid) return;
+  const head = Array.from(grid.querySelectorAll('.cal-weekday'));
+  grid.innerHTML = '';
+  head.forEach(h => grid.appendChild(h));
+
+  const rows = postFilteredRows();
+  const mappedByDay = {};
+  rows.forEach(r => {
+    const ds = String(r.post_date || '').slice(0, 10);
+    if(!ds) return;
+    if(!mappedByDay[ds]) mappedByDay[ds] = [];
+    mappedByDay[ds].push(r);
+  });
+
+  const first = new Date(_postCalYear, _postCalMonth, 1);
+  const startDow = first.getDay();
+  const start = new Date(_postCalYear, _postCalMonth, 1 - startDow);
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  for(let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const ds = d.toISOString().slice(0, 10);
+    const isOther = d.getMonth() !== _postCalMonth;
+    const isToday = ds === todayStr;
+    const dayPosts = (mappedByDay[ds] || []).slice().sort((a, b) => String(a.post_time || '').localeCompare(String(b.post_time || '')));
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '');
+    cell.setAttribute('data-date', ds);
+    cell.onclick = () => {
+      if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('postagens')) {
+        try { toast('Sem permissão para criar postagens.', 'warn'); } catch(_) {}
+        return;
+      }
+      openPostagemModal(null, ds);
+    };
+
+    const num = document.createElement('div');
+    num.className = 'cal-day-num';
+    num.textContent = String(d.getDate());
+    cell.appendChild(num);
+
+    const maxShow = 3;
+    dayPosts.slice(0, maxShow).forEach(row => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = _postSmallCard(row);
+      const card = wrap.firstElementChild;
+      if(card) {
+        card.addEventListener('click', e => { e.stopPropagation(); openPostagemModal(row); });
+        cell.appendChild(card);
+      }
+    });
+    if(dayPosts.length > maxShow) {
+      const more = document.createElement('div');
+      more.className = 'cal-more';
+      more.textContent = `+${dayPosts.length - maxShow} mais`;
+      more.onclick = e => {
+        e.stopPropagation();
+        if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('postagens')) return;
+        openPostagemModal(null, ds);
+      };
+      cell.appendChild(more);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function openPostagemModalById(id) {
+  const row = _postagensCache.find(x => String(x.id) === String(id));
+  openPostagemModal(row || null, null);
+}
+
+function postRenderList() {
+  const tb = document.getElementById('postListTbody');
+  if(!tb) return;
+  const rows = postFilteredRows();
+  if(!rows.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="table-empty">Nenhuma postagem neste período.</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(r => {
+    const idJs = String(r.id || '').replace(/'/g, "\\'");
+    const dt = escHtml(String(r.post_date || '').slice(0, 10));
+    const tRaw = r.post_time != null ? String(r.post_time) : '';
+    const tm = escHtml(tRaw.length >= 5 ? tRaw.slice(0, 5) : (tRaw || '—'));
+    const net = escHtml(String(r.network || '—'));
+    const pj = escHtml(String(((r.client_name || '') + (r.client_name && r.project_name ? ' — ' : '') + (r.project_name || ''))).trim() || '—');
+    const mat = escHtml(String(r.material || r.format || '—'));
+    const st = escHtml(String(r.status || '—'));
+    return `<tr>
+      <td>${dt}</td>
+      <td>${tm}</td>
+      <td><span style="font-weight:700;font-size:10px">${net}</span></td>
+      <td>${pj}</td>
+      <td>${mat}</td>
+      <td>${st}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="openPostagemModalById('${idJs}')"><i class="fas fa-pen"></i></button>
+      </td></tr>`;
+  }).join('');
+}
+
+async function openPostagemModal(row, dateStr) {
+  await postPopulateProjectSelects();
+  const delBtn = document.getElementById('postFormDeleteBtn');
+  if(row && row.id) {
+    document.getElementById('modalPostagemTitle').textContent = 'EDITAR POSTAGEM';
+    document.getElementById('postFormId').value = row.id;
+    if(delBtn) delBtn.style.display = '';
+    document.getElementById('postFormDate').value = String(row.post_date || '').slice(0, 10) || (dateStr || new Date().toISOString().slice(0, 10));
+    document.getElementById('postFormTime').value = row.post_time ? String(row.post_time).slice(0, 5) : '';
+    document.getElementById('postFormNetwork').value = String(row.network || 'instagram');
+    document.getElementById('postFormFormat').value = String(row.format || '');
+    document.getElementById('postFormProjectId').value = row.project_id ? String(row.project_id) : '';
+    document.getElementById('postFormMaterial').value = row.material || '';
+    document.getElementById('postFormAssetUrl').value = row.asset_url || '';
+    document.getElementById('postFormCaption').value = row.caption || '';
+    document.getElementById('postFormStatus').value = String(row.status || 'planejado');
+    document.getElementById('postFormAssigned').value = row.assigned_to || '';
+    document.getElementById('postFormNotes').value = row.notes || '';
+  } else {
+    document.getElementById('modalPostagemTitle').textContent = 'NOVA POSTAGEM';
+    document.getElementById('postFormId').value = '';
+    if(delBtn) delBtn.style.display = 'none';
+    document.getElementById('postFormDate').value = (dateStr || new Date().toISOString().slice(0, 10));
+    document.getElementById('postFormTime').value = '';
+    document.getElementById('postFormNetwork').value = 'instagram';
+    document.getElementById('postFormFormat').value = '';
+    document.getElementById('postFormProjectId').value = '';
+    document.getElementById('postFormMaterial').value = '';
+    document.getElementById('postFormAssetUrl').value = '';
+    document.getElementById('postFormCaption').value = '';
+    document.getElementById('postFormStatus').value = 'planejado';
+    document.getElementById('postFormAssigned').value = '';
+    document.getElementById('postFormNotes').value = '';
+  }
+  openModal('modalPostagem');
+}
+
+async function savePostagem() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('postagens')) {
+    toast('Sem permissão para editar postagens.', 'warn');
+    return;
+  }
+  const cid = currentUser?.company_id;
+  if(!cid) { toast('Empresa não identificada.', 'warn'); return; }
+
+  const postDate = document.getElementById('postFormDate')?.value;
+  const net = document.getElementById('postFormNetwork')?.value;
+  if(!postDate || !net) { toast('Data e rede social são obrigatórias.', 'warn'); return; }
+
+  const pid = (document.getElementById('postFormProjectId')?.value || '').trim();
+  let client_name = null;
+  let project_name = null;
+  if(pid) {
+    try {
+      const projs = await fetchAgeProjectsScoped(500);
+      const p = projs.find(x => String(x.id) === pid);
+      if(p) {
+        client_name = _ageProjDbClient(p) || null;
+        project_name = _ageProjDbTitle(p) || null;
+      }
+    } catch(_) {}
+  }
+
+  const tRaw = document.getElementById('postFormTime')?.value || '';
+  const post_time = tRaw ? (tRaw.length === 5 ? tRaw + ':00' : tRaw) : null;
+
+  const payload = {
+    post_date: postDate,
+    post_time,
+    network: net,
+    format: (document.getElementById('postFormFormat')?.value || '') || null,
+    project_id: pid || null,
+    client_name,
+    project_name,
+    material: (document.getElementById('postFormMaterial')?.value || '').trim() || null,
+    asset_url: (document.getElementById('postFormAssetUrl')?.value || '').trim() || null,
+    caption: (document.getElementById('postFormCaption')?.value || '').trim() || null,
+    status: document.getElementById('postFormStatus')?.value || 'planejado',
+    assigned_to: (document.getElementById('postFormAssigned')?.value || '').trim() || null,
+    notes: (document.getElementById('postFormNotes')?.value || '').trim() || null,
+    updated_at: Date.now()
+  };
+
+  const id = document.getElementById('postFormId')?.value;
+  try {
+    if(id) {
+      await apiPatch('age_social_posts', id, payload);
+    } else {
+      payload.company_id = String(cid);
+      payload.created_at = Date.now();
+      payload.deleted = false;
+      await apiPost('age_social_posts', payload);
+    }
+    closeModal('modalPostagem');
+    toast('Postagem salva!');
+    await loadPostagens();
+  } catch(e) {
+    console.error('[savePostagem]', e);
+    toast(String(e?.message || 'Erro ao salvar'), 'err');
+  }
+}
+
+async function deletePostagem() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('postagens')) {
+    toast('Sem permissão.', 'warn');
+    return;
+  }
+  const id = document.getElementById('postFormId')?.value;
+  if(!id || !confirm('Excluir esta postagem?')) return;
+  try {
+    await apiPatch('age_social_posts', id, { deleted: true, updated_at: Date.now() });
+    closeModal('modalPostagem');
+    toast('Removida.');
+    await loadPostagens();
+  } catch(e) {
+    console.error('[deletePostagem]', e);
+    toast(String(e?.message || 'Erro ao excluir'), 'err');
+  }
 }
 
 /** Popula responsável (age_colaboradores) e projeto relacionado (age_projects) no modal do calendário. */
