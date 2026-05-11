@@ -3122,6 +3122,28 @@ body:has(#login-screen.visible){
             <select id="cfAnoBalanco" class="cf-select" title="Ano do balanço" onchange="cfApplyPeriodFromPanel()"></select>
             <span style="font-family:var(--font-m);font-size:9px;color:#94a3b8;max-width:260px;line-height:1.35">O mesmo período vale para custos fixos e para o gráfico anual do ano selecionado no topo.</span>
           </div>
+          <div id="cfBalancoProjPanel" style="margin:12px 0 6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <div style="font-family:var(--font-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8">
+                Projetos neste período <span id="cfBalancoProjPeriodLbl" style="color:rgba(255,255,255,.55)">—</span>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="navigate('projects')"><i class="fas fa-folder-open"></i> Abrir aba Projetos</button>
+            </div>
+            <div class="cf-table-wrap">
+              <table class="cf-table" id="cfTableBalancoProjetos">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Projeto</th>
+                    <th style="white-space:nowrap">Data pgto</th>
+                    <th style="text-align:right">Faturamento</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="cfTbodyBalancoProjetos"></tbody>
+              </table>
+            </div>
+          </div>
           <div id="cfHeroMes"></div>
           <div class="cf-kpi-row" id="cfKpiBalanco"></div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
@@ -13002,12 +13024,20 @@ async function saveSheetCell(inp) {
 
   /* Atualizar cache local para UI reativa sem reload */
   const cached = _projAllCache.find(p=>p.id===pid||p._sheetIdx===sidx);
+  let mesPaymentDateOverride = null;
+  if(field === 'mes' && pid && !String(pid).startsWith('sheet_') && cached) {
+    mesPaymentDateOverride = _projComposePaymentDateForMonth(cached, newVal);
+  }
+
   if(cached) {
     if(field==='total_value')       cached.total_value  = parseFloat(newVal)||0;
     else if(field==='cost')        cached.cost         = parseFloat(newVal)||0;
     else if(field==='nps')         cached.nps          = parseFloat(newVal)||0;
     else if(field==='is_new_client') cached.is_new_client = newVal==='true';
-    else if(field==='mes')         cached._sheetMes    = parseInt(newVal)||1;
+    else if(field==='mes') {
+      cached._sheetMes = parseInt(newVal)||1;
+      if(mesPaymentDateOverride) cached.payment_date = mesPaymentDateOverride;
+    }
     else if(field==='payment_date') { cached.payment_date = newVal; if(autoMes) cached._sheetMes = autoMes; }
     else                           cached[field]       = newVal;
     if(field==='total_value' || field==='cost') {
@@ -13019,6 +13049,12 @@ async function saveSheetCell(inp) {
         cached.profit_pct = tv > 0 ? Math.round((tv - co) / tv * 100) : 0;
       }
     }
+  }
+
+  if(field === 'mes' && mesPaymentDateOverride) {
+    const rowSync = inp.closest('tr');
+    const payInp = rowSync?.querySelector('input[type="date"][data-f="payment_date"]');
+    if(payInp) payInp.value = mesPaymentDateOverride;
   }
 
   /* Atualizar KPI / barra mensal sem reload completo */
@@ -13040,7 +13076,7 @@ async function saveSheetCell(inp) {
       else if(field==='cost')          payload.cost         = parseFloat(newVal)||0;
       else if(field==='nps')           payload.nps          = parseFloat(newVal)||0;
       else if(field==='is_new_client') payload.is_new_client= newVal==='true';
-      else if(field==='mes') {}        /* mes não existe no BD, apenas na planilha */
+      else if(field==='mes' && mesPaymentDateOverride) payload.payment_date = mesPaymentDateOverride;
       else if(field==='payment_date')  { payload.payment_date = newVal; }
       else if(field==='client_name')   payload.client_name  = newVal;
       else if(field==='project_name')  payload.project_name = newVal;
@@ -17831,6 +17867,60 @@ function _cfProjFinanceMonth(mes, ano) {
   return { rec, cst };
 }
 
+/** Atualiza payment_date no Supabase quando o usuário muda só o mês na planilha (não existe coluna mes). */
+function _projComposePaymentDateForMonth(cached, mesNew) {
+  const m = Math.max(1, Math.min(12, parseInt(mesNew, 10) || 1));
+  const pay = String(cached?.payment_date || '').slice(0, 10);
+  const proj = String(cached?.project_date || '').slice(0, 10);
+  const base = pay || proj;
+  let y;
+  let day = 15;
+  if(base && /^\d{4}-\d{2}-\d{2}$/.test(base)) {
+    y = parseInt(base.slice(0, 4), 10);
+    day = parseInt(base.slice(8, 10), 10) || 15;
+  } else {
+    const yy = parseInt(document.getElementById('cfAno')?.value, 10);
+    y = yy >= 1990 && yy <= 2100 ? yy : new Date().getFullYear();
+  }
+  if(!(y >= 1990 && y <= 2100)) y = new Date().getFullYear();
+  const dim = new Date(y, m, 0).getDate();
+  if(day > dim) day = dim;
+  if(day < 1) day = 1;
+  return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function renderCfBalancoProjetosList(mes, ano) {
+  const tb = document.getElementById('cfTbodyBalancoProjetos');
+  const lbl = document.getElementById('cfBalancoProjPeriodLbl');
+  if(lbl) lbl.textContent = `· ${MONTHS[(mes || 1) - 1] || ''} ${ano}`;
+  if(!tb) return;
+  const list = (_cfProjectsForMonth(mes, ano) || []).slice();
+  list.sort((a, b) => _projRefTime(a) - _projRefTime(b));
+  if(!list.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="color:#64748b;padding:16px">Nenhum projeto neste mês/ano (critério igual ao balanço: data de pagamento ou referência do projeto).</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(p => {
+    const cli = escHtml(String(p.client_name || '').trim() || '—');
+    const tit = escHtml(String(p.project_name || '').trim() || '—');
+    const rawPay = p.payment_date ? String(p.payment_date).slice(0, 10) : '';
+    let payCell = '—';
+    if(rawPay) {
+      const d = new Date(rawPay + 'T12:00:00');
+      payCell = escHtml(!isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR') : rawPay);
+    }
+    const fat = parseFloat(p.total_value || 0) || 0;
+    const st = _dashStatusLabel(p.status || '');
+    return `<tr>
+      <td>${cli}</td>
+      <td>${tit}</td>
+      <td style="white-space:nowrap">${payCell}</td>
+      <td style="text-align:right;font-weight:600">${fmtBRL(fat)}</td>
+      <td style="font-size:10px">${escHtml(st)}</td>
+    </tr>`;
+  }).join('');
+}
+
 function _cfSyntheticProjectRows(mes, ano) {
   const list = _cfProjectsForMonth(mes, ano);
   const fechMap = _cfCashflowFechMap;
@@ -18452,6 +18542,7 @@ async function loadCashflow() {
   }
 
   renderBalanco(receitas, variaveis, fixosMes, mes, ano);
+  renderCfBalancoProjetosList(mes, ano);
   renderCustosFixos(fixosMes, mes, ano);
   renderSummaryCards(receitas, variaveis, fixosMes, mes, ano);
   renderCfProjecaoFromYear(ano);
