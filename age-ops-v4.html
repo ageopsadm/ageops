@@ -2085,7 +2085,7 @@ body:has(#login-screen.visible){
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
           <input type="checkbox" id="remember-me-checkbox" style="width:16px;height:16px;accent-color:#111;cursor:pointer" />
-          <label for="remember-me-checkbox" style="font-family:'Rajdhani',sans-serif;font-size:14px;color:#555;cursor:pointer;letter-spacing:0.5px">Lembrar de mim</label>
+          <label for="remember-me-checkbox" title="Salva o e-mail no navegador para preencher na próxima vez. O login continua ativo após atualizar a página." style="font-family:'Rajdhani',sans-serif;font-size:14px;color:#555;cursor:pointer;letter-spacing:0.5px">Lembrar e-mail</label>
         </div>
         <button type="button" class="btn btn-primary login-btn" id="loginBtn" onclick="handleLogin()">
           <i class="fas fa-spinner fa-spin" id="loginBtnIcon" style="display:none;margin-right:8px;vertical-align:middle" aria-hidden="true"></i>
@@ -7312,30 +7312,26 @@ function initInviteFromUrl() {
   } catch(e) {}
 }
 
-/* ─── LEMBRAR DE MIM (Supabase Auth + sessão age_users) ─── */
+/* ─── Supabase Auth (JWT em localStorage) + age_users ───
+ * "Lembrar de mim" só guarda e-mail no formulário (ageops_email).
+ * A sessão do Supabase (persistSession) mantém o login após F5 / novo deploy no mesmo domínio,
+ * desde que signInWithPassword tenha sido bem-sucedido no último login. */
 
-async function checkRememberedSession() {
-  const remembered = localStorage.getItem('ageops_remember');
-  if(remembered !== 'true') return false;
-  if(!supabase || !supabase.auth) {
-    localStorage.removeItem('ageops_remember');
-    localStorage.removeItem('ageops_email');
+async function tryRestoreSupabaseSession() {
+  if(!supabase || !supabase.auth) return false;
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if(error || !session?.user) return false;
+  const mail = String(session.user.email || '').trim().toLowerCase();
+  const row = mail ? await fetchAgeUserByEmail(mail) : null;
+  if(!row || !_sbIsRowVisible(row)) {
+    try { await supabase.auth.signOut(); } catch(_) {}
     return false;
   }
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if(session && !error && session.user) {
-    const mail = String(session.user.email || '').trim().toLowerCase();
-    const row = mail ? await fetchAgeUserByEmail(mail) : null;
-    if(row && _sbIsRowVisible(row)) {
-      const res = await applyLoginSessionFromRow(row);
-      if(res.ok) {
-        try { await initApp(); } catch(_) {}
-        return true;
-      }
-    }
+  const res = await applyLoginSessionFromRow(row);
+  if(res.ok) {
+    try { await initApp(); } catch(_) {}
+    return true;
   }
-  localStorage.removeItem('ageops_remember');
-  localStorage.removeItem('ageops_email');
   return false;
 }
 
@@ -7460,26 +7456,25 @@ async function handleLogin() {
     if(rememberMe) {
       localStorage.setItem('ageops_remember', 'true');
       localStorage.setItem('ageops_email', loginEmailForAuth || email);
-      if(supabase && supabase.auth && loginEmailForAuth) {
-        try {
-          const { error: authErr } = await supabase.auth.signInWithPassword({
-            email: loginEmailForAuth,
-            password
-          });
-          if(authErr) console.warn('[auth] signInWithPassword (lembrar):', authErr.message);
-          else {
-            try { await supabase.auth.updateUser({}); } catch(_) {}
-          }
-        } catch(e) {
-          console.warn('[auth] lembrar — Auth opcional:', e);
-        }
-      }
     } else {
       localStorage.removeItem('ageops_remember');
       localStorage.removeItem('ageops_email');
+    }
+
+    /* Persiste JWT (localStorage) para sobreviver a recarregar / novo deploy — não depende do checkbox */
+    if(supabase && supabase.auth && loginEmailForAuth) {
       try {
-        if(supabase && supabase.auth) await supabase.auth.signOut();
-      } catch(_) {}
+        const { error: authErr } = await supabase.auth.signInWithPassword({
+          email: loginEmailForAuth,
+          password
+        });
+        if(authErr) console.warn('[auth] signInWithPassword:', authErr.message);
+        else {
+          try { await supabase.auth.updateUser({}); } catch(_) {}
+        }
+      } catch(e) {
+        console.warn('[auth] signInWithPassword opcional:', e);
+      }
     }
 
     const res = await applyLoginSessionFromRow(sessionRow);
@@ -22045,7 +22040,7 @@ function _ageInit() {
 
 async function _ageBootstrap() {
   try {
-    const autoLogado = await checkRememberedSession();
+    const autoLogado = await tryRestoreSupabaseSession();
     if(!autoLogado) {
       const gustavoOk = await tryAutoLoginGustavowng();
       if(!gustavoOk) {
