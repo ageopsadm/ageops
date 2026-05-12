@@ -3431,8 +3431,16 @@ body:has(#login-screen.visible){
                   <input id="orc-cliente" placeholder="Nome do cliente" class="orc-input" oninput="atualizarPreview();orcUpdateHeaderInfo()" />
                   <textarea id="orc-descricao" placeholder="Descrição / escopo do projeto" class="orc-input" rows="3" oninput="atualizarPreview()"></textarea>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                    <input id="orc-data" type="date" class="orc-input" onchange="atualizarPreview()" />
-                    <input id="orc-validade" type="date" class="orc-input" onchange="atualizarPreview()" title="Validade da proposta" />
+                    <div>
+                      <label for="orc-data" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;letter-spacing:.06em;margin-bottom:6px">EMISSÃO DA PROPOSTA</label>
+                      <input id="orc-data" type="date" class="orc-input" onchange="atualizarPreview()" title="Data em que o orçamento é emitido" />
+                      <div style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.35">Data do documento enviado ao cliente.</div>
+                    </div>
+                    <div>
+                      <label for="orc-validade" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;letter-spacing:.06em;margin-bottom:6px">VALIDADE (ACEITE)</label>
+                      <input id="orc-validade" type="date" class="orc-input" onchange="atualizarPreview()" title="Último dia para o cliente aceitar esta proposta" />
+                      <div style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.35">Após esta data a proposta pode ser revisada ou cancelada.</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -16291,71 +16299,87 @@ function atualizarPreview() {
   const data = document.getElementById('orc-data')?.value;
   const validade = document.getElementById('orc-validade')?.value;
   const numRef = window._orcProposalNum || String(Date.now()).slice(-6);
+  const emissaoStr = data ? new Date(data + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
   const validadeStr = validade ? new Date(validade + 'T00:00:00').toLocaleDateString('pt-BR') : '';
 
+  const secTitle = (t) => `<div style="font-family:var(--font-h),sans-serif;font-size:9px;letter-spacing:.2em;color:#475569;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #0f172a">${t}</div>`;
+
   preview.innerHTML = `
-    <div style="font-family:var(--font-b),Rajdhani,sans-serif;color:#1a1a1a">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #000">
-        <div>
-          <div style="font-family:var(--font-h),sans-serif;font-size:22px;font-weight:700;letter-spacing:2px">AGE OPS</div>
-          <div style="font-size:11px;opacity:.4;letter-spacing:3px;margin-top:4px">PROPOSTA COMERCIAL</div>
+    <div style="font-family:var(--font-b),Rajdhani,sans-serif;color:#0f172a;line-height:1.45">
+      <div style="background:linear-gradient(145deg,#0f172a 0%,#1e3a5f 55%,#0f172a 100%);color:#fff;margin:-32px -32px 28px -32px;padding:26px 32px 0;border-radius:12px 12px 0 0;box-shadow:0 12px 40px rgba(15,23,42,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
+          <div style="padding-bottom:22px">
+            <div style="font-family:var(--font-h),sans-serif;font-size:26px;font-weight:800;letter-spacing:.14em">AGE OPS</div>
+            <div style="font-size:10px;opacity:.72;letter-spacing:.32em;margin-top:10px">PROPOSTA COMERCIAL</div>
+          </div>
+          <div style="text-align:right;font-size:11px;line-height:1.75;min-width:200px">
+            <div style="margin-bottom:4px"><span style="opacity:.55;display:inline-block;width:88px;text-align:left;font-size:9px;letter-spacing:.06em">EMISSÃO</span><strong style="font-weight:600;font-size:13px">${escHtml(emissaoStr)}</strong></div>
+            ${validadeStr ? `<div style="margin-bottom:4px"><span style="opacity:.55;display:inline-block;width:88px;text-align:left;font-size:9px;letter-spacing:.06em">VALIDADE</span><strong style="font-weight:600;font-size:13px">${escHtml(validadeStr)}</strong></div>` : `<div style="opacity:.45;font-size:10px;font-style:italic">Validade não informada</div>`}
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2)">
+              <span style="opacity:.55;font-size:9px;letter-spacing:.08em">PROPOSTA Nº</span>
+              <strong style="font-weight:700;font-size:14px;margin-left:8px">${escHtml(numRef)}</strong>
+            </div>
+          </div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:12px;opacity:.5">${data ? new Date(data + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')}</div>
-          <div style="font-size:11px;opacity:.4;margin-top:4px">Nº ${escHtml(numRef)}</div>
-        </div>
+        <div style="height:4px;background:linear-gradient(90deg,#b45309,#fbbf24,#b45309);margin:18px -32px 0;border-radius:2px"></div>
       </div>
-      <div style="margin-bottom:28px">
-        <div style="font-family:var(--font-h),sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">${escHtml(titulo) || '—'}</div>
-        ${cliente ? `<div style="font-size:14px;opacity:.6">Cliente: ${escHtml(cliente)}</div>` : ''}
-        ${descricao ? `<div style="font-size:13px;opacity:.75;margin-top:10px;line-height:1.5">${escHtml(descricao).replace(/\n/g,'<br>')}</div>` : ''}
-        ${validadeStr ? `<div style="font-size:12px;opacity:.5;margin-top:8px">Proposta válida até ${escHtml(validadeStr)}</div>` : ''}
+
+      <div style="margin-bottom:26px">
+        <div style="font-family:var(--font-h),sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;letter-spacing:.02em">${escHtml(titulo) || '—'}</div>
+        ${cliente ? `<div style="font-size:13px;color:#475569;font-weight:600">Cliente · ${escHtml(cliente)}</div>` : ''}
+        ${descricao ? `<div style="font-size:12px;color:#334155;margin-top:12px;line-height:1.65;border-left:3px solid #e2e8f0;padding-left:14px">${escHtml(descricao).replace(/\n/g,'<br>')}</div>` : ''}
       </div>
+
       ${window._orcEquipe.length ? `
-        <div style="margin-bottom:24px">
-          <div style="font-family:var(--font-h),sans-serif;font-size:10px;letter-spacing:2px;opacity:.5;margin-bottom:12px">EQUIPE</div>
+        <div style="margin-bottom:26px">
+          ${secTitle('EQUIPE & DIÁRIAS')}
           ${window._orcEquipe.map(m => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:13px">
-              <span>${escHtml(m.nome)} × ${m.quantidade} × ${diarias} diária${diarias > 1 ? 's' : ''}</span>
-              <span style="font-weight:600">${fmtBRL(m.diaria * m.quantidade * diarias)}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #f1f5f9;border-radius:8px;margin-bottom:8px;background:#fafafa;font-size:13px">
+              <span>${escHtml(m.nome)} <span style="color:#64748b;font-size:11px">× ${m.quantidade} × ${diarias} diária${diarias > 1 ? 's' : ''}</span></span>
+              <span style="font-family:var(--font-h);font-weight:700">${fmtBRL(m.diaria * m.quantidade * diarias)}</span>
             </div>
           `).join('')}
         </div>
       ` : ''}
       ${window._orcCatalogo.filter(i => i.descricao).length ? `
-        <div style="margin-bottom:24px">
-          <div style="font-family:var(--font-h),sans-serif;font-size:10px;letter-spacing:2px;opacity:.5;margin-bottom:12px">PRODUTOS E SERVIÇOS</div>
+        <div style="margin-bottom:26px">
+          ${secTitle('PRODUTOS E SERVIÇOS')}
           ${window._orcCatalogo.filter(i => i.descricao).map(i => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:13px">
-              <span>${escHtml(i.descricao)} × ${i.quantidade}</span>
-              <span style="font-weight:600">${fmtBRL(i.valorUnit * i.quantidade)}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #f1f5f9;border-radius:8px;margin-bottom:8px;background:#fafafa;font-size:13px">
+              <span>${escHtml(i.descricao)} <span style="color:#64748b;font-size:11px">× ${i.quantidade}</span></span>
+              <span style="font-family:var(--font-h);font-weight:700">${fmtBRL(i.valorUnit * i.quantidade)}</span>
             </div>
           `).join('')}
         </div>
       ` : ''}
       ${window._orcDespesas.filter(d => d.descricao).length ? `
-        <div style="margin-bottom:24px">
-          <div style="font-family:var(--font-h),sans-serif;font-size:10px;letter-spacing:2px;opacity:.5;margin-bottom:12px">DESPESAS ADICIONAIS</div>
+        <div style="margin-bottom:26px">
+          ${secTitle('DESPESAS ADICIONAIS')}
           ${window._orcDespesas.filter(d => d.descricao).map(d => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:13px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #f1f5f9;border-radius:8px;margin-bottom:8px;background:#fafafa;font-size:13px">
               <span>${escHtml(d.descricao)}</span>
-              <span style="font-weight:600">${fmtBRL(d.valor)}</span>
+              <span style="font-family:var(--font-h);font-weight:700">${fmtBRL(d.valor)}</span>
             </div>
           `).join('')}
         </div>
       ` : ''}
-      <div style="background:#000;color:#fff;border-radius:12px;padding:20px;margin-top:24px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;opacity:.7;font-size:13px">
-          <span>Subtotal</span><span>${fmtBRL(fin.subtotal)}</span>
+
+      <div style="background:#0f172a;color:#fff;border-radius:14px;padding:22px 24px;margin-top:8px;box-shadow:0 8px 32px rgba(15,23,42,.2)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;opacity:.85;font-size:13px">
+          <span>Subtotal operacional</span><span style="font-family:var(--font-h)">${fmtBRL(fin.subtotal)}</span>
         </div>
         ${margem ? `
-          <div style="display:flex;justify-content:space-between;margin-bottom:12px;opacity:.7;font-size:13px">
-            <span>Taxa de serviço (${margem}%)</span><span>${fmtBRL(fin.valorMargem)}</span>
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px;opacity:.85;font-size:13px">
+            <span>Taxa de serviço (${margem}%)</span><span style="font-family:var(--font-h);color:#86efac">${fmtBRL(fin.valorMargem)}</span>
           </div>
         ` : ''}
-        <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700;border-top:1px solid rgba(255,255,255,.2);padding-top:12px">
+        <div style="display:flex;justify-content:space-between;font-size:22px;font-weight:800;font-family:var(--font-h);border-top:1px solid rgba(255,255,255,.25);padding-top:14px">
           <span>TOTAL</span><span>${fmtBRL(fin.totalFinal)}</span>
         </div>
+      </div>
+
+      <div style="margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;font-size:9px;color:#94a3b8;letter-spacing:.12em;line-height:1.5">
+        Documento confidencial · valores válidos conforme validade indicada · Age Ops
       </div>
     </div>
   `;
@@ -16560,6 +16584,10 @@ function gerarPDFInterno() {
   if(!client) { toast('Informe o nome do cliente', 'err'); return; }
   const fin = orcBuilderGetFinancials();
   const diarias = fin.diarias;
+  const dtEm = document.getElementById('orc-data')?.value;
+  const dtVal = document.getElementById('orc-validade')?.value;
+  const emStr = dtEm ? new Date(dtEm + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const valStr = dtVal ? new Date(dtVal + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
   const wrap = document.createElement('div');
   wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:Rajdhani,sans-serif;font-size:13px;line-height:1.45;width:794px';
   const eqRows = (window._orcEquipe || []).map(m => `
@@ -16570,7 +16598,12 @@ function gerarPDFInterno() {
   wrap.innerHTML = `
     <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;letter-spacing:0.5px;margin-bottom:16px;color:#666">DOCUMENTO INTERNO — NÃO ENVIAR AO CLIENTE</div>
     <h1 style="font-size:20px;margin-bottom:8px">Breakdown — ${escHtml(document.getElementById('orc-titulo')?.value || 'Projeto')}</h1>
-    <p style="opacity:.75;margin-bottom:20px">Cliente: ${escHtml(client)}</p>
+    <p style="opacity:.75;margin-bottom:6px">Cliente: ${escHtml(client)}</p>
+    <p style="font-size:11px;color:#475569;margin-bottom:20px;line-height:1.6">
+      <strong>Emissão da proposta:</strong> ${escHtml(emStr)}
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <strong>Validade (aceite):</strong> ${escHtml(valStr)}
+    </p>
     <h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Equipe</h2>
     <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
       <thead><tr style="background:#f4f4f5"><th align="left" style="padding:8px">Função</th><th align="left" style="padding:8px">Área</th><th style="padding:8px">Qtd</th><th style="padding:8px;text-align:right">Diária</th><th style="padding:8px">Dias gravação</th><th style="padding:8px;text-align:right">Subtotal</th></tr></thead>
