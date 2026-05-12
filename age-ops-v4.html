@@ -3542,11 +3542,22 @@ body:has(#login-screen.visible){
                   </div>
                   <div style="display:flex;justify-content:space-between;align-items:center">
                     <span style="opacity:.7">Margem da agência (%)</span>
-                    <input type="number" id="orc-margem" value="20" min="0" max="100" style="width:60px;text-align:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;color:#fff;padding:4px;font-size:14px" onchange="recalcularTotais()" />
+                    <input type="number" id="orc-margem" value="20" min="0" max="100" style="width:60px;text-align:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;color:#fff;padding:4px;font-size:14px" oninput="recalcularTotais()" onchange="recalcularTotais()" />
                   </div>
                   <div style="display:flex;justify-content:space-between">
                     <span style="opacity:.7">Valor da margem</span>
                     <span id="orc-valor-margem" style="color:#4ade80">R$ 0</span>
+                  </div>
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.2);display:flex;flex-direction:column;gap:10px;font-size:11px;line-height:1.45">
+                    <span style="opacity:.85;font-weight:700">Taxa no PDF ao cliente</span>
+                    <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;opacity:.95">
+                      <input type="radio" name="orc-margem-modo" value="transparente" checked onchange="recalcularTotais()" style="margin-top:2px;accent-color:#4ade80" />
+                      <span>Transparente — discriminar a taxa em linha própria na composição (cliente vê o % separado das entregas).</span>
+                    </label>
+                    <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;opacity:.95">
+                      <input type="radio" name="orc-margem-modo" value="diluida" onchange="recalcularTotais()" style="margin-top:2px;accent-color:#4ade80" />
+                      <span>Diluir — repartir a taxa proporcionalmente em cada entrega do escopo (cada valor já inclui a %).</span>
+                    </label>
                   </div>
                   <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);font-size:20px;font-weight:700">
                     <span>TOTAL FINAL</span>
@@ -16092,6 +16103,11 @@ window._orcCatalogo = window._orcCatalogo || [];
 window._orcDespesas = window._orcDespesas || [];
 window._orcProposalNum = window._orcProposalNum || '';
 
+function _orcMargemModo() {
+  const el = document.querySelector('input[name="orc-margem-modo"]:checked');
+  return el?.value === 'diluida' ? 'diluida' : 'transparente';
+}
+
 function orcBuilderGetFinancials() {
   const diarias = parseInt(document.getElementById('orc-diarias')?.value || 1, 10) || 1;
   const margem = parseFloat(document.getElementById('orc-margem')?.value || 0) / 100;
@@ -16102,7 +16118,9 @@ function orcBuilderGetFinancials() {
   const valorMargem = subtotal * margem;
   const totalFinal = subtotal + valorMargem;
   const margemPct = parseFloat(document.getElementById('orc-margem')?.value || 0) || 0;
-  return { diarias, totalEquipe, totalCatalogo, totalDespesas, subtotal, valorMargem, totalFinal, margemPct };
+  const margemModo = _orcMargemModo();
+  const fatorDiluicao = subtotal > 0 ? totalFinal / subtotal : 1;
+  return { diarias, totalEquipe, totalCatalogo, totalDespesas, subtotal, valorMargem, totalFinal, margemPct, margemModo, fatorDiluicao };
 }
 
 function orcSerializeBuilder() {
@@ -16113,6 +16131,7 @@ function orcSerializeBuilder() {
     descricao: document.getElementById('orc-descricao')?.value?.trim() || '',
     diarias: parseInt(document.getElementById('orc-diarias')?.value || 1, 10) || 1,
     margemPct: parseFloat(m?.value || 0) || 0,
+    margemModo: _orcMargemModo(),
     equipe: JSON.parse(JSON.stringify(window._orcEquipe || [])),
     catalogo: JSON.parse(JSON.stringify(window._orcCatalogo || [])),
     despesas: JSON.parse(JSON.stringify(window._orcDespesas || [])),
@@ -16384,27 +16403,59 @@ function atualizarPreview() {
     <span style="${mono};font-size:9px;letter-spacing:.12em;color:#737373">${escHtml(right)}</span>
   </div>`;
 
-  const escopoItems = [];
+  const diluida = fin.margemModo === 'diluida' && fin.margemPct > 0 && fin.subtotal > 0;
+  const fator = fin.fatorDiluicao;
+
+  const escopoLinhas = [];
   (window._orcEquipe || []).forEach(m => {
+    const base = m.diaria * m.quantidade * diarias;
     const cat = FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '';
-    escopoItems.push({
+    escopoLinhas.push({
       title: m.nome,
-      sub: `${cat} · ${m.quantidade} × ${diarias} diária${diarias > 1 ? 's' : ''}`
+      sub: `${cat} · ${m.quantidade} × ${diarias} diária${diarias > 1 ? 's' : ''}`,
+      base
     });
   });
   (window._orcCatalogo || []).filter(i => i.descricao).forEach(i => {
-    escopoItems.push({ title: i.descricao, sub: 'Produto / serviço contratado' });
+    escopoLinhas.push({
+      title: i.descricao,
+      sub: 'Produto / serviço contratado',
+      base: i.valorUnit * i.quantidade
+    });
+  });
+  (window._orcDespesas || []).filter(d => d.descricao).forEach(d => {
+    escopoLinhas.push({ title: d.descricao, sub: 'Despesa', base: d.valor || 0 });
   });
 
-  const escopoHtml = escopoItems.length ? escopoItems.map(it => `
-    <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start">
-      <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
-      <div style="min-width:0">
-        <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
-        <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
+  const escopoHtml = escopoLinhas.length ? escopoLinhas.map(it => {
+    const precoDir = diluida && (it.base || 0) > 0
+      ? `<div style="flex-shrink:0;text-align:right;padding-left:10px">
+          <div style="font-weight:800;font-size:15px;color:#0a0a0a">${fmtBRL(it.base * fator)}</div>
+          <div style="font-size:9px;color:#737373;max-width:130px;line-height:1.25;margin-top:3px">inclui taxa ${margem}% diluída</div>
+        </div>`
+      : '';
+    return `<div style="display:flex;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div style="display:flex;gap:12px;min-width:0;flex:1;align-items:flex-start">
+        <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
+        <div style="min-width:0">
+          <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
+          <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
+        </div>
       </div>
-    </div>
-  `).join('') : `<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe e dos produtos/serviços.</div>`;
+      ${precoDir}
+    </div>`;
+  }).join('') : `<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>`;
+
+  let modoBand = '';
+  if(margem > 0) {
+    modoBand = diluida
+      ? `<div style="font-size:11px;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 14px;margin-top:16px;line-height:1.55;color:#166534">
+          <strong>Taxa diluída no escopo.</strong> Os <strong>${margem}%</strong> de taxa da agência (<strong>${fmtBRL(fin.valorMargem)}</strong>) estão <strong>distribuídos proporcionalmente</strong> entre todas as entregas acima (peso = valor operacional de cada linha).
+        </div>`
+      : `<div style="font-size:11px;background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin-top:16px;line-height:1.55;color:#9a3412">
+          <strong>Taxa transparente.</strong> A taxa de <strong>${margem}%</strong> consta <strong>em linha separada</strong> na composição do valor abaixo — os itens do escopo mostram apenas o custo operacional, sem embutir a taxa.
+        </div>`;
+  }
 
   const compLinha = (label, hint, valor, neg) => {
     const cor = neg ? '#b91c1c' : '#0a0a0a';
@@ -16419,11 +16470,18 @@ function atualizarPreview() {
   };
 
   let compHtml = '';
-  compHtml += compLinha('Subtotal — equipe e diárias', '', fin.totalEquipe, false);
-  if(fin.totalCatalogo > 0) compHtml += compLinha('Subtotal — produtos e serviços', '', fin.totalCatalogo, false);
-  if(fin.totalDespesas > 0) compHtml += compLinha('Despesas adicionais', '', fin.totalDespesas, false);
-  if(margem > 0 && fin.valorMargem > 0) {
-    compHtml += compLinha(`Taxa de serviço (${margem}%)`, 'Margem / agência sobre o operacional', fin.valorMargem, false);
+  if(diluida) {
+    compHtml += compLinha('Subtotal operacional (referência)', 'Soma das entregas antes da taxa', fin.subtotal, false);
+    compHtml += `<div style="padding:14px 0 12px;border-bottom:1px solid #eee;font-size:12px;color:#333;line-height:1.6">
+        A taxa da agência de <strong>${margem}%</strong> (<strong>${fmtBRL(fin.valorMargem)}</strong>) foi <strong>diluída proporcionalmente</strong> nos valores exibidos no escopo. O total da proposta é <strong>${fmtBRL(fin.totalFinal)}</strong> (não há cobrança adicional além do escopo).
+      </div>`;
+  } else {
+    compHtml += compLinha('Subtotal — equipe e diárias', '', fin.totalEquipe, false);
+    if(fin.totalCatalogo > 0) compHtml += compLinha('Subtotal — produtos e serviços', '', fin.totalCatalogo, false);
+    if(fin.totalDespesas > 0) compHtml += compLinha('Despesas adicionais', '', fin.totalDespesas, false);
+    if(margem > 0 && fin.valorMargem > 0) {
+      compHtml += compLinha(`Taxa da agência (${margem}%)`, 'Discriminada — não embutida nas linhas do escopo', fin.valorMargem, false);
+    }
   }
 
   const doisParc = pdfm.parcelas === '2';
@@ -16528,7 +16586,7 @@ function atualizarPreview() {
         ${subLinha('ESCOPO CONTRATADO', 'ENTREGAS CONFIRMADAS')}
         ${escopoHtml}
       </div>
-
+      ${modoBand}
       <div style="margin-top:28px">
         ${subLinha('COMPOSIÇÃO DO VALOR', 'DETALHAMENTO')}
         ${compHtml}
@@ -16581,6 +16639,8 @@ function initOrcamentoBuilder(resetState) {
     if(rp) rp.value = 'Pagamento à vista';
     const pp = document.getElementById('orc-pdf-parcelas');
     if(pp) pp.value = '1';
+    const rTr = document.querySelector('input[name="orc-margem-modo"][value="transparente"]');
+    if(rTr) rTr.checked = true;
   }
   renderEquipe();
   renderCatalogoProdutos();
@@ -16625,6 +16685,13 @@ function loadOrcBuilderFromRow(o) {
     if(t && parsed.titulo != null) t.value = parsed.titulo;
     if(d && parsed.descricao != null) d.value = parsed.descricao;
     if(mg) mg.value = String(parsed.margemPct != null ? parsed.margemPct : 20);
+    if(parsed.margemModo === 'diluida') {
+      const rd = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
+      if(rd) rd.checked = true;
+    } else {
+      const rt = document.querySelector('input[name="orc-margem-modo"][value="transparente"]');
+      if(rt) rt.checked = true;
+    }
     if(parsed.pdfMeta) _applyOrcPdfMetaToForm(parsed.pdfMeta);
     else {
       const rp0 = document.getElementById('orc-pdf-resumo-pagamento');
@@ -16763,6 +16830,9 @@ function gerarPDFInterno() {
   if(!client) { toast('Informe o nome do cliente', 'err'); return; }
   const fin = orcBuilderGetFinancials();
   const diarias = fin.diarias;
+  const modoPdf = fin.margemModo === 'diluida'
+    ? '<p style="font-size:11px;color:#166534;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> taxa da agência <strong>diluída proporcionalmente</strong> nos valores de cada entrega do escopo.</p>'
+    : '<p style="font-size:11px;color:#9a3412;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> taxa da agência <strong>discriminada à parte</strong> na composição (transparente).</p>';
   const dtEm = document.getElementById('orc-data')?.value;
   const dtVal = document.getElementById('orc-validade')?.value;
   const emStr = dtEm ? new Date(dtEm + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
@@ -16783,6 +16853,7 @@ function gerarPDFInterno() {
       &nbsp;&nbsp;·&nbsp;&nbsp;
       <strong>Validade (aceite):</strong> ${escHtml(valStr)}
     </p>
+    ${modoPdf}
     <h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Equipe</h2>
     <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
       <thead><tr style="background:#f4f4f5"><th align="left" style="padding:8px">Função</th><th align="left" style="padding:8px">Área</th><th style="padding:8px">Qtd</th><th style="padding:8px;text-align:right">Diária</th><th style="padding:8px">Dias gravação</th><th style="padding:8px;text-align:right">Subtotal</th></tr></thead>
