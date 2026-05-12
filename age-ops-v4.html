@@ -2310,6 +2310,11 @@ body:has(#login-screen.visible){
         <div class="plans-grid" id="plansCardsGrid">
           <!-- preenchido por refreshPlanCardsPricing() -->
         </div>
+        <div style="text-align:center;margin:16px 0 8px">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="exportPlanosPropostaPDF()">
+            <i class="fas fa-file-pdf"></i> Exportar PDF da proposta
+          </button>
+        </div>
         <div class="plans-footer">
           <span>Trial 7 dias</span>
           <span>Cancele quando quiser</span>
@@ -2336,6 +2341,11 @@ body:has(#login-screen.visible){
       <p class="plans-economy-hint" id="plansEconomyHintGlobal">Preços de teste: R$0,01 — mensal e anual (pagamento real).</p>
     </div>
     <div class="plans-grid" id="plansCardsGridGlobal"></div>
+    <div style="text-align:center;margin:16px 0 8px">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="exportPlanosPropostaPDF()" title="Proposta em PDF (layout comparativo)">
+        <i class="fas fa-file-pdf"></i> Exportar PDF da proposta
+      </button>
+    </div>
     <div class="plans-footer">
       <span>Trial 7 dias</span>
       <span>Cancele quando quiser</span>
@@ -3440,6 +3450,39 @@ body:has(#login-screen.visible){
                       <label for="orc-validade" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;letter-spacing:.06em;margin-bottom:6px">VALIDADE (ACEITE)</label>
                       <input id="orc-validade" type="date" class="orc-input" onchange="atualizarPreview()" title="Último dia para o cliente aceitar esta proposta" />
                       <div style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.35">Após esta data a proposta pode ser revisada ou cancelada.</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px dashed #cbd5e1">
+                    <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#64748b;letter-spacing:.08em;margin-bottom:10px">PDF — ESTILO APROVAÇÃO (OPCIONAL)</div>
+                    <p style="font-size:11px;color:#64748b;margin:0 0 12px;line-height:1.45">Preenche o PDF ao cliente no visual preto e branco (referência “proposta aprovada”).</p>
+                    <div style="display:grid;gap:12px">
+                      <div>
+                        <label for="orc-data-evento" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">DATA DO EVENTO / GRAVAÇÃO</label>
+                        <input id="orc-data-evento" type="date" class="orc-input" onchange="atualizarPreview()" title="Aparece no cabeçalho e na faixa preta" />
+                      </div>
+                      <div>
+                        <label for="orc-pdf-resumo-pagamento" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">RESUMO DO PAGAMENTO (TEXTO)</label>
+                        <input id="orc-pdf-resumo-pagamento" class="orc-input" placeholder="ex: Pagamento à vista" oninput="atualizarPreview()" />
+                      </div>
+                      <div>
+                        <label for="orc-pdf-parcelas" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">PARCELAS NO PDF</label>
+                        <select id="orc-pdf-parcelas" class="orc-input" onchange="atualizarPreview()">
+                          <option value="1">Uma parcela (100%)</option>
+                          <option value="2">Duas parcelas (50% + 50%)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label for="orc-pdf-pix" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">CHAVE PIX</label>
+                        <input id="orc-pdf-pix" class="orc-input" placeholder="Telefone, e-mail ou chave aleatória" oninput="atualizarPreview()" />
+                      </div>
+                      <div>
+                        <label for="orc-pdf-favorecido" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">FAVORECIDO</label>
+                        <input id="orc-pdf-favorecido" class="orc-input" placeholder="Razão social ou nome" oninput="atualizarPreview()" />
+                      </div>
+                      <div>
+                        <label for="orc-pdf-aprovado" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">APROVADO POR (RODAPÉ)</label>
+                        <input id="orc-pdf-aprovado" class="orc-input" placeholder="Nome · empresa do cliente" oninput="atualizarPreview()" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -16072,7 +16115,8 @@ function orcSerializeBuilder() {
     margemPct: parseFloat(m?.value || 0) || 0,
     equipe: JSON.parse(JSON.stringify(window._orcEquipe || [])),
     catalogo: JSON.parse(JSON.stringify(window._orcCatalogo || [])),
-    despesas: JSON.parse(JSON.stringify(window._orcDespesas || []))
+    despesas: JSON.parse(JSON.stringify(window._orcDespesas || [])),
+    pdfMeta: _orcPdfMetaFromForm()
   };
 }
 
@@ -16287,6 +16331,32 @@ function recalcularTotais() {
   atualizarPreview();
 }
 
+function _orcPdfMetaFromForm() {
+  return {
+    dataEvento: document.getElementById('orc-data-evento')?.value?.trim() || '',
+    resumoPagamento: document.getElementById('orc-pdf-resumo-pagamento')?.value?.trim() || '',
+    parcelas: document.getElementById('orc-pdf-parcelas')?.value || '1',
+    pix: document.getElementById('orc-pdf-pix')?.value?.trim() || '',
+    favorecido: document.getElementById('orc-pdf-favorecido')?.value?.trim() || '',
+    aprovadoPor: document.getElementById('orc-pdf-aprovado')?.value?.trim() || ''
+  };
+}
+
+function _applyOrcPdfMetaToForm(meta) {
+  if(!meta || typeof meta !== 'object') return;
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if(el && v != null && v !== '') el.value = String(v);
+  };
+  set('orc-data-evento', meta.dataEvento);
+  set('orc-pdf-resumo-pagamento', meta.resumoPagamento);
+  const ps = document.getElementById('orc-pdf-parcelas');
+  if(ps && (meta.parcelas === '1' || meta.parcelas === '2')) ps.value = meta.parcelas;
+  set('orc-pdf-pix', meta.pix);
+  set('orc-pdf-favorecido', meta.favorecido);
+  set('orc-pdf-aprovado', meta.aprovadoPor);
+}
+
 function atualizarPreview() {
   const preview = document.getElementById('orc-preview-content');
   if(!preview) return;
@@ -16298,88 +16368,188 @@ function atualizarPreview() {
   const descricao = document.getElementById('orc-descricao')?.value?.trim() || '';
   const data = document.getElementById('orc-data')?.value;
   const validade = document.getElementById('orc-validade')?.value;
+  const pdfm = _orcPdfMetaFromForm();
   const numRef = window._orcProposalNum || String(Date.now()).slice(-6);
   const emissaoStr = data ? new Date(data + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
   const validadeStr = validade ? new Date(validade + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+  const eventIso = pdfm.dataEvento || '';
+  const eventStr = eventIso ? new Date(eventIso + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+  const marca = (currentUser?.company_name || '').trim() || 'Age Ops';
+  const resumoPag = (pdfm.resumoPagamento || '').trim() || 'Pagamento à vista';
+  const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  const sans = 'font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif';
 
-  const secTitle = (t) => `<div style="font-family:var(--font-h),sans-serif;font-size:9px;letter-spacing:.2em;color:#475569;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #0f172a">${t}</div>`;
+  const subLinha = (left, right) => `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;gap:12px">
+    <span style="${mono};font-size:9px;letter-spacing:.22em;color:#737373">${escHtml(left)}</span>
+    <span style="${mono};font-size:9px;letter-spacing:.12em;color:#737373">${escHtml(right)}</span>
+  </div>`;
+
+  const escopoItems = [];
+  (window._orcEquipe || []).forEach(m => {
+    const cat = FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '';
+    escopoItems.push({
+      title: m.nome,
+      sub: `${cat} · ${m.quantidade} × ${diarias} diária${diarias > 1 ? 's' : ''}`
+    });
+  });
+  (window._orcCatalogo || []).filter(i => i.descricao).forEach(i => {
+    escopoItems.push({ title: i.descricao, sub: 'Produto / serviço contratado' });
+  });
+
+  const escopoHtml = escopoItems.length ? escopoItems.map(it => `
+    <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start">
+      <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
+      <div style="min-width:0">
+        <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
+        <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
+      </div>
+    </div>
+  `).join('') : `<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe e dos produtos/serviços.</div>`;
+
+  const compLinha = (label, hint, valor, neg) => {
+    const cor = neg ? '#b91c1c' : '#0a0a0a';
+    const pref = neg ? '− ' : '';
+    return `<div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start">
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:13px;color:#111">${escHtml(label)}</div>
+        ${hint ? `<div style="font-size:11px;color:#737373;margin-top:3px;line-height:1.4">${escHtml(hint)}</div>` : ''}
+      </div>
+      <div style="font-weight:800;font-size:14px;color:${cor};white-space:nowrap">${pref}${fmtBRL(Math.abs(valor))}</div>
+    </div>`;
+  };
+
+  let compHtml = '';
+  compHtml += compLinha('Subtotal — equipe e diárias', '', fin.totalEquipe, false);
+  if(fin.totalCatalogo > 0) compHtml += compLinha('Subtotal — produtos e serviços', '', fin.totalCatalogo, false);
+  if(fin.totalDespesas > 0) compHtml += compLinha('Despesas adicionais', '', fin.totalDespesas, false);
+  if(margem > 0 && fin.valorMargem > 0) {
+    compHtml += compLinha(`Taxa de serviço (${margem}%)`, 'Margem / agência sobre o operacional', fin.valorMargem, false);
+  }
+
+  const doisParc = pdfm.parcelas === '2';
+  const tot = fin.totalFinal;
+  const p1 = Math.round((tot / 2) * 100) / 100;
+  const p2 = Math.round((tot - p1) * 100) / 100;
+  let d2Parcela = validadeStr;
+  if(doisParc && !validadeStr && data) {
+    const t2 = new Date(data + 'T12:00:00');
+    t2.setDate(t2.getDate() + 5);
+    d2Parcela = t2.toLocaleDateString('pt-BR');
+  }
+  const d1Parcela = emissaoStr;
+
+  let cronHtml = '';
+  if(doisParc) {
+    cronHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">
+        <div style="border:2px solid #000;border-radius:2px;overflow:hidden">
+          <div style="background:#000;color:#fff;padding:10px 12px;${mono};font-size:9px;letter-spacing:.2em">PARCELA 01</div>
+          <div style="padding:14px 12px;background:#fff">
+            <div style="font-size:13px;color:#525252">${escHtml(d1Parcela)}</div>
+            <div style="font-size:22px;font-weight:800;margin-top:8px">${fmtBRL(p1)}</div>
+            <div style="font-size:11px;color:#737373;margin-top:6px">Pagamento parcial</div>
+          </div>
+        </div>
+        <div style="border:1px solid #d4d4d4;border-radius:2px;overflow:hidden;background:#f5f5f5">
+          <div style="background:#e5e5e5;color:#404040;padding:10px 12px;${mono};font-size:9px;letter-spacing:.2em">PARCELA 02</div>
+          <div style="padding:14px 12px">
+            <div style="font-size:13px;color:#525252">${escHtml(d2Parcela || '—')}</div>
+            <div style="font-size:22px;font-weight:800;margin-top:8px">${fmtBRL(p2)}</div>
+            <div style="font-size:11px;color:#737373;margin-top:6px">Valor restante</div>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    cronHtml = `
+      <div style="border:2px solid #000;border-radius:2px;overflow:hidden;max-width:420px">
+        <div style="background:#000;color:#fff;padding:10px 12px;${mono};font-size:9px;letter-spacing:.2em">PAGAMENTO</div>
+        <div style="padding:14px 12px;background:#fff">
+          <div style="font-size:13px;color:#525252">${escHtml(d1Parcela)}</div>
+          <div style="font-size:22px;font-weight:800;margin-top:8px">${fmtBRL(tot)}</div>
+          <div style="font-size:11px;color:#737373;margin-top:6px">Valor total da proposta</div>
+        </div>
+      </div>`;
+  }
+
+  const pixLinha = (pdfm.pix || pdfm.favorecido) ? `
+    <div style="background:#000;color:#fff;margin-top:28px;padding:18px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:20px">
+      <div>
+        <div style="${mono};font-size:9px;letter-spacing:.22em;opacity:.75">CHAVE PIX</div>
+        <div style="font-size:18px;font-weight:800;margin-top:6px">${escHtml(pdfm.pix || '—')}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="${mono};font-size:9px;letter-spacing:.22em;opacity:.75">FAVORECIDO</div>
+        <div style="font-size:15px;font-weight:800;margin-top:6px;max-width:280px">${escHtml(pdfm.favorecido || '—')}</div>
+      </div>
+    </div>` : '';
+
+  const rodapeAprov = pdfm.aprovadoPor ? `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:28px;padding-top:18px;border-top:1px solid #e5e5e5;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="${mono};font-size:9px;letter-spacing:.2em;color:#737373">APROVADO POR</div>
+        <div style="font-weight:700;font-size:15px;margin-top:6px;color:#111">${escHtml(pdfm.aprovadoPor)}</div>
+      </div>
+      <div style="${mono};font-size:11px;color:#737373;text-align:right">Formalização em ${escHtml(emissaoStr)}</div>
+    </div>` : '';
+
+  const subtCab = 'Confirmação de orçamento' + (eventStr ? ` · Gravação ${eventStr}` : (titulo && titulo !== 'Orçamento' ? ` · ${titulo}` : ''));
 
   preview.innerHTML = `
-    <div style="font-family:var(--font-b),Rajdhani,sans-serif;color:#0f172a;line-height:1.45">
-      <div style="background:linear-gradient(145deg,#0f172a 0%,#1e3a5f 55%,#0f172a 100%);color:#fff;margin:-32px -32px 28px -32px;padding:26px 32px 0;border-radius:12px 12px 0 0;box-shadow:0 12px 40px rgba(15,23,42,.25)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
-          <div style="padding-bottom:22px">
-            <div style="font-family:var(--font-h),sans-serif;font-size:26px;font-weight:800;letter-spacing:.14em">AGE OPS</div>
-            <div style="font-size:10px;opacity:.72;letter-spacing:.32em;margin-top:10px">PROPOSTA COMERCIAL</div>
-          </div>
-          <div style="text-align:right;font-size:11px;line-height:1.75;min-width:200px">
-            <div style="margin-bottom:4px"><span style="opacity:.55;display:inline-block;width:88px;text-align:left;font-size:9px;letter-spacing:.06em">EMISSÃO</span><strong style="font-weight:600;font-size:13px">${escHtml(emissaoStr)}</strong></div>
-            ${validadeStr ? `<div style="margin-bottom:4px"><span style="opacity:.55;display:inline-block;width:88px;text-align:left;font-size:9px;letter-spacing:.06em">VALIDADE</span><strong style="font-weight:600;font-size:13px">${escHtml(validadeStr)}</strong></div>` : `<div style="opacity:.45;font-size:10px;font-style:italic">Validade não informada</div>`}
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2)">
-              <span style="opacity:.55;font-size:9px;letter-spacing:.08em">PROPOSTA Nº</span>
-              <strong style="font-weight:700;font-size:14px;margin-left:8px">${escHtml(numRef)}</strong>
-            </div>
-          </div>
+    <div style="${sans};color:#111;line-height:1.45;background:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:20px;border-bottom:1px solid #000">
+        <div style="min-width:0;flex:1">
+          <div style="font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#0a0a0a;line-height:1.15">Proposta ${escHtml(marca)}</div>
+          ${cliente ? `<div style="font-size:22px;font-weight:700;margin-top:6px;color:#0a0a0a">para ${escHtml(cliente)}</div>` : ''}
+          <div style="font-size:12px;color:#737373;margin-top:10px;max-width:520px">${escHtml(subtCab)}</div>
         </div>
-        <div style="height:4px;background:linear-gradient(90deg,#b45309,#fbbf24,#b45309);margin:18px -32px 0;border-radius:2px"></div>
-      </div>
-
-      <div style="margin-bottom:26px">
-        <div style="font-family:var(--font-h),sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;letter-spacing:.02em">${escHtml(titulo) || '—'}</div>
-        ${cliente ? `<div style="font-size:13px;color:#475569;font-weight:600">Cliente · ${escHtml(cliente)}</div>` : ''}
-        ${descricao ? `<div style="font-size:12px;color:#334155;margin-top:12px;line-height:1.65;border-left:3px solid #e2e8f0;padding-left:14px">${escHtml(descricao).replace(/\n/g,'<br>')}</div>` : ''}
-      </div>
-
-      ${window._orcEquipe.length ? `
-        <div style="margin-bottom:26px">
-          ${secTitle('EQUIPE & DIÁRIAS')}
-          ${window._orcEquipe.map(m => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #f1f5f9;border-radius:8px;margin-bottom:8px;background:#fafafa;font-size:13px">
-              <span>${escHtml(m.nome)} <span style="color:#64748b;font-size:11px">× ${m.quantidade} × ${diarias} diária${diarias > 1 ? 's' : ''}</span></span>
-              <span style="font-family:var(--font-h);font-weight:700">${fmtBRL(m.diaria * m.quantidade * diarias)}</span>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
-      ${window._orcCatalogo.filter(i => i.descricao).length ? `
-        <div style="margin-bottom:26px">
-          ${secTitle('PRODUTOS E SERVIÇOS')}
-          ${window._orcCatalogo.filter(i => i.descricao).map(i => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #f1f5f9;border-radius:8px;margin-bottom:8px;background:#fafafa;font-size:13px">
-              <span>${escHtml(i.descricao)} <span style="color:#64748b;font-size:11px">× ${i.quantidade}</span></span>
-              <span style="font-family:var(--font-h);font-weight:700">${fmtBRL(i.valorUnit * i.quantidade)}</span>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
-      ${window._orcDespesas.filter(d => d.descricao).length ? `
-        <div style="margin-bottom:26px">
-          ${secTitle('DESPESAS ADICIONAIS')}
-          ${window._orcDespesas.filter(d => d.descricao).map(d => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #f1f5f9;border-radius:8px;margin-bottom:8px;background:#fafafa;font-size:13px">
-              <span>${escHtml(d.descricao)}</span>
-              <span style="font-family:var(--font-h);font-weight:700">${fmtBRL(d.valor)}</span>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
-
-      <div style="background:#0f172a;color:#fff;border-radius:14px;padding:22px 24px;margin-top:8px;box-shadow:0 8px 32px rgba(15,23,42,.2)">
-        <div style="display:flex;justify-content:space-between;margin-bottom:10px;opacity:.85;font-size:13px">
-          <span>Subtotal operacional</span><span style="font-family:var(--font-h)">${fmtBRL(fin.subtotal)}</span>
-        </div>
-        ${margem ? `
-          <div style="display:flex;justify-content:space-between;margin-bottom:14px;opacity:.85;font-size:13px">
-            <span>Taxa de serviço (${margem}%)</span><span style="font-family:var(--font-h);color:#86efac">${fmtBRL(fin.valorMargem)}</span>
-          </div>
-        ` : ''}
-        <div style="display:flex;justify-content:space-between;font-size:22px;font-weight:800;font-family:var(--font-h);border-top:1px solid rgba(255,255,255,.25);padding-top:14px">
-          <span>TOTAL</span><span>${fmtBRL(fin.totalFinal)}</span>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="display:inline-block;background:#000;color:#fff;padding:6px 12px;${mono};font-size:11px;font-weight:700">01 / 01</div>
+          <div style="${mono};font-size:11px;color:#525252;margin-top:10px">${escHtml(marca)}</div>
+          <div style="${mono};font-size:11px;color:#525252">${escHtml(emissaoStr.replace(/\//g, '.'))}</div>
+          <div style="${mono};font-size:10px;color:#737373;margin-top:6px">Nº ${escHtml(numRef)}</div>
         </div>
       </div>
 
-      <div style="margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;font-size:9px;color:#94a3b8;letter-spacing:.12em;line-height:1.5">
-        Documento confidencial · valores válidos conforme validade indicada · Age Ops
+      <div style="background:#000;color:#fff;margin-top:20px;padding:18px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:flex-end">
+        <div>
+          <div style="${mono};font-size:9px;letter-spacing:.28em;opacity:.8">ORÇAMENTO / PROPOSTA</div>
+          <div style="font-size:26px;font-weight:800;margin-top:8px">${fmtBRL(fin.totalFinal)}</div>
+          <div style="font-size:12px;opacity:.85;margin-top:4px">${escHtml(resumoPag)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="${mono};font-size:9px;letter-spacing:.22em;opacity:.75">DATA DO EVENTO</div>
+          <div style="font-size:22px;font-weight:800;margin-top:6px">${escHtml(eventStr || '—')}</div>
+        </div>
+      </div>
+
+      ${descricao ? `<div style="margin-top:20px;padding:14px 16px;background:#fafafa;border:1px solid #eee;font-size:13px;color:#404040;line-height:1.55">${escHtml(descricao).replace(/\n/g,'<br>')}</div>` : ''}
+
+      <div style="margin-top:28px">
+        ${subLinha('ESCOPO CONTRATADO', 'ENTREGAS CONFIRMADAS')}
+        ${escopoHtml}
+      </div>
+
+      <div style="margin-top:28px">
+        ${subLinha('COMPOSIÇÃO DO VALOR', 'DETALHAMENTO')}
+        ${compHtml}
+      </div>
+
+      <div style="background:#000;color:#fff;margin-top:8px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:800;font-size:14px">Valor total da proposta</span>
+        <span style="font-size:24px;font-weight:800">${fmtBRL(fin.totalFinal)}</span>
+      </div>
+
+      <div style="margin-top:28px">
+        ${subLinha('CRONOGRAMA DE PAGAMENTO', resumoPag)}
+        ${cronHtml}
+      </div>
+
+      ${pixLinha}
+      ${rodapeAprov}
+
+      <div style="margin-top:24px;padding-top:12px;border-top:1px solid #eee;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;${mono};font-size:10px;color:#a3a3a3">
+        <span>${escHtml(marca)} — Proposta comercial</span>
+        <span>${cliente ? escHtml(cliente) + ' · ' : ''}${escHtml(titulo)}</span>
       </div>
     </div>
   `;
@@ -16405,8 +16575,12 @@ function initOrcamentoBuilder(resetState) {
   if(rs && iMarg) iMarg.value = 20;
   if(rs && iDia) iDia.value = 1;
   if(rs) {
-    const ids = ['orc-titulo','orc-cliente','orc-descricao'];
+    const ids = ['orc-titulo','orc-cliente','orc-descricao','orc-data-evento','orc-pdf-pix','orc-pdf-favorecido','orc-pdf-aprovado'];
     ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    const rp = document.getElementById('orc-pdf-resumo-pagamento');
+    if(rp) rp.value = 'Pagamento à vista';
+    const pp = document.getElementById('orc-pdf-parcelas');
+    if(pp) pp.value = '1';
   }
   renderEquipe();
   renderCatalogoProdutos();
@@ -16451,6 +16625,11 @@ function loadOrcBuilderFromRow(o) {
     if(t && parsed.titulo != null) t.value = parsed.titulo;
     if(d && parsed.descricao != null) d.value = parsed.descricao;
     if(mg) mg.value = String(parsed.margemPct != null ? parsed.margemPct : 20);
+    if(parsed.pdfMeta) _applyOrcPdfMetaToForm(parsed.pdfMeta);
+    else {
+      const rp0 = document.getElementById('orc-pdf-resumo-pagamento');
+      if(rp0 && o.payment_terms) rp0.value = String(o.payment_terms);
+    }
   } else {
     if(mg) mg.value = '20';
     if(Array.isArray(parsed) && parsed.length) {
@@ -16504,7 +16683,7 @@ async function salvarOrcamento(status) {
     imposto_pct: fin.margemPct,
     imposto_valor: fin.valorMargem,
     total_value: vals.total,
-    payment_terms: 'À vista',
+    payment_terms: document.getElementById('orc-pdf-resumo-pagamento')?.value?.trim() || 'À vista',
     notes: document.getElementById('orc-descricao')?.value?.trim() || '',
     status: st,
     created_by: currentUser?.username || 'unknown'
@@ -16623,6 +16802,144 @@ function gerarPDFInterno() {
   };
   html2pdf().set(opt).from(wrap).save();
   toast('PDF interno gerado');
+}
+
+function buildPlanosParceriaPdfHtml(yearlyOpt) {
+  const yearly = typeof yearlyOpt === 'boolean'
+    ? yearlyOpt
+    : (_planBillGlobal === 'yearly');
+  const s = _planPrecoRow('solo', yearly);
+  const pr = _planPrecoRow('produtora', yearly);
+  const ag = _planPrecoRow('agencia', yearly);
+  const marca = (currentUser?.company_name || '').trim() || 'Age Ops';
+  const labM = 'font-family:ui-monospace,monospace;font-size:9px;letter-spacing:.26em;color:#737373';
+  const hoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '.');
+  const perLab = yearly ? 'MÊS (CICLO ANUAL)' : 'MÊS';
+  const intro = `A ${marca} apresenta os planos de assinatura do Age Ops — gestão de projetos, equipe, financeiro e comercial em um único ambiente. Escolha o nível conforme o porte da operação. Contrato com faturamento recorrente.`;
+
+  const col = (o) => {
+    const { darkHeader, darkFooter, planTag, planName, desc, valDisplay, tri, triFormula, feats } = o;
+    const headBg = darkHeader ? '#000' : '#ededed';
+    const headFg = darkHeader ? '#fff' : '#111';
+    const footBg = darkFooter ? '#000' : '#ededed';
+    const footFg = darkFooter ? '#fff' : '#111';
+    const lis = feats.map(t => `<li style="font-size:11px;line-height:1.5;color:#333;margin-bottom:5px;padding-left:2px">▸ ${escHtml(t)}</li>`).join('');
+    return `<div style="border:1px solid #ddd;min-height:400px;display:flex;flex-direction:column;background:#fff">
+      <div style="background:${headBg};color:${headFg};padding:14px 12px;border-bottom:1px solid #ddd">
+        <div style="${labM};opacity:${darkHeader ? '.85' : '1'}">${escHtml(planTag)}</div>
+        <div style="font-size:18px;font-weight:800;margin-top:8px">${escHtml(planName)}</div>
+        <div style="font-size:11px;opacity:.85;margin-top:6px;line-height:1.4">${escHtml(desc)}</div>
+      </div>
+      <div style="padding:16px 12px;flex:1">
+        <div style="font-size:32px;font-weight:800;letter-spacing:-0.02em">${escHtml(valDisplay)}</div>
+        <div style="${labM};margin-top:4px;font-size:10px">POR ${perLab}</div>
+        <div style="${labM};margin-top:18px;font-size:9px;color:#525252;margin-bottom:8px">O QUE INCLUI</div>
+        <ul style="margin:0;padding:0;list-style:none">${lis}</ul>
+      </div>
+      <div style="background:${footBg};color:${footFg};padding:12px;margin-top:auto;border-top:1px solid #ddd">
+        <div style="${labM};opacity:.9;font-size:9px">${escHtml(o.tripLabel)}</div>
+        <div style="font-size:20px;font-weight:800;margin-top:6px">${escHtml(_fmtMoney(tri))}</div>
+        <div style="font-size:10px;opacity:.85;margin-top:4px">${escHtml(triFormula)}</div>
+      </div>
+    </div>`;
+  };
+
+  const featS = ['Operação individual (freelancer / solo)','Projetos, pipeline, clientes e orçamentos','Cronograma e financeiro pessoal','Trial de 7 dias'];
+  const featP = ['Equipe maior (até 8 usuários)','Contratos, pagamentos de equipe e fechamento','Tarefas atribuídas e visão corporativa','Suporte via WhatsApp'];
+  const featA = ['Suite completa para agência','Permissões por módulo e relatórios','Histórico e NPS','Suporte prioritário'];
+  const triS = s.valor * 3;
+  const triP = pr.valor * 3;
+  const triA = ag.valor * 3;
+
+  const grid = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px">
+      ${col({ darkHeader: false, darkFooter: false, planTag: 'PLANO 01', planName: 'Solo', desc: 'Para quem opera sozinho ou quer validar a ferramenta.', valDisplay: s.valorDisplay, tri: triS, triFormula: `${s.valorDisplay} × 3 meses`, feats: featS, tripLabel: 'SOLO · TRIMESTRE' })}
+      ${col({ darkHeader: true, darkFooter: true, planTag: 'PLANO 02 · RECOMENDADO', planName: 'Produtora', desc: 'Produção com equipe, financeiro de projeto e contratos.', valDisplay: pr.valorDisplay, tri: triP, triFormula: `${pr.valorDisplay} × 3 meses`, feats: featP, tripLabel: 'PRODUTORA · TRIMESTRE' })}
+      ${col({ darkHeader: false, darkFooter: false, planTag: 'PLANO 03', planName: 'Agência', desc: 'Operação completa com permissões avançadas e histórico.', valDisplay: ag.valorDisplay, tri: triA, triFormula: `${ag.valorDisplay} × 3 meses`, feats: featA, tripLabel: 'AGÊNCIA · TRIMESTRE' })}
+    </div>`;
+
+  const rows = [
+    ['Usuários / equipe', '1', 'até 8', 'ilimitado'],
+    ['Contratos e pagamentos', '—', '✓', '✓'],
+    ['Histórico + NPS + relatórios', '—', 'limitado', 'completo'],
+    ['Permissões por módulo', '—', '—', '✓'],
+    ['Valor (' + (yearly ? 'anual' : 'mensal') + ')', s.valorDisplay, pr.valorDisplay, ag.valorDisplay]
+  ];
+
+  const tableBody = rows.map(r => `<tr>
+    <td style="padding:8px;border:1px solid #eee;font-weight:600">${escHtml(r[0])}</td>
+    <td style="padding:8px;border:1px solid #eee;text-align:center">${escHtml(r[1])}</td>
+    <td style="padding:8px;border:1px solid #eee;text-align:center">${escHtml(r[2])}</td>
+    <td style="padding:8px;border:1px solid #eee;text-align:center">${escHtml(r[3])}</td>
+  </tr>`).join('');
+
+  return `
+    <div style="border-bottom:1px solid #000;padding-bottom:16px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+      <div>
+        <div style="font-size:22px;font-weight:800;line-height:1.2">Planos de assinatura — Age Ops</div>
+        <div style="font-size:12px;color:#525252;margin-top:8px">Proposta ${escHtml(marca)} · Software em nuvem · ${yearly ? 'Simulação anual' : 'Simulação mensal'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="display:inline-block;background:#000;color:#fff;padding:6px 10px;font-size:11px;font-family:ui-monospace,monospace">01 / 02</div>
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#525252;margin-top:8px">${escHtml(marca)}</div>
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#525252">${escHtml(hoje)}</div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-family:ui-monospace,monospace;font-size:9px;letter-spacing:.24em;color:#737373;margin-bottom:8px">PROPOSTA DE PLANOS</div>
+      <p style="font-size:13px;line-height:1.65;color:#333;margin:0;max-width:720px">${escHtml(intro)}</p>
+    </div>
+    ${grid}
+    <div style="margin-top:20px;padding-top:12px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-family:ui-monospace,monospace;font-size:10px;color:#999">
+      <span>${escHtml(marca)} · Planos Age Ops</span>
+      <span>${escHtml(hoje)}</span>
+    </div>
+    <div style="page-break-before:always;margin-top:8px;padding-top:24px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px;align-items:flex-start">
+        <div>
+          <div style="font-size:16px;font-weight:800">Comparativo resumido</div>
+          <div style="font-size:11px;color:#666;margin-top:4px">Itens principais por plano</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:inline-block;background:#000;color:#fff;padding:6px 10px;font-size:11px;font-family:ui-monospace,monospace">02 / 02</div>
+          <div style="font-family:ui-monospace,monospace;font-size:11px;color:#525252;margin-top:8px">${escHtml(marca)}</div>
+          <div style="font-family:ui-monospace,monospace;font-size:11px;color:#525252">${escHtml(hoje)}</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#f5f5f5">
+          <th style="text-align:left;padding:10px;border:1px solid #ddd">Item</th>
+          <th style="padding:10px;border:1px solid #ddd">Solo</th>
+          <th style="padding:10px;border:1px solid #ddd">Produtora</th>
+          <th style="padding:10px;border:1px solid #ddd">Agência</th>
+        </tr></thead>
+        <tbody>${tableBody}</tbody>
+      </table>
+      <p style="font-size:10px;color:#737373;margin-top:14px;line-height:1.5">Valores conforme tela de planos (${yearly ? 'cobrança anual' : 'mensal'}). Trial de 7 dias. Documento informativo — condições finais nos termos e no checkout.</p>
+    </div>
+  `;
+}
+
+function exportPlanosPropostaPDF() {
+  if(typeof html2pdf === 'undefined') {
+    toast('Gerador PDF não carregado.', 'err');
+    return;
+  }
+  const signupOpen = document.getElementById('plansPostSignupLayer')?.classList.contains('open');
+  const yearly = signupOpen ? (_planBillSignup === 'yearly') : (_planBillGlobal === 'yearly');
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:24px 28px;background:#fff;color:#111;width:794px;font-family:system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.45';
+  wrap.innerHTML = buildPlanosParceriaPdfHtml(yearly);
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `AgeOps_Proposta_Planos_${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+  html2pdf().set(opt).from(wrap).save();
+  toast('PDF de planos gerado');
 }
 
 /* ── Estado do modal ── */
