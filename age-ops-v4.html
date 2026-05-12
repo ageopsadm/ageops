@@ -18,6 +18,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.21.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
@@ -1974,6 +1975,104 @@ body:has(#login-screen.visible){
 #loginPage .login-sub{
   color:#333333 !important;
 }
+
+/* ═══ Conteúdos · redes sociais (Kanban flat / light) ═══ */
+#page-conteudos-sociais.cs-page-light{
+  --cs-bg:#ffffff;
+  --cs-bg2:#F5F5F2;
+  --cs-text:#111111;
+  --cs-sub:#737373;
+  --cs-bd:rgba(0,0,0,.15);
+  --cs-green-bg:#EAF3DE;
+  --cs-green-bd:#97C459;
+  --cs-green-tx:#173404;
+  --cs-green-btn:#3B6D11;
+  --cs-amber-tx:#854F0B;
+  --cs-blue-tx:#185FA5;
+  background:var(--cs-bg)!important;
+  color:var(--cs-text);
+  font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Inter',sans-serif;
+  font-weight:400;
+  padding:24px!important;
+  border-radius:0;
+  box-shadow:none!important;
+}
+#page-conteudos-sociais .cs-root{max-width:1320px;margin:0 auto;}
+#page-conteudos-sociais .cs-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;}
+#page-conteudos-sociais .cs-title{font-size:18px;font-weight:500;color:var(--cs-text);letter-spacing:0;}
+#page-conteudos-sociais .cs-sub{font-size:13px;color:var(--cs-sub);margin-top:6px;font-weight:400;}
+#page-conteudos-sociais .cs-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+#page-conteudos-sociais .cs-btn{
+  height:36px;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;
+  border:0.5px solid var(--cs-bd);background:var(--cs-bg);color:var(--cs-text);
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  box-shadow:none;
+}
+#page-conteudos-sociais .cs-btn:focus-visible{outline:2px solid #185FA5;outline-offset:2px;}
+#page-conteudos-sociais .cs-btn--primary{background:#111;color:#fff;border-color:#111;}
+#page-conteudos-sociais .cs-btn .ti{font-size:16px;opacity:.85;}
+#page-conteudos-sociais .cs-select{
+  height:36px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:400;
+  border:0.5px solid var(--cs-bd);background:var(--cs-bg);color:var(--cs-text);min-width:140px;
+  box-shadow:none;font-family:inherit;
+}
+#page-conteudos-sociais .cs-select:focus-visible{outline:2px solid #185FA5;outline-offset:2px;}
+#page-conteudos-sociais .cs-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:900px){#page-conteudos-sociais .cs-metrics{grid-template-columns:repeat(2,1fr);}}
+#page-conteudos-sociais .cs-metric{
+  background:var(--cs-bg2);border:0.5px solid var(--cs-bd);border-radius:12px;padding:16px 18px;
+  box-shadow:none;
+}
+#page-conteudos-sociais .cs-metric-label{
+  font-size:11px;letter-spacing:.3px;text-transform:uppercase;color:var(--cs-sub);font-weight:400;margin-bottom:8px;
+}
+#page-conteudos-sociais .cs-metric-val{font-size:24px;font-weight:500;color:var(--cs-text);line-height:1.2;}
+#page-conteudos-sociais .cs-metric--ok .cs-metric-label{color:#173404;}
+#page-conteudos-sociais .cs-metric--ok .cs-metric-val{color:#173404;}
+#page-conteudos-sociais .cs-col-body.cs-drag-over{background:rgba(24,95,165,.06);}
+#page-conteudos-sociais .cs-board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}
+@media(max-width:1100px){#page-conteudos-sociais .cs-board{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){#page-conteudos-sociais .cs-board{grid-template-columns:1fr;}}
+#page-conteudos-sociais .cs-col{
+  background:var(--cs-bg2);border:0.5px solid var(--cs-bd);border-radius:12px;padding:12px;min-height:280px;
+  box-shadow:none;display:flex;flex-direction:column;gap:10px;
+}
+#page-conteudos-sociais .cs-col-head{font-size:11px;letter-spacing:.3px;text-transform:uppercase;color:var(--cs-sub);font-weight:400;margin-bottom:2px;}
+#page-conteudos-sociais .cs-col-head strong{font-weight:500;color:var(--cs-text);}
+#page-conteudos-sociais .cs-col-body{flex:1;display:flex;flex-direction:column;gap:10px;min-height:120px;}
+#page-conteudos-sociais .cs-card{
+  background:#fff;border:0.5px solid var(--cs-bd);border-radius:12px;padding:12px;
+  cursor:grab;box-shadow:none;font-size:13px;color:var(--cs-text);
+}
+#page-conteudos-sociais .cs-card:active{cursor:grabbing;}
+#page-conteudos-sociais .cs-card--pronto{background:var(--cs-green-bg);border-color:var(--cs-green-bd);}
+#page-conteudos-sociais .cs-card--posted{background:#F5F5F2;border-color:var(--cs-bd);opacity:.72;}
+#page-conteudos-sociais .cs-card-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;}
+#page-conteudos-sociais .cs-badge{
+  display:inline-block;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:500;line-height:1.2;
+}
+#page-conteudos-sociais .cs-card-title{font-size:13px;font-weight:500;margin-bottom:6px;line-height:1.35;}
+#page-conteudos-sociais .cs-card-meta{font-size:11px;color:var(--cs-sub);font-weight:400;line-height:1.4;}
+#page-conteudos-sociais .cs-card-when{font-size:11px;color:var(--cs-sub);margin-top:8px;font-weight:400;}
+#page-conteudos-sociais .cs-status-row{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;font-weight:400;}
+#page-conteudos-sociais .cs-status-row .ti{font-size:14px;}
+#page-conteudos-sociais .cs-btn-post{
+  width:100%;margin-top:12px;height:36px;border-radius:8px;border:none;background:var(--cs-green-btn);
+  color:#fff;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  box-shadow:none;
+}
+#page-conteudos-sociais .cs-btn-post:focus-visible{outline:2px solid var(--cs-green-btn);outline-offset:2px;}
+#page-conteudos-sociais .cs-posted-metrics{font-size:11px;color:var(--cs-sub);margin-top:8px;font-weight:400;}
+#modalCsMarcarPostado .modal-box,#modalCsNovoConteudo .modal-box{background:#fff;color:#111;border:0.5px solid rgba(0,0,0,.12);box-shadow:none;max-width:480px;}
+#modalCsMarcarPostado input,#modalCsMarcarPostado input[type="datetime-local"],#modalCsNovoConteudo input,#modalCsNovoConteudo select{
+  height:36px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;padding:0 12px;font-size:13px;font-weight:400;width:100%;box-sizing:border-box;font-family:inherit;
+}
+#modalCsMarcarPostado input:focus-visible,#modalCsNovoConteudo input:focus-visible,#modalCsNovoConteudo select:focus-visible{outline:2px solid #185FA5;outline-offset:2px;}
+#modalCsMarcarPostado label,#modalCsNovoConteudo label{font-size:11px;color:#737373;font-weight:400;display:block;margin-bottom:6px;}
+#modalCsMarcarPostado .btn-primary,#modalCsNovoConteudo .btn-primary{
+  font-weight:500;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Inter',sans-serif;letter-spacing:0;text-transform:none;
+}
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
 <script>
@@ -2558,6 +2657,9 @@ body:has(#login-screen.visible){
         </button>
         <button type="button" class="nav-item" data-page="postagens" data-perm-module="pipeline" onclick="navigate('postagens')">
           <i class="fas fa-share-alt"></i><span>POSTAGENS</span>
+        </button>
+        <button type="button" class="nav-item" data-page="conteudos-sociais" data-perm-module="pipeline" onclick="navigate('conteudos-sociais')">
+          <i class="fas fa-columns"></i><span>CONTEÚDOS · REDES</span>
         </button>
       </div>
 
@@ -3737,6 +3839,33 @@ body:has(#login-screen.visible){
       </div>
 
       <!-- ══════════════════════════════════
+           CONTEÚDOS · REDES SOCIAIS (Kanban)
+      ══════════════════════════════════ -->
+      <div id="page-conteudos-sociais" class="page cs-page-light">
+        <div class="cs-root">
+          <div class="cs-top">
+            <div>
+              <div class="cs-title">Conteúdos · Redes sociais</div>
+              <div class="cs-sub" id="csWeekSubtitle">—</div>
+            </div>
+            <div class="cs-actions">
+              <select id="csFilterCliente" class="cs-select" onchange="csApplyFilters()" title="Filtrar por cliente">
+                <option value="">Todos os clientes</option>
+              </select>
+              <div style="display:flex;align-items:center;gap:2px;flex-wrap:wrap">
+                <button type="button" class="cs-btn" onclick="csWeekShift(-1)" title="Semana anterior" aria-label="Semana anterior"><i class="ti ti-chevron-left"></i></button>
+                <span style="font-size:12px;color:#737373;padding:0 6px;font-weight:400">Período</span>
+                <button type="button" class="cs-btn" onclick="csWeekShift(1)" title="Próxima semana" aria-label="Próxima semana"><i class="ti ti-chevron-right"></i></button>
+              </div>
+              <button type="button" class="cs-btn cs-btn--primary perm-guard-edit" onclick="csOpenNovoModal()"><i class="ti ti-plus"></i> Novo conteúdo</button>
+            </div>
+          </div>
+          <div class="cs-metrics" id="csMetricsRow"></div>
+          <div class="cs-board" id="csBoard"></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
            CRONOGRAMA PAGE
       ══════════════════════════════════ -->
       <div id="page-cronograma" class="page">
@@ -4685,6 +4814,66 @@ body:has(#login-screen.visible){
   </div>
 </div>
 
+<!-- Modal Conteúdos · redes — marcar postado -->
+<div class="modal" id="modalCsMarcarPostado">
+  <div class="modal-box" style="padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:16px;font-weight:500;color:#111">Marcar como postado</span>
+      <button type="button" onclick="closeModal('modalCsMarcarPostado')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;font-weight:400" aria-label="Fechar">×</button>
+    </div>
+    <input type="hidden" id="csMarcarId" value="">
+    <label for="csMarcarLink">Link da publicação</label>
+    <input type="url" id="csMarcarLink" placeholder="https://..." autocomplete="off">
+    <label for="csMarcarDt" style="margin-top:12px">Data e hora da publicação</label>
+    <input type="datetime-local" id="csMarcarDt">
+    <label style="margin-top:14px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:13px;color:#111;font-weight:400">
+      <input type="checkbox" id="csMarcarLembrete" style="width:auto;height:auto;margin-top:3px;accent-color:#185FA5">
+      <span>Criar lembrete para coletar métricas em 7 dias</span>
+    </label>
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary perm-guard-edit" onclick="csConfirmMarcarPostado()" style="border-radius:8px;padding:10px 18px">Confirmar</button>
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modalCsMarcarPostado')" style="border-radius:8px;padding:10px 18px">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Conteúdos · redes — novo conteúdo -->
+<div class="modal" id="modalCsNovoConteudo">
+  <div class="modal-box" style="padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:16px;font-weight:500;color:#111">Novo conteúdo</span>
+      <button type="button" onclick="closeModal('modalCsNovoConteudo')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;font-weight:400" aria-label="Fechar">×</button>
+    </div>
+    <label for="csNovoTitulo">Título da peça</label>
+    <input type="text" id="csNovoTitulo" placeholder="Ex.: Bastidores comercial" autocomplete="off">
+    <label for="csNovoCliente" style="margin-top:12px">Cliente</label>
+    <input type="text" id="csNovoCliente" placeholder="Ex.: Natura" autocomplete="off">
+    <label for="csNovoResp" style="margin-top:12px">Responsável</label>
+    <input type="text" id="csNovoResp" placeholder="Nome" autocomplete="off">
+    <label for="csNovoFormato" style="margin-top:12px">Formato</label>
+    <select id="csNovoFormato">
+      <option value="reels">Reels</option>
+      <option value="carrossel">Carrossel</option>
+      <option value="story">Story</option>
+      <option value="tiktok">TikTok</option>
+      <option value="post">Post</option>
+    </select>
+    <label for="csNovoRede" style="margin-top:12px">Rede</label>
+    <select id="csNovoRede">
+      <option value="instagram">Instagram</option>
+      <option value="tiktok">TikTok</option>
+      <option value="linkedin">LinkedIn</option>
+      <option value="youtube">YouTube</option>
+    </select>
+    <label for="csNovoScheduled" style="margin-top:12px">Data e hora previstas</label>
+    <input type="datetime-local" id="csNovoScheduled">
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary perm-guard-edit" onclick="csConfirmNovoConteudo()" style="border-radius:8px;padding:10px 18px">Adicionar</button>
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modalCsNovoConteudo')" style="border-radius:8px;padding:10px 18px">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Sched Event — calendário mensal + visão semanal (campos alinhados ao age_team_calendar) -->
 <div class="modal" id="modalSchedEvent">
   <div class="modal-box" style="max-width:520px;max-height:90vh;overflow-y:auto;background:#fff;color:#111">
@@ -5591,6 +5780,7 @@ const PAGE_PERM_KEYS = {
   projects: ['projetos'],
   pipeline: ['pipeline'],
   postagens: ['pipeline'],
+  'conteudos-sociais': ['pipeline'],
   gestao: ['gestao'],
   orcamentos: ['orcamentos'],
   clientes: ['clientes'],
@@ -9179,6 +9369,7 @@ const PAGE_TITLES = {
   relatorios:'RELATÓRIOS DE PROJETOS',
   pipeline:'PIPELINE COMERCIAL',
   postagens:'CRONOGRAMA DE POSTAGENS',
+  'conteudos-sociais':'CONTEÚDOS · REDES SOCIAIS',
   nps:'NPS — AVALIAÇÃO DE CLIENTES',
   cashflow:'FLUXO DE CAIXA'
 };
@@ -9246,6 +9437,7 @@ function navigate(page) {
   if(page==='relatorios')   loadRelatorios();
   if(page==='pipeline')     loadPipeline();
   if(page==='postagens')   loadPostagens();
+  if(page==='conteudos-sociais') loadConteudosSociais();
   if(page==='nps')          loadNps();
   if(page==='cashflow')     loadCashflow();
 
@@ -19942,6 +20134,563 @@ async function postPopulateProjectSelects() {
   }
 }
 
+/* ═══════════════════════════════════════════
+   CONTEÚDOS · REDES SOCIAIS (Kanban — age_social_posts)
+═══════════════════════════════════════════ */
+let _csKanbanItems = [];
+let _csWeekStart = null;
+let _csDragId = null;
+
+const CS_BADGE = {
+  reels:{ bg:'#FAECE7', fg:'#712B13', lab:'Reels' },
+  carrossel:{ bg:'#EEEDFE', fg:'#3C3489', lab:'Carrossel' },
+  tiktok:{ bg:'#FAEEDA', fg:'#633806', lab:'TikTok' },
+  story:{ bg:'#FAECE7', fg:'#712B13', lab:'Story' },
+  post:{ bg:'#ECECEC', fg:'#444444', lab:'Post' },
+};
+
+const CS_BOARD_COLS = [
+  { key:'producao', head:'Em produção', metricLabel:'Em produção' },
+  { key:'aprovacao', head:'Aprovação', metricLabel:'Aprovação' },
+  { key:'pronto', head:'Pronto p/ postar', metricLabel:'Pronto p/ postar', metricOk:true },
+  { key:'postado', head:'Postado', metricLabel:'Postado (semana)' },
+];
+
+function _csInferStageFromLegacy(r) {
+  const st = String(r.status || '').toLowerCase();
+  if(st === 'postado') return 'postado';
+  if(st === 'agendado') return 'pronto';
+  return 'producao';
+}
+
+function _csNormalizeStageFromRow(r) {
+  const s = r.editorial_stage;
+  const v = s != null && String(s).trim() !== '' ? String(s).toLowerCase().trim() : '';
+  if(['producao', 'aprovacao', 'pronto', 'postado'].includes(v)) return v;
+  return _csInferStageFromLegacy(r);
+}
+
+function _csPostDateTimeToMs(post_date, post_time) {
+  if(!post_date) return null;
+  const ds = String(post_date).slice(0, 10);
+  let hh = 12;
+  let mm = 0;
+  const pt = String(post_time || '').trim();
+  const m = pt.match(/^(\d{1,2}):(\d{2})/);
+  if(m) {
+    hh = Math.min(23, parseInt(m[1], 10));
+    mm = Math.min(59, parseInt(m[2], 10));
+  }
+  const parts = ds.split('-').map(Number);
+  const y = parts[0];
+  const Mo = parts[1];
+  const d = parts[2];
+  if(!y || !Mo || !d) return null;
+  return new Date(y, Mo - 1, d, hh, mm, 0, 0).getTime();
+}
+
+function _csPostDateTimeParts(ms) {
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2, '0');
+  return {
+    post_date: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+    post_time: `${p(d.getHours())}:${p(d.getMinutes())}:00`,
+  };
+}
+
+function _csFormatFromDb(f, network) {
+  const net = String(network || '').toLowerCase();
+  const x = String(f || '').toLowerCase();
+  if(net === 'tiktok') return 'tiktok';
+  if(x === 'stories') return 'story';
+  if(x === 'carrossel') return 'carrossel';
+  if(x === 'reels' || x === 'shorts') return 'reels';
+  return 'post';
+}
+
+function _csFormatToDb(formato) {
+  const x = String(formato || '').toLowerCase();
+  if(x === 'story') return 'stories';
+  if(x === 'post') return 'feed';
+  if(x === 'tiktok') return 'reels';
+  if(x === 'carrossel') return 'carrossel';
+  if(x === 'reels') return 'reels';
+  return 'feed';
+}
+
+function _csDbRowToItem(r) {
+  const coluna = _csNormalizeStageFromRow(r);
+  const scheduledAt = _csPostDateTimeToMs(r.post_date, r.post_time);
+  let postedAt = r.published_at != null ? Number(r.published_at) : null;
+  if(postedAt != null && isNaN(postedAt)) postedAt = null;
+  const statusLine = r.approval_status_text
+    ? { kind: String(r.approval_status_kind || 'wait') === 'review' ? 'review' : 'wait', text: String(r.approval_status_text) }
+    : null;
+  const mat = (r.material && String(r.material).trim()) ? String(r.material) : '';
+  return {
+    id: r.id,
+    coluna,
+    formato: _csFormatFromDb(r.format, r.network),
+    rede: String(r.network || 'instagram').toLowerCase(),
+    titulo: mat || 'Sem título',
+    cliente: (r.client_name && String(r.client_name).trim()) ? String(r.client_name) : '—',
+    responsavel: (r.assigned_to && String(r.assigned_to).trim()) ? String(r.assigned_to) : '—',
+    scheduledAt,
+    statusLine,
+    postedAt,
+    postLink: r.public_url ? String(r.public_url) : '',
+    views: r.metrics_views != null && String(r.metrics_views).trim() !== '' ? String(r.metrics_views) : '—',
+    likes: r.metrics_likes != null && String(r.metrics_likes).trim() !== '' ? String(r.metrics_likes) : '—',
+  };
+}
+
+function _csStatusForStage(stage) {
+  if(stage === 'pronto') return 'agendado';
+  if(stage === 'postado') return 'postado';
+  return 'planejado';
+}
+
+async function _csPatchEditorialStage(id, stage) {
+  const payload = {
+    editorial_stage: stage,
+    status: _csStatusForStage(stage),
+    updated_at: Date.now(),
+  };
+  await apiPatch('age_social_posts', id, payload);
+}
+
+function _csStartOfWeekMonday(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function _csIsoWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function csFormatWeekRangeSubtitle(d0) {
+  const start = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const wn = _csIsoWeekNumber(start);
+  const y = start.getFullYear();
+  const d1 = start.getDate();
+  const d2 = end.getDate();
+  const m1 = months[start.getMonth()];
+  const m2 = months[end.getMonth()];
+  if(start.getMonth() === end.getMonth()) {
+    return `Semana ${wn} — ${d1} a ${d2} de ${m1} de ${y}`;
+  }
+  return `Semana ${wn} — ${d1} de ${m1} a ${d2} de ${m2} de ${y}`;
+}
+
+function _csEnsureWeekStart() {
+  if(!_csWeekStart) _csWeekStart = _csStartOfWeekMonday(new Date());
+}
+
+function _csWeekRangeMs() {
+  _csEnsureWeekStart();
+  const a = new Date(_csWeekStart.getFullYear(), _csWeekStart.getMonth(), _csWeekStart.getDate());
+  const b = new Date(a);
+  b.setDate(b.getDate() + 7);
+  return { start:a.getTime(), end:b.getTime() };
+}
+
+function _csItemInWeek(it) {
+  const { start, end } = _csWeekRangeMs();
+  const t = it.coluna === 'postado' ? (it.postedAt != null ? it.postedAt : it.scheduledAt) : it.scheduledAt;
+  if(t == null) return true;
+  return t >= start && t < end;
+}
+
+function csFilteredItems() {
+  let rows = _csKanbanItems.slice();
+  const cli = document.getElementById('csFilterCliente')?.value || '';
+  if(cli) rows = rows.filter(it => String(it.cliente) === cli);
+  return rows.filter(_csItemInWeek);
+}
+
+function _csSeedMockIfNeeded() {
+  if(_csKanbanItems.length) return;
+  _csEnsureWeekStart();
+  const ws = _csWeekStart;
+  const t = (dayOffset, hour, min) => {
+    const x = new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + dayOffset, hour, min, 0, 0);
+    return x.getTime();
+  };
+  _csKanbanItems = [
+    { id:'cs_m1', coluna:'producao', formato:'reels', rede:'instagram', titulo:'Bastidores comercial Natura', cliente:'Natura', responsavel:'Bea', scheduledAt:t(1,15,30) },
+    { id:'cs_m2', coluna:'producao', formato:'carrossel', rede:'instagram', titulo:'Lançamento verão Magalu', cliente:'Magalu', responsavel:'Lucas', scheduledAt:t(2,10,0) },
+    { id:'cs_m3', coluna:'producao', formato:'tiktok', rede:'tiktok', titulo:'Trend sandálias Havaianas', cliente:'Havaianas', responsavel:'Ana', scheduledAt:t(3,18,45) },
+    { id:'cs_m4', coluna:'aprovacao', formato:'reels', rede:'instagram', titulo:'Depoimento cliente Bradesco', cliente:'Bradesco', responsavel:'Rafa', scheduledAt:t(2,14,0), statusLine:{ kind:'wait', text:'Aguarda cliente · 2d' } },
+    { id:'cs_m5', coluna:'aprovacao', formato:'carrossel', rede:'linkedin', titulo:'Cases B2B trimestre', cliente:'Itaú', responsavel:'Marina', scheduledAt:t(4,9,0), statusLine:{ kind:'review', text:'Revisão interna' } },
+    { id:'cs_m6', coluna:'aprovacao', formato:'post', rede:'youtube', titulo:'Making of da campanha', cliente:'Natura', responsavel:'Bea', scheduledAt:t(5,11,20), statusLine:{ kind:'wait', text:'Aguarda cliente · 5d' } },
+    { id:'cs_m7', coluna:'pronto', formato:'story', rede:'instagram', titulo:'Countdown Black Friday', cliente:'Magalu', responsavel:'Lucas', scheduledAt:t(1,8,0) },
+    { id:'cs_m8', coluna:'pronto', formato:'reels', rede:'tiktok', titulo:'Desafio #MinhaHavaiana', cliente:'Havaianas', responsavel:'Ana', scheduledAt:t(2,19,0) },
+    { id:'cs_m9', coluna:'pronto', formato:'carrossel', rede:'instagram', titulo:'Guia de presentes', cliente:'Natura', responsavel:'Bea', scheduledAt:t(6,12,0) },
+    { id:'cs_m10', coluna:'postado', formato:'reels', rede:'instagram', titulo:'Abertura campanha aromaterapia', cliente:'Natura', responsavel:'Bea', scheduledAt:t(0,10,0), postedAt:t(0,10,5), postLink:'https://instagram.com/p/example', views:'2.4k', likes:'312' },
+    { id:'cs_m11', coluna:'postado', formato:'tiktok', rede:'tiktok', titulo:'Humor estoque Magalu', cliente:'Magalu', responsavel:'Lucas', scheduledAt:t(0,20,0), postedAt:t(0,20,10), postLink:'https://tiktok.com/@magalu/video/1', views:'18k', likes:'890' },
+    { id:'cs_m12', coluna:'postado', formato:'post', rede:'linkedin', titulo:'Thought leadership em CX', cliente:'Bradesco', responsavel:'Marina', scheduledAt:t(4,7,0), postedAt:t(4,7,15), postLink:'https://linkedin.com/posts/example', views:'890', likes:'54' },
+  ];
+}
+
+function csPopulateClienteFilter() {
+  const sel = document.getElementById('csFilterCliente');
+  if(!sel) return;
+  const cur = sel.value;
+  const set = new Set();
+  _csKanbanItems.forEach(it => { if(it.cliente) set.add(String(it.cliente)); });
+  const opts = ['<option value="">Todos os clientes</option>'];
+  [...set].sort((a, b) => a.localeCompare(b, 'pt')).forEach(c => {
+    opts.push(`<option value="${escAttr(c)}">${escHtml(c)}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+  if(cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function csRedeIconClass(rede) {
+  const r = String(rede || '').toLowerCase();
+  const m = { instagram:'ti-brand-instagram', tiktok:'ti-brand-tiktok', linkedin:'ti-brand-linkedin', youtube:'ti-brand-youtube' };
+  return m[r] || 'ti-share';
+}
+
+function csBadgeHtml(formato) {
+  const b = CS_BADGE[String(formato)] || CS_BADGE.post;
+  return `<span class="cs-badge" style="background:${b.bg};color:${b.fg}">${escHtml(b.lab)}</span>`;
+}
+
+function csFormatShortWhen(ms) {
+  if(ms == null) return '—';
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2, '0');
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)} · ${d.getHours()}h`;
+}
+
+function _csToDatetimeLocal(ms) {
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function csStatusRowHtml(sl) {
+  if(!sl || !sl.text) return '';
+  const icon = sl.kind === 'review' ? 'ti-eye' : 'ti-clock';
+  const color = sl.kind === 'review' ? 'var(--cs-blue-tx)' : 'var(--cs-amber-tx)';
+  return `<div class="cs-status-row" style="color:${color}"><i class="ti ${icon}" aria-hidden="true"></i><span>${escHtml(sl.text)}</span></div>`;
+}
+
+function csCardHtml(it, canEdit) {
+  const ic = csRedeIconClass(it.rede);
+  const drag = canEdit ? 'true' : 'false';
+  let cls = 'cs-card';
+  if(it.coluna === 'pronto') cls += ' cs-card--pronto';
+  else if(it.coluna === 'postado') cls += ' cs-card--posted';
+
+  if(it.coluna === 'postado') {
+    const when = csFormatShortWhen(it.postedAt || it.scheduledAt);
+    return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group">
+      <div class="cs-card-when" style="margin-top:0">${escHtml(when)}</div>
+      <div class="cs-card-top" style="margin-top:8px">${csBadgeHtml(it.formato)}<i class="ti ${ic}" style="font-size:14px;color:#737373" aria-hidden="true"></i></div>
+      <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
+      <div class="cs-card-meta">${escHtml(it.cliente || '')} · ${escHtml(it.responsavel || '')}</div>
+      <div class="cs-posted-metrics">${escHtml(String(it.views || '—'))} views · ${escHtml(String(it.likes || '—'))} likes</div>
+    </div>`;
+  }
+
+  let btn = '';
+  if(it.coluna === 'pronto') {
+    btn = `<button type="button" class="cs-btn-post perm-guard-edit" draggable="false" onclick="event.stopPropagation();csOpenMarcarPostado(${JSON.stringify(it.id)})"><i class="ti ti-check" aria-hidden="true"></i> Marcar postado</button>`;
+  }
+
+  const whenLine = it.scheduledAt != null
+    ? `<div class="cs-card-when">${escHtml(csFormatShortWhen(it.scheduledAt))}</div>`
+    : '';
+
+  return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group">
+    <div class="cs-card-top">${csBadgeHtml(it.formato)}<i class="ti ${ic}" style="font-size:14px;color:#737373" aria-hidden="true"></i></div>
+    <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
+    <div class="cs-card-meta">${escHtml(it.cliente || '')} · ${escHtml(it.responsavel || '')}</div>
+    ${whenLine}
+    ${csStatusRowHtml(it.statusLine)}
+    ${btn}
+  </div>`;
+}
+
+function csBoardWireDrag() {
+  const board = document.getElementById('csBoard');
+  if(!board) return;
+  board.querySelectorAll('.cs-card').forEach(el => {
+    el.addEventListener('dragstart', csCardDragStart);
+    el.addEventListener('dragend', csCardDragEnd);
+  });
+  board.querySelectorAll('.cs-col-body').forEach(el => {
+    el.addEventListener('dragover', csColDragOver);
+    el.addEventListener('dragleave', csColDragLeave);
+    el.addEventListener('drop', csColDrop);
+  });
+}
+
+function csCardDragStart(e) {
+  if(!hasModuleEditForPage('conteudos-sociais')) {
+    e.preventDefault();
+    return;
+  }
+  const id = e.currentTarget.getAttribute('data-cs-id');
+  _csDragId = id;
+  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function csCardDragEnd() {
+  _csDragId = null;
+  document.querySelectorAll('#page-conteudos-sociais .cs-col-body').forEach(el => el.classList.remove('cs-drag-over'));
+}
+
+function csColDragOver(e) {
+  if(!hasModuleEditForPage('conteudos-sociais')) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('cs-drag-over');
+}
+
+function csColDragLeave(e) {
+  e.currentTarget.classList.remove('cs-drag-over');
+}
+
+async function csColDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('cs-drag-over');
+  const id = e.dataTransfer.getData('text/plain') || _csDragId;
+  const col = e.currentTarget.getAttribute('data-cs-col');
+  if(!id || !col) return;
+  if(!hasModuleEditForPage('conteudos-sociais')) return;
+  const it = _csKanbanItems.find(x => x.id === id);
+  if(!it) return;
+  if(col === 'postado') {
+    csOpenMarcarPostado(id);
+    return;
+  }
+  const prev = it.coluna;
+  it.coluna = col;
+  csRenderKanban();
+  try {
+    await _csPatchEditorialStage(id, col);
+  } catch(err) {
+    console.warn('[csColDrop]', err);
+    it.coluna = prev;
+    csRenderKanban();
+    try { toast(String(err?.message || 'Erro ao mover card'), 'err'); } catch(_) {}
+  }
+}
+
+function csMetricsHtml(counts) {
+  return CS_BOARD_COLS.map(def => {
+    const n = counts[def.key] || 0;
+    const ok = def.metricOk ? ' cs-metric--ok' : '';
+    return `<div class="cs-metric${ok}">
+      <div class="cs-metric-label">${escHtml(def.metricLabel)}</div>
+      <div class="cs-metric-val">${n}</div>
+    </div>`;
+  }).join('');
+}
+
+function csRenderKanban() {
+  _csEnsureWeekStart();
+  const sub = document.getElementById('csWeekSubtitle');
+  if(sub) sub.textContent = csFormatWeekRangeSubtitle(_csWeekStart);
+
+  const rows = csFilteredItems();
+  const byCol = { producao:[], aprovacao:[], pronto:[], postado:[] };
+  const counts = { producao:0, aprovacao:0, pronto:0, postado:0 };
+  rows.forEach(it => {
+    if(byCol[it.coluna]) {
+      byCol[it.coluna].push(it);
+      counts[it.coluna]++;
+    }
+  });
+
+  const metricsEl = document.getElementById('csMetricsRow');
+  if(metricsEl) metricsEl.innerHTML = csMetricsHtml(counts);
+
+  const canEdit = hasModuleEditForPage('conteudos-sociais');
+  const board = document.getElementById('csBoard');
+  if(!board) return;
+
+  board.innerHTML = CS_BOARD_COLS.map(def => {
+    const list = byCol[def.key] || [];
+    const n = list.length;
+    const cards = list.map(it => csCardHtml(it, canEdit)).join('');
+    return `<div class="cs-col">
+      <div class="cs-col-head"><strong>${escHtml(def.head)}</strong> ${n}</div>
+      <div class="cs-col-body" data-cs-col="${escAttr(def.key)}">${cards}</div>
+    </div>`;
+  }).join('');
+
+  csBoardWireDrag();
+}
+
+function csApplyFilters() {
+  csRenderKanban();
+}
+
+function csWeekShift(deltaWeeks) {
+  _csEnsureWeekStart();
+  _csWeekStart.setDate(_csWeekStart.getDate() + 7 * deltaWeeks);
+  csRenderKanban();
+}
+
+async function loadConteudosSociais() {
+  _csEnsureWeekStart();
+  const cid = currentUser?.company_id;
+  if(!cid) {
+    _csKanbanItems = [];
+    csPopulateClienteFilter();
+    csRenderKanban();
+    try { toast('Empresa não identificada.', 'warn'); } catch(_) {}
+    return;
+  }
+  const enc = encodeURIComponent(String(cid));
+  try {
+    const d = await apiGet('age_social_posts',
+      `?company_id=eq.${enc}&deleted=eq.false&order=post_date.desc&limit=800`);
+    const raw = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    _csKanbanItems = raw.map(_csDbRowToItem);
+  } catch(e) {
+    console.warn('[loadConteudosSociais]', e);
+    _csKanbanItems = [];
+    const msg = String(e?.message || e || '');
+    if(/42P01|does not exist|Could not find|relation/i.test(msg)) {
+      try { toast('Execute no Supabase: supabase/sql/age_social_posts.sql', 'warn'); } catch(_) {}
+    } else if(/42703|column/i.test(msg)) {
+      try { toast('Atualize o SQL no Supabase (colunas do kanban em age_social_posts).', 'warn'); } catch(_) {}
+    }
+    _csSeedMockIfNeeded();
+  }
+  csPopulateClienteFilter();
+  csRenderKanban();
+}
+
+function csOpenMarcarPostado(id) {
+  const it = _csKanbanItems.find(x => x.id === id);
+  if(!it) return;
+  document.getElementById('csMarcarId').value = id;
+  document.getElementById('csMarcarLink').value = it.postLink || '';
+  const base = it.postedAt != null ? it.postedAt : (it.scheduledAt != null ? it.scheduledAt : Date.now());
+  document.getElementById('csMarcarDt').value = _csToDatetimeLocal(base);
+  const cb = document.getElementById('csMarcarLembrete');
+  if(cb) cb.checked = false;
+  openModal('modalCsMarcarPostado');
+}
+
+async function csConfirmMarcarPostado() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
+  const id = document.getElementById('csMarcarId').value;
+  const link = document.getElementById('csMarcarLink').value.trim();
+  const dtVal = document.getElementById('csMarcarDt').value;
+  const lembrete = document.getElementById('csMarcarLembrete')?.checked;
+  if(!link) {
+    try { toast('Informe o link da publicação.', 'warn'); } catch(_) {}
+    return;
+  }
+  if(!dtVal) {
+    try { toast('Informe data e hora da publicação.', 'warn'); } catch(_) {}
+    return;
+  }
+  const it = _csKanbanItems.find(x => x.id === id);
+  if(!it) return;
+  const postedMs = new Date(dtVal).getTime();
+  const parts = _csPostDateTimeParts(postedMs);
+  const payload = {
+    editorial_stage: 'postado',
+    status: 'postado',
+    public_url: link,
+    published_at: postedMs,
+    post_date: parts.post_date,
+    post_time: parts.post_time,
+    updated_at: Date.now(),
+  };
+  if(lembrete) payload.remind_metrics_at = Date.now() + 7 * 86400000;
+  try {
+    await apiPatch('age_social_posts', id, payload);
+    if(lembrete) {
+      try { toast('Lembrete registrado para coletar métricas em 7 dias.', 'ok'); } catch(_) {}
+    }
+    closeModal('modalCsMarcarPostado');
+    await loadConteudosSociais();
+  } catch(err) {
+    console.warn('[csConfirmMarcarPostado]', err);
+    try { toast(String(err?.message || 'Erro ao salvar'), 'err'); } catch(_) {}
+  }
+}
+
+function csOpenNovoModal() {
+  document.getElementById('csNovoTitulo').value = '';
+  document.getElementById('csNovoCliente').value = '';
+  document.getElementById('csNovoResp').value = '';
+  document.getElementById('csNovoFormato').value = 'reels';
+  document.getElementById('csNovoRede').value = 'instagram';
+  document.getElementById('csNovoScheduled').value = _csToDatetimeLocal(Date.now());
+  openModal('modalCsNovoConteudo');
+}
+
+async function csConfirmNovoConteudo() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
+  const titulo = document.getElementById('csNovoTitulo').value.trim();
+  const cliente = document.getElementById('csNovoCliente').value.trim();
+  const resp = document.getElementById('csNovoResp').value.trim();
+  const formato = document.getElementById('csNovoFormato').value;
+  const rede = document.getElementById('csNovoRede').value;
+  const dtVal = document.getElementById('csNovoScheduled').value;
+  if(!titulo) {
+    try { toast('Informe o título da peça.', 'warn'); } catch(_) {}
+    return;
+  }
+  if(!dtVal) {
+    try { toast('Informe data e hora previstas.', 'warn'); } catch(_) {}
+    return;
+  }
+  const cid = currentUser?.company_id;
+  if(!cid) {
+    try { toast('Empresa não identificada.', 'warn'); } catch(_) {}
+    return;
+  }
+  const ms = new Date(dtVal).getTime();
+  const parts = _csPostDateTimeParts(ms);
+  const payload = {
+    company_id: String(cid),
+    post_date: parts.post_date,
+    post_time: parts.post_time,
+    network: rede,
+    format: _csFormatToDb(formato),
+    material: titulo,
+    client_name: cliente || null,
+    assigned_to: resp || null,
+    status: 'planejado',
+    editorial_stage: 'producao',
+    deleted: false,
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  };
+  try {
+    await apiPost('age_social_posts', payload);
+    closeModal('modalCsNovoConteudo');
+    try { toast('Conteúdo criado.'); } catch(_) {}
+    await loadConteudosSociais();
+  } catch(err) {
+    console.warn('[csConfirmNovoConteudo]', err);
+    try { toast(String(err?.message || 'Erro ao criar'), 'err'); } catch(_) {}
+  }
+}
+
 async function loadPostagens() {
   const tit = document.getElementById('postCalTitle');
   if(tit) tit.textContent = _monthTitle(_postCalYear, _postCalMonth);
@@ -20182,6 +20931,13 @@ async function savePostagem() {
     updated_at: Date.now()
   };
 
+  const stNorm = String(payload.status || '').toLowerCase();
+  if(stNorm === 'postado') payload.editorial_stage = 'postado';
+  else if(stNorm === 'agendado') payload.editorial_stage = 'pronto';
+  else if(!document.getElementById('postFormId')?.value) {
+    payload.editorial_stage = 'producao';
+  }
+
   const id = document.getElementById('postFormId')?.value;
   try {
     if(id) {
@@ -20190,11 +20946,17 @@ async function savePostagem() {
       payload.company_id = String(cid);
       payload.created_at = Date.now();
       payload.deleted = false;
+      if(payload.editorial_stage == null) payload.editorial_stage = 'producao';
       await apiPost('age_social_posts', payload);
     }
     closeModal('modalPostagem');
     toast('Postagem salva!');
     await loadPostagens();
+    try {
+      if(document.getElementById('page-conteudos-sociais')?.classList.contains('active') && typeof loadConteudosSociais === 'function') {
+        await loadConteudosSociais();
+      }
+    } catch(_) {}
   } catch(e) {
     console.error('[savePostagem]', e);
     toast(String(e?.message || 'Erro ao salvar'), 'err');
@@ -20213,6 +20975,11 @@ async function deletePostagem() {
     closeModal('modalPostagem');
     toast('Removida.');
     await loadPostagens();
+    try {
+      if(document.getElementById('page-conteudos-sociais')?.classList.contains('active') && typeof loadConteudosSociais === 'function') {
+        await loadConteudosSociais();
+      }
+    } catch(_) {}
   } catch(e) {
     console.error('[deletePostagem]', e);
     toast(String(e?.message || 'Erro ao excluir'), 'err');
