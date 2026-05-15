@@ -42,8 +42,21 @@ CREATE INDEX IF NOT EXISTS idx_age_social_posts_company_stage
 
 COMMENT ON TABLE age_social_posts IS 'Cronograma editorial: data, projeto, material e rede social; estágio do kanban em editorial_stage';
 
--- Migração para instalações que já criaram a tabela sem as colunas do kanban:
-ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS editorial_stage text NOT NULL DEFAULT 'producao';
+-- Migração para instalações que já criaram a tabela em versões antigas (idempotente):
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS post_time text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS format text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS project_id uuid;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS client_name text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS project_name text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS material text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS asset_url text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS caption text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS assigned_to text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS notes text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS deleted boolean DEFAULT false;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS created_at bigint;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS updated_at bigint;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS editorial_stage text DEFAULT 'producao';
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS approval_status_kind text;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS approval_status_text text;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS public_url text;
@@ -51,3 +64,6 @@ ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS published_at bigint;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS metrics_views text;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS metrics_likes text;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS remind_metrics_at bigint;
+
+-- Garantir default em editorial_stage onde a coluna já existia sem NOT NULL:
+UPDATE age_social_posts SET editorial_stage = 'producao' WHERE editorial_stage IS NULL;

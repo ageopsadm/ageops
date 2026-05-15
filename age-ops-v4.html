@@ -20130,40 +20130,58 @@ async function _csResolveProjectMeta(projectId) {
   return { client_name, project_name };
 }
 
-const _CS_KANBAN_PAYLOAD_KEYS = [
-  'editorial_stage', 'approval_status_kind', 'approval_status_text',
-  'public_url', 'published_at', 'metrics_views', 'metrics_likes', 'remind_metrics_at'
-];
+function _socialPostMissingColumnName(err) {
+  const msg = String(err?.message || err || '');
+  const m = msg.match(/Could not find the '([^']+)' column/i);
+  if(m) return m[1];
+  const m2 = msg.match(/column "?(\w+)"? of relation/i);
+  return m2 ? m2[1] : null;
+}
 
-function _csApiErrMissingColumn(err) {
+function _socialPostIsMissingColumnErr(err) {
   const msg = String(err?.message || err || '');
   return /\(400\)|42703|column|PGRST204|schema cache/i.test(msg);
 }
 
-function _csStripKanbanFields(payload) {
-  const slim = Object.assign({}, payload);
-  _CS_KANBAN_PAYLOAD_KEYS.forEach(k => { delete slim[k]; });
-  return slim;
-}
-
+/** POST/PATCH em age_social_posts: remove colunas ausentes no schema (retry até 15x). */
 async function _csApiPostSocial(payload) {
-  try {
-    return await apiPost('age_social_posts', payload);
-  } catch(e) {
-    if(!_csApiErrMissingColumn(e)) throw e;
-    const slim = _csStripKanbanFields(payload);
-    if(slim.status == null) slim.status = 'planejado';
-    return await apiPost('age_social_posts', slim);
+  let body = Object.assign({}, payload);
+  const dropped = [];
+  for(let i = 0; i < 15; i++) {
+    try {
+      const res = await apiPost('age_social_posts', body);
+      if(dropped.length) {
+        try { toast('Salvo. Rode supabase/sql/age_social_posts.sql para habilitar: ' + dropped.join(', '), 'warn'); } catch(_) {}
+      }
+      return res;
+    } catch(e) {
+      const col = _socialPostMissingColumnName(e);
+      if(!col || !(col in body) || !_socialPostIsMissingColumnErr(e)) throw e;
+      delete body[col];
+      dropped.push(col);
+    }
   }
+  throw new Error('age_social_posts: schema desatualizado no Supabase');
 }
 
 async function _csApiPatchSocial(id, payload) {
-  try {
-    return await apiPatch('age_social_posts', id, payload);
-  } catch(e) {
-    if(!_csApiErrMissingColumn(e)) throw e;
-    return await apiPatch('age_social_posts', id, _csStripKanbanFields(payload));
+  let body = Object.assign({}, payload);
+  const dropped = [];
+  for(let i = 0; i < 15; i++) {
+    try {
+      const res = await apiPatch('age_social_posts', id, body);
+      if(dropped.length) {
+        try { toast('Atualizado. Rode supabase/sql/age_social_posts.sql para: ' + dropped.join(', '), 'warn'); } catch(_) {}
+      }
+      return res;
+    } catch(e) {
+      const col = _socialPostMissingColumnName(e);
+      if(!col || !(col in body) || !_socialPostIsMissingColumnErr(e)) throw e;
+      delete body[col];
+      dropped.push(col);
+    }
   }
+  throw new Error('age_social_posts: schema desatualizado no Supabase');
 }
 
 function _csMaterialsFromOrcJson(itemsJson) {
@@ -21127,13 +21145,13 @@ async function savePostagem() {
   const id = document.getElementById('postFormId')?.value;
   try {
     if(id) {
-      await apiPatch('age_social_posts', id, payload);
+      await _csApiPatchSocial(id, payload);
     } else {
       payload.company_id = String(cid);
       payload.created_at = Date.now();
       payload.deleted = false;
       if(payload.editorial_stage == null) payload.editorial_stage = 'producao';
-      await apiPost('age_social_posts', payload);
+      await _csApiPostSocial(payload);
     }
     closeModal('modalPostagem');
     toast('Postagem salva!');
@@ -21157,7 +21175,7 @@ async function deletePostagem() {
   const id = document.getElementById('postFormId')?.value;
   if(!id || !confirm('Excluir esta postagem?')) return;
   try {
-    await apiPatch('age_social_posts', id, { deleted: true, updated_at: Date.now() });
+    await _csApiPatchSocial(id, { deleted: true, updated_at: Date.now() });
     closeModal('modalPostagem');
     toast('Removida.');
     await loadPostagens();
