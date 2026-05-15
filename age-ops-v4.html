@@ -20143,45 +20143,106 @@ function _socialPostIsMissingColumnErr(err) {
   return /\(400\)|42703|column|PGRST204|schema cache/i.test(msg);
 }
 
-/** POST/PATCH em age_social_posts: remove colunas ausentes no schema (retry até 15x). */
-async function _csApiPostSocial(payload) {
-  let body = Object.assign({}, payload);
-  const dropped = [];
-  for(let i = 0; i < 15; i++) {
-    try {
-      const res = await apiPost('age_social_posts', body);
-      if(dropped.length) {
-        try { toast('Salvo. Rode supabase/sql/age_social_posts.sql para habilitar: ' + dropped.join(', '), 'warn'); } catch(_) {}
+function _socialPostIsDateRangeErr(err) {
+  const msg = String(err?.message || err || '');
+  return /22008|date\/time field value out of range|datestyle/i.test(msg);
+}
+
+function _socialPostMsFromValue(v) {
+  if(v == null || v === '') return null;
+  if(typeof v === 'number' && !isNaN(v)) return v;
+  const s = String(v).trim();
+  if(/^\d{12,}$/.test(s)) return Number(s);
+  const t = new Date(s).getTime();
+  return isNaN(t) ? null : t;
+}
+
+function _socialPostEnsureDateOnly(v) {
+  if(v == null || v === '') return v;
+  const ms = _socialPostMsFromValue(v);
+  if(ms != null) return _csPostDateTimeParts(ms).post_date;
+  return String(v).slice(0, 10);
+}
+
+/** Converte epoch ms → ISO (timestamptz no Supabase). */
+function _socialPostPayloadIsoTimestamps(payload) {
+  const o = Object.assign({}, payload);
+  if(o.post_date != null) o.post_date = _socialPostEnsureDateOnly(o.post_date);
+  ['created_at', 'updated_at', 'published_at', 'remind_metrics_at'].forEach(k => {
+    if(o[k] == null) return;
+    const ms = _socialPostMsFromValue(o[k]);
+    if(ms != null) o[k] = new Date(ms).toISOString();
+  });
+  return o;
+}
+
+/** Mantém epoch ms (bigint no SQL do repositório). */
+function _socialPostPayloadEpochTimestamps(payload) {
+  const o = Object.assign({}, payload);
+  if(o.post_date != null) o.post_date = _socialPostEnsureDateOnly(o.post_date);
+  ['created_at', 'updated_at', 'published_at', 'remind_metrics_at'].forEach(k => {
+    if(o[k] == null) return;
+    const ms = _socialPostMsFromValue(o[k]);
+    if(ms != null) o[k] = ms;
+  });
+  return o;
+}
+
+function _socialPostPayloadVariants(payload) {
+  const base = Object.assign({}, payload);
+  const iso = _socialPostPayloadIsoTimestamps(base);
+  const epoch = _socialPostPayloadEpochTimestamps(base);
+  const minimal = Object.assign({}, base);
+  delete minimal.created_at;
+  delete minimal.updated_at;
+  const out = [iso, epoch, minimal];
+  const seen = new Set();
+  return out.filter(p => {
+    const k = JSON.stringify(p);
+    if(seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+async function _socialPostApiWrite(method, id, payload) {
+  const variants = _socialPostPayloadVariants(payload);
+  const droppedAll = [];
+  let lastErr = null;
+  for(const variant of variants) {
+    let body = Object.assign({}, variant);
+    const dropped = [];
+    for(let i = 0; i < 15; i++) {
+      try {
+        const res = method === 'post'
+          ? await apiPost('age_social_posts', body)
+          : await apiPatch('age_social_posts', id, body);
+        if(droppedAll.length) {
+          try { toast('Salvo. Rode supabase/sql/age_social_posts.sql para: ' + droppedAll.join(', '), 'warn'); } catch(_) {}
+        }
+        return res;
+      } catch(e) {
+        lastErr = e;
+        const col = _socialPostMissingColumnName(e);
+        if(col && col in body && _socialPostIsMissingColumnErr(e)) {
+          delete body[col];
+          dropped.push(col);
+          droppedAll.push(col);
+          continue;
+        }
+        break;
       }
-      return res;
-    } catch(e) {
-      const col = _socialPostMissingColumnName(e);
-      if(!col || !(col in body) || !_socialPostIsMissingColumnErr(e)) throw e;
-      delete body[col];
-      dropped.push(col);
     }
   }
-  throw new Error('age_social_posts: schema desatualizado no Supabase');
+  throw lastErr || new Error('age_social_posts: falha ao salvar');
+}
+
+async function _csApiPostSocial(payload) {
+  return _socialPostApiWrite('post', null, payload);
 }
 
 async function _csApiPatchSocial(id, payload) {
-  let body = Object.assign({}, payload);
-  const dropped = [];
-  for(let i = 0; i < 15; i++) {
-    try {
-      const res = await apiPatch('age_social_posts', id, body);
-      if(dropped.length) {
-        try { toast('Atualizado. Rode supabase/sql/age_social_posts.sql para: ' + dropped.join(', '), 'warn'); } catch(_) {}
-      }
-      return res;
-    } catch(e) {
-      const col = _socialPostMissingColumnName(e);
-      if(!col || !(col in body) || !_socialPostIsMissingColumnErr(e)) throw e;
-      delete body[col];
-      dropped.push(col);
-    }
-  }
-  throw new Error('age_social_posts: schema desatualizado no Supabase');
+  return _socialPostApiWrite('patch', id, payload);
 }
 
 function _csMaterialsFromOrcJson(itemsJson) {
@@ -20333,8 +20394,7 @@ function _csFormatToDb(formato) {
 function _csDbRowToItem(r) {
   const coluna = _csNormalizeStageFromRow(r);
   const scheduledAt = _csPostDateTimeToMs(r.post_date, r.post_time);
-  let postedAt = r.published_at != null ? Number(r.published_at) : null;
-  if(postedAt != null && isNaN(postedAt)) postedAt = null;
+  let postedAt = _socialPostMsFromValue(r.published_at);
   const statusLine = r.approval_status_text
     ? { kind: String(r.approval_status_kind || 'wait') === 'review' ? 'review' : 'wait', text: String(r.approval_status_text) }
     : null;
