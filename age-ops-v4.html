@@ -20568,8 +20568,9 @@ async function loadConteudosSociais() {
     console.warn('[loadConteudosSociais]', e);
     _csKanbanItems = [];
     const msg = String(e?.message || e || '');
-    if(/42P01|does not exist|Could not find|relation/i.test(msg)) {
-      try { toast('Execute no Supabase: supabase/sql/age_social_posts.sql', 'warn'); } catch(_) {}
+    /* PostgREST: tabela ausente costuma ser HTTP 404 (ex.: PGRST205) — não vem 42P01 no corpo. */
+    if(/42P01|does not exist|Could not find|relation|PGRST205|\(404\)/i.test(msg)) {
+      try { toast('Crie a tabela no projeto Supabase: abra o SQL Editor e execute o arquivo supabase/sql/age_social_posts.sql', 'warn'); } catch(_) {}
     } else if(/42703|column/i.test(msg)) {
       try { toast('Atualize o SQL no Supabase (colunas do kanban em age_social_posts).', 'warn'); } catch(_) {}
     }
@@ -20718,8 +20719,8 @@ async function loadPostagens() {
     console.warn('[loadPostagens]', e);
     _postagensCache = [];
     const msg = String(e?.message || e || '');
-    if(/42P01|does not exist|Could not find|relation/i.test(msg)) {
-      try { toast('Execute no Supabase: supabase/sql/age_social_posts.sql', 'warn'); } catch(_) {}
+    if(/42P01|does not exist|Could not find|relation|PGRST205|\(404\)/i.test(msg)) {
+      try { toast('Crie a tabela no projeto Supabase: abra o SQL Editor e execute o arquivo supabase/sql/age_social_posts.sql', 'warn'); } catch(_) {}
     }
   }
   await postPopulateProjectSelects();
