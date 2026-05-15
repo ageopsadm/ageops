@@ -2629,24 +2629,11 @@ body:has(#login-screen.visible){
         <button type="button" class="nav-item" data-page="dashboard" data-perm-module="dashboard" onclick="navigate('dashboard')">
           <i class="fas fa-chart-line"></i><span>DASHBOARD</span>
         </button>
-        <button type="button" class="nav-item" data-page="historico" data-perm-module="historico" onclick="navigate('historico')">
-          <i class="fas fa-archive"></i><span>HISTÓRICO</span>
-        </button>
-      </div>
-
-      <div class="nav-sector">
-        <div class="nav-group-label nav-sector-label">Criativo</div>
         <button type="button" class="nav-item" data-page="projects" data-perm-module="projetos" onclick="navigate('projects')">
           <i class="fas fa-folder-open"></i><span>PROJETOS</span>
         </button>
-        <button type="button" class="nav-item" data-page="gestao" data-perm-module="gestao" onclick="navigate('gestao')">
-          <i class="fas fa-project-diagram"></i><span>GESTÃO</span>
-        </button>
-        <button type="button" class="nav-item" data-page="relatorios" data-perm-module="relatorios" onclick="navigate('relatorios')">
-          <i class="fas fa-clipboard-list"></i><span>RELATÓRIOS</span>
-        </button>
-        <button type="button" class="nav-item" data-page="nps" data-perm-module="nps" onclick="navigate('nps')">
-          <i class="fas fa-star"></i><span>NPS</span>
+        <button type="button" class="nav-item" data-page="historico" data-perm-module="historico" onclick="navigate('historico')">
+          <i class="fas fa-archive"></i><span>HISTÓRICO</span>
         </button>
       </div>
 
@@ -2668,8 +2655,14 @@ body:has(#login-screen.visible){
         <button type="button" class="nav-item" data-page="clientes" data-perm-module="clientes" onclick="navigate('clientes')">
           <i class="fas fa-users"></i><span>CLIENTES</span>
         </button>
-        <button type="button" class="nav-item" data-page="orcamentos" data-perm-module="orcamentos" onclick="navigate('orcamentos')">
-          <i class="fas fa-file-alt"></i><span>ORÇAMENTOS</span>
+        <button type="button" class="nav-item" data-page="gestao" data-perm-module="gestao" onclick="navigate('gestao')">
+          <i class="fas fa-project-diagram"></i><span>GESTÃO</span>
+        </button>
+        <button type="button" class="nav-item" data-page="relatorios" data-perm-module="relatorios" onclick="navigate('relatorios')">
+          <i class="fas fa-clipboard-list"></i><span>RELATÓRIOS</span>
+        </button>
+        <button type="button" class="nav-item" data-page="nps" data-perm-module="nps" onclick="navigate('nps')">
+          <i class="fas fa-star"></i><span>NPS</span>
         </button>
       </div>
 
@@ -2682,6 +2675,9 @@ body:has(#login-screen.visible){
 
       <div class="nav-sector">
         <div class="nav-group-label nav-sector-label">Financeiro</div>
+        <button type="button" class="nav-item" data-page="orcamentos" data-perm-module="orcamentos" onclick="navigate('orcamentos')">
+          <i class="fas fa-file-alt"></i><span>ORÇAMENTOS</span>
+        </button>
         <button type="button" class="nav-item" data-page="pagamentos" data-perm-module="pagamentos" onclick="navigate('pagamentos')">
           <i class="fas fa-money-check-alt"></i><span>PAGAMENTOS</span>
         </button>
@@ -4844,10 +4840,21 @@ body:has(#login-screen.visible){
       <span style="font-size:16px;font-weight:500;color:#111">Novo conteúdo</span>
       <button type="button" onclick="closeModal('modalCsNovoConteudo')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;font-weight:400" aria-label="Fechar">×</button>
     </div>
-    <label for="csNovoTitulo">Título da peça</label>
-    <input type="text" id="csNovoTitulo" placeholder="Ex.: Bastidores comercial" autocomplete="off">
+    <label for="csNovoProjectId">Projeto *</label>
+    <select id="csNovoProjectId" onchange="csOnNovoProjectChange()">
+      <option value="">Selecionar projeto…</option>
+    </select>
+    <label for="csNovoMaterial" style="margin-top:12px">Material / peça gravada</label>
+    <select id="csNovoMaterial" onchange="csOnNovoMaterialChange()">
+      <option value="">Selecione o projeto primeiro…</option>
+      <option value="__custom__">Outro (digitar título)</option>
+    </select>
+    <label for="csNovoTitulo" style="margin-top:12px">Título da peça *</label>
+    <input type="text" id="csNovoTitulo" placeholder="Ex.: Reel 01 — bastidores" autocomplete="off">
+    <label for="csNovoAssetUrl" style="margin-top:12px">Link do material gravado</label>
+    <input type="url" id="csNovoAssetUrl" placeholder="https://drive.google.com/…" autocomplete="off">
     <label for="csNovoCliente" style="margin-top:12px">Cliente</label>
-    <input type="text" id="csNovoCliente" placeholder="Ex.: Natura" autocomplete="off">
+    <input type="text" id="csNovoCliente" placeholder="Preenchido pelo projeto" autocomplete="off">
     <label for="csNovoResp" style="margin-top:12px">Responsável</label>
     <input type="text" id="csNovoResp" placeholder="Nome" autocomplete="off">
     <label for="csNovoFormato" style="margin-top:12px">Formato</label>
@@ -20107,6 +20114,82 @@ function postCalGoToday() {
   loadPostagens();
 }
 
+async function _csResolveProjectMeta(projectId) {
+  let client_name = null;
+  let project_name = null;
+  const pid = String(projectId || '').trim();
+  if(!pid) return { client_name, project_name };
+  try {
+    const projs = await fetchAgeProjectsScoped(500);
+    const p = projs.find(x => String(x.id) === pid);
+    if(p) {
+      client_name = _ageProjDbClient(p) || null;
+      project_name = _ageProjDbTitle(p) || null;
+    }
+  } catch(_) {}
+  return { client_name, project_name };
+}
+
+const _CS_KANBAN_PAYLOAD_KEYS = [
+  'editorial_stage', 'approval_status_kind', 'approval_status_text',
+  'public_url', 'published_at', 'metrics_views', 'metrics_likes', 'remind_metrics_at'
+];
+
+function _csApiErrMissingColumn(err) {
+  const msg = String(err?.message || err || '');
+  return /\(400\)|42703|column|PGRST204|schema cache/i.test(msg);
+}
+
+function _csStripKanbanFields(payload) {
+  const slim = Object.assign({}, payload);
+  _CS_KANBAN_PAYLOAD_KEYS.forEach(k => { delete slim[k]; });
+  return slim;
+}
+
+async function _csApiPostSocial(payload) {
+  try {
+    return await apiPost('age_social_posts', payload);
+  } catch(e) {
+    if(!_csApiErrMissingColumn(e)) throw e;
+    const slim = _csStripKanbanFields(payload);
+    if(slim.status == null) slim.status = 'planejado';
+    return await apiPost('age_social_posts', slim);
+  }
+}
+
+async function _csApiPatchSocial(id, payload) {
+  try {
+    return await apiPatch('age_social_posts', id, payload);
+  } catch(e) {
+    if(!_csApiErrMissingColumn(e)) throw e;
+    return await apiPatch('age_social_posts', id, _csStripKanbanFields(payload));
+  }
+}
+
+function _csMaterialsFromOrcJson(itemsJson) {
+  const out = new Set();
+  if(!itemsJson) return out;
+  try {
+    const raw = typeof itemsJson === 'string' ? JSON.parse(itemsJson) : itemsJson;
+    if(Array.isArray(raw)) {
+      raw.forEach(it => {
+        if(it?.name) out.add(String(it.name).trim());
+        (it.deliverables || []).forEach(d => { if(d) out.add(String(d).trim()); });
+      });
+    } else if(raw && typeof raw === 'object' && raw.version === 2) {
+      if(raw.titulo) out.add(String(raw.titulo).trim());
+      (raw.equipe || []).forEach(e => { if(e?.role) out.add(String(e.role).trim()); });
+      (raw.catalogo || []).forEach(c => {
+        if(c?.descricao) out.add(String(c.descricao).trim());
+        else if(c?.nome) out.add(String(c.nome).trim());
+      });
+      (raw.despesas || []).forEach(d => { if(d?.descricao) out.add(String(d.descricao).trim()); });
+    }
+  } catch(_) {}
+  out.forEach(v => { if(!v) out.delete(v); });
+  return out;
+}
+
 async function postPopulateProjectSelects() {
   let projs = [];
   try { projs = await fetchAgeProjectsScoped(500); } catch(_) { projs = []; }
@@ -20131,6 +20214,17 @@ async function postPopulateProjectSelects() {
       selM.insertAdjacentHTML('beforeend', `<option value="${escAttr(p.id)}">${escHtml(lab)}</option>`);
     });
     if(curM && [...selM.options].some(o => o.value === curM)) selM.value = curM;
+  }
+  const selCs = document.getElementById('csNovoProjectId');
+  if(selCs) {
+    const curCs = selCs.value;
+    selCs.innerHTML = '<option value="">Selecionar projeto…</option>';
+    projs.forEach(p => {
+      if(!p?.id) return;
+      const lab = `${_ageProjDbClient(p)} — ${_ageProjDbTitle(p)}`.trim() || p.id;
+      selCs.insertAdjacentHTML('beforeend', `<option value="${escAttr(p.id)}">${escHtml(lab)}</option>`);
+    });
+    if(curCs && [...selCs.options].some(o => o.value === curCs)) selCs.value = curCs;
   }
 }
 
@@ -20227,6 +20321,7 @@ function _csDbRowToItem(r) {
     ? { kind: String(r.approval_status_kind || 'wait') === 'review' ? 'review' : 'wait', text: String(r.approval_status_text) }
     : null;
   const mat = (r.material && String(r.material).trim()) ? String(r.material) : '';
+  const projName = (r.project_name && String(r.project_name).trim()) ? String(r.project_name) : '';
   return {
     id: r.id,
     coluna,
@@ -20234,6 +20329,8 @@ function _csDbRowToItem(r) {
     rede: String(r.network || 'instagram').toLowerCase(),
     titulo: mat || 'Sem título',
     cliente: (r.client_name && String(r.client_name).trim()) ? String(r.client_name) : '—',
+    projeto: projName,
+    projectId: r.project_id ? String(r.project_id) : '',
     responsavel: (r.assigned_to && String(r.assigned_to).trim()) ? String(r.assigned_to) : '—',
     scheduledAt,
     statusLine,
@@ -20256,7 +20353,7 @@ async function _csPatchEditorialStage(id, stage) {
     status: _csStatusForStage(stage),
     updated_at: Date.now(),
   };
-  await apiPatch('age_social_posts', id, payload);
+  await _csApiPatchSocial(id, payload);
 }
 
 function _csStartOfWeekMonday(d) {
@@ -20388,6 +20485,13 @@ function csStatusRowHtml(sl) {
   return `<div class="cs-status-row" style="color:${color}"><i class="ti ${icon}" aria-hidden="true"></i><span>${escHtml(sl.text)}</span></div>`;
 }
 
+function _csCardMetaLine(it) {
+  const parts = [it.cliente || '—'];
+  if(it.projeto) parts.push(it.projeto);
+  parts.push(it.responsavel || '—');
+  return escHtml(parts.join(' · '));
+}
+
 function csCardHtml(it, canEdit) {
   const ic = csRedeIconClass(it.rede);
   const drag = canEdit ? 'true' : 'false';
@@ -20401,7 +20505,7 @@ function csCardHtml(it, canEdit) {
       <div class="cs-card-when" style="margin-top:0">${escHtml(when)}</div>
       <div class="cs-card-top" style="margin-top:8px">${csBadgeHtml(it.formato)}<i class="ti ${ic}" style="font-size:14px;color:#737373" aria-hidden="true"></i></div>
       <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
-      <div class="cs-card-meta">${escHtml(it.cliente || '')} · ${escHtml(it.responsavel || '')}</div>
+      <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
       <div class="cs-posted-metrics">${escHtml(String(it.views || '—'))} views · ${escHtml(String(it.likes || '—'))} likes</div>
     </div>`;
   }
@@ -20418,7 +20522,7 @@ function csCardHtml(it, canEdit) {
   return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group">
     <div class="cs-card-top">${csBadgeHtml(it.formato)}<i class="ti ${ic}" style="font-size:14px;color:#737373" aria-hidden="true"></i></div>
     <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
-    <div class="cs-card-meta">${escHtml(it.cliente || '')} · ${escHtml(it.responsavel || '')}</div>
+    <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
     ${whenLine}
     ${csStatusRowHtml(it.statusLine)}
     ${btn}
@@ -20621,7 +20725,7 @@ async function csConfirmMarcarPostado() {
   };
   if(lembrete) payload.remind_metrics_at = Date.now() + 7 * 86400000;
   try {
-    await apiPatch('age_social_posts', id, payload);
+    await _csApiPatchSocial(id, payload);
     if(lembrete) {
       try { toast('Lembrete registrado para coletar métricas em 7 dias.', 'ok'); } catch(_) {}
     }
@@ -20633,8 +20737,73 @@ async function csConfirmMarcarPostado() {
   }
 }
 
-function csOpenNovoModal() {
+
+async function csOnNovoProjectChange() {
+  const pid = document.getElementById('csNovoProjectId')?.value || '';
+  const selMat = document.getElementById('csNovoMaterial');
+  const inpCli = document.getElementById('csNovoCliente');
+  const inpTit = document.getElementById('csNovoTitulo');
+  if(!selMat) return;
+  const baseOpts = '<option value="">Selecione a peça gravada…</option><option value="__custom__">Outro (digitar título)</option>';
+  if(!pid) {
+    selMat.innerHTML = baseOpts;
+    return;
+  }
+  let projs = [];
+  try { projs = await fetchAgeProjectsScoped(500); } catch(_) {}
+  const proj = projs.find(x => String(x.id) === String(pid));
+  if(proj && inpCli) inpCli.value = _ageProjDbClient(proj) || '';
+  const materials = new Set();
+  if(proj) {
+    const pt = _ageProjDbTitle(proj);
+    if(pt) materials.add(pt);
+  }
+  try {
+    const d = await apiGet('age_social_posts', `?project_id=eq.${encodeURIComponent(pid)}&deleted=eq.false&select=material&limit=120`);
+    (Array.isArray(d?.data) ? d.data : []).forEach(r => {
+      const m = String(r.material || '').trim();
+      if(m) materials.add(m);
+    });
+  } catch(_) {}
+  try {
+    const client = proj ? _ageProjDbClient(proj).toLowerCase() : '';
+    const projTitle = proj ? _ageProjDbTitle(proj).toLowerCase() : '';
+    const orcs = await fetchAll('age_orcamentos', 300).catch(() => []);
+    orcs.filter(_sbIsRowVisible).forEach(o => {
+      const oc = String(o.client_name || o.client || '').trim().toLowerCase();
+      if(!client || oc !== client) return;
+      const opn = String(o.project_name || '').trim().toLowerCase();
+      if(projTitle && opn && opn !== projTitle) return;
+      _csMaterialsFromOrcJson(o.items_json).forEach(m => materials.add(m));
+    });
+  } catch(_) {}
+  let html = baseOpts;
+  [...materials].sort((a, b) => a.localeCompare(b, 'pt')).forEach(m => {
+    html += `<option value="${escAttr(m)}">${escHtml(m)}</option>`;
+  });
+  selMat.innerHTML = html;
+  if(materials.size === 1 && inpTit) {
+    const only = [...materials][0];
+    selMat.value = only;
+    if(!inpTit.value.trim()) inpTit.value = only;
+  }
+}
+
+function csOnNovoMaterialChange() {
+  const sel = document.getElementById('csNovoMaterial');
+  const tit = document.getElementById('csNovoTitulo');
+  if(!sel || !tit) return;
+  if(sel.value && sel.value !== '__custom__') tit.value = sel.value;
+}
+
+async function csOpenNovoModal() {
+  await postPopulateProjectSelects();
+  const pid = document.getElementById('csNovoProjectId');
+  if(pid) pid.value = '';
+  const mat = document.getElementById('csNovoMaterial');
+  if(mat) mat.innerHTML = '<option value="">Selecione o projeto primeiro…</option><option value="__custom__">Outro (digitar título)</option>';
   document.getElementById('csNovoTitulo').value = '';
+  document.getElementById('csNovoAssetUrl').value = '';
   document.getElementById('csNovoCliente').value = '';
   document.getElementById('csNovoResp').value = '';
   document.getElementById('csNovoFormato').value = 'reels';
@@ -20645,12 +20814,20 @@ function csOpenNovoModal() {
 
 async function csConfirmNovoConteudo() {
   if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
-  const titulo = document.getElementById('csNovoTitulo').value.trim();
+  const projectId = (document.getElementById('csNovoProjectId')?.value || '').trim();
+  const matSel = document.getElementById('csNovoMaterial')?.value || '';
+  let titulo = document.getElementById('csNovoTitulo').value.trim();
   const cliente = document.getElementById('csNovoCliente').value.trim();
   const resp = document.getElementById('csNovoResp').value.trim();
   const formato = document.getElementById('csNovoFormato').value;
   const rede = document.getElementById('csNovoRede').value;
   const dtVal = document.getElementById('csNovoScheduled').value;
+  const assetUrl = (document.getElementById('csNovoAssetUrl')?.value || '').trim();
+  if(!projectId) {
+    try { toast('Selecione o projeto ao qual o material pertence.', 'warn'); } catch(_) {}
+    return;
+  }
+  if(matSel && matSel !== '__custom__' && !titulo) titulo = matSel;
   if(!titulo) {
     try { toast('Informe o título da peça.', 'warn'); } catch(_) {}
     return;
@@ -20664,6 +20841,7 @@ async function csConfirmNovoConteudo() {
     try { toast('Empresa não identificada.', 'warn'); } catch(_) {}
     return;
   }
+  const meta = await _csResolveProjectMeta(projectId);
   const ms = new Date(dtVal).getTime();
   const parts = _csPostDateTimeParts(ms);
   const payload = {
@@ -20673,7 +20851,10 @@ async function csConfirmNovoConteudo() {
     network: rede,
     format: _csFormatToDb(formato),
     material: titulo,
-    client_name: cliente || null,
+    project_id: projectId,
+    client_name: cliente || meta.client_name || null,
+    project_name: meta.project_name || null,
+    asset_url: assetUrl || null,
     assigned_to: resp || null,
     status: 'planejado',
     editorial_stage: 'producao',
@@ -20682,17 +20863,21 @@ async function csConfirmNovoConteudo() {
     updated_at: Date.now(),
   };
   try {
-    await apiPost('age_social_posts', payload);
+    await _csApiPostSocial(payload);
     closeModal('modalCsNovoConteudo');
-    try { toast('Conteúdo criado.'); } catch(_) {}
+    try { toast('Conteúdo criado e vinculado ao projeto.'); } catch(_) {}
     await loadConteudosSociais();
   } catch(err) {
     console.warn('[csConfirmNovoConteudo]', err);
-    try { toast(String(err?.message || 'Erro ao criar'), 'err'); } catch(_) {}
+    const msg = String(err?.message || err || '');
+    if(/42703|column|PGRST204/i.test(msg)) {
+      try { toast('Atualize o SQL no Supabase (age_social_posts).', 'warn'); } catch(_) {}
+    }
+    try { toast(msg || 'Erro ao criar', 'err'); } catch(_) {}
   }
 }
 
-async function loadPostagens() {
+async function loadPostagensasync function loadPostagens() {
   const tit = document.getElementById('postCalTitle');
   if(tit) tit.textContent = _monthTitle(_postCalYear, _postCalMonth);
   const vsel = document.getElementById('postViewMode');
