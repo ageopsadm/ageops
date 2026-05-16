@@ -3601,9 +3601,10 @@ body:has(#login-screen.visible){
                   <div style="text-align:center;padding:32px;opacity:.4;font-size:13px">Clique em &quot;+ Adicionar função&quot; para montar sua equipe</div>
                 </div>
                 <div style="display:flex;justify-content:space-between;padding:12px 0;border-top:2px solid #000;margin-top:12px">
-                  <span style="font-weight:700;font-size:14px">TOTAL EQUIPE</span>
+                  <span style="font-weight:700;font-size:14px">TOTAL EQUIPE (cobrado)</span>
                   <span id="orc-total-equipe" style="font-weight:700;font-size:16px">R$ 0</span>
                 </div>
+                <div style="font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">No PDF ao cliente não aparecem valores por função — só o total da proposta.</div>
               </div>
               <div class="orc-section">
                 <div class="orc-section-header">
@@ -16307,10 +16308,53 @@ function _orcMargemModo() {
   return el?.value === 'diluida' ? 'diluida' : 'transparente';
 }
 
+function _orcDefaultDiariaCusto(nome, diariaCobrada, funcaoId) {
+  const cob = parseFloat(diariaCobrada) || 0;
+  const n = String(nome || '').trim().toLowerCase();
+  const cache = typeof _colabCache !== 'undefined' ? _colabCache : [];
+  const hit = cache.find(c => {
+    const fn = String(c.funcao || c.role || '').trim().toLowerCase();
+    const nm = String(c.nome || c.name || '').trim().toLowerCase();
+    return (fn && (fn === n || fn.includes(n) || n.includes(fn))) || (nm && (nm === n || nm.includes(n)));
+  });
+  if(hit && parseFloat(hit.diaria) > 0) return parseFloat(hit.diaria);
+  const cat = Object.values(FUNCOES_AUDIOVISUAL || {}).flatMap(c => c.funcoes || []);
+  const meta = cat.find(f => f.id === funcaoId);
+  if(meta && typeof DAILY_RATES !== 'undefined' && DAILY_RATES[meta.nome] > 0) return DAILY_RATES[meta.nome];
+  return cob > 0 ? Math.round(cob * 0.7) : 0;
+}
+
+function _orcMembroFinance(m, diarias) {
+  const q = parseInt(m.quantidade, 10) || 1;
+  const d = parseInt(diarias, 10) || 1;
+  const diariaCobrada = parseFloat(m.diaria) || 0;
+  const diariaCusto = m.diariaCusto != null && m.diariaCusto !== ''
+    ? (parseFloat(m.diariaCusto) || 0)
+    : _orcDefaultDiariaCusto(m.nome, diariaCobrada, m.funcaoId);
+  const cobrada = diariaCobrada * q * d;
+  const custo = diariaCusto * q * d;
+  return { diariaCobrada, diariaCusto, quantidade: q, diarias: d, cobrada, custo, margem: cobrada - custo };
+}
+
+function _orcBackfillEquipeCusto() {
+  (window._orcEquipe || []).forEach(m => {
+    if(m.diariaCusto == null || m.diariaCusto === '') {
+      m.diariaCusto = _orcDefaultDiariaCusto(m.nome, m.diaria, m.funcaoId);
+    }
+  });
+}
+
 function orcBuilderGetFinancials() {
   const diarias = parseInt(document.getElementById('orc-diarias')?.value || 1, 10) || 1;
   const margem = parseFloat(document.getElementById('orc-margem')?.value || 0) / 100;
-  const totalEquipe = (window._orcEquipe || []).reduce((sum, m) => sum + (m.diaria * m.quantidade * diarias), 0);
+  let totalEquipe = 0;
+  let totalCustoEquipe = 0;
+  const linhasEquipe = (window._orcEquipe || []).map(m => {
+    const f = _orcMembroFinance(m, diarias);
+    totalEquipe += f.cobrada;
+    totalCustoEquipe += f.custo;
+    return Object.assign({ membro: m }, f);
+  });
   const totalCatalogo = (window._orcCatalogo || []).reduce((sum, i) => sum + (i.valorUnit * i.quantidade), 0);
   const totalDespesas = (window._orcDespesas || []).reduce((sum, d) => sum + (d.valor || 0), 0);
   const subtotal = totalEquipe + totalCatalogo + totalDespesas;
@@ -16319,7 +16363,11 @@ function orcBuilderGetFinancials() {
   const margemPct = parseFloat(document.getElementById('orc-margem')?.value || 0) || 0;
   const margemModo = _orcMargemModo();
   const fatorDiluicao = subtotal > 0 ? totalFinal / subtotal : 1;
-  return { diarias, totalEquipe, totalCatalogo, totalDespesas, subtotal, valorMargem, totalFinal, margemPct, margemModo, fatorDiluicao };
+  const margemBrutaEquipe = totalEquipe - totalCustoEquipe;
+  return {
+    diarias, totalEquipe, totalCustoEquipe, margemBrutaEquipe, linhasEquipe,
+    totalCatalogo, totalDespesas, subtotal, valorMargem, totalFinal, margemPct, margemModo, fatorDiluicao
+  };
 }
 
 function orcSerializeBuilder() {
@@ -16416,9 +16464,11 @@ function adicionarFuncaoEquipe(funcaoId, categoriaId) {
       nome,
       categoriaId,
       diaria,
+      diariaCusto: _orcDefaultDiariaCusto(nome, diaria, funcaoId),
       quantidade: 1
     });
   }
+  _orcBackfillEquipeCusto();
   renderEquipe();
   recalcularTotais();
   fecharCatalogo();
@@ -16432,8 +16482,11 @@ function renderEquipe() {
     lista.innerHTML = `<div style="text-align:center;padding:32px;opacity:.4;font-size:13px">Clique em &quot;+ Adicionar função&quot; para montar sua equipe</div>`;
     return;
   }
-  lista.innerHTML = window._orcEquipe.map((m, idx) => `
-    <div style="display:grid;grid-template-columns:1fr auto auto auto auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0">
+  lista.innerHTML = window._orcEquipe.map((m, idx) => {
+    const f = _orcMembroFinance(m, diarias);
+    const custoVal = m.diariaCusto != null ? m.diariaCusto : f.diariaCusto;
+    return `
+    <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto auto;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f0f0f0">
       <div style="min-width:0">
         <div style="font-weight:600;font-size:14px">${escHtml(m.nome)}</div>
         <div style="font-size:11px;opacity:.5">${escHtml(FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '')}</div>
@@ -16445,21 +16498,31 @@ function renderEquipe() {
           onchange="window._orcEquipe[${idx}].quantidade=parseInt(this.value)||1;recalcularTotais();" />
       </div>
       <div style="text-align:center">
-        <div style="font-size:10px;opacity:.5;margin-bottom:2px">DIÁRIA</div>
+        <div style="font-size:10px;opacity:.5;margin-bottom:2px" title="Valor cobrado do cliente">COBRAR</div>
         <input type="number" value="${m.diaria}" min="0" step="50"
-          style="width:90px;text-align:right;border:1px solid #ddd;border-radius:6px;padding:4px"
+          style="width:82px;text-align:right;border:1px solid #ddd;border-radius:6px;padding:4px"
           onchange="window._orcEquipe[${idx}].diaria=parseFloat(this.value)||0;recalcularTotais();" />
       </div>
-      <div style="text-align:right;min-width:100px">
-        <div style="font-size:10px;opacity:.5;margin-bottom:2px">SUBTOTAL</div>
-        <div style="font-weight:700">${fmtBRL(m.diaria * m.quantidade * diarias)}</div>
+      <div style="text-align:center">
+        <div style="font-size:10px;opacity:.5;margin-bottom:2px" title="Custo real da diária">CUSTO</div>
+        <input type="number" value="${custoVal}" min="0" step="50"
+          style="width:82px;text-align:right;border:1px solid #fde68a;border-radius:6px;padding:4px;background:#fffbeb"
+          onchange="window._orcEquipe[${idx}].diariaCusto=parseFloat(this.value)||0;recalcularTotais();" />
+      </div>
+      <div style="text-align:right;min-width:88px">
+        <div style="font-size:10px;opacity:.5;margin-bottom:2px">COBRADO</div>
+        <div style="font-weight:700;font-size:13px">${fmtBRL(f.cobrada)}</div>
+      </div>
+      <div style="text-align:right;min-width:88px">
+        <div style="font-size:10px;opacity:.5;margin-bottom:2px">MARGEM</div>
+        <div style="font-weight:700;font-size:13px;color:${f.margem >= 0 ? '#15803d' : '#b91c1c'}">${fmtBRL(f.margem)}</div>
       </div>
       <button type="button" onclick="removerMembroEquipe(${idx})"
         style="background:none;border:1px solid #eee;border-radius:8px;padding:6px 10px;cursor:pointer;color:#dc2626">
         <i class="fas fa-times"></i>
       </button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function removerMembroEquipe(idx) {
@@ -16602,86 +16665,41 @@ function atualizarPreview() {
     <span style="${mono};font-size:9px;letter-spacing:.12em;color:#737373">${escHtml(right)}</span>
   </div>`;
 
-  const diluida = fin.margemModo === 'diluida' && fin.margemPct > 0 && fin.subtotal > 0;
-  const fator = fin.fatorDiluicao;
-
   const escopoLinhas = [];
   (window._orcEquipe || []).forEach(m => {
-    const base = m.diaria * m.quantidade * diarias;
     const cat = FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '';
     escopoLinhas.push({
+      kind: 'equipe',
       title: m.nome,
-      sub: `${cat} · ${m.quantidade} × ${diarias} diária${diarias > 1 ? 's' : ''}`,
-      base
+      sub: `${cat} · ${m.quantidade} profissional(is) · ${diarias} diária${diarias > 1 ? 's' : ''} de gravação`
     });
   });
   (window._orcCatalogo || []).filter(i => i.descricao).forEach(i => {
     escopoLinhas.push({
+      kind: 'outro',
       title: i.descricao,
-      sub: 'Produto / serviço contratado',
-      base: i.valorUnit * i.quantidade
+      sub: `Produto / serviço · quantidade ${i.quantidade || 1}`
     });
   });
   (window._orcDespesas || []).filter(d => d.descricao).forEach(d => {
-    escopoLinhas.push({ title: d.descricao, sub: 'Despesa', base: d.valor || 0 });
+    escopoLinhas.push({ kind: 'outro', title: d.descricao, sub: 'Despesa prevista na produção' });
   });
 
-  const escopoHtml = escopoLinhas.length ? escopoLinhas.map(it => {
-    const precoDir = diluida && (it.base || 0) > 0
-      ? `<div style="flex-shrink:0;text-align:right;padding-left:10px">
-          <div style="font-weight:800;font-size:15px;color:#0a0a0a">${fmtBRL(it.base * fator)}</div>
-          <div style="font-size:9px;color:#737373;max-width:130px;line-height:1.25;margin-top:3px">inclui taxa ${margem}% diluída</div>
-        </div>`
-      : '';
-    return `<div style="display:flex;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start;justify-content:space-between;gap:10px">
-      <div style="display:flex;gap:12px;min-width:0;flex:1;align-items:flex-start">
-        <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
-        <div style="min-width:0">
-          <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
-          <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
-        </div>
+  const escopoHtml = escopoLinhas.length ? escopoLinhas.map(it => `
+    <div style="display:flex;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start;gap:10px">
+      <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
+      <div style="min-width:0;flex:1">
+        <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
+        <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
       </div>
-      ${precoDir}
+    </div>`).join('') : `<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>`;
+
+  const modoBand = '';
+
+  const compHtml = `<div style="padding:14px 0;font-size:12px;color:#525252;line-height:1.6">
+      O investimento total da proposta está indicado no destaque acima e na barra <strong>Valor total da proposta</strong>.
+      Detalhamento financeiro por função e margens é de uso interno da agência.
     </div>`;
-  }).join('') : `<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>`;
-
-  let modoBand = '';
-  if(margem > 0) {
-    modoBand = diluida
-      ? `<div style="font-size:11px;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 14px;margin-top:16px;line-height:1.55;color:#166534">
-          <strong>Taxa diluída no escopo.</strong> Os <strong>${margem}%</strong> de taxa da agência (<strong>${fmtBRL(fin.valorMargem)}</strong>) estão <strong>distribuídos proporcionalmente</strong> entre todas as entregas acima (peso = valor operacional de cada linha).
-        </div>`
-      : `<div style="font-size:11px;background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin-top:16px;line-height:1.55;color:#9a3412">
-          <strong>Taxa transparente.</strong> A taxa de <strong>${margem}%</strong> consta <strong>em linha separada</strong> na composição do valor abaixo — os itens do escopo mostram apenas o custo operacional, sem embutir a taxa.
-        </div>`;
-  }
-
-  const compLinha = (label, hint, valor, neg) => {
-    const cor = neg ? '#b91c1c' : '#0a0a0a';
-    const pref = neg ? '− ' : '';
-    return `<div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start">
-      <div style="min-width:0">
-        <div style="font-weight:600;font-size:13px;color:#111">${escHtml(label)}</div>
-        ${hint ? `<div style="font-size:11px;color:#737373;margin-top:3px;line-height:1.4">${escHtml(hint)}</div>` : ''}
-      </div>
-      <div style="font-weight:800;font-size:14px;color:${cor};white-space:nowrap">${pref}${fmtBRL(Math.abs(valor))}</div>
-    </div>`;
-  };
-
-  let compHtml = '';
-  if(diluida) {
-    compHtml += compLinha('Subtotal operacional (referência)', 'Soma das entregas antes da taxa', fin.subtotal, false);
-    compHtml += `<div style="padding:14px 0 12px;border-bottom:1px solid #eee;font-size:12px;color:#333;line-height:1.6">
-        A taxa da agência de <strong>${margem}%</strong> (<strong>${fmtBRL(fin.valorMargem)}</strong>) foi <strong>diluída proporcionalmente</strong> nos valores exibidos no escopo. O total da proposta é <strong>${fmtBRL(fin.totalFinal)}</strong> (não há cobrança adicional além do escopo).
-      </div>`;
-  } else {
-    compHtml += compLinha('Subtotal — equipe e diárias', '', fin.totalEquipe, false);
-    if(fin.totalCatalogo > 0) compHtml += compLinha('Subtotal — produtos e serviços', '', fin.totalCatalogo, false);
-    if(fin.totalDespesas > 0) compHtml += compLinha('Despesas adicionais', '', fin.totalDespesas, false);
-    if(margem > 0 && fin.valorMargem > 0) {
-      compHtml += compLinha(`Taxa da agência (${margem}%)`, 'Discriminada — não embutida nas linhas do escopo', fin.valorMargem, false);
-    }
-  }
 
   const doisParc = pdfm.parcelas === '2';
   const tot = fin.totalFinal;
@@ -16841,6 +16859,7 @@ function initOrcamentoBuilder(resetState) {
     const rTr = document.querySelector('input[name="orc-margem-modo"][value="transparente"]');
     if(rTr) rTr.checked = true;
   }
+  _orcBackfillEquipeCusto();
   renderEquipe();
   renderCatalogoProdutos();
   renderDespesas();
@@ -16878,6 +16897,7 @@ function loadOrcBuilderFromRow(o) {
 
   if(parsed && typeof parsed === 'object' && parsed.version === 2) {
     window._orcEquipe = parsed.equipe || [];
+    _orcBackfillEquipeCusto();
     window._orcCatalogo = parsed.catalogo || [];
     window._orcDespesas = parsed.despesas || [];
     if(dg && parsed.diarias != null) dg.value = parsed.diarias;
@@ -16903,6 +16923,7 @@ function loadOrcBuilderFromRow(o) {
     }
   }
 
+  _orcBackfillEquipeCusto();
   renderEquipe();
   renderCatalogoProdutos();
   renderDespesas();
@@ -17030,38 +17051,91 @@ function gerarPDFInterno() {
   const fin = orcBuilderGetFinancials();
   const diarias = fin.diarias;
   const modoPdf = fin.margemModo === 'diluida'
-    ? '<p style="font-size:11px;color:#166534;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> taxa da agência <strong>diluída proporcionalmente</strong> nos valores de cada entrega do escopo.</p>'
-    : '<p style="font-size:11px;color:#9a3412;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> taxa da agência <strong>discriminada à parte</strong> na composição (transparente).</p>';
+    ? '<p style="font-size:11px;color:#166534;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total.</p>'
+    : '<p style="font-size:11px;color:#9a3412;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total.</p>';
   const dtEm = document.getElementById('orc-data')?.value;
   const dtVal = document.getElementById('orc-validade')?.value;
   const emStr = dtEm ? new Date(dtEm + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
   const valStr = dtVal ? new Date(dtVal + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
   const wrap = document.createElement('div');
   wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:Rajdhani,sans-serif;font-size:13px;line-height:1.45;width:794px';
-  const eqRows = (window._orcEquipe || []).map(m => `
-    <tr><td style="padding:6px;border-bottom:1px solid #eee">${escHtml(m.nome)}</td><td style="padding:6px;border-bottom:1px solid #eee">${escHtml(FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '')}</td>
-    <td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${m.quantidade}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmtBRL(m.diaria)}</td>
-    <td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${diarias}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL(m.diaria * m.quantidade * diarias)}</td></tr>
-  `).join('');
+  const eqRows = (fin.linhasEquipe || []).map(l => {
+    const m = l.membro;
+    const margemCor = l.margem >= 0 ? '#15803d' : '#b91c1c';
+    return `<tr>
+      <td style="padding:6px;border-bottom:1px solid #eee">${escHtml(m.nome)}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee">${escHtml(FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '')}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${l.quantidade}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmtBRL(l.diariaCobrada)}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmtBRL(l.diariaCusto)}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${l.diarias}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL(l.cobrada)}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmtBRL(l.custo)}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:${margemCor}">${fmtBRL(l.margem)}</td>
+    </tr>`;
+  }).join('');
+  const catRows = (window._orcCatalogo || []).filter(i => i.descricao).map(i => `
+    <tr><td colspan="3" style="padding:6px;border-bottom:1px solid #eee">${escHtml(i.descricao)}</td>
+    <td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${i.quantidade||1}</td>
+    <td colspan="2"></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL((i.valorUnit||0)*(i.quantidade||1))}</td>
+    <td colspan="2"></td></tr>`).join('');
+  const despRows = (window._orcDespesas || []).filter(d => d.descricao).map(d => `
+    <tr><td colspan="3" style="padding:6px;border-bottom:1px solid #eee">${escHtml(d.descricao)}</td>
+    <td colspan="4"></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL(d.valor||0)}</td>
+    <td colspan="2"></td></tr>`).join('');
   wrap.innerHTML = `
     <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;letter-spacing:0.5px;margin-bottom:16px;color:#666">DOCUMENTO INTERNO — NÃO ENVIAR AO CLIENTE</div>
-    <h1 style="font-size:20px;margin-bottom:8px">Breakdown — ${escHtml(document.getElementById('orc-titulo')?.value || 'Projeto')}</h1>
+    <h1 style="font-size:20px;margin-bottom:8px">Breakdown financeiro — ${escHtml(document.getElementById('orc-titulo')?.value || 'Projeto')}</h1>
     <p style="opacity:.75;margin-bottom:6px">Cliente: ${escHtml(client)}</p>
     <p style="font-size:11px;color:#475569;margin-bottom:20px;line-height:1.6">
-      <strong>Emissão da proposta:</strong> ${escHtml(emStr)}
-      &nbsp;&nbsp;·&nbsp;&nbsp;
-      <strong>Validade (aceite):</strong> ${escHtml(valStr)}
+      <strong>Emissão:</strong> ${escHtml(emStr)} &nbsp;·&nbsp; <strong>Validade:</strong> ${escHtml(valStr)}
     </p>
     ${modoPdf}
-    <h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Equipe</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
-      <thead><tr style="background:#f4f4f5"><th align="left" style="padding:8px">Função</th><th align="left" style="padding:8px">Área</th><th style="padding:8px">Qtd</th><th style="padding:8px;text-align:right">Diária</th><th style="padding:8px">Dias gravação</th><th style="padding:8px;text-align:right">Subtotal</th></tr></thead>
-      <tbody>${eqRows || '<tr><td colspan="6" style="padding:12px;opacity:.5">Nenhum item</td></tr>'}</tbody>
+    <h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Equipe — cobrança × custo × margem</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:20px">
+      <thead><tr style="background:#f4f4f5">
+        <th align="left" style="padding:8px">Função</th>
+        <th align="left" style="padding:8px">Área</th>
+        <th style="padding:8px">Qtd</th>
+        <th style="padding:8px;text-align:right">Diária cliente</th>
+        <th style="padding:8px;text-align:right">Diária custo</th>
+        <th style="padding:8px">Dias</th>
+        <th style="padding:8px;text-align:right">Cobrado</th>
+        <th style="padding:8px;text-align:right">Custo real</th>
+        <th style="padding:8px;text-align:right">Margem</th>
+      </tr></thead>
+      <tbody>${eqRows || '<tr><td colspan="9" style="padding:12px;opacity:.5">Nenhum profissional</td></tr>'}</tbody>
     </table>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #000">
-      <span>Subtotal operacional</span><strong>${fmtBRL(fin.subtotal)}</strong></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;font-size:12px">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.08em">Equipe — cobrado do cliente</div>
+        <div style="font-size:18px;font-weight:800;margin-top:4px">${fmtBRL(fin.totalEquipe)}</div>
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#92400e;text-transform:uppercase;letter-spacing:.08em">Equipe — custo real</div>
+        <div style="font-size:18px;font-weight:800;margin-top:4px;color:#92400e">${fmtBRL(fin.totalCustoEquipe)}</div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#166534;text-transform:uppercase;letter-spacing:.08em">Margem bruta da equipe</div>
+        <div style="font-size:18px;font-weight:800;margin-top:4px;color:#15803d">${fmtBRL(fin.margemBrutaEquipe)}</div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#1e40af;text-transform:uppercase;letter-spacing:.08em">Margem agência (${fin.margemPct}%)</div>
+        <div style="font-size:18px;font-weight:800;margin-top:4px;color:#1d4ed8">${fmtBRL(fin.valorMargem)}</div>
+      </div>
+    </div>
+    ${(catRows || despRows) ? `<h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Produtos, serviços e despesas</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px">
+      <tbody>${catRows}${despRows}</tbody>
+    </table>` : ''}
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #000;font-size:13px">
+      <span>Subtotal operacional (cobrado)</span><strong>${fmtBRL(fin.subtotal)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+      <span>Custo operacional estimado (equipe)</span><strong style="color:#92400e">${fmtBRL(fin.totalCustoEquipe)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:6px 0"><span>Margem agência (${fin.margemPct}%)</span><strong style="color:#15803d">${fmtBRL(fin.valorMargem)}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:800;border-top:2px solid #000"><span>Total final</span><span>${fmtBRL(fin.totalFinal)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:800;border-top:2px solid #000">
+      <span>Total cobrado do cliente</span><span>${fmtBRL(fin.totalFinal)}</span></div>
+    <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Diária custo: cadastro em colaboradores ou campo CUSTO no builder. Ajuste antes de fechar o orçamento.</p>
   `;
   const opt = {
     margin: [8, 8, 8, 8],
@@ -17854,28 +17928,37 @@ async function orcGenPDF(id) {
 }
 
 /* HTML de escopo para orçamentos v2 (builder audiovisual) */
-function orcScopeHtmlFromBuilder(b) {
+function orcScopeHtmlFromBuilder(b, opts) {
+  const forCliente = !opts || opts.forCliente !== false;
   const diarias = parseInt(b.diarias, 10) || 1;
   const parts = [];
   if((b.equipe||[]).length) {
-    parts.push('<p class="section-label">Equipe e diárias</p>');
+    parts.push('<p class="section-label">Equipe de produção</p>');
     for(const m of b.equipe) {
-      const linha = (m.diaria||0) * (m.quantidade||1) * diarias;
-      parts.push(`<div class="item-block"><table class="item-head"><tr><td class="item-name">${escHtml(m.nome)} &times; ${m.quantidade||1} &times; ${diarias} diária(s)</td><td class="item-price">${fmtBRL(linha)}</td></tr></table></div>`);
+      const cat = (typeof FUNCOES_AUDIOVISUAL !== 'undefined' && m.categoriaId) ? (FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '') : '';
+      const sub = cat ? ` · ${escHtml(cat)}` : '';
+      if(forCliente) {
+        parts.push(`<div class="item-block"><table class="item-head"><tr><td class="item-name">${escHtml(m.nome)} &times; ${m.quantidade||1} &times; ${diarias} diária(s)${sub}</td><td class="item-price"></td></tr></table></div>`);
+      } else {
+        const linha = (m.diaria||0) * (m.quantidade||1) * diarias;
+        parts.push(`<div class="item-block"><table class="item-head"><tr><td class="item-name">${escHtml(m.nome)} &times; ${m.quantidade||1} &times; ${diarias} diária(s)</td><td class="item-price">${fmtBRL(linha)}</td></tr></table></div>`);
+      }
     }
   }
   if((b.catalogo||[]).filter(i=>i.descricao).length) {
     parts.push('<p class="section-label">Produtos e serviços</p>');
     for(const i of b.catalogo) {
       if(!i.descricao) continue;
-      parts.push(`<div class="item-block"><table class="item-head"><tr><td class="item-name">${escHtml(i.descricao)} &times; ${i.quantidade||1}</td><td class="item-price">${fmtBRL((i.valorUnit||0)*(i.quantidade||1))}</td></tr></table></div>`);
+      const preco = forCliente ? '' : fmtBRL((i.valorUnit||0)*(i.quantidade||1));
+      parts.push(`<div class="item-block"><table class="item-head"><tr><td class="item-name">${escHtml(i.descricao)} &times; ${i.quantidade||1}</td><td class="item-price">${preco}</td></tr></table></div>`);
     }
   }
   if((b.despesas||[]).filter(d=>d.descricao).length) {
     parts.push('<p class="section-label">Despesas adicionais</p>');
     for(const d of b.despesas) {
       if(!d.descricao) continue;
-      parts.push(`<div class="item-block"><table class="item-head"><tr><td class="item-name">${escHtml(d.descricao)}</td><td class="item-price">${fmtBRL(d.valor||0)}</td></tr></table></div>`);
+      const preco = forCliente ? '' : fmtBRL(d.valor||0);
+      parts.push(`<div class="item-block"><table class="item-head"><tr><td class="item-name">${escHtml(d.descricao)}</td><td class="item-price">${preco}</td></tr></table></div>`);
     }
   }
   const titulo = b.titulo ? `<p class="item-desc" style="font-weight:700;color:#0f172a;margin-bottom:10px">${escHtml(b.titulo)}</p>` : '';
@@ -17901,7 +17984,7 @@ async function _orcGenPDFFromObject(o) {
   const validStr   = o.validity ? new Date(o.validity+'T00:00:00').toLocaleDateString('pt-BR') : '—';
 
   /* ── Escopo de serviços por item ── */
-  const scopeHtml = builderV2 ? orcScopeHtmlFromBuilder(builderV2) : (items.length ? items.map(it => {
+  const scopeHtml = builderV2 ? orcScopeHtmlFromBuilder(builderV2, { forCliente: true }) : (items.length ? items.map(it => {
     const pkg    = (typeof ORC_PACKAGES !== 'undefined') ? ORC_PACKAGES.find(p => p.name === it.name) : null;
     const delivs = (it.deliverables && it.deliverables.length) ? it.deliverables : (pkg?.deliverables || []);
     const team   = (it.team && it.team.length) ? it.team : (pkg?.team || []);
@@ -17956,13 +18039,15 @@ async function _orcGenPDFFromObject(o) {
   }).join('') : `<p class="no-items">Servi&ccedil;os a definir.</p>`);
 
   /* ── Composição do valor ── */
-  const compRows = [
-    `<tr><td class="comp-label">${builderV2 ? 'Subtotal operacional' : 'Servi&ccedil;os'}</td><td class="comp-val">${fmtBRL(subtotal)}</td></tr>`,
+  const compRows = builderV2
+    ? `<tr><td class="comp-label">Valor total da proposta</td><td class="comp-val">${fmtBRL(total)}</td></tr>`
+    : [
+    `<tr><td class="comp-label">Servi&ccedil;os</td><td class="comp-val">${fmtBRL(subtotal)}</td></tr>`,
     ...discounts.map(d =>
       `<tr><td class="comp-label">${escHtml(d.desc||'Desconto')}</td><td class="comp-val disc">-${fmtBRL(d.value||0)}</td></tr>`
     ),
     impostoPct > 0
-      ? `<tr><td class="comp-label">${builderV2 ? 'Margem agência' : 'Impostos'} (${impostoPct}%)</td><td class="comp-val tax">${fmtBRL(impostoV)}</td></tr>`
+      ? `<tr><td class="comp-label">Impostos (${impostoPct}%)</td><td class="comp-val tax">${fmtBRL(impostoV)}</td></tr>`
       : ''
   ].join('');
 
@@ -20164,40 +20249,60 @@ function _socialPostEnsureDateOnly(v) {
   return String(v).slice(0, 10);
 }
 
-/** Converte epoch ms → ISO (timestamptz no Supabase). */
-function _socialPostPayloadIsoTimestamps(payload) {
+const _SOCIAL_POST_TS_KEYS = ['created_at', 'updated_at', 'published_at', 'remind_metrics_at'];
+
+function _socialPostEpochToIso(v) {
+  const ms = _socialPostMsFromValue(v);
+  return ms != null && ms > 1e11 ? new Date(ms).toISOString() : null;
+}
+
+function _socialPostIsEpochLike(v) {
+  if(v == null || v === '') return false;
+  if(typeof v === 'number' && !isNaN(v) && v > 1e11) return true;
+  return /^\d{12,}$/.test(String(v).trim());
+}
+
+/** Nunca envia epoch ms (ex.: Date.now()) — só ISO ou omite; post_date sempre YYYY-MM-DD. */
+function _socialPostPreparePayload(payload, isInsert) {
   const o = Object.assign({}, payload);
   if(o.post_date != null) o.post_date = _socialPostEnsureDateOnly(o.post_date);
-  ['created_at', 'updated_at', 'published_at', 'remind_metrics_at'].forEach(k => {
+  if(o.post_time != null && o.post_time !== '') {
+    const t = String(o.post_time).trim();
+    o.post_time = t.length === 5 ? t + ':00' : t.slice(0, 8);
+  }
+  _SOCIAL_POST_TS_KEYS.forEach(k => {
     if(o[k] == null) return;
-    const ms = _socialPostMsFromValue(o[k]);
-    if(ms != null) o[k] = new Date(ms).toISOString();
+    if(isInsert && (k === 'created_at' || k === 'updated_at')) {
+      delete o[k];
+      return;
+    }
+    const iso = _socialPostEpochToIso(o[k]);
+    if(iso) o[k] = iso;
+    else if(!isNaN(Date.parse(String(o[k])))) o[k] = new Date(o[k]).toISOString();
+    else delete o[k];
+  });
+  Object.keys(o).forEach(k => {
+    const v = o[k];
+    if(v == null) return;
+    if(_SOCIAL_POST_TS_KEYS.includes(k)) return;
+    if(typeof v === 'number' && v > 1e11) {
+      delete o[k];
+      return;
+    }
+    if(typeof v === 'string' && /^\d{12,}$/.test(v.trim())) delete o[k];
   });
   return o;
 }
 
-/** Mantém epoch ms (bigint no SQL do repositório). */
-function _socialPostPayloadEpochTimestamps(payload) {
-  const o = Object.assign({}, payload);
-  if(o.post_date != null) o.post_date = _socialPostEnsureDateOnly(o.post_date);
-  ['created_at', 'updated_at', 'published_at', 'remind_metrics_at'].forEach(k => {
-    if(o[k] == null) return;
-    const ms = _socialPostMsFromValue(o[k]);
-    if(ms != null) o[k] = ms;
+function _socialPostPayloadVariants(payload, isInsert) {
+  const primary = _socialPostPreparePayload(payload, isInsert);
+  const slim = Object.assign({}, primary);
+  ['published_at', 'remind_metrics_at', 'editorial_stage', 'approval_status_kind', 'approval_status_text',
+    'public_url', 'metrics_views', 'metrics_likes', 'asset_url', 'project_id', 'project_name'].forEach(k => {
+    delete slim[k];
   });
-  return o;
-}
-
-function _socialPostPayloadVariants(payload) {
-  const base = Object.assign({}, payload);
-  const iso = _socialPostPayloadIsoTimestamps(base);
-  const epoch = _socialPostPayloadEpochTimestamps(base);
-  const minimal = Object.assign({}, base);
-  delete minimal.created_at;
-  delete minimal.updated_at;
-  const out = [iso, epoch, minimal];
   const seen = new Set();
-  return out.filter(p => {
+  return [primary, slim].filter(p => {
     const k = JSON.stringify(p);
     if(seen.has(k)) return false;
     seen.add(k);
@@ -20206,7 +20311,8 @@ function _socialPostPayloadVariants(payload) {
 }
 
 async function _socialPostApiWrite(method, id, payload) {
-  const variants = _socialPostPayloadVariants(payload);
+  const isInsert = method === 'post';
+  const variants = _socialPostPayloadVariants(payload, isInsert);
   const droppedAll = [];
   let lastErr = null;
   for(const variant of variants) {
@@ -20214,7 +20320,7 @@ async function _socialPostApiWrite(method, id, payload) {
     const dropped = [];
     for(let i = 0; i < 15; i++) {
       try {
-        const res = method === 'post'
+        const res = isInsert
           ? await apiPost('age_social_posts', body)
           : await apiPatch('age_social_posts', id, body);
         if(droppedAll.length) {
@@ -20223,6 +20329,13 @@ async function _socialPostApiWrite(method, id, payload) {
         return res;
       } catch(e) {
         lastErr = e;
+        if(_socialPostIsDateRangeErr(e)) {
+          Object.keys(body).forEach(k => {
+            if(_socialPostIsEpochLike(body[k])) delete body[k];
+          });
+          _SOCIAL_POST_TS_KEYS.forEach(k => { delete body[k]; });
+          if(Object.keys(body).length) continue;
+        }
         const col = _socialPostMissingColumnName(e);
         if(col && col in body && _socialPostIsMissingColumnErr(e)) {
           delete body[col];
@@ -20429,7 +20542,6 @@ async function _csPatchEditorialStage(id, stage) {
   const payload = {
     editorial_stage: stage,
     status: _csStatusForStage(stage),
-    updated_at: Date.now(),
   };
   await _csApiPatchSocial(id, payload);
 }
@@ -20796,12 +20908,11 @@ async function csConfirmMarcarPostado() {
     editorial_stage: 'postado',
     status: 'postado',
     public_url: link,
-    published_at: postedMs,
+    published_at: new Date(postedMs).toISOString(),
     post_date: parts.post_date,
     post_time: parts.post_time,
-    updated_at: Date.now(),
   };
-  if(lembrete) payload.remind_metrics_at = Date.now() + 7 * 86400000;
+  if(lembrete) payload.remind_metrics_at = new Date(Date.now() + 7 * 86400000).toISOString();
   try {
     await _csApiPatchSocial(id, payload);
     if(lembrete) {
@@ -20937,8 +21048,6 @@ async function csConfirmNovoConteudo() {
     status: 'planejado',
     editorial_stage: 'producao',
     deleted: false,
-    created_at: Date.now(),
-    updated_at: Date.now(),
   };
   try {
     await _csApiPostSocial(payload);
@@ -21192,7 +21301,6 @@ async function savePostagem() {
     status: document.getElementById('postFormStatus')?.value || 'planejado',
     assigned_to: (document.getElementById('postFormAssigned')?.value || '').trim() || null,
     notes: (document.getElementById('postFormNotes')?.value || '').trim() || null,
-    updated_at: Date.now()
   };
 
   const stNorm = String(payload.status || '').toLowerCase();
@@ -21208,7 +21316,6 @@ async function savePostagem() {
       await _csApiPatchSocial(id, payload);
     } else {
       payload.company_id = String(cid);
-      payload.created_at = Date.now();
       payload.deleted = false;
       if(payload.editorial_stage == null) payload.editorial_stage = 'producao';
       await _csApiPostSocial(payload);
@@ -21235,7 +21342,7 @@ async function deletePostagem() {
   const id = document.getElementById('postFormId')?.value;
   if(!id || !confirm('Excluir esta postagem?')) return;
   try {
-    await _csApiPatchSocial(id, { deleted: true, updated_at: Date.now() });
+    await _csApiPatchSocial(id, { deleted: true });
     closeModal('modalPostagem');
     toast('Removida.');
     await loadPostagens();
