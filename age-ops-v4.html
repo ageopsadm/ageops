@@ -3601,6 +3601,11 @@ body:has(#login-screen.visible){
                 <div class="orc-fields">
                   <input id="orc-titulo" placeholder="Título do projeto" class="orc-input" oninput="atualizarPreview();orcSyncHeaderTitle()" />
                   <input id="orc-cliente" placeholder="Nome do cliente" class="orc-input" oninput="atualizarPreview();orcUpdateHeaderInfo()" />
+                  <div style="margin-top:12px">
+                    <label for="orc-emissor" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;letter-spacing:.06em;margin-bottom:6px">PROPOSTA EM NOME DE</label>
+                    <input id="orc-emissor" placeholder="Ex.: OWNAGE Films" class="orc-input" oninput="atualizarPreview()" title="Nome que aparece no PDF ao cliente (cabeçalho e rodapé)" />
+                    <div style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.35">Substitui o nome da empresa no documento enviado ao cliente.</div>
+                  </div>
                   <textarea id="orc-descricao" placeholder="Descrição / escopo do projeto" class="orc-input" rows="3" oninput="atualizarPreview()"></textarea>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                     <div>
@@ -3712,14 +3717,14 @@ body:has(#login-screen.visible){
                     <span id="orc-valor-margem" style="color:#4ade80">R$ 0</span>
                   </div>
                   <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.2);display:flex;flex-direction:column;gap:10px;font-size:11px;line-height:1.45">
-                    <span style="opacity:.85;font-weight:700">Taxa no PDF ao cliente</span>
+                    <span style="opacity:.85;font-weight:700">Margem no cálculo (não vai no PDF do cliente)</span>
                     <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;opacity:.95">
-                      <input type="radio" name="orc-margem-modo" value="transparente" checked onchange="recalcularTotais()" style="margin-top:2px;accent-color:#4ade80" />
-                      <span>Transparente — discriminar a taxa em linha própria na composição (cliente vê o % separado das entregas).</span>
+                      <input type="radio" name="orc-margem-modo" value="diluida" checked onchange="recalcularTotais()" style="margin-top:2px;accent-color:#4ade80" />
+                      <span>Diluir — a taxa entra só no valor total; escopo e composição ao cliente sem % nem valores da equipe.</span>
                     </label>
                     <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;opacity:.95">
-                      <input type="radio" name="orc-margem-modo" value="diluida" onchange="recalcularTotais()" style="margin-top:2px;accent-color:#4ade80" />
-                      <span>Diluir — repartir a taxa proporcionalmente em cada entrega do escopo (cada valor já inclui a %).</span>
+                      <input type="radio" name="orc-margem-modo" value="transparente" onchange="recalcularTotais()" style="margin-top:2px;accent-color:#4ade80" />
+                      <span>Transparente — mesma proposta ao cliente; no PDF interno a margem aparece discriminada.</span>
                     </label>
                   </div>
                   <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);font-size:20px;font-weight:700">
@@ -16441,6 +16446,19 @@ function _orcMargemModo() {
   return el?.value === 'diluida' ? 'diluida' : 'transparente';
 }
 
+function _orcPropostaEmissor() {
+  const custom = document.getElementById('orc-emissor')?.value?.trim();
+  if(custom) return custom;
+  return (currentUser?.company_name || '').trim() || 'Age Ops';
+}
+
+function _orcInitEmissorDefault() {
+  const el = document.getElementById('orc-emissor');
+  if(!el || el.value.trim()) return;
+  const cn = (currentUser?.company_name || '').trim();
+  if(cn) el.value = cn;
+}
+
 function _orcDefaultDiariaCusto(nome, diariaCobrada, funcaoId) {
   const cob = parseFloat(diariaCobrada) || 0;
   const n = String(nome || '').trim().toLowerCase();
@@ -16512,6 +16530,7 @@ function orcSerializeBuilder() {
     diarias: parseInt(document.getElementById('orc-diarias')?.value || 1, 10) || 1,
     margemPct: parseFloat(m?.value || 0) || 0,
     margemModo: _orcMargemModo(),
+    propostaEmissor: document.getElementById('orc-emissor')?.value?.trim() || '',
     equipe: JSON.parse(JSON.stringify(window._orcEquipe || [])),
     catalogo: JSON.parse(JSON.stringify(window._orcCatalogo || [])),
     despesas: JSON.parse(JSON.stringify(window._orcDespesas || [])),
@@ -16747,6 +16766,7 @@ function recalcularTotais() {
 
 function _orcPdfMetaFromForm() {
   return {
+    propostaEmissor: document.getElementById('orc-emissor')?.value?.trim() || '',
     dataEvento: document.getElementById('orc-data-evento')?.value?.trim() || '',
     resumoPagamento: document.getElementById('orc-pdf-resumo-pagamento')?.value?.trim() || '',
     parcelas: document.getElementById('orc-pdf-parcelas')?.value || '1',
@@ -16762,6 +16782,7 @@ function _applyOrcPdfMetaToForm(meta) {
     const el = document.getElementById(id);
     if(el && v != null && v !== '') el.value = String(v);
   };
+  set('orc-emissor', meta.propostaEmissor);
   set('orc-data-evento', meta.dataEvento);
   set('orc-pdf-resumo-pagamento', meta.resumoPagamento);
   const ps = document.getElementById('orc-pdf-parcelas');
@@ -16788,7 +16809,7 @@ function atualizarPreview() {
   const validadeStr = validade ? new Date(validade + 'T00:00:00').toLocaleDateString('pt-BR') : '';
   const eventIso = pdfm.dataEvento || '';
   const eventStr = eventIso ? new Date(eventIso + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-  const marca = (currentUser?.company_name || '').trim() || 'Age Ops';
+  const marca = _orcPropostaEmissor();
   const resumoPag = (pdfm.resumoPagamento || '').trim() || 'Pagamento à vista';
   const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
   const sans = 'font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif';
@@ -16827,11 +16848,9 @@ function atualizarPreview() {
       </div>
     </div>`).join('') : `<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>`;
 
-  const modoBand = '';
-
   const compHtml = `<div style="padding:14px 0;font-size:12px;color:#525252;line-height:1.6">
       O investimento total da proposta está indicado no destaque acima e na barra <strong>Valor total da proposta</strong>.
-      Detalhamento financeiro por função e margens é de uso interno da agência.
+      O escopo lista entregas e equipe sem valores por função; taxas administrativas não são discriminadas neste documento.
     </div>`;
 
   const doisParc = pdfm.parcelas === '2';
@@ -16936,7 +16955,6 @@ function atualizarPreview() {
         ${subLinha('ESCOPO CONTRATADO', 'ENTREGAS CONFIRMADAS')}
         ${escopoHtml}
       </div>
-      ${modoBand}
       <div style="margin-top:28px">
         ${subLinha('COMPOSIÇÃO DO VALOR', 'DETALHAMENTO')}
         ${compHtml}
@@ -16983,14 +17001,15 @@ function initOrcamentoBuilder(resetState) {
   if(rs && iMarg) iMarg.value = 20;
   if(rs && iDia) iDia.value = 1;
   if(rs) {
-    const ids = ['orc-titulo','orc-cliente','orc-descricao','orc-data-evento','orc-pdf-pix','orc-pdf-favorecido','orc-pdf-aprovado'];
+    const ids = ['orc-titulo','orc-cliente','orc-descricao','orc-emissor','orc-data-evento','orc-pdf-pix','orc-pdf-favorecido','orc-pdf-aprovado'];
     ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     const rp = document.getElementById('orc-pdf-resumo-pagamento');
     if(rp) rp.value = 'Pagamento à vista';
     const pp = document.getElementById('orc-pdf-parcelas');
     if(pp) pp.value = '1';
-    const rTr = document.querySelector('input[name="orc-margem-modo"][value="transparente"]');
-    if(rTr) rTr.checked = true;
+    const rDi = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
+    if(rDi) rDi.checked = true;
+    _orcInitEmissorDefault();
   }
   _orcBackfillEquipeCusto();
   renderEquipe();
@@ -17037,12 +17056,16 @@ function loadOrcBuilderFromRow(o) {
     if(t && parsed.titulo != null) t.value = parsed.titulo;
     if(d && parsed.descricao != null) d.value = parsed.descricao;
     if(mg) mg.value = String(parsed.margemPct != null ? parsed.margemPct : 20);
-    if(parsed.margemModo === 'diluida') {
-      const rd = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
-      if(rd) rd.checked = true;
-    } else {
+    if(parsed.margemModo === 'transparente') {
       const rt = document.querySelector('input[name="orc-margem-modo"][value="transparente"]');
       if(rt) rt.checked = true;
+    } else {
+      const rd = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
+      if(rd) rd.checked = true;
+    }
+    if(parsed.propostaEmissor != null) {
+      const em = document.getElementById('orc-emissor');
+      if(em) em.value = String(parsed.propostaEmissor);
     }
     if(parsed.pdfMeta) _applyOrcPdfMetaToForm(parsed.pdfMeta);
     else {
