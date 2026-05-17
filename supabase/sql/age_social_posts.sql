@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS age_social_posts (
   post_date date NOT NULL,
   post_time text,
   network text NOT NULL,
+  instagram_account text,
   format text,
   project_id uuid,
   client_name text,
@@ -44,6 +45,7 @@ COMMENT ON TABLE age_social_posts IS 'Cronograma editorial: data, projeto, mater
 
 -- Migração para instalações que já criaram a tabela em versões antigas (idempotente):
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS post_time text;
+ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS instagram_account text;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS format text;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS project_id uuid;
 ALTER TABLE age_social_posts ADD COLUMN IF NOT EXISTS client_name text;

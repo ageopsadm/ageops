@@ -1978,100 +1978,164 @@ body:has(#login-screen.visible){
 
 /* ═══ Conteúdos · redes sociais (Kanban flat / light) ═══ */
 #page-conteudos-sociais.cs-page-light{
-  --cs-bg:#ffffff;
-  --cs-bg2:#F5F5F2;
-  --cs-text:#111111;
-  --cs-sub:#737373;
-  --cs-bd:rgba(0,0,0,.15);
-  --cs-green-bg:#EAF3DE;
-  --cs-green-bd:#97C459;
-  --cs-green-tx:#173404;
-  --cs-green-btn:#3B6D11;
-  --cs-amber-tx:#854F0B;
-  --cs-blue-tx:#185FA5;
+  --cs-bg:#fafafa;
+  --cs-bg2:#ffffff;
+  --cs-text:#0f172a;
+  --cs-sub:#64748b;
+  --cs-bd:#e2e8f0;
+  --cs-green-bg:#f0fdf4;
+  --cs-green-bd:#86efac;
+  --cs-green-tx:#166534;
+  --cs-green-btn:#15803d;
+  --cs-amber-tx:#b45309;
+  --cs-blue-tx:#1d4ed8;
+  --cs-prod:#6366f1;
+  --cs-aprov:#f59e0b;
+  --cs-pronto:#22c55e;
+  --cs-post:#94a3b8;
   background:var(--cs-bg)!important;
   color:var(--cs-text);
   font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Inter',sans-serif;
   font-weight:400;
-  padding:24px!important;
+  padding:28px 24px!important;
   border-radius:0;
   box-shadow:none!important;
 }
-#page-conteudos-sociais .cs-root{max-width:1320px;margin:0 auto;}
-#page-conteudos-sociais .cs-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;}
-#page-conteudos-sociais .cs-title{font-size:18px;font-weight:500;color:var(--cs-text);letter-spacing:0;}
-#page-conteudos-sociais .cs-sub{font-size:13px;color:var(--cs-sub);margin-top:6px;font-weight:400;}
-#page-conteudos-sociais .cs-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+#page-conteudos-sociais .cs-root{max-width:1360px;margin:0 auto;}
+#page-conteudos-sociais .cs-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:22px;}
+#page-conteudos-sociais .cs-title{font-size:20px;font-weight:600;color:var(--cs-text);letter-spacing:-0.02em;line-height:1.2;}
+#page-conteudos-sociais .cs-sub{font-size:13px;color:var(--cs-sub);margin-top:6px;font-weight:400;max-width:520px;line-height:1.45;}
+#page-conteudos-sociais .cs-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;}
 #page-conteudos-sociais .cs-btn{
-  height:36px;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;
-  border:0.5px solid var(--cs-bd);background:var(--cs-bg);color:var(--cs-text);
+  height:38px;padding:0 14px;border-radius:10px;font-size:13px;font-weight:500;font-family:inherit;
+  border:1px solid var(--cs-bd);background:var(--cs-bg2);color:var(--cs-text);
   display:inline-flex;align-items:center;gap:6px;cursor:pointer;
-  box-shadow:none;
+  transition:background .15s,border-color .15s,box-shadow .15s;
 }
-#page-conteudos-sociais .cs-btn:focus-visible{outline:2px solid #185FA5;outline-offset:2px;}
-#page-conteudos-sociais .cs-btn--primary{background:#111;color:#fff;border-color:#111;}
-#page-conteudos-sociais .cs-btn .ti{font-size:16px;opacity:.85;}
+#page-conteudos-sociais .cs-btn:hover{background:#f8fafc;border-color:#cbd5e1;}
+#page-conteudos-sociais .cs-btn:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
+#page-conteudos-sociais .cs-btn--primary{background:#0f172a;color:#fff;border-color:#0f172a;}
+#page-conteudos-sociais .cs-btn--primary:hover{background:#1e293b;border-color:#1e293b;}
+#page-conteudos-sociais .cs-btn .ti{font-size:17px;opacity:.9;}
+#page-conteudos-sociais .cs-week-nav{
+  display:inline-flex;align-items:center;border:1px solid var(--cs-bd);border-radius:10px;background:var(--cs-bg2);overflow:hidden;
+}
+#page-conteudos-sociais .cs-week-nav .cs-btn{border:none;border-radius:0;height:38px;min-width:38px;padding:0;justify-content:center;}
+#page-conteudos-sociais .cs-week-nav .cs-btn:first-child{border-right:1px solid var(--cs-bd);}
+#page-conteudos-sociais .cs-week-nav .cs-btn:last-child{border-left:1px solid var(--cs-bd);}
+#page-conteudos-sociais .cs-week-nav-label{font-size:12px;color:var(--cs-sub);padding:0 10px;white-space:nowrap;font-weight:500;}
 #page-conteudos-sociais .cs-select{
-  height:36px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:400;
-  border:0.5px solid var(--cs-bd);background:var(--cs-bg);color:var(--cs-text);min-width:140px;
-  box-shadow:none;font-family:inherit;
+  height:38px;padding:0 12px;border-radius:10px;font-size:13px;font-weight:400;
+  border:1px solid var(--cs-bd);background:var(--cs-bg2);color:var(--cs-text);min-width:148px;
+  font-family:inherit;
 }
-#page-conteudos-sociais .cs-select:focus-visible{outline:2px solid #185FA5;outline-offset:2px;}
-#page-conteudos-sociais .cs-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+#page-conteudos-sociais .cs-select:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
+#page-conteudos-sociais .cs-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
 @media(max-width:900px){#page-conteudos-sociais .cs-metrics{grid-template-columns:repeat(2,1fr);}}
 #page-conteudos-sociais .cs-metric{
-  background:var(--cs-bg2);border:0.5px solid var(--cs-bd);border-radius:12px;padding:16px 18px;
-  box-shadow:none;
+  background:var(--cs-bg2);border:1px solid var(--cs-bd);border-radius:14px;padding:16px 18px;
+  border-left:4px solid var(--cs-metric-accent,#cbd5e1);
 }
 #page-conteudos-sociais .cs-metric-label{
-  font-size:11px;letter-spacing:.3px;text-transform:uppercase;color:var(--cs-sub);font-weight:400;margin-bottom:8px;
+  font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--cs-sub);font-weight:500;margin-bottom:6px;
 }
-#page-conteudos-sociais .cs-metric-val{font-size:24px;font-weight:500;color:var(--cs-text);line-height:1.2;}
-#page-conteudos-sociais .cs-metric--ok .cs-metric-label{color:#173404;}
-#page-conteudos-sociais .cs-metric--ok .cs-metric-val{color:#173404;}
-#page-conteudos-sociais .cs-col-body.cs-drag-over{background:rgba(24,95,165,.06);}
-#page-conteudos-sociais .cs-board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}
+#page-conteudos-sociais .cs-metric-val{font-size:26px;font-weight:600;color:var(--cs-text);line-height:1.1;letter-spacing:-0.02em;}
+#page-conteudos-sociais .cs-metric--ok .cs-metric-label{color:var(--cs-green-tx);}
+#page-conteudos-sociais .cs-metric--ok .cs-metric-val{color:var(--cs-green-tx);}
+#page-conteudos-sociais .cs-col-body.cs-drag-over{background:rgba(37,99,235,.05);outline:2px dashed #93c5fd;outline-offset:-2px;border-radius:10px;}
+#page-conteudos-sociais .cs-board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start;}
 @media(max-width:1100px){#page-conteudos-sociais .cs-board{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){#page-conteudos-sociais .cs-board{grid-template-columns:1fr;}}
 #page-conteudos-sociais .cs-col{
-  background:var(--cs-bg2);border:0.5px solid var(--cs-bd);border-radius:12px;padding:12px;min-height:280px;
-  box-shadow:none;display:flex;flex-direction:column;gap:10px;
+  background:var(--cs-bg2);border:1px solid var(--cs-bd);border-radius:14px;padding:0;min-height:300px;
+  display:flex;flex-direction:column;overflow:hidden;
 }
-#page-conteudos-sociais .cs-col-head{font-size:11px;letter-spacing:.3px;text-transform:uppercase;color:var(--cs-sub);font-weight:400;margin-bottom:2px;}
-#page-conteudos-sociais .cs-col-head strong{font-weight:500;color:var(--cs-text);}
-#page-conteudos-sociais .cs-col-body{flex:1;display:flex;flex-direction:column;gap:10px;min-height:120px;}
+#page-conteudos-sociais .cs-col-head{
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-sub);font-weight:600;
+  padding:14px 14px 10px;border-top:3px solid var(--cs-col-accent,#cbd5e1);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+#page-conteudos-sociais .cs-col-head strong{font-weight:600;color:var(--cs-text);font-size:12px;text-transform:none;letter-spacing:0;}
+#page-conteudos-sociais .cs-col-count{
+  font-size:11px;font-weight:600;color:var(--cs-sub);background:#f1f5f9;border-radius:20px;padding:2px 8px;min-width:22px;text-align:center;
+}
+#page-conteudos-sociais .cs-col-body{flex:1;display:flex;flex-direction:column;gap:10px;min-height:100px;padding:0 10px 12px;}
+#page-conteudos-sociais .cs-col-empty{
+  text-align:center;padding:28px 12px;font-size:12px;color:#94a3b8;line-height:1.5;border:1px dashed #e2e8f0;border-radius:10px;background:#f8fafc;
+}
 #page-conteudos-sociais .cs-card{
-  background:#fff;border:0.5px solid var(--cs-bd);border-radius:12px;padding:12px;
-  cursor:grab;box-shadow:none;font-size:13px;color:var(--cs-text);
+  background:#fff;border:1px solid var(--cs-bd);border-radius:12px;padding:12px 12px 11px;
+  cursor:grab;font-size:13px;color:var(--cs-text);
+  transition:box-shadow .15s,border-color .15s,transform .12s;
 }
-#page-conteudos-sociais .cs-card:active{cursor:grabbing;}
-#page-conteudos-sociais .cs-card--pronto{background:var(--cs-green-bg);border-color:var(--cs-green-bd);}
-#page-conteudos-sociais .cs-card--posted{background:#F5F5F2;border-color:var(--cs-bd);opacity:.72;}
-#page-conteudos-sociais .cs-card-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;}
+#page-conteudos-sociais .cs-card:hover{box-shadow:0 4px 14px rgba(15,23,42,.06);border-color:#cbd5e1;}
+#page-conteudos-sociais .cs-card:active{cursor:grabbing;transform:scale(.99);}
+#page-conteudos-sociais .cs-card--pronto{background:linear-gradient(180deg,#f0fdf4 0%,#fff 100%);border-color:#bbf7d0;}
+#page-conteudos-sociais .cs-card--posted{background:#f8fafc;border-color:#e2e8f0;opacity:.85;}
+#page-conteudos-sociais .cs-card-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-bottom:8px;}
+#page-conteudos-sociais .cs-card-top-left{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+#page-conteudos-sociais .cs-rede-pill{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;
+  font-size:10px;font-weight:600;background:#f1f5f9;color:#475569;
+}
+#page-conteudos-sociais .cs-rede-pill .ti{font-size:13px;}
+#page-conteudos-sociais .cs-card-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s;}
+#page-conteudos-sociais .cs-card:hover .cs-card-actions{opacity:1;}
+#page-conteudos-sociais .cs-card-icon-btn{
+  width:28px;height:28px;border:none;background:transparent;border-radius:8px;cursor:pointer;
+  color:#64748b;display:inline-flex;align-items:center;justify-content:center;padding:0;
+}
+#page-conteudos-sociais .cs-card-icon-btn:hover{background:#f1f5f9;color:#0f172a;}
 #page-conteudos-sociais .cs-badge{
-  display:inline-block;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:500;line-height:1.2;
+  display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;line-height:1.2;letter-spacing:.02em;
 }
-#page-conteudos-sociais .cs-card-title{font-size:13px;font-weight:500;margin-bottom:6px;line-height:1.35;}
-#page-conteudos-sociais .cs-card-meta{font-size:11px;color:var(--cs-sub);font-weight:400;line-height:1.4;}
-#page-conteudos-sociais .cs-card-when{font-size:11px;color:var(--cs-sub);margin-top:8px;font-weight:400;}
-#page-conteudos-sociais .cs-status-row{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;font-weight:400;}
-#page-conteudos-sociais .cs-status-row .ti{font-size:14px;}
+#page-conteudos-sociais .cs-card-title{font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:#0f172a;}
+#page-conteudos-sociais .cs-card-meta{font-size:11px;color:var(--cs-sub);font-weight:400;line-height:1.45;}
+#page-conteudos-sociais .cs-card-link{
+  display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:11px;color:#2563eb;font-weight:500;
+  text-decoration:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#page-conteudos-sociais .cs-card-link:hover{text-decoration:underline;}
+#page-conteudos-sociais .cs-card-when{
+  font-size:11px;color:var(--cs-sub);margin-top:8px;font-weight:500;display:flex;align-items:center;gap:4px;
+}
+#page-conteudos-sociais .cs-card-when .ti{font-size:13px;opacity:.7;}
+#page-conteudos-sociais .cs-status-row{
+  display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;font-weight:500;
+  padding:6px 8px;border-radius:8px;background:#f8fafc;
+}
+#page-conteudos-sociais .cs-status-row .ti{font-size:14px;flex-shrink:0;}
 #page-conteudos-sociais .cs-btn-post{
-  width:100%;margin-top:12px;height:36px;border-radius:8px;border:none;background:var(--cs-green-btn);
-  color:#fff;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;
+  width:100%;margin-top:10px;height:34px;border-radius:9px;border:none;background:var(--cs-green-btn);
+  color:#fff;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  box-shadow:none;
+  transition:background .15s;
 }
+#page-conteudos-sociais .cs-btn-post:hover{background:#166534;}
 #page-conteudos-sociais .cs-btn-post:focus-visible{outline:2px solid var(--cs-green-btn);outline-offset:2px;}
 #page-conteudos-sociais .cs-posted-metrics{font-size:11px;color:var(--cs-sub);margin-top:8px;font-weight:400;}
-#modalCsMarcarPostado .modal-box,#modalCsNovoConteudo .modal-box{background:#fff;color:#111;border:0.5px solid rgba(0,0,0,.12);box-shadow:none;max-width:480px;}
-#modalCsMarcarPostado input,#modalCsMarcarPostado input[type="datetime-local"],#modalCsNovoConteudo input,#modalCsNovoConteudo select{
-  height:36px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;padding:0 12px;font-size:13px;font-weight:400;width:100%;box-sizing:border-box;font-family:inherit;
+#page-conteudos-sociais .cs-card-ig{
+  display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11px;font-weight:600;color:#be185d;
 }
-#modalCsMarcarPostado input:focus-visible,#modalCsNovoConteudo input:focus-visible,#modalCsNovoConteudo select:focus-visible{outline:2px solid #185FA5;outline-offset:2px;}
-#modalCsMarcarPostado label,#modalCsNovoConteudo label{font-size:11px;color:#737373;font-weight:400;display:block;margin-bottom:6px;}
-#modalCsMarcarPostado .btn-primary,#modalCsNovoConteudo .btn-primary{
-  font-weight:500;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Inter',sans-serif;letter-spacing:0;text-transform:none;
+#page-conteudos-sociais .cs-card-ig .ti{font-size:13px;}
+.cs-ig-field{display:none;}
+#modalCsMarcarPostado .modal-box,#modalCsNovoConteudo .modal-box,#modalCsEditar .modal-box{
+  background:#fff;color:#111;border:1px solid #e2e8f0;box-shadow:0 20px 50px rgba(15,23,42,.12);max-width:480px;border-radius:16px;
+}
+#modalCsMarcarPostado input,#modalCsMarcarPostado input[type="datetime-local"],
+#modalCsNovoConteudo input,#modalCsNovoConteudo select,#modalCsEditar input,#modalCsEditar select,#modalCsEditar textarea{
+  height:38px;border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:13px;font-weight:400;width:100%;box-sizing:border-box;font-family:inherit;
+}
+#modalCsEditar textarea{height:auto;min-height:72px;padding:10px 12px;resize:vertical;}
+#modalCsMarcarPostado input:focus-visible,#modalCsNovoConteudo input:focus-visible,#modalCsNovoConteudo select:focus-visible,
+#modalCsEditar input:focus-visible,#modalCsEditar select:focus-visible,#modalCsEditar textarea:focus-visible{
+  outline:2px solid #2563eb;outline-offset:2px;border-color:#93c5fd;
+}
+#modalCsMarcarPostado label,#modalCsNovoConteudo label,#modalCsEditar label{
+  font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;
+}
+#modalCsMarcarPostado .btn-primary,#modalCsNovoConteudo .btn-primary,#modalCsEditar .btn-primary{
+  font-weight:600;font-family:inherit;letter-spacing:0;text-transform:none;border-radius:10px;
 }
 </style>
 <!-- Detecção de ambiente preview — executa antes de tudo -->
@@ -3845,13 +3909,20 @@ body:has(#login-screen.visible){
               <div class="cs-title">Conteúdos · Redes sociais</div>
               <div class="cs-sub" id="csWeekSubtitle">—</div>
             </div>
-            <div class="cs-actions">
+            <div class="cs-toolbar">
               <select id="csFilterCliente" class="cs-select" onchange="csApplyFilters()" title="Filtrar por cliente">
                 <option value="">Todos os clientes</option>
               </select>
-              <div style="display:flex;align-items:center;gap:2px;flex-wrap:wrap">
+              <select id="csFilterRede" class="cs-select" onchange="csApplyFilters()" title="Filtrar por rede">
+                <option value="">Todas as redes</option>
+                <option value="instagram">Instagram</option>
+                <option value="tiktok">TikTok</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="youtube">YouTube</option>
+              </select>
+              <div class="cs-week-nav">
                 <button type="button" class="cs-btn" onclick="csWeekShift(-1)" title="Semana anterior" aria-label="Semana anterior"><i class="ti ti-chevron-left"></i></button>
-                <span style="font-size:12px;color:#737373;padding:0 6px;font-weight:400">Período</span>
+                <span class="cs-week-nav-label">Semana</span>
                 <button type="button" class="cs-btn" onclick="csWeekShift(1)" title="Próxima semana" aria-label="Próxima semana"><i class="ti ti-chevron-right"></i></button>
               </div>
               <button type="button" class="cs-btn cs-btn--primary perm-guard-edit" onclick="csOpenNovoModal()"><i class="ti ti-plus"></i> Novo conteúdo</button>
@@ -4742,7 +4813,7 @@ body:has(#login-screen.visible){
     </div>
     <div class="form-group" style="margin-bottom:14px">
       <label class="form-label" style="font-size:11px;font-weight:700;color:#888">REDE SOCIAL *</label>
-      <select id="postFormNetwork" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
+      <select id="postFormNetwork" onchange="csOnCsRedeChange('post')" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;background:#fff">
         <option value="instagram">Instagram</option>
         <option value="facebook">Facebook</option>
         <option value="tiktok">TikTok</option>
@@ -4752,6 +4823,11 @@ body:has(#login-screen.visible){
         <option value="pinterest">Pinterest</option>
         <option value="outro">Outro</option>
       </select>
+    </div>
+    <div id="postFormIgWrap" class="form-group cs-ig-field" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">CONTA INSTAGRAM</label>
+      <input id="postFormInstagram" type="text" list="postFormIgList" placeholder="@marca_oficial" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+      <datalist id="postFormIgList"></datalist>
     </div>
     <div class="form-group" style="margin-bottom:14px">
       <label class="form-label" style="font-size:11px;font-weight:700;color:#888">FORMATO / TIPO</label>
@@ -4835,6 +4911,58 @@ body:has(#login-screen.visible){
 </div>
 
 <!-- Modal Conteúdos · redes — novo conteúdo -->
+<div class="modal" id="modalCsEditar">
+  <div class="modal-box" style="padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:16px;font-weight:500;color:#111">Editar conteúdo</span>
+      <button type="button" onclick="closeModal('modalCsEditar')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;font-weight:400" aria-label="Fechar">×</button>
+    </div>
+    <input type="hidden" id="csEditarId" value="">
+    <label for="csEditarTitulo">Título da peça *</label>
+    <input type="text" id="csEditarTitulo" placeholder="Ex.: Reel 01 — bastidores" autocomplete="off">
+    <label for="csEditarAssetUrl" style="margin-top:12px">Link do material gravado</label>
+    <input type="url" id="csEditarAssetUrl" placeholder="https://drive.google.com/…" autocomplete="off">
+    <label for="csEditarResp" style="margin-top:12px">Responsável</label>
+    <input type="text" id="csEditarResp" placeholder="Nome" autocomplete="off">
+    <label for="csEditarFormato" style="margin-top:12px">Formato</label>
+    <select id="csEditarFormato">
+      <option value="reels">Reels</option>
+      <option value="carrossel">Carrossel</option>
+      <option value="story">Story</option>
+      <option value="tiktok">TikTok</option>
+      <option value="post">Post</option>
+    </select>
+    <label for="csEditarRede" style="margin-top:12px">Rede</label>
+    <select id="csEditarRede" onchange="csOnCsRedeChange('editar')">
+      <option value="instagram">Instagram</option>
+      <option value="tiktok">TikTok</option>
+      <option value="linkedin">LinkedIn</option>
+      <option value="youtube">YouTube</option>
+    </select>
+    <div id="csEditarIgWrap" class="cs-ig-field" style="margin-top:12px">
+      <label for="csEditarInstagram">Conta Instagram</label>
+      <input type="text" id="csEditarInstagram" list="csEditarIgList" placeholder="@marca_oficial" autocomplete="off">
+      <datalist id="csEditarIgList"></datalist>
+    </div>
+    <label for="csEditarScheduled" style="margin-top:12px">Data e hora previstas</label>
+    <input type="datetime-local" id="csEditarScheduled">
+    <label for="csEditarAprovKind" style="margin-top:12px">Status de aprovação</label>
+    <select id="csEditarAprovKind">
+      <option value="">Sem status</option>
+      <option value="wait">Aguardando cliente</option>
+      <option value="review">Revisão interna</option>
+    </select>
+    <label for="csEditarAprovText" style="margin-top:12px">Texto do status (opcional)</label>
+    <input type="text" id="csEditarAprovText" placeholder="Ex.: Aguarda cliente · 2d" autocomplete="off">
+    <label for="csEditarNotas" style="margin-top:12px">Observações</label>
+    <textarea id="csEditarNotas" rows="3" placeholder="Notas internas…"></textarea>
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary perm-guard-edit" onclick="csConfirmEditar()" style="border-radius:8px;padding:10px 18px">Salvar</button>
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modalCsEditar')" style="border-radius:8px;padding:10px 18px">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="modalCsNovoConteudo">
   <div class="modal-box" style="padding:24px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -4867,12 +4995,17 @@ body:has(#login-screen.visible){
       <option value="post">Post</option>
     </select>
     <label for="csNovoRede" style="margin-top:12px">Rede</label>
-    <select id="csNovoRede">
+    <select id="csNovoRede" onchange="csOnCsRedeChange('novo')">
       <option value="instagram">Instagram</option>
       <option value="tiktok">TikTok</option>
       <option value="linkedin">LinkedIn</option>
       <option value="youtube">YouTube</option>
     </select>
+    <div id="csNovoIgWrap" class="cs-ig-field" style="margin-top:12px">
+      <label for="csNovoInstagram">Conta Instagram</label>
+      <input type="text" id="csNovoInstagram" list="csNovoIgList" placeholder="@marca_oficial" autocomplete="off">
+      <datalist id="csNovoIgList"></datalist>
+    </div>
     <label for="csNovoScheduled" style="margin-top:12px">Data e hora previstas</label>
     <input type="datetime-local" id="csNovoScheduled">
     <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
@@ -20436,10 +20569,10 @@ const CS_BADGE = {
 };
 
 const CS_BOARD_COLS = [
-  { key:'producao', head:'Em produção', metricLabel:'Em produção' },
-  { key:'aprovacao', head:'Aprovação', metricLabel:'Aprovação' },
-  { key:'pronto', head:'Pronto p/ postar', metricLabel:'Pronto p/ postar', metricOk:true },
-  { key:'postado', head:'Postado', metricLabel:'Postado (semana)' },
+  { key:'producao', head:'Em produção', metricLabel:'Em produção', accent:'var(--cs-prod)', empty:'Nenhuma peça em produção nesta semana.' },
+  { key:'aprovacao', head:'Aprovação', metricLabel:'Aprovação', accent:'var(--cs-aprov)', empty:'Nada aguardando aprovação nesta semana.' },
+  { key:'pronto', head:'Pronto p/ postar', metricLabel:'Pronto p/ postar', metricOk:true, accent:'var(--cs-pronto)', empty:'Nenhum conteúdo pronto para publicar.' },
+  { key:'postado', head:'Postado', metricLabel:'Postado (semana)', accent:'var(--cs-post)', empty:'Nenhuma publicação nesta semana.' },
 ];
 
 function _csInferStageFromLegacy(r) {
@@ -20529,6 +20662,9 @@ function _csDbRowToItem(r) {
     postLink: r.public_url ? String(r.public_url) : '',
     views: r.metrics_views != null && String(r.metrics_views).trim() !== '' ? String(r.metrics_views) : '—',
     likes: r.metrics_likes != null && String(r.metrics_likes).trim() !== '' ? String(r.metrics_likes) : '—',
+    assetUrl: r.asset_url ? String(r.asset_url) : '',
+    notes: r.notes ? String(r.notes) : '',
+    instagramAccount: r.instagram_account ? _csNormalizeIgAccount(r.instagram_account) : '',
   };
 }
 
@@ -20602,7 +20738,9 @@ function _csItemInWeek(it) {
 function csFilteredItems() {
   let rows = _csKanbanItems.slice();
   const cli = document.getElementById('csFilterCliente')?.value || '';
+  const rede = document.getElementById('csFilterRede')?.value || '';
   if(cli) rows = rows.filter(it => String(it.cliente) === cli);
+  if(rede) rows = rows.filter(it => String(it.rede || '').toLowerCase() === rede);
   return rows.filter(_csItemInWeek);
 }
 
@@ -20615,7 +20753,7 @@ function _csSeedMockIfNeeded() {
     return x.getTime();
   };
   _csKanbanItems = [
-    { id:'cs_m1', coluna:'producao', formato:'reels', rede:'instagram', titulo:'Bastidores comercial Natura', cliente:'Natura', responsavel:'Bea', scheduledAt:t(1,15,30) },
+    { id:'cs_m1', coluna:'producao', formato:'reels', rede:'instagram', titulo:'Bastidores comercial Natura', cliente:'Natura', responsavel:'Bea', instagramAccount:'@natura', scheduledAt:t(1,15,30) },
     { id:'cs_m2', coluna:'producao', formato:'carrossel', rede:'instagram', titulo:'Lançamento verão Magalu', cliente:'Magalu', responsavel:'Lucas', scheduledAt:t(2,10,0) },
     { id:'cs_m3', coluna:'producao', formato:'tiktok', rede:'tiktok', titulo:'Trend sandálias Havaianas', cliente:'Havaianas', responsavel:'Ana', scheduledAt:t(3,18,45) },
     { id:'cs_m4', coluna:'aprovacao', formato:'reels', rede:'instagram', titulo:'Depoimento cliente Bradesco', cliente:'Bradesco', responsavel:'Rafa', scheduledAt:t(2,14,0), statusLine:{ kind:'wait', text:'Aguarda cliente · 2d' } },
@@ -20650,6 +20788,89 @@ function csRedeIconClass(rede) {
   return m[r] || 'ti-share';
 }
 
+function csRedeLabel(rede) {
+  const m = { instagram:'Instagram', tiktok:'TikTok', linkedin:'LinkedIn', youtube:'YouTube' };
+  return m[String(rede || '').toLowerCase()] || 'Rede';
+}
+
+function _csNormalizeIgAccount(v) {
+  const s = String(v || '').trim();
+  if(!s) return '';
+  const h = s.replace(/^@+/, '');
+  return h ? '@' + h : '';
+}
+
+function _csIgFieldIds(which) {
+  if(which === 'novo') return { wrap:'csNovoIgWrap', input:'csNovoInstagram', list:'csNovoIgList', rede:'csNovoRede' };
+  if(which === 'editar') return { wrap:'csEditarIgWrap', input:'csEditarInstagram', list:'csEditarIgList', rede:'csEditarRede' };
+  return { wrap:'postFormIgWrap', input:'postFormInstagram', list:'postFormIgList', rede:'postFormNetwork' };
+}
+
+function csOnCsRedeChange(which) {
+  const ids = _csIgFieldIds(which);
+  const rede = String(document.getElementById(ids.rede)?.value || '').toLowerCase();
+  const wrap = document.getElementById(ids.wrap);
+  if(wrap) wrap.style.display = rede === 'instagram' ? 'block' : 'none';
+  if(rede === 'instagram') csRefreshInstagramAccountHints(which, '');
+}
+
+async function _csGatherInstagramAccounts(clientName) {
+  const set = new Set();
+  const add = v => { const n = _csNormalizeIgAccount(v); if(n) set.add(n); };
+  (_csKanbanItems || []).forEach(it => {
+    add(it.instagramAccount);
+    if(clientName && String(it.cliente || '').toLowerCase() === String(clientName).toLowerCase()) add(it.instagramAccount);
+  });
+  const cid = currentUser?.company_id;
+  if(cid) {
+    try {
+      const enc = encodeURIComponent(String(cid));
+      const d = await apiGet('age_social_posts',
+        `?company_id=eq.${enc}&deleted=eq.false&network=eq.instagram&select=instagram_account,client_name&limit=300`);
+      (Array.isArray(d?.data) ? d.data : []).forEach(r => {
+        if(clientName && String(r.client_name || '').toLowerCase() !== String(clientName).toLowerCase()) return;
+        add(r.instagram_account);
+      });
+    } catch(_) {}
+  }
+  try {
+    const d = await apiGet('age_leads', '?limit=300&select=empresa,nome');
+    (Array.isArray(d?.data) ? d.data : []).forEach(l => {
+      const emp = String(l.empresa || '').trim();
+      if(!emp || !emp.includes('@')) return;
+      if(!clientName) { add(emp); return; }
+      const nm = String(l.nome || '').toLowerCase();
+      const cn = String(clientName).toLowerCase();
+      if(nm.includes(cn) || cn.includes(nm) || emp.toLowerCase().includes(cn.replace(/\s/g, ''))) add(emp);
+    });
+  } catch(_) {}
+  return [...set].sort((a, b) => a.localeCompare(b, 'pt'));
+}
+
+async function csRefreshInstagramAccountHints(which, clientName) {
+  const ids = _csIgFieldIds(which);
+  const listEl = document.getElementById(ids.list);
+  if(!listEl) return;
+  const accounts = await _csGatherInstagramAccounts(clientName || '');
+  listEl.innerHTML = accounts.map(a => `<option value="${escAttr(a)}">`).join('');
+}
+
+async function csSuggestInstagramForClient(clientName, inputId) {
+  if(!clientName) return;
+  const inp = document.getElementById(inputId);
+  if(!inp || inp.value.trim()) return;
+  const recent = (_csKanbanItems || []).filter(it =>
+    String(it.rede || '') === 'instagram' &&
+    String(it.cliente || '').toLowerCase() === String(clientName).toLowerCase() &&
+    it.instagramAccount
+  );
+  if(recent.length) inp.value = recent[recent.length - 1].instagramAccount;
+  else {
+    const accounts = await _csGatherInstagramAccounts(clientName);
+    if(accounts.length === 1) inp.value = accounts[0];
+  }
+}
+
 function csBadgeHtml(formato) {
   const b = CS_BADGE[String(formato)] || CS_BADGE.post;
   return `<span class="cs-badge" style="background:${b.bg};color:${b.fg}">${escHtml(b.lab)}</span>`;
@@ -20682,9 +20903,41 @@ function _csCardMetaLine(it) {
   return escHtml(parts.join(' · '));
 }
 
-function csCardHtml(it, canEdit) {
+function _csCardTopHtml(it, actionsHtml) {
   const ic = csRedeIconClass(it.rede);
+  return `<div class="cs-card-top">
+    <div class="cs-card-top-left">${csBadgeHtml(it.formato)}<span class="cs-rede-pill"><i class="ti ${ic}" aria-hidden="true"></i>${escHtml(csRedeLabel(it.rede))}</span></div>
+    <div class="cs-card-actions">${actionsHtml || ''}</div>
+  </div>`;
+}
+
+function _csCardActionsHtml(it, canEdit) {
+  if(!canEdit) return '';
+  const idJs = JSON.stringify(it.id);
+  let html = `<button type="button" class="cs-card-icon-btn perm-guard-edit" draggable="false" title="Editar" aria-label="Editar" onclick="event.stopPropagation();csOpenEditar(${idJs})"><i class="ti ti-pencil" aria-hidden="true"></i></button>`;
+  const asset = (it.assetUrl || '').trim();
+  if(asset) {
+    html += `<a class="cs-card-icon-btn" draggable="false" href="${escAttr(asset)}" target="_blank" rel="noopener noreferrer" title="Abrir material" aria-label="Abrir material" onclick="event.stopPropagation()"><i class="ti ti-link" aria-hidden="true"></i></a>`;
+  }
+  return html;
+}
+
+function _csCardLinkHtml(url, label) {
+  const u = (url || '').trim();
+  if(!u) return '';
+  return `<a class="cs-card-link" href="${escAttr(u)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()"><i class="ti ti-external-link" aria-hidden="true"></i>${escHtml(label)}</a>`;
+}
+
+function _csCardInstagramHtml(it) {
+  if(String(it.rede || '').toLowerCase() !== 'instagram') return '';
+  const ig = _csNormalizeIgAccount(it.instagramAccount);
+  if(!ig) return '';
+  return `<div class="cs-card-ig"><i class="ti ti-brand-instagram" aria-hidden="true"></i>${escHtml(ig)}</div>`;
+}
+
+function csCardHtml(it, canEdit) {
   const drag = canEdit ? 'true' : 'false';
+  const top = _csCardTopHtml(it, _csCardActionsHtml(it, canEdit));
   let cls = 'cs-card';
   if(it.coluna === 'pronto') cls += ' cs-card--pronto';
   else if(it.coluna === 'postado') cls += ' cs-card--posted';
@@ -20692,10 +20945,12 @@ function csCardHtml(it, canEdit) {
   if(it.coluna === 'postado') {
     const when = csFormatShortWhen(it.postedAt || it.scheduledAt);
     return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group">
-      <div class="cs-card-when" style="margin-top:0">${escHtml(when)}</div>
-      <div class="cs-card-top" style="margin-top:8px">${csBadgeHtml(it.formato)}<i class="ti ${ic}" style="font-size:14px;color:#737373" aria-hidden="true"></i></div>
+      ${top}
+      <div class="cs-card-when" style="margin-top:0"><i class="ti ti-calendar-event" aria-hidden="true"></i>${escHtml(when)}</div>
       <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
       <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
+      ${_csCardInstagramHtml(it)}
+      ${_csCardLinkHtml(it.postLink, 'Ver publicação')}
       <div class="cs-posted-metrics">${escHtml(String(it.views || '—'))} views · ${escHtml(String(it.likes || '—'))} likes</div>
     </div>`;
   }
@@ -20706,14 +20961,16 @@ function csCardHtml(it, canEdit) {
   }
 
   const whenLine = it.scheduledAt != null
-    ? `<div class="cs-card-when">${escHtml(csFormatShortWhen(it.scheduledAt))}</div>`
+    ? `<div class="cs-card-when"><i class="ti ti-clock" aria-hidden="true"></i>${escHtml(csFormatShortWhen(it.scheduledAt))}</div>`
     : '';
 
   return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group">
-    <div class="cs-card-top">${csBadgeHtml(it.formato)}<i class="ti ${ic}" style="font-size:14px;color:#737373" aria-hidden="true"></i></div>
+    ${top}
     <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
     <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
+    ${_csCardInstagramHtml(it)}
     ${whenLine}
+    ${_csCardLinkHtml(it.assetUrl, 'Material gravado')}
     ${csStatusRowHtml(it.statusLine)}
     ${btn}
   </div>`;
@@ -20790,7 +21047,7 @@ function csMetricsHtml(counts) {
   return CS_BOARD_COLS.map(def => {
     const n = counts[def.key] || 0;
     const ok = def.metricOk ? ' cs-metric--ok' : '';
-    return `<div class="cs-metric${ok}">
+    return `<div class="cs-metric${ok}" style="--cs-metric-accent:${def.accent || '#cbd5e1'}">
       <div class="cs-metric-label">${escHtml(def.metricLabel)}</div>
       <div class="cs-metric-val">${n}</div>
     </div>`;
@@ -20823,9 +21080,10 @@ function csRenderKanban() {
     const list = byCol[def.key] || [];
     const n = list.length;
     const cards = list.map(it => csCardHtml(it, canEdit)).join('');
-    return `<div class="cs-col">
-      <div class="cs-col-head"><strong>${escHtml(def.head)}</strong> ${n}</div>
-      <div class="cs-col-body" data-cs-col="${escAttr(def.key)}">${cards}</div>
+    const body = cards || `<div class="cs-col-empty">${escHtml(def.empty || 'Nenhum item nesta coluna.')}</div>`;
+    return `<div class="cs-col" style="--cs-col-accent:${def.accent || '#cbd5e1'}">
+      <div class="cs-col-head"><strong>${escHtml(def.head)}</strong><span class="cs-col-count">${n}</span></div>
+      <div class="cs-col-body" data-cs-col="${escAttr(def.key)}">${body}</div>
     </div>`;
   }).join('');
 
@@ -20927,6 +21185,76 @@ async function csConfirmMarcarPostado() {
 }
 
 
+function csOpenEditar(id) {
+  const it = _csKanbanItems.find(x => x.id === id);
+  if(!it) return;
+  document.getElementById('csEditarId').value = id;
+  document.getElementById('csEditarTitulo').value = it.titulo && it.titulo !== 'Sem título' ? it.titulo : '';
+  document.getElementById('csEditarAssetUrl').value = it.assetUrl || '';
+  document.getElementById('csEditarResp').value = it.responsavel && it.responsavel !== '—' ? it.responsavel : '';
+  document.getElementById('csEditarFormato').value = it.formato || 'reels';
+  document.getElementById('csEditarRede').value = it.rede || 'instagram';
+  document.getElementById('csEditarInstagram').value = it.instagramAccount || '';
+  csOnCsRedeChange('editar');
+  csRefreshInstagramAccountHints('editar', it.cliente && it.cliente !== '—' ? it.cliente : '');
+  const base = it.scheduledAt != null ? it.scheduledAt : Date.now();
+  document.getElementById('csEditarScheduled').value = _csToDatetimeLocal(base);
+  const kind = it.statusLine?.kind || '';
+  document.getElementById('csEditarAprovKind').value = kind === 'review' ? 'review' : (kind === 'wait' ? 'wait' : '');
+  document.getElementById('csEditarAprovText').value = it.statusLine?.text || '';
+  document.getElementById('csEditarNotas').value = it.notes || '';
+  openModal('modalCsEditar');
+}
+
+async function csConfirmEditar() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
+  const id = document.getElementById('csEditarId').value;
+  const titulo = (document.getElementById('csEditarTitulo')?.value || '').trim();
+  const assetUrl = (document.getElementById('csEditarAssetUrl')?.value || '').trim();
+  const resp = (document.getElementById('csEditarResp')?.value || '').trim();
+  const formato = document.getElementById('csEditarFormato')?.value || 'reels';
+  const rede = document.getElementById('csEditarRede')?.value || 'instagram';
+  const igAccount = _csNormalizeIgAccount(document.getElementById('csEditarInstagram')?.value || '');
+  const dtVal = document.getElementById('csEditarScheduled')?.value || '';
+  const aprovKind = document.getElementById('csEditarAprovKind')?.value || '';
+  const aprovText = (document.getElementById('csEditarAprovText')?.value || '').trim();
+  const notes = (document.getElementById('csEditarNotas')?.value || '').trim();
+  if(!id) return;
+  if(!titulo) {
+    try { toast('Informe o título da peça.', 'warn'); } catch(_) {}
+    return;
+  }
+  if(!dtVal) {
+    try { toast('Informe data e hora previstas.', 'warn'); } catch(_) {}
+    return;
+  }
+  const ms = new Date(dtVal).getTime();
+  const parts = _csPostDateTimeParts(ms);
+  const payload = {
+    material: titulo,
+    asset_url: assetUrl || null,
+    assigned_to: resp || null,
+    network: rede,
+    format: _csFormatToDb(formato),
+    post_date: parts.post_date,
+    post_time: parts.post_time,
+    approval_status_kind: aprovKind || null,
+    approval_status_text: aprovText || null,
+    notes: notes || null,
+    instagram_account: rede === 'instagram' ? (igAccount || null) : null,
+  };
+  try {
+    await _csApiPatchSocial(id, payload);
+    closeModal('modalCsEditar');
+    try { toast('Conteúdo atualizado.'); } catch(_) {}
+    await loadConteudosSociais();
+  } catch(err) {
+    console.warn('[csConfirmEditar]', err);
+    try { toast(String(err?.message || 'Erro ao salvar'), 'err'); } catch(_) {}
+  }
+}
+
+
 async function csOnNovoProjectChange() {
   const pid = document.getElementById('csNovoProjectId')?.value || '';
   const selMat = document.getElementById('csNovoMaterial');
@@ -20941,7 +21269,12 @@ async function csOnNovoProjectChange() {
   let projs = [];
   try { projs = await fetchAgeProjectsScoped(500); } catch(_) {}
   const proj = projs.find(x => String(x.id) === String(pid));
-  if(proj && inpCli) inpCli.value = _ageProjDbClient(proj) || '';
+  const clientName = proj ? _ageProjDbClient(proj) || '' : '';
+  if(proj && inpCli) inpCli.value = clientName;
+  if(clientName) {
+    csRefreshInstagramAccountHints('novo', clientName);
+    csSuggestInstagramForClient(clientName, 'csNovoInstagram');
+  }
   const materials = new Set();
   if(proj) {
     const pt = _ageProjDbTitle(proj);
@@ -20997,7 +21330,10 @@ async function csOpenNovoModal() {
   document.getElementById('csNovoResp').value = '';
   document.getElementById('csNovoFormato').value = 'reels';
   document.getElementById('csNovoRede').value = 'instagram';
+  document.getElementById('csNovoInstagram').value = '';
   document.getElementById('csNovoScheduled').value = _csToDatetimeLocal(Date.now());
+  csOnCsRedeChange('novo');
+  csRefreshInstagramAccountHints('novo', '');
   openModal('modalCsNovoConteudo');
 }
 
@@ -21012,6 +21348,7 @@ async function csConfirmNovoConteudo() {
   const rede = document.getElementById('csNovoRede').value;
   const dtVal = document.getElementById('csNovoScheduled').value;
   const assetUrl = (document.getElementById('csNovoAssetUrl')?.value || '').trim();
+  const igAccount = _csNormalizeIgAccount(document.getElementById('csNovoInstagram')?.value || '');
   if(!projectId) {
     try { toast('Selecione o projeto ao qual o material pertence.', 'warn'); } catch(_) {}
     return;
@@ -21048,6 +21385,7 @@ async function csConfirmNovoConteudo() {
     status: 'planejado',
     editorial_stage: 'producao',
     deleted: false,
+    instagram_account: rede === 'instagram' ? (igAccount || null) : null,
   };
   try {
     await _csApiPostSocial(payload);
@@ -21231,6 +21569,9 @@ async function openPostagemModal(row, dateStr) {
     document.getElementById('postFormDate').value = String(row.post_date || '').slice(0, 10) || (dateStr || new Date().toISOString().slice(0, 10));
     document.getElementById('postFormTime').value = row.post_time ? String(row.post_time).slice(0, 5) : '';
     document.getElementById('postFormNetwork').value = String(row.network || 'instagram');
+    document.getElementById('postFormInstagram').value = row.instagram_account ? _csNormalizeIgAccount(row.instagram_account) : '';
+    csOnCsRedeChange('post');
+    csRefreshInstagramAccountHints('post', row.client_name || '');
     document.getElementById('postFormFormat').value = String(row.format || '');
     document.getElementById('postFormProjectId').value = row.project_id ? String(row.project_id) : '';
     document.getElementById('postFormMaterial').value = row.material || '';
@@ -21246,6 +21587,9 @@ async function openPostagemModal(row, dateStr) {
     document.getElementById('postFormDate').value = (dateStr || new Date().toISOString().slice(0, 10));
     document.getElementById('postFormTime').value = '';
     document.getElementById('postFormNetwork').value = 'instagram';
+    document.getElementById('postFormInstagram').value = '';
+    csOnCsRedeChange('post');
+    csRefreshInstagramAccountHints('post', '');
     document.getElementById('postFormFormat').value = '';
     document.getElementById('postFormProjectId').value = '';
     document.getElementById('postFormMaterial').value = '';
@@ -21268,6 +21612,7 @@ async function savePostagem() {
 
   const postDate = document.getElementById('postFormDate')?.value;
   const net = document.getElementById('postFormNetwork')?.value;
+  const igAccount = _csNormalizeIgAccount(document.getElementById('postFormInstagram')?.value || '');
   if(!postDate || !net) { toast('Data e rede social são obrigatórias.', 'warn'); return; }
 
   const pid = (document.getElementById('postFormProjectId')?.value || '').trim();
@@ -21301,6 +21646,7 @@ async function savePostagem() {
     status: document.getElementById('postFormStatus')?.value || 'planejado',
     assigned_to: (document.getElementById('postFormAssigned')?.value || '').trim() || null,
     notes: (document.getElementById('postFormNotes')?.value || '').trim() || null,
+    instagram_account: String(net || '').toLowerCase() === 'instagram' ? (igAccount || null) : null,
   };
 
   const stNorm = String(payload.status || '').toLowerCase();
