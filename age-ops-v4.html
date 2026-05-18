@@ -2112,11 +2112,17 @@ body:has(#login-screen.visible){
 }
 #page-conteudos-sociais .cs-card{
   background:#fff;border:1px solid var(--cs-bd);border-radius:12px;padding:12px 12px 11px;
-  cursor:grab;font-size:13px;color:var(--cs-text);
+  cursor:default;font-size:13px;color:var(--cs-text);
   transition:box-shadow .15s,border-color .15s,transform .12s;
 }
 #page-conteudos-sociais .cs-card:hover{box-shadow:0 4px 14px rgba(15,23,42,.06);border-color:#cbd5e1;}
-#page-conteudos-sociais .cs-card:active{cursor:grabbing;transform:scale(.99);}
+#page-conteudos-sociais .cs-card.cs-card--dragging{opacity:.92;transform:scale(.99);}
+#page-conteudos-sociais .cs-drag-handle{
+  width:22px;height:22px;border:none;background:transparent;border-radius:6px;cursor:grab;
+  color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;
+}
+#page-conteudos-sociais .cs-drag-handle:hover{background:#f1f5f9;color:#64748b;}
+#page-conteudos-sociais .cs-drag-handle:active{cursor:grabbing;}
 #page-conteudos-sociais .cs-card--pronto{background:linear-gradient(180deg,#f0fdf4 0%,#fff 100%);border-color:#bbf7d0;}
 #page-conteudos-sociais .cs-card--posted{background:#f8fafc;border-color:#e2e8f0;opacity:.85;}
 #page-conteudos-sociais .cs-card-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -4989,7 +4995,7 @@ body:has(#login-screen.visible){
       <button type="button" onclick="closeModal('modalCsEditar')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;font-weight:400" aria-label="Fechar">×</button>
     </div>
     <input type="hidden" id="csEditarId" value="">
-    <label for="csEditarProjectId">Projeto *</label>
+    <label for="csEditarProjectId">Projeto</label>
     <select id="csEditarProjectId" onchange="csOnEditarProjectChange()">
       <option value="">Selecionar projeto…</option>
     </select>
@@ -6017,7 +6023,7 @@ const PAGE_PERM_KEYS = {
   projects: ['projetos'],
   pipeline: ['pipeline'],
   postagens: ['pipeline'],
-  'conteudos-sociais': ['pipeline'],
+  'conteudos-sociais': ['pipeline', 'projetos'],
   gestao: ['gestao'],
   orcamentos: ['orcamentos'],
   clientes: ['clientes'],
@@ -21209,10 +21215,14 @@ function _csCardMetaLine(it) {
   return escHtml(parts.join(' · '));
 }
 
-function _csCardTopHtml(it, actionsHtml) {
+function _csCardTopHtml(it, actionsHtml, canEdit) {
   const ic = csRedeIconClass(it.rede);
+  const sid = escAttr(String(it.id ?? ''));
+  const drag = canEdit
+    ? `<button type="button" class="cs-drag-handle" draggable="true" data-cs-action="drag" data-cs-id="${sid}" title="Arrastar para outra coluna" aria-label="Arrastar"><i class="ti ti-grip-vertical" aria-hidden="true"></i></button>`
+    : '';
   return `<div class="cs-card-top">
-    <div class="cs-card-top-left">${csBadgeHtml(it.formato)}<span class="cs-rede-pill"><i class="ti ${ic}" aria-hidden="true"></i>${escHtml(csRedeLabel(it.rede))}</span></div>
+    <div class="cs-card-top-left">${drag}${csBadgeHtml(it.formato)}<span class="cs-rede-pill"><i class="ti ${ic}" aria-hidden="true"></i>${escHtml(csRedeLabel(it.rede))}</span></div>
     <div class="cs-card-actions">${actionsHtml || ''}</div>
   </div>`;
 }
@@ -21243,16 +21253,15 @@ function _csCardInstagramHtml(it) {
 }
 
 function csCardHtml(it, canEdit) {
-  const drag = canEdit ? 'true' : 'false';
-  const dblEdit = canEdit ? ' title="Clique para editar · arraste para mover de coluna"' : '';
-  const top = _csCardTopHtml(it, _csCardActionsHtml(it, canEdit));
+  const dblEdit = canEdit ? ' title="Clique para editar · use o ícone ⋮⋮ para arrastar"' : '';
+  const top = _csCardTopHtml(it, _csCardActionsHtml(it, canEdit), canEdit);
   let cls = 'cs-card';
   if(it.coluna === 'pronto') cls += ' cs-card--pronto';
   else if(it.coluna === 'postado') cls += ' cs-card--posted';
 
   if(it.coluna === 'postado') {
     const when = csFormatShortWhen(it.postedAt || it.scheduledAt);
-    return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
+    return `<div class="${cls}" draggable="false" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
       ${top}
       <div class="cs-card-when" style="margin-top:0"><i class="ti ti-calendar-event" aria-hidden="true"></i>${escHtml(when)}</div>
       <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
@@ -21265,14 +21274,14 @@ function csCardHtml(it, canEdit) {
 
   let btn = '';
   if(it.coluna === 'pronto') {
-    btn = `<button type="button" class="cs-btn-post perm-guard-edit" draggable="false" onclick="event.stopPropagation();csOpenMarcarPostado(${JSON.stringify(it.id)})"><i class="ti ti-check" aria-hidden="true"></i> Marcar postado</button>`;
+    btn = `<button type="button" class="cs-btn-post" draggable="false" data-cs-action="post" data-cs-id="${escAttr(String(it.id ?? ''))}"><i class="ti ti-check" aria-hidden="true"></i> Marcar postado</button>`;
   }
 
   const whenLine = it.scheduledAt != null
     ? `<div class="cs-card-when"><i class="ti ti-clock" aria-hidden="true"></i>${escHtml(csFormatShortWhen(it.scheduledAt))}</div>`
     : '';
 
-  return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
+  return `<div class="${cls}" draggable="false" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
     ${top}
     <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
     <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
@@ -21298,8 +21307,8 @@ function csBoardWireEvents() {
     board.addEventListener('click', csBoardClick);
     board.addEventListener('mousedown', csBoardMouseDown);
   }
-  board.querySelectorAll('.cs-card').forEach(el => {
-    el.addEventListener('dragstart', csCardDragStart);
+  board.querySelectorAll('.cs-drag-handle').forEach(el => {
+    el.addEventListener('dragstart', csHandleDragStart);
     el.addEventListener('dragend', csCardDragEnd);
   });
   board.querySelectorAll('.cs-col-body').forEach(el => {
@@ -21310,7 +21319,7 @@ function csBoardWireEvents() {
 }
 
 function csBoardMouseDown(e) {
-  if(e.target.closest('[data-cs-action], .cs-btn-post, .cs-card-link, a.cs-card-icon-btn')) {
+  if(e.target.closest('[data-cs-action], .cs-btn-post, .cs-card-link, a.cs-card-icon-btn, .cs-drag-handle')) {
     e.stopPropagation();
   }
 }
@@ -21321,38 +21330,46 @@ function csBoardClick(e) {
   if(actEl) {
     const action = actEl.getAttribute('data-cs-action');
     const id = actEl.getAttribute('data-cs-id');
-    if(action === 'link') return;
+    if(action === 'link' || action === 'drag') return;
     e.preventDefault();
     e.stopPropagation();
     if(!_csKanbanCanEdit()) {
-      try { toast('Sem permissão para alterar conteúdos nesta aba.', 'warn'); } catch(_) {}
+      try { toast('Sem permissão para alterar conteúdos. Peça edição no módulo Pipeline ou Projetos.', 'warn'); } catch(_) {}
       return;
     }
     if(action === 'edit' && id) csOpenEditar(id);
     else if(action === 'delete' && id) csExcluirConteudo(id);
+    else if(action === 'post' && id) csOpenMarcarPostado(id);
     return;
   }
   const card = e.target.closest('.cs-card[data-cs-id]');
-  if(!card || e.target.closest('a, button, input, select, textarea, .cs-btn-post')) return;
-  if(!_csKanbanCanEdit()) return;
+  if(!card || e.target.closest('a, button, input, select, textarea, .cs-btn-post, .cs-drag-handle')) return;
+  if(!_csKanbanCanEdit()) {
+    try { toast('Sem permissão para editar. Ative edição em Pipeline ou Projetos.', 'warn'); } catch(_) {}
+    return;
+  }
   const id = card.getAttribute('data-cs-id');
   if(id) csOpenEditar(id);
 }
 
-function csCardDragStart(e) {
-  if(!hasModuleEditForPage('conteudos-sociais')) {
+function csHandleDragStart(e) {
+  if(!_csKanbanCanEdit()) {
     e.preventDefault();
     return;
   }
-  const id = e.currentTarget.getAttribute('data-cs-id');
+  const handle = e.currentTarget;
+  const id = handle.getAttribute('data-cs-id');
+  const card = handle.closest('.cs-card');
+  if(card) card.classList.add('cs-card--dragging');
   _csDragId = id;
-  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.setData('text/plain', id || '');
   e.dataTransfer.effectAllowed = 'move';
 }
 
 function csCardDragEnd() {
   _csJustDragged = true;
   _csDragId = null;
+  document.querySelectorAll('#page-conteudos-sociais .cs-card').forEach(el => el.classList.remove('cs-card--dragging'));
   document.querySelectorAll('#page-conteudos-sociais .cs-col-body').forEach(el => el.classList.remove('cs-drag-over'));
   setTimeout(() => { _csJustDragged = false; }, 250);
 }
@@ -21460,6 +21477,33 @@ function csWeekShift(deltaWeeks) {
   csRenderKanban();
 }
 
+function _csIsMissBrasilProducao(it) {
+  if(!it || it.coluna !== 'producao') return false;
+  const blob = [it.projeto, it.titulo, it.cliente].map(x => String(x || '')).join(' ').toLowerCase();
+  return blob.includes('miss brasil') || (blob.includes('marcella') && blob.includes('miss'));
+}
+
+async function _csRemoveMissBrasilProducao(maxN) {
+  const limit = maxN == null ? 3 : maxN;
+  const targets = _csKanbanItems.filter(_csIsMissBrasilProducao).slice(0, limit);
+  if(!targets.length) return 0;
+  let n = 0;
+  for(const it of targets) {
+    try {
+      await _csApiPatchSocial(it.id, { deleted: true });
+      n++;
+    } catch(e) {
+      console.warn('[csRemoveMissBrasil]', it.id, e);
+    }
+  }
+  if(n) {
+    const removed = new Set(targets.map(t => String(t.id)));
+    _csKanbanItems = _csKanbanItems.filter(x => !removed.has(String(x.id)));
+    try { toast(`${n} peça(s) Miss Brasil removida(s) de Em produção.`); } catch(_) {}
+  }
+  return n;
+}
+
 async function loadConteudosSociais() {
   _csEnsureWeekStart();
   const cid = currentUser?.company_id;
@@ -21474,6 +21518,13 @@ async function loadConteudosSociais() {
   try {
     const raw = await _csFetchSocialPosts(cid);
     _csKanbanItems = raw.map(_csDbRowToItem);
+    try {
+      const ck = 'age_cs_missbrasil_cleanup_v1';
+      if(!sessionStorage.getItem(ck)) {
+        const n = await _csRemoveMissBrasilProducao(3);
+        if(n) sessionStorage.setItem(ck, '1');
+      }
+    } catch(_) {}
   } catch(e) {
     console.warn('[loadConteudosSociais]', e);
     _csKanbanItems = [];
@@ -21644,7 +21695,8 @@ async function csConfirmEditar() {
   const aprovText = (document.getElementById('csEditarAprovText')?.value || '').trim();
   const notes = (document.getElementById('csEditarNotas')?.value || '').trim();
   if(!id) return;
-  if(!projectId) {
+  const prevItem = _csFindKanbanItem(id);
+  if(!projectId && prevItem?.projectId) {
     try { toast('Selecione o projeto vinculado a esta peça.', 'warn'); } catch(_) {}
     return;
   }
@@ -21656,14 +21708,14 @@ async function csConfirmEditar() {
     try { toast('Informe data e hora previstas.', 'warn'); } catch(_) {}
     return;
   }
-  const meta = await _csResolveProjectMeta(projectId);
+  const meta = projectId ? await _csResolveProjectMeta(projectId) : { client_name: null, project_name: null };
   const ms = new Date(dtVal).getTime();
   const parts = _csPostDateTimeParts(ms);
   const payload = {
     material: titulo,
-    project_id: projectId,
-    client_name: cliente || meta.client_name || null,
-    project_name: meta.project_name || null,
+    project_id: projectId || null,
+    client_name: cliente || meta.client_name || prevItem?.cliente || null,
+    project_name: meta.project_name || prevItem?.projeto || null,
     asset_url: assetUrl || null,
     assigned_to: resp || null,
     network: rede,
@@ -21879,6 +21931,13 @@ async function csConfirmNovoConteudo() {
     try { toast(msg || 'Erro ao criar', 'err'); } catch(_) {}
   }
 }
+
+try {
+  window.csOpenEditar = csOpenEditar;
+  window.csExcluirConteudo = csExcluirConteudo;
+  window.csOpenMarcarPostado = csOpenMarcarPostado;
+  window.csOpenNovoModal = csOpenNovoModal;
+} catch(_) {}
 
 async function loadPostagens() {
   const tit = document.getElementById('postCalTitle');
