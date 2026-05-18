@@ -20376,6 +20376,21 @@ function closeSchedModal() {
 }
 
 function _pad2(n){ return String(n).padStart(2,'0'); }
+
+/** Data civil local YYYY-MM-DD (evita bug UTC: dia 18 virar 17 no calendário). */
+function _localDateKey(y, m, d) {
+  return `${y}-${_pad2(m)}-${_pad2(d)}`;
+}
+function _localDateKeyFromDate(d) {
+  if(!(d instanceof Date) || isNaN(d.getTime())) return '';
+  return _localDateKey(d.getFullYear(), d.getMonth() + 1, d.getDate());
+}
+function _csNormalizePostDateOnly(v) {
+  if(v == null || v === '') return '';
+  const m = String(v).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+
 function _monthTitle(y, m){
   const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   return `${meses[m]} ${y}`;
@@ -20552,12 +20567,12 @@ function _postDetailRow(label, valHtml) {
 }
 
 function openPostDiaModal(dateStr, rowsOptional) {
-  const ds = String(dateStr || '').slice(0, 10);
+  const ds = _csNormalizePostDateOnly(dateStr);
   if(!ds) return;
   _postDiaDate = ds;
   _postDiaRows = Array.isArray(rowsOptional)
     ? rowsOptional.slice()
-    : postFilteredRows().filter(r => String(r.post_date || '').slice(0, 10) === ds);
+    : postFilteredRows().filter(r => _csNormalizePostDateOnly(r.post_date) === ds);
   _postDiaRows.sort((a, b) => String(a.post_time || '').localeCompare(String(b.post_time || '')));
   _postDiaCurrentId = '';
   const tit = document.getElementById('postDiaTitle');
@@ -21147,6 +21162,28 @@ async function _csFetchSocialPosts(companyId) {
   return [];
 }
 
+function _csRowForKanban(apiRow, payload, ms) {
+  const parts = ms != null && !isNaN(ms) ? _csPostDateTimeParts(ms) : null;
+  return {
+    ...(payload || {}),
+    ...(apiRow || {}),
+    id: apiRow?.id ?? payload?.id,
+    editorial_stage: apiRow?.editorial_stage ?? payload?.editorial_stage ?? 'producao',
+    status: apiRow?.status ?? payload?.status ?? 'planejado',
+    post_date: _csNormalizePostDateOnly(apiRow?.post_date) || parts?.post_date,
+    post_time: apiRow?.post_time ?? parts?.post_time,
+    material: apiRow?.material ?? payload?.material,
+    network: apiRow?.network ?? payload?.network,
+    project_id: apiRow?.project_id ?? payload?.project_id,
+    client_name: apiRow?.client_name ?? payload?.client_name,
+    project_name: apiRow?.project_name ?? payload?.project_name,
+    asset_url: apiRow?.asset_url ?? payload?.asset_url,
+    assigned_to: apiRow?.assigned_to ?? payload?.assigned_to,
+    instagram_account: apiRow?.instagram_account ?? payload?.instagram_account,
+    deleted: false,
+  };
+}
+
 function _csMergeKanbanRow(row) {
   if(!row?.id) return;
   const item = _csDbRowToItem(row);
@@ -21155,6 +21192,17 @@ function _csMergeKanbanRow(row) {
   if(idx >= 0) _csKanbanItems[idx] = item;
   else _csKanbanItems.unshift(item);
   return item;
+}
+
+async function _csReloadConteudosPreserving(preserveIds) {
+  const ids = new Set((preserveIds || []).map(String).filter(Boolean));
+  const backup = _csKanbanItems.filter(it => ids.has(String(it.id)));
+  await loadConteudosSociais();
+  backup.forEach(row => {
+    if(!_csFindKanbanItem(row.id)) _csKanbanItems.unshift(row);
+  });
+  csPopulateClienteFilter();
+  csRenderKanban();
 }
 
 let _csKanbanItems = [];
@@ -21193,7 +21241,8 @@ function _csNormalizeStageFromRow(r) {
 
 function _csPostDateTimeToMs(post_date, post_time) {
   if(!post_date) return null;
-  const ds = String(post_date).slice(0, 10);
+  const ds = _csNormalizePostDateOnly(post_date);
+  if(!ds) return null;
   let hh = 12;
   let mm = 0;
   const pt = String(post_time || '').trim();
@@ -22037,34 +22086,22 @@ async function csConfirmEditar() {
   try {
     _csJumpToWeekForMs(ms);
     const saved = await _csApiPatchSocial(id, payload);
-    const row = Array.isArray(saved) ? saved[0] : saved;
-    if(row && row.id) _csMergeKanbanRow(row);
-    else {
-      const prev = _csFindKanbanItem(id);
-      if(prev) _csMergeKanbanRow({
-        id,
-        post_date: parts.post_date,
-        post_time: parts.post_time,
-        network: rede,
-        format: _csFormatToDb(formato),
-        material: titulo,
-        project_id: projectId,
-        client_name: cliente || prev.cliente,
-        project_name: meta.project_name || prev.projeto,
-        asset_url: assetUrl,
-        assigned_to: resp,
-        editorial_stage: prev.coluna,
-        approval_status_kind: aprovKind,
-        approval_status_text: aprovText,
-        notes,
-        instagram_account: igAccount,
-      });
-    }
+    const apiRow = Array.isArray(saved) ? saved[0] : saved;
+    const prev = _csFindKanbanItem(id);
+    const merged = _csRowForKanban(apiRow || { id }, {
+      ...payload,
+      editorial_stage: prev?.coluna || apiRow?.editorial_stage || 'producao',
+      format: _csFormatToDb(formato),
+      approval_status_kind: aprovKind,
+      approval_status_text: aprovText,
+      notes,
+    }, ms);
+    if(merged.id) _csMergeKanbanRow(merged);
     closeModal('modalCsEditar');
     try { toast('Conteúdo atualizado.'); } catch(_) {}
     csPopulateClienteFilter();
     csRenderKanban();
-    await loadConteudosSociais();
+    setTimeout(() => { _csReloadConteudosPreserving([String(id)]).catch(() => {}); }, 600);
   } catch(err) {
     console.warn('[csConfirmEditar]', err);
     try { toast(String(err?.message || 'Erro ao salvar'), 'err'); } catch(_) {}
@@ -22228,13 +22265,24 @@ async function csConfirmNovoConteudo() {
   try {
     _csJumpToWeekForMs(ms);
     const saved = await _csApiPostSocial(payload);
-    const row = Array.isArray(saved) ? saved[0] : saved;
-    if(row && row.id) _csMergeKanbanRow(row);
+    const apiRow = Array.isArray(saved) ? saved[0] : saved;
+    const merged = _csRowForKanban(apiRow, payload, ms);
+    const item = merged.id ? _csMergeKanbanRow(merged) : null;
     closeModal('modalCsNovoConteudo');
-    try { toast('Conteúdo criado e vinculado ao projeto.'); } catch(_) {}
     csPopulateClienteFilter();
     csRenderKanban();
-    await loadConteudosSociais();
+    const inWeek = item && _csItemInWeek(item);
+    try {
+      toast(inWeek
+        ? 'Conteúdo criado — visível em Em produção.'
+        : 'Conteúdo criado. Use as setas ← → da semana se não aparecer no quadro.', 'warn');
+    } catch(_) {}
+    const sid = merged.id ? String(merged.id) : '';
+    if(sid) {
+      setTimeout(() => { _csReloadConteudosPreserving([sid]).catch(() => {}); }, 600);
+    } else {
+      setTimeout(() => { loadConteudosSociais().catch(() => {}); }, 600);
+    }
   } catch(err) {
     console.warn('[csConfirmNovoConteudo]', err);
     const msg = String(err?.message || err || '');
@@ -22276,8 +22324,8 @@ async function loadPostagens() {
   try {
     const raw = await _csFetchSocialPosts(cid);
     _postagensCache = raw.filter(r => {
-      const ds = String(r.post_date || '').slice(0, 10);
-      return ds >= startStr && ds <= endStr;
+      const ds = _csNormalizePostDateOnly(r.post_date);
+      return ds && ds >= startStr && ds <= endStr;
     });
   } catch(e) {
     console.warn('[loadPostagens]', e);
@@ -22319,7 +22367,7 @@ function postRenderCalendar() {
   const rows = postFilteredRows();
   const mappedByDay = {};
   rows.forEach(r => {
-    const ds = String(r.post_date || '').slice(0, 10);
+    const ds = _csNormalizePostDateOnly(r.post_date);
     if(!ds) return;
     if(!mappedByDay[ds]) mappedByDay[ds] = [];
     mappedByDay[ds].push(r);
@@ -22328,12 +22376,11 @@ function postRenderCalendar() {
   const first = new Date(_postCalYear, _postCalMonth, 1);
   const startDow = first.getDay();
   const start = new Date(_postCalYear, _postCalMonth, 1 - startDow);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = _localDateKeyFromDate(new Date());
 
   for(let i = 0; i < 42; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    const ds = d.toISOString().slice(0, 10);
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const ds = _localDateKeyFromDate(d);
     const isOther = d.getMonth() !== _postCalMonth;
     const isToday = ds === todayStr;
     const dayPosts = (mappedByDay[ds] || []).slice().sort((a, b) => String(a.post_time || '').localeCompare(String(b.post_time || '')));
