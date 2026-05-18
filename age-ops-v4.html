@@ -14632,12 +14632,13 @@ async function saveProject() {
     if(SUPABASE_IS_SOURCE_OF_TRUTH) await refreshLiveProjectsKpiCache().catch(()=>{});
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
     if(window._csSelectProjectAfterSave && savedId) {
-      await postPopulateProjectSelects(String(savedId)).catch(() => {});
+      const norm = _csNormalizeProjectRow(srow, payload);
+      await _csRefreshConteudosProjectSelects(String(savedId), norm).catch(() => {});
       window._csSelectProjectAfterSave = false;
       if(document.getElementById('modalCsNovoConteudo')) {
         openModal('modalCsNovoConteudo');
-        const sel = document.getElementById('csNovoProjectId');
-        if(sel) { sel.value = String(savedId); csOnNovoProjectChange(); }
+        _csSetSelectProjectValue('csNovoProjectId', String(savedId));
+        csOnNovoProjectChange(norm).catch(() => {});
       }
     } else {
       postPopulateProjectSelects().catch(() => {});
@@ -20661,6 +20662,90 @@ function _ageProjIdForConteudos(p) {
   return id;
 }
 
+const _csProjectPickCache = new Map();
+
+function _csNormalizeProjectRow(row, payload) {
+  const cid = currentUser?.company_id;
+  const r = row && typeof row === 'object' ? row : {};
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const id = String(r.id || p.id || '').trim();
+  return {
+    ...p,
+    ...r,
+    id,
+    client_name: _ageProjDbClient(r) || p.client_name || '',
+    project_name: _ageProjDbTitle(r) || p.project_name || p.title || '',
+    title: _ageProjDbTitle(r) || p.title || p.project_name || '',
+    company_id: r.company_id ?? p.company_id ?? cid ?? null,
+    deleted: r.deleted ?? false
+  };
+}
+
+function _csCacheProjectRow(row) {
+  const norm = _csNormalizeProjectRow(row, null);
+  if(norm.id) _csProjectPickCache.set(norm.id, norm);
+  return norm;
+}
+
+function _csForceAppendCsProjectOption(selectEl, row) {
+  if(!selectEl || !row?.id) return false;
+  const id = String(row.id);
+  if([...selectEl.options].some(o => o.value === id)) return true;
+  const lab = `${_ageProjDbClient(row)} — ${_ageProjDbTitle(row)}`.trim() || id;
+  const opt = document.createElement('option');
+  opt.value = id;
+  opt.textContent = lab;
+  const anchor = [...selectEl.options].find(o => o.value === '__new_project__');
+  if(anchor) selectEl.insertBefore(opt, anchor.nextSibling);
+  else selectEl.appendChild(opt);
+  return true;
+}
+
+function _csSetSelectProjectValue(selectId, projectId) {
+  const sel = document.getElementById(selectId);
+  const id = String(projectId || '').trim();
+  if(!sel || !id) return false;
+  if(![...sel.options].some(o => o.value === id)) return false;
+  sel.value = id;
+  return sel.value === id;
+}
+
+async function _csRefreshConteudosProjectSelects(selectAfter, rowHint) {
+  const id = String(selectAfter || rowHint?.id || '').trim();
+  let inject = [];
+  if(rowHint) {
+    const norm = _csCacheProjectRow(rowHint);
+    if(norm.id) inject = [norm];
+  }
+  await postPopulateProjectSelects(id || null, inject);
+  if(id) {
+    let ok = _csSetSelectProjectValue('csNovoProjectId', id) || _csSetSelectProjectValue('csEditarProjectId', id);
+    if(!ok && inject[0]) {
+      _csForceAppendCsProjectOption(document.getElementById('csNovoProjectId'), inject[0]);
+      _csForceAppendCsProjectOption(document.getElementById('csEditarProjectId'), inject[0]);
+      ok = _csSetSelectProjectValue('csNovoProjectId', id) || _csSetSelectProjectValue('csEditarProjectId', id);
+    }
+    if(!ok) {
+      await new Promise(r => setTimeout(r, 400));
+      try {
+        const one = await apiGet('age_projects', `/${id}`);
+        if(one?.id) {
+          const norm = _csCacheProjectRow(one);
+          await postPopulateProjectSelects(id, [norm]);
+          _csForceAppendCsProjectOption(document.getElementById('csNovoProjectId'), norm);
+          _csForceAppendCsProjectOption(document.getElementById('csEditarProjectId'), norm);
+          ok = _csSetSelectProjectValue('csNovoProjectId', id) || _csSetSelectProjectValue('csEditarProjectId', id);
+        }
+      } catch(_) {}
+    }
+    if(!ok && inject[0]) {
+      _csForceAppendCsProjectOption(document.getElementById('csNovoProjectId'), inject[0]);
+      _csSetSelectProjectValue('csNovoProjectId', id);
+    }
+  }
+  return id;
+}
+
 function _csToggleNovoProjInline(show) {
   const box = document.getElementById('csNovoProjInline');
   if(box) box.style.display = show ? 'block' : 'none';
@@ -20689,6 +20774,7 @@ async function csQuickCreateProject() {
   }
   const hoje = new Date().toISOString().slice(0, 10);
   const payload = {
+    company_id: cid,
     client_name: client,
     project_name: name,
     title: name,
@@ -20701,35 +20787,51 @@ async function csQuickCreateProject() {
     nps: 0,
     is_new_client: false,
     status: 'em_andamento',
-    created_by: currentUser?.username || 'unknown'
+    created_by: currentUser?.username || 'unknown',
+    deleted: false
   };
   try {
     const saved = await apiPost('age_projects', payload);
-    const row = Array.isArray(saved) ? saved[0] : saved;
-    const newId = row?.id ? String(row.id) : '';
+    const row = _csNormalizeProjectRow(Array.isArray(saved) ? saved[0] : saved, payload);
+    const newId = row.id ? String(row.id) : '';
     if(!newId) {
       try { toast('Projeto salvo, mas o ID não retornou. Atualize a página.', 'warn'); } catch(_) {}
       await postPopulateProjectSelects();
       return;
     }
     _projAllCache = [];
-    await postPopulateProjectSelects(newId);
-    const sel = document.getElementById('csNovoProjectId');
-    if(sel) {
-      sel.value = newId;
-      await csOnNovoProjectChange();
+    if(typeof refreshLiveProjectsKpiCache === 'function') {
+      refreshLiveProjectsKpiCache().catch(() => {});
     }
+    await _csRefreshConteudosProjectSelects(newId, row);
+    _csSetSelectProjectValue('csNovoProjectId', newId);
+    await csOnNovoProjectChange(row);
     _csToggleNovoProjInline(false);
-    try { toast('Projeto cadastrado — já pode vincular o conteúdo.'); } catch(_) {}
+    try { toast('Projeto cadastrado — já aparece na lista.'); } catch(_) {}
   } catch(e) {
     console.warn('[csQuickCreateProject]', e);
     try { toast(String(e?.message || e || 'Erro ao salvar projeto'), 'err'); } catch(_) {}
   }
 }
 
-async function postPopulateProjectSelects(selectAfter) {
+async function postPopulateProjectSelects(selectAfter, injectRows) {
   let projs = [];
   try { projs = await fetchAgeProjectsScoped(500); } catch(_) { projs = []; }
+  const seen = new Set(projs.map(p => String(p?.id || '')));
+  (injectRows || []).forEach(r => {
+    const norm = _csNormalizeProjectRow(r, null);
+    if(norm.id && !seen.has(norm.id)) {
+      projs.push(norm);
+      seen.add(norm.id);
+      _csProjectPickCache.set(norm.id, norm);
+    }
+  });
+  _csProjectPickCache.forEach((norm, id) => {
+    if(id && !seen.has(id)) {
+      projs.push(norm);
+      seen.add(id);
+    }
+  });
   const selF = document.getElementById('postFilterProject');
   if(selF) {
     const cur = selF.value;
@@ -21606,7 +21708,7 @@ async function csOpenEditar(id) {
     return;
   }
   try {
-    await postPopulateProjectSelects(it.projectId || null);
+    await _csRefreshConteudosProjectSelects(it.projectId || null, it.projectId ? { id: it.projectId, client_name: it.cliente, project_name: it.projeto } : null);
     const set = (elId, val) => { const el = document.getElementById(elId); if(el) el.value = val; };
     set('csEditarId', String(it.id));
     const pid = String(it.projectId || '').trim();
@@ -21765,7 +21867,7 @@ async function csConfirmEditar() {
 }
 
 
-async function csOnNovoProjectChange() {
+async function csOnNovoProjectChange(projectHint) {
   const pid = document.getElementById('csNovoProjectId')?.value || '';
   const selMat = document.getElementById('csNovoMaterial');
   const inpCli = document.getElementById('csNovoCliente');
@@ -21783,9 +21885,15 @@ async function csOnNovoProjectChange() {
     selMat.innerHTML = baseOpts;
     return;
   }
-  let projs = [];
-  try { projs = await fetchAgeProjectsScoped(500); } catch(_) {}
-  const proj = projs.find(x => String(x.id) === String(pid));
+  let proj = projectHint && String(projectHint.id) === String(pid)
+    ? _csNormalizeProjectRow(projectHint, null)
+    : _csProjectPickCache.get(String(pid));
+  if(!proj) {
+    let projs = [];
+    try { projs = await fetchAgeProjectsScoped(500); } catch(_) {}
+    proj = projs.find(x => String(x.id) === String(pid));
+    if(proj) _csCacheProjectRow(proj);
+  }
   const clientName = proj ? _ageProjDbClient(proj) || '' : '';
   if(proj && inpCli) inpCli.value = clientName;
   if(clientName) {
