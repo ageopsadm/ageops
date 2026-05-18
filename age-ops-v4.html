@@ -21875,56 +21875,6 @@ async function _csRemoveMissBrasilProducao(maxN) {
   return n;
 }
 
-function _csIsEscolaPlanejados(it) {
-  if(!it) return false;
-  const blob = [it.projeto, it.titulo, it.cliente].map(x => String(x || '')).join(' ').toLowerCase();
-  return blob.includes('escola de planejados') || blob.includes('escola planejados');
-}
-
-async function _csDedupeEscolaPlanejados() {
-  const matches = _csKanbanItems.filter(_csIsEscolaPlanejados);
-  if(!matches.length) return 0;
-
-  const stageRank = { pronto: 0, aprovacao: 1, producao: 2, postado: 3 };
-  matches.sort((a, b) => {
-    const ra = stageRank[a.coluna] ?? 9;
-    const rb = stageRank[b.coluna] ?? 9;
-    if(ra !== rb) return ra - rb;
-    return (b.scheduledAt || 0) - (a.scheduledAt || 0);
-  });
-
-  const keeper = matches[0];
-  const toRemove = matches.slice(1);
-  let removed = 0;
-
-  for(const it of toRemove) {
-    try {
-      await _csApiPatchSocial(it.id, { deleted: true });
-      removed++;
-    } catch(e) {
-      console.warn('[csDedupeEscola]', it.id, e);
-    }
-  }
-  if(removed) {
-    const dropIds = new Set(toRemove.map(t => String(t.id)));
-    _csKanbanItems = _csKanbanItems.filter(x => !dropIds.has(String(x.id)));
-  }
-
-  if(keeper.coluna !== 'pronto' && keeper.coluna !== 'postado') {
-    try {
-      await _csPatchEditorialStage(keeper.id, 'pronto');
-      keeper.coluna = 'pronto';
-    } catch(e) {
-      console.warn('[csDedupeEscola] pronto', keeper.id, e);
-    }
-  }
-
-  if(removed) {
-    try { toast(`Escola de Planejados: ${removed} duplicata(s) removida(s); 1 peça mantida em Pronto.`); } catch(_) {}
-  }
-  return removed;
-}
-
 async function loadConteudosSociais() {
   _csEnsureWeekStart();
   const cid = currentUser?.company_id;
@@ -21944,13 +21894,6 @@ async function loadConteudosSociais() {
       if(!sessionStorage.getItem(ck)) {
         const n = await _csRemoveMissBrasilProducao(3);
         if(n) sessionStorage.setItem(ck, '1');
-      }
-    } catch(_) {}
-    try {
-      const ck2 = 'age_cs_escola_planejados_dedupe_v1';
-      if(!sessionStorage.getItem(ck2)) {
-        await _csDedupeEscolaPlanejados();
-        sessionStorage.setItem(ck2, '1');
       }
     } catch(_) {}
   } catch(e) {
