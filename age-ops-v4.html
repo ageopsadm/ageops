@@ -2130,7 +2130,9 @@ body:has(#login-screen.visible){
   transition:box-shadow .15s,border-color .15s,transform .12s;
 }
 #page-conteudos-sociais .cs-card:hover{box-shadow:0 4px 14px rgba(15,23,42,.06);border-color:#cbd5e1;}
-#page-conteudos-sociais .cs-card.cs-card--dragging{opacity:.92;transform:scale(.99);}
+#page-conteudos-sociais .cs-card[draggable="true"]{cursor:grab;}
+#page-conteudos-sociais .cs-card[draggable="true"]:active{cursor:grabbing;}
+#page-conteudos-sociais .cs-card.cs-card--dragging{opacity:.55;transform:scale(.99);cursor:grabbing;}
 #page-conteudos-sociais .cs-drag-handle{
   width:22px;height:22px;border:none;background:transparent;border-radius:6px;cursor:grab;
   color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;
@@ -4003,6 +4005,7 @@ body:has(#login-screen.visible){
                 <span class="cs-week-nav-label">Semana</span>
                 <button type="button" class="cs-btn" onclick="csWeekShift(1)" title="Próxima semana" aria-label="Próxima semana"><i class="ti ti-chevron-right"></i></button>
               </div>
+              <button type="button" class="cs-btn" id="csToggleWeekBtn" onclick="csToggleWeekFilter()" title="Alternar filtro por semana">Todas as semanas</button>
               <button type="button" class="cs-btn cs-btn--primary perm-guard-edit" onclick="csOpenNovoModal()"><i class="ti ti-plus"></i> Novo conteúdo</button>
             </div>
           </div>
@@ -21207,6 +21210,7 @@ async function _csReloadConteudosPreserving(preserveIds) {
 
 let _csKanbanItems = [];
 let _csWeekStart = null;
+let _csShowAllWeeks = true;
 let _csDragId = null;
 let _csJustDragged = false;
 
@@ -21408,7 +21412,25 @@ function csFilteredItems() {
   const rede = document.getElementById('csFilterRede')?.value || '';
   if(cli) rows = rows.filter(it => String(it.cliente) === cli);
   if(rede) rows = rows.filter(it => String(it.rede || '').toLowerCase() === rede);
+  if(_csShowAllWeeks) return rows;
   return rows.filter(_csItemInWeek);
+}
+
+function csToggleWeekFilter() {
+  _csShowAllWeeks = !_csShowAllWeeks;
+  const btn = document.getElementById('csToggleWeekBtn');
+  if(btn) {
+    btn.textContent = _csShowAllWeeks ? 'Todas as semanas' : 'Só esta semana';
+    btn.classList.toggle('cs-btn--primary', !_csShowAllWeeks);
+  }
+  csRenderKanban();
+}
+
+function _csSyncWeekFilterBtn() {
+  const btn = document.getElementById('csToggleWeekBtn');
+  if(!btn) return;
+  btn.textContent = _csShowAllWeeks ? 'Todas as semanas' : 'Só esta semana';
+  btn.classList.toggle('cs-btn--primary', !_csShowAllWeeks);
 }
 
 function _csSeedMockIfNeeded() {
@@ -21572,9 +21594,8 @@ function _csCardMetaLine(it) {
 
 function _csCardTopHtml(it, actionsHtml, canEdit) {
   const ic = csRedeIconClass(it.rede);
-  const sid = escAttr(String(it.id ?? ''));
   const drag = canEdit
-    ? `<button type="button" class="cs-drag-handle" draggable="true" data-cs-action="drag" data-cs-id="${sid}" title="Arrastar para outra coluna" aria-label="Arrastar"><i class="ti ti-grip-vertical" aria-hidden="true"></i></button>`
+    ? `<span class="cs-drag-handle" title="Arraste o card" aria-hidden="true"><i class="ti ti-grip-vertical"></i></span>`
     : '';
   return `<div class="cs-card-top">
     <div class="cs-card-top-left">${drag}${csBadgeHtml(it.formato)}<span class="cs-rede-pill"><i class="ti ${ic}" aria-hidden="true"></i>${escHtml(csRedeLabel(it.rede))}</span></div>
@@ -21607,8 +21628,14 @@ function _csCardInstagramHtml(it) {
   return `<div class="cs-card-ig"><i class="ti ti-brand-instagram" aria-hidden="true"></i>${escHtml(ig)}</div>`;
 }
 
+function _csCardDragAttrs(canEdit) {
+  if(!canEdit) return ' draggable="false"';
+  return ' draggable="true" ondragstart="csCardDragStartInline(event)" ondragend="csCardDragEndInline(event)"';
+}
+
 function csCardHtml(it, canEdit) {
-  const dblEdit = canEdit ? ' title="Clique para editar · use o ícone ⋮⋮ para arrastar"' : '';
+  const dragAttrs = _csCardDragAttrs(canEdit);
+  const tip = canEdit ? ' title="Arraste para mudar o status · lápis para editar"' : '';
   const top = _csCardTopHtml(it, _csCardActionsHtml(it, canEdit), canEdit);
   let cls = 'cs-card';
   if(it.coluna === 'pronto') cls += ' cs-card--pronto';
@@ -21616,7 +21643,7 @@ function csCardHtml(it, canEdit) {
 
   if(it.coluna === 'postado') {
     const when = csFormatShortWhen(it.postedAt || it.scheduledAt);
-    return `<div class="${cls}" draggable="false" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
+    return `<div class="${cls}"${dragAttrs} data-cs-id="${escAttr(it.id)}" role="group"${tip}>
       ${top}
       <div class="cs-card-when" style="margin-top:0"><i class="ti ti-calendar-event" aria-hidden="true"></i>${escHtml(when)}</div>
       <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
@@ -21636,7 +21663,7 @@ function csCardHtml(it, canEdit) {
     ? `<div class="cs-card-when"><i class="ti ti-clock" aria-hidden="true"></i>${escHtml(csFormatShortWhen(it.scheduledAt))}</div>`
     : '';
 
-  return `<div class="${cls}" draggable="false" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
+  return `<div class="${cls}"${dragAttrs} data-cs-id="${escAttr(it.id)}" role="group"${tip}>
     ${top}
     <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
     <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
@@ -21656,97 +21683,76 @@ function _csKanbanCanEdit() {
 
 function csBoardWireEvents() {
   const board = document.getElementById('csBoard');
-  if(!board) return;
-  if(!_csBoardEventsWired) {
-    _csBoardEventsWired = true;
-    board.addEventListener('click', csBoardClick);
-    board.addEventListener('mousedown', csBoardMouseDown);
-  }
-  board.querySelectorAll('.cs-drag-handle').forEach(el => {
-    el.addEventListener('dragstart', csHandleDragStart);
-    el.addEventListener('dragend', csCardDragEnd);
-  });
-  board.querySelectorAll('.cs-col-body').forEach(el => {
-    el.addEventListener('dragover', csColDragOver);
-    el.addEventListener('dragleave', csColDragLeave);
-    el.addEventListener('drop', csColDrop);
-  });
-}
-
-function csBoardMouseDown(e) {
-  if(e.target.closest('[data-cs-action], .cs-btn-post, .cs-card-link, a.cs-card-icon-btn, .cs-drag-handle')) {
-    e.stopPropagation();
-  }
+  if(!board || _csBoardEventsWired) return;
+  _csBoardEventsWired = true;
+  board.addEventListener('click', csBoardClick);
 }
 
 function csBoardClick(e) {
   if(_csJustDragged) return;
   const actEl = e.target.closest('[data-cs-action]');
-  if(actEl) {
-    const action = actEl.getAttribute('data-cs-action');
-    const id = actEl.getAttribute('data-cs-id');
-    if(action === 'link' || action === 'drag') return;
-    e.preventDefault();
-    e.stopPropagation();
-    if(!_csKanbanCanEdit()) {
-      try { toast('Sem permissão para alterar conteúdos. Peça edição no módulo Pipeline ou Projetos.', 'warn'); } catch(_) {}
-      return;
-    }
-    if(action === 'edit' && id) csOpenEditar(id);
-    else if(action === 'delete' && id) csExcluirConteudo(id);
-    else if(action === 'post' && id) csOpenMarcarPostado(id);
-    return;
-  }
-  const card = e.target.closest('.cs-card[data-cs-id]');
-  if(!card || e.target.closest('a, button, input, select, textarea, .cs-btn-post, .cs-drag-handle')) return;
+  if(!actEl) return;
+  const action = actEl.getAttribute('data-cs-action');
+  const id = actEl.getAttribute('data-cs-id');
+  if(action === 'link') return;
+  e.preventDefault();
+  e.stopPropagation();
   if(!_csKanbanCanEdit()) {
-    try { toast('Sem permissão para editar. Ative edição em Pipeline ou Projetos.', 'warn'); } catch(_) {}
+    try { toast('Sem permissão para alterar conteúdos. Peça edição no módulo Pipeline ou Projetos.', 'warn'); } catch(_) {}
     return;
   }
-  const id = card.getAttribute('data-cs-id');
-  if(id) csOpenEditar(id);
+  if(action === 'edit' && id) csOpenEditar(id);
+  else if(action === 'delete' && id) csExcluirConteudo(id);
+  else if(action === 'post' && id) csOpenMarcarPostado(id);
 }
 
-function csHandleDragStart(e) {
+function csCardDragStartInline(e) {
   if(!_csKanbanCanEdit()) {
     e.preventDefault();
     return;
   }
-  const handle = e.currentTarget;
-  const id = handle.getAttribute('data-cs-id');
-  const card = handle.closest('.cs-card');
-  if(card) card.classList.add('cs-card--dragging');
+  if(e.target.closest('button, a.cs-card-icon-btn, .cs-btn-post, input, select, textarea')) {
+    e.preventDefault();
+    return;
+  }
+  const card = e.currentTarget;
+  const id = card.getAttribute('data-cs-id');
   _csDragId = id;
+  card.classList.add('cs-card--dragging');
   e.dataTransfer.setData('text/plain', id || '');
   e.dataTransfer.effectAllowed = 'move';
 }
 
-function csCardDragEnd() {
+function csCardDragEndInline(e) {
   _csJustDragged = true;
   _csDragId = null;
-  document.querySelectorAll('#page-conteudos-sociais .cs-card').forEach(el => el.classList.remove('cs-card--dragging'));
+  e.currentTarget.classList.remove('cs-card--dragging');
   document.querySelectorAll('#page-conteudos-sociais .cs-col-body').forEach(el => el.classList.remove('cs-drag-over'));
-  setTimeout(() => { _csJustDragged = false; }, 250);
+  setTimeout(() => { _csJustDragged = false; }, 200);
 }
 
-function csColDragOver(e) {
-  if(!hasModuleEditForPage('conteudos-sociais')) return;
+function csColDragOverInline(e) {
+  if(!_csKanbanCanEdit()) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   e.currentTarget.classList.add('cs-drag-over');
 }
 
-function csColDragLeave(e) {
+function csColDragLeaveInline(e) {
   e.currentTarget.classList.remove('cs-drag-over');
 }
 
-async function csColDrop(e) {
+function csColDropInline(e, colKey) {
   e.preventDefault();
   e.currentTarget.classList.remove('cs-drag-over');
   const id = e.dataTransfer.getData('text/plain') || _csDragId;
-  const col = e.currentTarget.getAttribute('data-cs-col');
+  const col = colKey || e.currentTarget.getAttribute('data-cs-col');
   if(!id || !col) return;
-  if(!hasModuleEditForPage('conteudos-sociais')) return;
+  if(!_csKanbanCanEdit()) return;
+  csColDropCore(id, col);
+}
+
+async function csColDropCore(id, col) {
   const it = _csFindKanbanItem(id);
   if(!it) return;
   if(col === 'postado') {
@@ -21754,6 +21760,7 @@ async function csColDrop(e) {
     return;
   }
   const prev = it.coluna;
+  if(prev === col) return;
   it.coluna = col;
   csRenderKanban();
   try {
@@ -21779,22 +21786,28 @@ function csMetricsHtml(counts) {
 
 function csRenderKanban() {
   _csEnsureWeekStart();
+  _csSyncWeekFilterBtn();
   const sub = document.getElementById('csWeekSubtitle');
   if(sub) {
     let txt = csFormatWeekRangeSubtitle(_csWeekStart);
-    const outside = _csCountOutsideCurrentWeek();
-    if(outside > 0) txt += ` · ${outside} fora desta semana (use ← →)`;
+    if(_csShowAllWeeks) {
+      txt += ' · mostrando todas as semanas';
+    } else {
+      const outside = _csCountOutsideCurrentWeek();
+      if(outside > 0) txt += ` · ${outside} fora desta semana (use ← → ou “Todas as semanas”)`;
+    }
     sub.textContent = txt;
   }
 
   const rows = csFilteredItems();
   const byCol = { producao:[], aprovacao:[], pronto:[], postado:[] };
   const counts = { producao:0, aprovacao:0, pronto:0, postado:0 };
+  const validCols = ['producao', 'aprovacao', 'pronto', 'postado'];
   rows.forEach(it => {
-    if(byCol[it.coluna]) {
-      byCol[it.coluna].push(it);
-      counts[it.coluna]++;
-    }
+    const col = validCols.includes(it.coluna) ? it.coluna : 'producao';
+    if(it.coluna !== col) it.coluna = col;
+    byCol[col].push(it);
+    counts[col]++;
   });
 
   const metricsEl = document.getElementById('csMetricsRow');
@@ -21811,7 +21824,10 @@ function csRenderKanban() {
     const body = cards || `<div class="cs-col-empty">${escHtml(def.empty || 'Nenhum item nesta coluna.')}</div>`;
     return `<div class="cs-col" style="--cs-col-accent:${def.accent || '#cbd5e1'}">
       <div class="cs-col-head"><strong>${escHtml(def.head)}</strong><span class="cs-col-count">${n}</span></div>
-      <div class="cs-col-body" data-cs-col="${escAttr(def.key)}">${body}</div>
+      <div class="cs-col-body" data-cs-col="${escAttr(def.key)}"
+           ondragover="csColDragOverInline(event)"
+           ondragleave="csColDragLeaveInline(event)"
+           ondrop="csColDropInline(event,'${def.key}')">${body}</div>
     </div>`;
   }).join('');
 
@@ -21859,6 +21875,56 @@ async function _csRemoveMissBrasilProducao(maxN) {
   return n;
 }
 
+function _csIsEscolaPlanejados(it) {
+  if(!it) return false;
+  const blob = [it.projeto, it.titulo, it.cliente].map(x => String(x || '')).join(' ').toLowerCase();
+  return blob.includes('escola de planejados') || blob.includes('escola planejados');
+}
+
+async function _csDedupeEscolaPlanejados() {
+  const matches = _csKanbanItems.filter(_csIsEscolaPlanejados);
+  if(!matches.length) return 0;
+
+  const stageRank = { pronto: 0, aprovacao: 1, producao: 2, postado: 3 };
+  matches.sort((a, b) => {
+    const ra = stageRank[a.coluna] ?? 9;
+    const rb = stageRank[b.coluna] ?? 9;
+    if(ra !== rb) return ra - rb;
+    return (b.scheduledAt || 0) - (a.scheduledAt || 0);
+  });
+
+  const keeper = matches[0];
+  const toRemove = matches.slice(1);
+  let removed = 0;
+
+  for(const it of toRemove) {
+    try {
+      await _csApiPatchSocial(it.id, { deleted: true });
+      removed++;
+    } catch(e) {
+      console.warn('[csDedupeEscola]', it.id, e);
+    }
+  }
+  if(removed) {
+    const dropIds = new Set(toRemove.map(t => String(t.id)));
+    _csKanbanItems = _csKanbanItems.filter(x => !dropIds.has(String(x.id)));
+  }
+
+  if(keeper.coluna !== 'pronto' && keeper.coluna !== 'postado') {
+    try {
+      await _csPatchEditorialStage(keeper.id, 'pronto');
+      keeper.coluna = 'pronto';
+    } catch(e) {
+      console.warn('[csDedupeEscola] pronto', keeper.id, e);
+    }
+  }
+
+  if(removed) {
+    try { toast(`Escola de Planejados: ${removed} duplicata(s) removida(s); 1 peça mantida em Pronto.`); } catch(_) {}
+  }
+  return removed;
+}
+
 async function loadConteudosSociais() {
   _csEnsureWeekStart();
   const cid = currentUser?.company_id;
@@ -21878,6 +21944,13 @@ async function loadConteudosSociais() {
       if(!sessionStorage.getItem(ck)) {
         const n = await _csRemoveMissBrasilProducao(3);
         if(n) sessionStorage.setItem(ck, '1');
+      }
+    } catch(_) {}
+    try {
+      const ck2 = 'age_cs_escola_planejados_dedupe_v1';
+      if(!sessionStorage.getItem(ck2)) {
+        await _csDedupeEscolaPlanejados();
+        sessionStorage.setItem(ck2, '1');
       }
     } catch(_) {}
   } catch(e) {
