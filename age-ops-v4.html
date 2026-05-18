@@ -2133,6 +2133,7 @@ body:has(#login-screen.visible){
   color:#64748b;display:inline-flex;align-items:center;justify-content:center;padding:0;
 }
 #page-conteudos-sociais .cs-card-icon-btn:hover{background:#f1f5f9;color:#0f172a;}
+#page-conteudos-sociais .cs-card-icon-btn--danger:hover{background:#fef2f2;color:#b91c1c;}
 #page-conteudos-sociais .cs-badge{
   display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;line-height:1.2;letter-spacing:.02em;
 }
@@ -2166,6 +2167,7 @@ body:has(#login-screen.visible){
 }
 #page-conteudos-sociais .cs-card-ig .ti{font-size:13px;}
 .cs-ig-field{display:none;}
+#modalCsEditar.modal,#modalCsNovoConteudo.modal,#modalCsMarcarPostado.modal{z-index:10050}
 #modalCsMarcarPostado .modal-box,#modalCsNovoConteudo .modal-box,#modalCsEditar .modal-box{
   background:#fff;color:#111;border:1px solid #e2e8f0;box-shadow:0 20px 50px rgba(15,23,42,.12);max-width:480px;border-radius:16px;
 }
@@ -5022,9 +5024,10 @@ body:has(#login-screen.visible){
     <input type="text" id="csEditarAprovText" placeholder="Ex.: Aguarda cliente · 2d" autocomplete="off">
     <label for="csEditarNotas" style="margin-top:12px">Observações</label>
     <textarea id="csEditarNotas" rows="3" placeholder="Notas internas…"></textarea>
-    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn btn-primary perm-guard-edit" onclick="csConfirmEditar()" style="border-radius:8px;padding:10px 18px">Salvar</button>
       <button type="button" class="btn btn-ghost" onclick="closeModal('modalCsEditar')" style="border-radius:8px;padding:10px 18px">Cancelar</button>
+      <button type="button" class="btn btn-danger perm-guard-edit" onclick="csExcluirConteudo(document.getElementById('csEditarId')?.value)" style="border-radius:8px;padding:10px 18px;margin-left:auto">Excluir conteúdo</button>
     </div>
   </div>
 </div>
@@ -20771,6 +20774,56 @@ async function postPopulateProjectSelects(selectAfter) {
 /* ═══════════════════════════════════════════
    CONTEÚDOS · REDES SOCIAIS (Kanban — age_social_posts)
 ═══════════════════════════════════════════ */
+function _csFindKanbanItem(id) {
+  const sid = String(id ?? '').trim();
+  if(!sid) return null;
+  return _csKanbanItems.find(x => String(x.id) === sid) || null;
+}
+
+function _csJumpToWeekForMs(ms) {
+  if(ms == null || isNaN(ms)) return;
+  _csWeekStart = _csStartOfWeekMonday(new Date(ms));
+}
+
+async function _csFetchSocialPosts(companyId) {
+  const enc = encodeURIComponent(String(companyId));
+  const attempts = [
+    `?company_id=eq.${enc}&order=post_date.desc,created_at.desc&limit=800`,
+    `?company_id=eq.${enc}&order=post_date.desc&limit=800`,
+    `?company_id=eq.${enc}&limit=800`,
+  ];
+  let lastErr = null;
+  for(const q of attempts) {
+    try {
+      const d = await apiGet('age_social_posts', q);
+      const rows = Array.isArray(d?.data) ? d.data : [];
+      return rows.filter(r => {
+        if(!_sbIsRowVisible(r)) return false;
+        const del = r.deleted;
+        if(del === true || del === 1 || String(del).toLowerCase() === 'true') return false;
+        return true;
+      });
+    } catch(e) {
+      lastErr = e;
+      const msg = String(e?.message || e || '');
+      if(/42703|column|PGRST204|deleted/i.test(msg)) continue;
+      throw e;
+    }
+  }
+  if(lastErr) throw lastErr;
+  return [];
+}
+
+function _csMergeKanbanRow(row) {
+  if(!row?.id) return;
+  const item = _csDbRowToItem(row);
+  const sid = String(item.id);
+  const idx = _csKanbanItems.findIndex(x => String(x.id) === sid);
+  if(idx >= 0) _csKanbanItems[idx] = item;
+  else _csKanbanItems.unshift(item);
+  return item;
+}
+
 let _csKanbanItems = [];
 let _csWeekStart = null;
 let _csDragId = null;
@@ -20943,11 +20996,27 @@ function _csWeekRangeMs() {
   return { start:a.getTime(), end:b.getTime() };
 }
 
+function _csItemScheduledMs(it) {
+  if(!it) return null;
+  return it.coluna === 'postado'
+    ? (it.postedAt != null ? it.postedAt : it.scheduledAt)
+    : it.scheduledAt;
+}
+
 function _csItemInWeek(it) {
   const { start, end } = _csWeekRangeMs();
-  const t = it.coluna === 'postado' ? (it.postedAt != null ? it.postedAt : it.scheduledAt) : it.scheduledAt;
+  const t = _csItemScheduledMs(it);
   if(t == null) return true;
   return t >= start && t < end;
+}
+
+function _csCountOutsideCurrentWeek() {
+  const { start, end } = _csWeekRangeMs();
+  return _csKanbanItems.filter(it => {
+    const t = _csItemScheduledMs(it);
+    if(t == null) return false;
+    return t < start || t >= end;
+  }).length;
 }
 
 function csFilteredItems() {
@@ -21134,6 +21203,7 @@ function _csCardActionsHtml(it, canEdit) {
   if(asset) {
     html += `<a class="cs-card-icon-btn" draggable="false" href="${escAttr(asset)}" target="_blank" rel="noopener noreferrer" title="Abrir material" aria-label="Abrir material" onclick="event.stopPropagation()"><i class="ti ti-link" aria-hidden="true"></i></a>`;
   }
+  html += `<button type="button" class="cs-card-icon-btn cs-card-icon-btn--danger perm-guard-edit" draggable="false" title="Excluir" aria-label="Excluir" onclick="event.stopPropagation();csExcluirConteudo(${idJs})"><i class="ti ti-trash" aria-hidden="true"></i></button>`;
   return html;
 }
 
@@ -21152,6 +21222,8 @@ function _csCardInstagramHtml(it) {
 
 function csCardHtml(it, canEdit) {
   const drag = canEdit ? 'true' : 'false';
+  const idJs = JSON.stringify(it.id);
+  const dblEdit = canEdit ? ` ondblclick="csOpenEditar(${idJs})" title="Duplo clique para editar"` : '';
   const top = _csCardTopHtml(it, _csCardActionsHtml(it, canEdit));
   let cls = 'cs-card';
   if(it.coluna === 'pronto') cls += ' cs-card--pronto';
@@ -21159,7 +21231,7 @@ function csCardHtml(it, canEdit) {
 
   if(it.coluna === 'postado') {
     const when = csFormatShortWhen(it.postedAt || it.scheduledAt);
-    return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group">
+    return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
       ${top}
       <div class="cs-card-when" style="margin-top:0"><i class="ti ti-calendar-event" aria-hidden="true"></i>${escHtml(when)}</div>
       <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
@@ -21179,7 +21251,7 @@ function csCardHtml(it, canEdit) {
     ? `<div class="cs-card-when"><i class="ti ti-clock" aria-hidden="true"></i>${escHtml(csFormatShortWhen(it.scheduledAt))}</div>`
     : '';
 
-  return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group">
+  return `<div class="${cls}" draggable="${drag}" data-cs-id="${escAttr(it.id)}" role="group"${dblEdit}>
     ${top}
     <div class="cs-card-title">${escHtml(it.titulo || '')}</div>
     <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
@@ -21239,7 +21311,7 @@ async function csColDrop(e) {
   const col = e.currentTarget.getAttribute('data-cs-col');
   if(!id || !col) return;
   if(!hasModuleEditForPage('conteudos-sociais')) return;
-  const it = _csKanbanItems.find(x => x.id === id);
+  const it = _csFindKanbanItem(id);
   if(!it) return;
   if(col === 'postado') {
     csOpenMarcarPostado(id);
@@ -21272,7 +21344,12 @@ function csMetricsHtml(counts) {
 function csRenderKanban() {
   _csEnsureWeekStart();
   const sub = document.getElementById('csWeekSubtitle');
-  if(sub) sub.textContent = csFormatWeekRangeSubtitle(_csWeekStart);
+  if(sub) {
+    let txt = csFormatWeekRangeSubtitle(_csWeekStart);
+    const outside = _csCountOutsideCurrentWeek();
+    if(outside > 0) txt += ` · ${outside} fora desta semana (use ← →)`;
+    sub.textContent = txt;
+  }
 
   const rows = csFilteredItems();
   const byCol = { producao:[], aprovacao:[], pronto:[], postado:[] };
@@ -21327,9 +21404,7 @@ async function loadConteudosSociais() {
   }
   const enc = encodeURIComponent(String(cid));
   try {
-    const d = await apiGet('age_social_posts',
-      `?company_id=eq.${enc}&deleted=eq.false&order=post_date.desc&limit=800`);
-    const raw = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+    const raw = await _csFetchSocialPosts(cid);
     _csKanbanItems = raw.map(_csDbRowToItem);
   } catch(e) {
     console.warn('[loadConteudosSociais]', e);
@@ -21349,7 +21424,7 @@ async function loadConteudosSociais() {
 }
 
 function csOpenMarcarPostado(id) {
-  const it = _csKanbanItems.find(x => x.id === id);
+  const it = _csFindKanbanItem(id);
   if(!it) return;
   document.getElementById('csMarcarId').value = id;
   document.getElementById('csMarcarLink').value = it.postLink || '';
@@ -21402,28 +21477,70 @@ async function csConfirmMarcarPostado() {
 
 
 function csOpenEditar(id) {
-  const it = _csKanbanItems.find(x => x.id === id);
-  if(!it) return;
-  document.getElementById('csEditarId').value = id;
-  document.getElementById('csEditarTitulo').value = it.titulo && it.titulo !== 'Sem título' ? it.titulo : '';
-  document.getElementById('csEditarAssetUrl').value = it.assetUrl || '';
-  document.getElementById('csEditarResp').value = it.responsavel && it.responsavel !== '—' ? it.responsavel : '';
-  document.getElementById('csEditarFormato').value = it.formato || 'reels';
-  document.getElementById('csEditarRede').value = it.rede || 'instagram';
-  document.getElementById('csEditarInstagram').value = it.instagramAccount || '';
-  csOnCsRedeChange('editar');
-  csRefreshInstagramAccountHints('editar', it.cliente && it.cliente !== '—' ? it.cliente : '');
-  const base = it.scheduledAt != null ? it.scheduledAt : Date.now();
-  document.getElementById('csEditarScheduled').value = _csToDatetimeLocal(base);
-  const kind = it.statusLine?.kind || '';
-  document.getElementById('csEditarAprovKind').value = kind === 'review' ? 'review' : (kind === 'wait' ? 'wait' : '');
-  document.getElementById('csEditarAprovText').value = it.statusLine?.text || '';
-  document.getElementById('csEditarNotas').value = it.notes || '';
-  openModal('modalCsEditar');
+  const it = _csFindKanbanItem(id);
+  if(!it) {
+    try { toast('Conteúdo não encontrado. Atualize a página ou mude a semana (← →).', 'warn'); } catch(_) {}
+    return;
+  }
+  try {
+    const set = (elId, val) => { const el = document.getElementById(elId); if(el) el.value = val; };
+    set('csEditarId', String(it.id));
+    set('csEditarTitulo', it.titulo && it.titulo !== 'Sem título' ? it.titulo : '');
+    set('csEditarAssetUrl', it.assetUrl || '');
+    set('csEditarResp', it.responsavel && it.responsavel !== '—' ? it.responsavel : '');
+    set('csEditarFormato', it.formato || 'reels');
+    set('csEditarRede', it.rede || 'instagram');
+    set('csEditarInstagram', it.instagramAccount || '');
+    csOnCsRedeChange('editar');
+    csRefreshInstagramAccountHints('editar', it.cliente && it.cliente !== '—' ? it.cliente : '');
+    const base = it.scheduledAt != null ? it.scheduledAt : Date.now();
+    set('csEditarScheduled', _csToDatetimeLocal(base));
+    const kind = it.statusLine?.kind || '';
+    set('csEditarAprovKind', kind === 'review' ? 'review' : (kind === 'wait' ? 'wait' : ''));
+    set('csEditarAprovText', it.statusLine?.text || '');
+    set('csEditarNotas', it.notes || '');
+    const modal = document.getElementById('modalCsEditar');
+    if(!modal) {
+      try { toast('Modal de edição não encontrado.', 'err'); } catch(_) {}
+      return;
+    }
+    openModal('modalCsEditar');
+  } catch(err) {
+    console.warn('[csOpenEditar]', err);
+    try { toast('Não foi possível abrir a edição.', 'err'); } catch(_) {}
+  }
+}
+
+function csExcluirConteudo(id) {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) {
+    try { toast('Sem permissão para excluir conteúdos.', 'warn'); } catch(_) {}
+    return;
+  }
+  const sid = String(id ?? '').trim();
+  if(!sid) return;
+  const it = _csFindKanbanItem(sid);
+  const label = (it?.titulo && it.titulo !== 'Sem título') ? it.titulo : 'este conteúdo';
+  confirm2(`Excluir "${label}" do cronograma? Esta ação não pode ser desfeita.`, async () => {
+    try {
+      await _csApiPatchSocial(sid, { deleted: true });
+      _csKanbanItems = _csKanbanItems.filter(x => String(x.id) !== sid);
+      closeModal('modalCsEditar');
+      try { toast('Conteúdo removido.'); } catch(_) {}
+      csPopulateClienteFilter();
+      csRenderKanban();
+      await loadConteudosSociais();
+    } catch(err) {
+      console.warn('[csExcluirConteudo]', err);
+      try { toast(String(err?.message || 'Erro ao excluir'), 'err'); } catch(_) {}
+    }
+  });
 }
 
 async function csConfirmEditar() {
-  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) {
+    try { toast('Sem permissão para editar conteúdos.', 'warn'); } catch(_) {}
+    return;
+  }
   const id = document.getElementById('csEditarId').value;
   const titulo = (document.getElementById('csEditarTitulo')?.value || '').trim();
   const assetUrl = (document.getElementById('csEditarAssetUrl')?.value || '').trim();
@@ -21460,9 +21577,34 @@ async function csConfirmEditar() {
     instagram_account: rede === 'instagram' ? (igAccount || null) : null,
   };
   try {
-    await _csApiPatchSocial(id, payload);
+    _csJumpToWeekForMs(ms);
+    const saved = await _csApiPatchSocial(id, payload);
+    const row = Array.isArray(saved) ? saved[0] : saved;
+    if(row && row.id) _csMergeKanbanRow(row);
+    else {
+      const prev = _csFindKanbanItem(id);
+      if(prev) _csMergeKanbanRow({
+        id,
+        post_date: parts.post_date,
+        post_time: parts.post_time,
+        network: rede,
+        format: _csFormatToDb(formato),
+        material: titulo,
+        client_name: prev.cliente,
+        project_name: prev.projeto,
+        asset_url: assetUrl,
+        assigned_to: resp,
+        editorial_stage: prev.coluna,
+        approval_status_kind: aprovKind,
+        approval_status_text: aprovText,
+        notes,
+        instagram_account: igAccount,
+      });
+    }
     closeModal('modalCsEditar');
     try { toast('Conteúdo atualizado.'); } catch(_) {}
+    csPopulateClienteFilter();
+    csRenderKanban();
     await loadConteudosSociais();
   } catch(err) {
     console.warn('[csConfirmEditar]', err);
@@ -21566,7 +21708,10 @@ async function csOpenNovoModal() {
 }
 
 async function csConfirmNovoConteudo() {
-  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) {
+    try { toast('Sem permissão para criar conteúdos.', 'warn'); } catch(_) {}
+    return;
+  }
   const projectId = (document.getElementById('csNovoProjectId')?.value || '').trim();
   const matSel = document.getElementById('csNovoMaterial')?.value || '';
   let titulo = document.getElementById('csNovoTitulo').value.trim();
@@ -21616,9 +21761,14 @@ async function csConfirmNovoConteudo() {
     instagram_account: rede === 'instagram' ? (igAccount || null) : null,
   };
   try {
-    await _csApiPostSocial(payload);
+    _csJumpToWeekForMs(ms);
+    const saved = await _csApiPostSocial(payload);
+    const row = Array.isArray(saved) ? saved[0] : saved;
+    if(row && row.id) _csMergeKanbanRow(row);
     closeModal('modalCsNovoConteudo');
     try { toast('Conteúdo criado e vinculado ao projeto.'); } catch(_) {}
+    csPopulateClienteFilter();
+    csRenderKanban();
     await loadConteudosSociais();
   } catch(err) {
     console.warn('[csConfirmNovoConteudo]', err);
