@@ -2126,11 +2126,13 @@ body:has(#login-screen.visible){
   font-size:10px;font-weight:600;background:#f1f5f9;color:#475569;
 }
 #page-conteudos-sociais .cs-rede-pill .ti{font-size:13px;}
-#page-conteudos-sociais .cs-card-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s;}
-#page-conteudos-sociais .cs-card:hover .cs-card-actions{opacity:1;}
+#page-conteudos-sociais .cs-card-actions{
+  display:flex;gap:2px;opacity:1;position:relative;z-index:3;flex-shrink:0;
+}
 #page-conteudos-sociais .cs-card-icon-btn{
   width:28px;height:28px;border:none;background:transparent;border-radius:8px;cursor:pointer;
   color:#64748b;display:inline-flex;align-items:center;justify-content:center;padding:0;
+  position:relative;z-index:4;pointer-events:auto;
 }
 #page-conteudos-sociais .cs-card-icon-btn:hover{background:#f1f5f9;color:#0f172a;}
 #page-conteudos-sociais .cs-card-icon-btn--danger:hover{background:#fef2f2;color:#b91c1c;}
@@ -2168,6 +2170,7 @@ body:has(#login-screen.visible){
 #page-conteudos-sociais .cs-card-ig .ti{font-size:13px;}
 .cs-ig-field{display:none;}
 #modalCsEditar.modal,#modalCsNovoConteudo.modal,#modalCsMarcarPostado.modal{z-index:10050}
+#modalConfirm.modal{z-index:10100}
 #modalCsMarcarPostado .modal-box,#modalCsNovoConteudo .modal-box,#modalCsEditar .modal-box{
   background:#fff;color:#111;border:1px solid #e2e8f0;box-shadow:0 20px 50px rgba(15,23,42,.12);max-width:480px;border-radius:16px;
 }
@@ -4986,7 +4989,13 @@ body:has(#login-screen.visible){
       <button type="button" onclick="closeModal('modalCsEditar')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;font-weight:400" aria-label="Fechar">×</button>
     </div>
     <input type="hidden" id="csEditarId" value="">
-    <label for="csEditarTitulo">Título da peça *</label>
+    <label for="csEditarProjectId">Projeto *</label>
+    <select id="csEditarProjectId" onchange="csOnEditarProjectChange()">
+      <option value="">Selecionar projeto…</option>
+    </select>
+    <label for="csEditarCliente" style="margin-top:12px">Cliente</label>
+    <input type="text" id="csEditarCliente" placeholder="Preenchido pelo projeto" autocomplete="off">
+    <label for="csEditarTitulo" style="margin-top:12px">Título da peça *</label>
     <input type="text" id="csEditarTitulo" placeholder="Ex.: Reel 01 — bastidores" autocomplete="off">
     <label for="csEditarAssetUrl" style="margin-top:12px">Link do material gravado</label>
     <input type="url" id="csEditarAssetUrl" placeholder="https://drive.google.com/…" autocomplete="off">
@@ -6206,6 +6215,7 @@ function applyActivePageEditGuards(page) {
   }
   const ro = page !== 'equipe-permissoes' && !hasModuleEditForPage(page);
   document.querySelectorAll('.perm-guard-edit').forEach(el => {
+    if(el.closest('#csBoard')) return;
     if(ro) {
       el.disabled = true;
       el.classList.add('perm-disabled');
@@ -20736,18 +20746,18 @@ async function postPopulateProjectSelects(selectAfter) {
     });
     if(curM && [...selM.options].some(o => o.value === curM)) selM.value = curM;
   }
+  const linkable = projs
+    .map(p => ({ p, id: _ageProjIdForConteudos(p) }))
+    .filter(x => x.id)
+    .sort((a, b) => {
+      const la = `${_ageProjDbClient(a.p)} ${_ageProjDbTitle(a.p)}`.toLowerCase();
+      const lb = `${_ageProjDbClient(b.p)} ${_ageProjDbTitle(b.p)}`.toLowerCase();
+      return la.localeCompare(lb, 'pt');
+    });
   const selCs = document.getElementById('csNovoProjectId');
   const hint = document.getElementById('csNovoProjHint');
   if(selCs) {
     const curCs = selCs.value;
-    const linkable = projs
-      .map(p => ({ p, id: _ageProjIdForConteudos(p) }))
-      .filter(x => x.id)
-      .sort((a, b) => {
-        const la = `${_ageProjDbClient(a.p)} ${_ageProjDbTitle(a.p)}`.toLowerCase();
-        const lb = `${_ageProjDbClient(b.p)} ${_ageProjDbTitle(b.p)}`.toLowerCase();
-        return la.localeCompare(lb, 'pt');
-      });
     selCs.innerHTML = '<option value="">Selecionar projeto…</option>'
       + '<option value="__new_project__">+ Cadastrar novo projeto…</option>';
     linkable.forEach(({ p, id }) => {
@@ -20768,6 +20778,17 @@ async function postPopulateProjectSelects(selectAfter) {
         hint.textContent = '';
       }
     }
+  }
+  const selEd = document.getElementById('csEditarProjectId');
+  if(selEd) {
+    const curEd = selEd.value;
+    selEd.innerHTML = '<option value="">Selecionar projeto…</option>';
+    linkable.forEach(({ p, id }) => {
+      const lab = `${_ageProjDbClient(p)} — ${_ageProjDbTitle(p)}`.trim() || id;
+      selEd.insertAdjacentHTML('beforeend', `<option value="${escAttr(id)}">${escHtml(lab)}</option>`);
+    });
+    if(curEd && [...selEd.options].some(o => o.value === curEd)) selEd.value = curEd;
+    else if(selectAfter && [...selEd.options].some(o => o.value === selectAfter)) selEd.value = selectAfter;
   }
 }
 
@@ -20827,6 +20848,7 @@ function _csMergeKanbanRow(row) {
 let _csKanbanItems = [];
 let _csWeekStart = null;
 let _csDragId = null;
+let _csJustDragged = false;
 
 const CS_BADGE = {
   reels:{ bg:'#FAECE7', fg:'#712B13', lab:'Reels' },
@@ -21197,13 +21219,13 @@ function _csCardTopHtml(it, actionsHtml) {
 
 function _csCardActionsHtml(it, canEdit) {
   if(!canEdit) return '';
-  const idJs = JSON.stringify(it.id);
-  let html = `<button type="button" class="cs-card-icon-btn perm-guard-edit" draggable="false" title="Editar" aria-label="Editar" onclick="event.stopPropagation();csOpenEditar(${idJs})"><i class="ti ti-pencil" aria-hidden="true"></i></button>`;
+  const sid = escAttr(String(it.id ?? ''));
+  let html = `<button type="button" class="cs-card-icon-btn" draggable="false" data-cs-action="edit" data-cs-id="${sid}" title="Editar peça" aria-label="Editar peça"><i class="ti ti-pencil" aria-hidden="true"></i></button>`;
   const asset = (it.assetUrl || '').trim();
   if(asset) {
-    html += `<a class="cs-card-icon-btn" draggable="false" href="${escAttr(asset)}" target="_blank" rel="noopener noreferrer" title="Abrir material" aria-label="Abrir material" onclick="event.stopPropagation()"><i class="ti ti-link" aria-hidden="true"></i></a>`;
+    html += `<a class="cs-card-icon-btn" draggable="false" data-cs-action="link" href="${escAttr(asset)}" target="_blank" rel="noopener noreferrer" title="Abrir material" aria-label="Abrir material"><i class="ti ti-link" aria-hidden="true"></i></a>`;
   }
-  html += `<button type="button" class="cs-card-icon-btn cs-card-icon-btn--danger perm-guard-edit" draggable="false" title="Excluir" aria-label="Excluir" onclick="event.stopPropagation();csExcluirConteudo(${idJs})"><i class="ti ti-trash" aria-hidden="true"></i></button>`;
+  html += `<button type="button" class="cs-card-icon-btn cs-card-icon-btn--danger" draggable="false" data-cs-action="delete" data-cs-id="${sid}" title="Excluir peça" aria-label="Excluir peça"><i class="ti ti-trash" aria-hidden="true"></i></button>`;
   return html;
 }
 
@@ -21222,8 +21244,7 @@ function _csCardInstagramHtml(it) {
 
 function csCardHtml(it, canEdit) {
   const drag = canEdit ? 'true' : 'false';
-  const idJs = JSON.stringify(it.id);
-  const dblEdit = canEdit ? ` ondblclick="csOpenEditar(${idJs})" title="Duplo clique para editar"` : '';
+  const dblEdit = canEdit ? ' title="Clique para editar · arraste para mover de coluna"' : '';
   const top = _csCardTopHtml(it, _csCardActionsHtml(it, canEdit));
   let cls = 'cs-card';
   if(it.coluna === 'pronto') cls += ' cs-card--pronto';
@@ -21263,9 +21284,20 @@ function csCardHtml(it, canEdit) {
   </div>`;
 }
 
-function csBoardWireDrag() {
+let _csBoardEventsWired = false;
+
+function _csKanbanCanEdit() {
+  return typeof hasModuleEditForPage === 'function' && hasModuleEditForPage('conteudos-sociais');
+}
+
+function csBoardWireEvents() {
   const board = document.getElementById('csBoard');
   if(!board) return;
+  if(!_csBoardEventsWired) {
+    _csBoardEventsWired = true;
+    board.addEventListener('click', csBoardClick);
+    board.addEventListener('mousedown', csBoardMouseDown);
+  }
   board.querySelectorAll('.cs-card').forEach(el => {
     el.addEventListener('dragstart', csCardDragStart);
     el.addEventListener('dragend', csCardDragEnd);
@@ -21275,6 +21307,36 @@ function csBoardWireDrag() {
     el.addEventListener('dragleave', csColDragLeave);
     el.addEventListener('drop', csColDrop);
   });
+}
+
+function csBoardMouseDown(e) {
+  if(e.target.closest('[data-cs-action], .cs-btn-post, .cs-card-link, a.cs-card-icon-btn')) {
+    e.stopPropagation();
+  }
+}
+
+function csBoardClick(e) {
+  if(_csJustDragged) return;
+  const actEl = e.target.closest('[data-cs-action]');
+  if(actEl) {
+    const action = actEl.getAttribute('data-cs-action');
+    const id = actEl.getAttribute('data-cs-id');
+    if(action === 'link') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if(!_csKanbanCanEdit()) {
+      try { toast('Sem permissão para alterar conteúdos nesta aba.', 'warn'); } catch(_) {}
+      return;
+    }
+    if(action === 'edit' && id) csOpenEditar(id);
+    else if(action === 'delete' && id) csExcluirConteudo(id);
+    return;
+  }
+  const card = e.target.closest('.cs-card[data-cs-id]');
+  if(!card || e.target.closest('a, button, input, select, textarea, .cs-btn-post')) return;
+  if(!_csKanbanCanEdit()) return;
+  const id = card.getAttribute('data-cs-id');
+  if(id) csOpenEditar(id);
 }
 
 function csCardDragStart(e) {
@@ -21289,8 +21351,10 @@ function csCardDragStart(e) {
 }
 
 function csCardDragEnd() {
+  _csJustDragged = true;
   _csDragId = null;
   document.querySelectorAll('#page-conteudos-sociais .cs-col-body').forEach(el => el.classList.remove('cs-drag-over'));
+  setTimeout(() => { _csJustDragged = false; }, 250);
 }
 
 function csColDragOver(e) {
@@ -21379,7 +21443,11 @@ function csRenderKanban() {
     </div>`;
   }).join('');
 
-  csBoardWireDrag();
+  csBoardWireEvents();
+  setTimeout(() => {
+    const pg = document.getElementById('page-conteudos-sociais');
+    if(pg?.classList.contains('active')) applyActivePageEditGuards('conteudos-sociais');
+  }, 0);
 }
 
 function csApplyFilters() {
@@ -21476,15 +21544,25 @@ async function csConfirmMarcarPostado() {
 }
 
 
-function csOpenEditar(id) {
+async function csOpenEditar(id) {
+  if(!_csKanbanCanEdit()) {
+    try { toast('Sem permissão para editar conteúdos.', 'warn'); } catch(_) {}
+    return;
+  }
   const it = _csFindKanbanItem(id);
   if(!it) {
     try { toast('Conteúdo não encontrado. Atualize a página ou mude a semana (← →).', 'warn'); } catch(_) {}
     return;
   }
   try {
+    await postPopulateProjectSelects(it.projectId || null);
     const set = (elId, val) => { const el = document.getElementById(elId); if(el) el.value = val; };
     set('csEditarId', String(it.id));
+    const pid = String(it.projectId || '').trim();
+    set('csEditarProjectId', pid);
+    const cli = it.cliente && it.cliente !== '—' ? it.cliente : '';
+    set('csEditarCliente', cli);
+    if(pid && !cli) await csOnEditarProjectChange(true);
     set('csEditarTitulo', it.titulo && it.titulo !== 'Sem título' ? it.titulo : '');
     set('csEditarAssetUrl', it.assetUrl || '');
     set('csEditarResp', it.responsavel && it.responsavel !== '—' ? it.responsavel : '');
@@ -21492,7 +21570,7 @@ function csOpenEditar(id) {
     set('csEditarRede', it.rede || 'instagram');
     set('csEditarInstagram', it.instagramAccount || '');
     csOnCsRedeChange('editar');
-    csRefreshInstagramAccountHints('editar', it.cliente && it.cliente !== '—' ? it.cliente : '');
+    csRefreshInstagramAccountHints('editar', cli);
     const base = it.scheduledAt != null ? it.scheduledAt : Date.now();
     set('csEditarScheduled', _csToDatetimeLocal(base));
     const kind = it.statusLine?.kind || '';
@@ -21511,8 +21589,19 @@ function csOpenEditar(id) {
   }
 }
 
+async function csOnEditarProjectChange(silent) {
+  const pid = (document.getElementById('csEditarProjectId')?.value || '').trim();
+  const inpCli = document.getElementById('csEditarCliente');
+  if(!pid) {
+    if(inpCli && !silent) inpCli.value = '';
+    return;
+  }
+  const meta = await _csResolveProjectMeta(pid);
+  if(inpCli && meta.client_name) inpCli.value = meta.client_name;
+}
+
 function csExcluirConteudo(id) {
-  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) {
+  if(!_csKanbanCanEdit()) {
     try { toast('Sem permissão para excluir conteúdos.', 'warn'); } catch(_) {}
     return;
   }
@@ -21537,11 +21626,13 @@ function csExcluirConteudo(id) {
 }
 
 async function csConfirmEditar() {
-  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) {
+  if(!_csKanbanCanEdit()) {
     try { toast('Sem permissão para editar conteúdos.', 'warn'); } catch(_) {}
     return;
   }
   const id = document.getElementById('csEditarId').value;
+  const projectId = (document.getElementById('csEditarProjectId')?.value || '').trim();
+  const cliente = (document.getElementById('csEditarCliente')?.value || '').trim();
   const titulo = (document.getElementById('csEditarTitulo')?.value || '').trim();
   const assetUrl = (document.getElementById('csEditarAssetUrl')?.value || '').trim();
   const resp = (document.getElementById('csEditarResp')?.value || '').trim();
@@ -21553,6 +21644,10 @@ async function csConfirmEditar() {
   const aprovText = (document.getElementById('csEditarAprovText')?.value || '').trim();
   const notes = (document.getElementById('csEditarNotas')?.value || '').trim();
   if(!id) return;
+  if(!projectId) {
+    try { toast('Selecione o projeto vinculado a esta peça.', 'warn'); } catch(_) {}
+    return;
+  }
   if(!titulo) {
     try { toast('Informe o título da peça.', 'warn'); } catch(_) {}
     return;
@@ -21561,10 +21656,14 @@ async function csConfirmEditar() {
     try { toast('Informe data e hora previstas.', 'warn'); } catch(_) {}
     return;
   }
+  const meta = await _csResolveProjectMeta(projectId);
   const ms = new Date(dtVal).getTime();
   const parts = _csPostDateTimeParts(ms);
   const payload = {
     material: titulo,
+    project_id: projectId,
+    client_name: cliente || meta.client_name || null,
+    project_name: meta.project_name || null,
     asset_url: assetUrl || null,
     assigned_to: resp || null,
     network: rede,
@@ -21590,8 +21689,9 @@ async function csConfirmEditar() {
         network: rede,
         format: _csFormatToDb(formato),
         material: titulo,
-        client_name: prev.cliente,
-        project_name: prev.projeto,
+        project_id: projectId,
+        client_name: cliente || prev.cliente,
+        project_name: meta.project_name || prev.projeto,
         asset_url: assetUrl,
         assigned_to: resp,
         editorial_stage: prev.coluna,
