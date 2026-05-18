@@ -921,6 +921,53 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   color:#888888;
 }
 
+/* ── MEU DIA (refinado) ── */
+.myday-hero{
+  background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+  border-radius:12px;padding:18px 20px;margin-bottom:16px;color:#fff;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 8px 28px rgba(15,23,42,.18);
+}
+.myday-hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.myday-hero-title{font-family:var(--font-h);font-size:15px;font-weight:800;letter-spacing:.04em}
+.myday-hero-date{font-family:var(--font-m);font-size:10px;color:rgba(255,255,255,.55);margin-top:4px;text-transform:capitalize}
+.myday-stat-pill{
+  font-family:var(--font-m);font-size:10px;font-weight:700;
+  padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.15);white-space:nowrap;
+}
+.myday-progress-label{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--font-m);font-size:9px;letter-spacing:.08em;
+  color:rgba(255,255,255,.65);margin-bottom:8px;
+}
+.myday-progress-track{
+  height:8px;border-radius:999px;background:rgba(255,255,255,.12);
+  overflow:hidden;border:1px solid rgba(255,255,255,.08);
+}
+.myday-progress-fill{
+  height:100%;border-radius:999px;background:linear-gradient(90deg,#4ade80,#22d3ee);
+  transition:width .35s ease;
+  min-width:0;
+}
+.myday-section{margin-bottom:18px}
+.myday-section-hdr{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,.08);
+}
+.myday-section-title{
+  font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.12em;
+  color:var(--textsub);text-transform:uppercase;
+}
+.myday-section-count{font-family:var(--font-m);font-size:9px;color:#94a3b8}
+.myday-empty{
+  text-align:center;padding:36px 20px;color:var(--textsub);
+  font-family:var(--font-m);font-size:11px;line-height:1.6;
+  background:#fafafa;border:1.5px dashed rgba(0,0,0,.1);border-radius:10px;
+}
+.task-item.myday-empresa{border-left:3px solid #0f172a}
+.task-item.myday-pessoal{border-left:3px solid #16a34a}
+
 /* ── CRONOGRAMA ── */
 .sched-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .sched-day{
@@ -3603,8 +3650,9 @@ body:has(#login-screen.visible){
                   <input id="orc-cliente" placeholder="Nome do cliente" class="orc-input" oninput="atualizarPreview();orcUpdateHeaderInfo()" />
                   <div style="margin-top:12px">
                     <label for="orc-emissor" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;letter-spacing:.06em;margin-bottom:6px">PROPOSTA EM NOME DE</label>
-                    <input id="orc-emissor" placeholder="Ex.: OWNAGE Films" class="orc-input" oninput="atualizarPreview()" title="Nome que aparece no PDF ao cliente (cabeçalho e rodapé)" />
-                    <div style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.35">Substitui o nome da empresa no documento enviado ao cliente.</div>
+                    <input id="orc-emissor" placeholder="Ex.: OWNAGE Films, Studio X…" class="orc-input" oninput="atualizarPreview();_orcUpdateCabecalhoPreview()" title="Nome que aparece no PDF ao cliente (cabeçalho e rodapé)" />
+                    <div id="orc-cabecalho-preview" style="font-family:var(--font-m);font-size:10px;color:#0f172a;margin-top:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;line-height:1.45"></div>
+                    <div style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:6px;line-height:1.35">Texto do cabeçalho: <em>Proposta [nome acima] para [cliente]</em> — sem expor taxa nem valores por função.</div>
                   </div>
                   <textarea id="orc-descricao" placeholder="Descrição / escopo do projeto" class="orc-input" rows="3" oninput="atualizarPreview()"></textarea>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -3979,13 +4027,26 @@ body:has(#login-screen.visible){
       ══════════════════════════════════ -->
       <div id="page-myday" class="page">
         <div class="page-header">
-          <div class="page-title"><i class="fas fa-crosshairs"></i> MEU DIA</div>
+          <div class="page-title" id="mydayPageTitle"><i class="fas fa-crosshairs"></i> MEU DIA</div>
           <div class="page-actions">
             <button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Tarefa</button>
           </div>
         </div>
-        <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-bottom:10px">
-          Tarefas do cronograma da empresa aparecem aqui automaticamente.
+        <div id="mydayHero" class="myday-hero" style="display:none">
+          <div class="myday-hero-top">
+            <div>
+              <div class="myday-hero-title">Foco de hoje</div>
+              <div class="myday-hero-date" id="mydayHeroDate"></div>
+            </div>
+            <div class="myday-stat-pill" id="mydayStatPill">0 / 0</div>
+          </div>
+          <div class="myday-progress-label">
+            <span>Progresso do dia</span>
+            <span id="mydayProgressPct">0%</span>
+          </div>
+          <div class="myday-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="mydayProgressTrack">
+            <div class="myday-progress-fill" id="mydayProgressFill" style="width:0%"></div>
+          </div>
         </div>
         <div id="mydayList"></div>
       </div>
@@ -16792,6 +16853,48 @@ function _applyOrcPdfMetaToForm(meta) {
   set('orc-pdf-aprovado', meta.aprovadoPor);
 }
 
+function _orcUpdateCabecalhoPreview() {
+  const el = document.getElementById('orc-cabecalho-preview');
+  if(!el) return;
+  const marca = _orcPropostaEmissor();
+  const cliente = document.getElementById('orc-cliente')?.value?.trim() || '';
+  el.innerHTML = cliente
+    ? `No PDF: <strong>Proposta ${escHtml(marca)}</strong> para <strong>${escHtml(cliente)}</strong>`
+    : `No PDF: <strong>Proposta ${escHtml(marca)}</strong> <span style="color:#94a3b8">(informe o cliente)</span>`;
+}
+
+/** Escopo ao cliente: só entregas, sem preço nem menção a taxa/margem. */
+function _orcClienteEscopoHtml(diarias) {
+  const escopoLinhas = [];
+  (window._orcEquipe || []).forEach(m => {
+    const cat = FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '';
+    escopoLinhas.push({
+      title: m.nome,
+      sub: `${cat} · ${m.quantidade} profissional(is) · ${diarias} diária${diarias > 1 ? 's' : ''} de gravação`
+    });
+  });
+  (window._orcCatalogo || []).filter(i => i.descricao).forEach(i => {
+    escopoLinhas.push({
+      title: i.descricao,
+      sub: `Produto / serviço · quantidade ${i.quantidade || 1}`
+    });
+  });
+  (window._orcDespesas || []).filter(d => d.descricao).forEach(d => {
+    escopoLinhas.push({ title: d.descricao, sub: 'Despesa prevista na produção' });
+  });
+  if(!escopoLinhas.length) {
+    return '<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>';
+  }
+  return escopoLinhas.map(it => `
+    <div style="display:flex;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start;gap:10px">
+      <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
+      <div style="min-width:0;flex:1">
+        <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
+        <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
+      </div>
+    </div>`).join('');
+}
+
 function atualizarPreview() {
   const preview = document.getElementById('orc-preview-content');
   if(!preview) return;
@@ -16819,39 +16922,8 @@ function atualizarPreview() {
     <span style="${mono};font-size:9px;letter-spacing:.12em;color:#737373">${escHtml(right)}</span>
   </div>`;
 
-  const escopoLinhas = [];
-  (window._orcEquipe || []).forEach(m => {
-    const cat = FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '';
-    escopoLinhas.push({
-      kind: 'equipe',
-      title: m.nome,
-      sub: `${cat} · ${m.quantidade} profissional(is) · ${diarias} diária${diarias > 1 ? 's' : ''} de gravação`
-    });
-  });
-  (window._orcCatalogo || []).filter(i => i.descricao).forEach(i => {
-    escopoLinhas.push({
-      kind: 'outro',
-      title: i.descricao,
-      sub: `Produto / serviço · quantidade ${i.quantidade || 1}`
-    });
-  });
-  (window._orcDespesas || []).filter(d => d.descricao).forEach(d => {
-    escopoLinhas.push({ kind: 'outro', title: d.descricao, sub: 'Despesa prevista na produção' });
-  });
-
-  const escopoHtml = escopoLinhas.length ? escopoLinhas.map(it => `
-    <div style="display:flex;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start;gap:10px">
-      <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
-      <div style="min-width:0;flex:1">
-        <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
-        <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
-      </div>
-    </div>`).join('') : `<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>`;
-
-  const compHtml = `<div style="padding:14px 0;font-size:12px;color:#525252;line-height:1.6">
-      O investimento total da proposta está indicado no destaque acima e na barra <strong>Valor total da proposta</strong>.
-      O escopo lista entregas e equipe sem valores por função; taxas administrativas não são discriminadas neste documento.
-    </div>`;
+  const escopoHtml = _orcClienteEscopoHtml(diarias);
+  _orcUpdateCabecalhoPreview();
 
   const doisParc = pdfm.parcelas === '2';
   const tot = fin.totalFinal;
@@ -16955,12 +17027,7 @@ function atualizarPreview() {
         ${subLinha('ESCOPO CONTRATADO', 'ENTREGAS CONFIRMADAS')}
         ${escopoHtml}
       </div>
-      <div style="margin-top:28px">
-        ${subLinha('COMPOSIÇÃO DO VALOR', 'DETALHAMENTO')}
-        ${compHtml}
-      </div>
-
-      <div style="background:#000;color:#fff;margin-top:8px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div style="background:#000;color:#fff;margin-top:20px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-weight:800;font-size:14px">Valor total da proposta</span>
         <span style="font-size:24px;font-weight:800">${fmtBRL(fin.totalFinal)}</span>
       </div>
@@ -22180,47 +22247,115 @@ async function saveSchedEvent() {
 /* ═══════════════════════════════════════════
    MEU DIA — integração com Cronograma
 ═══════════════════════════════════════════ */
+function _mydayDoneStore() {
+  try { return JSON.parse(localStorage.getItem('age_myday_done') || '{}'); } catch(e) { return {}; }
+}
+function _mydayIsDone(id, apiDone) {
+  if(apiDone === true || apiDone === 'true') return true;
+  return !!_mydayDoneStore()[String(id)];
+}
+function _mydaySetDone(id, done) {
+  const s = _mydayDoneStore();
+  const k = String(id);
+  if(done) s[k] = true; else delete s[k];
+  localStorage.setItem('age_myday_done', JSON.stringify(s));
+}
+function _mydayRenderProgress(done, total) {
+  const hero = document.getElementById('mydayHero');
+  const fill = document.getElementById('mydayProgressFill');
+  const pctEl = document.getElementById('mydayProgressPct');
+  const pill = document.getElementById('mydayStatPill');
+  const track = document.getElementById('mydayProgressTrack');
+  const dateEl = document.getElementById('mydayHeroDate');
+  if(dateEl) dateEl.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  if(!hero) return;
+  if(total <= 0) { hero.style.display = 'none'; return; }
+  hero.style.display = 'block';
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  if(fill) fill.style.width = pct + '%';
+  if(pctEl) pctEl.textContent = pct + '%';
+  if(pill) pill.textContent = `${done} / ${total} concluídas`;
+  if(track) track.setAttribute('aria-valuenow', String(pct));
+}
+function _mydayTaskRow(item) {
+  const done = !!item.done;
+  const chk = item.source === 'pessoal'
+    ? `<div class="task-check${done ? ' checked' : ''}" onclick="toggleTask('${item.id}','${item.done}')">${done ? '✓' : ''}</div>`
+    : `<div class="task-check${done ? ' checked' : ''}" onclick="toggleMyDaySched('${item.id}',${done})">${done ? '✓' : ''}</div>`;
+  const chkFixed = chk.replace('</div>', '</div>');
+  const extra = item.source === 'pessoal'
+    ? `<button class="btn btn-danger btn-sm" onclick="deleteTask('${item.id}')"><i class="fas fa-trash"></i></button>`
+    : '';
+  const cls = item.source === 'empresa' ? ' myday-empresa' : ' myday-pessoal';
+  return `
+      <div class="task-item${cls}${done ? ' done' : ''}">
+        ${chkFixed}
+        <div style="flex:1">
+          <div class="task-text" style="${done ? 'text-decoration:line-through' : ''}">${escHtml(item.text)}</div>
+          ${item.notes ? `<div class="task-meta">${escHtml(item.notes)}</div>` : ''}
+          ${item.owner && item.source === 'empresa' ? `<div class="task-meta">Responsável: ${escHtml(item.owner)}</div>` : ''}
+        </div>
+        <span class="task-source-badge">${item.source === 'empresa' ? 'EMPRESA' : 'PESSOAL'}</span>
+        ${extra}
+      </div>`;
+}
+function toggleMyDaySched(id, currentDone) {
+  const done = !(currentDone === true || currentDone === 'true');
+  _mydaySetDone(id, done);
+  loadMyDay();
+  toast(done ? 'Item do dia concluído!' : 'Item reaberto.');
+}
 async function loadMyDay() {
-  const el=document.getElementById('mydayList');
+  const el = document.getElementById('mydayList');
   if(!el) return;
-  const today=new Date().toISOString().slice(0,10);
+  const today = new Date().toISOString().slice(0, 10);
+  const hdr = document.getElementById('mydayPageTitle');
+  if(hdr) hdr.innerHTML = `<i class="fas fa-crosshairs"></i> MEU DIA <span style="font-family:var(--font-m);font-size:10px;color:var(--textsub);font-weight:400;margin-left:6px">${new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>`;
 
   try {
-    /* Buscar tarefas pessoais — apenas do usuário logado */
     const tasks = await fetchOwn('age_tasks');
-    const myTasks = tasks.filter(t=>(!t.day_date||t.day_date.slice(0,10)===today));
+    const myTasks = tasks.filter(t => (!t.day_date || String(t.day_date).slice(0, 10) === today));
+    const schedEvts = await fetchAll('age_team_calendar', 500);
+    const todayEvts = schedEvts.filter(e => (e.data_inicio || e.event_date || e.date || '').slice(0, 10) === today);
 
-    /* Buscar eventos do cronograma de HOJE */
-    const schedEvts = await fetchAll('age_team_calendar',500);
-    const todayEvts = schedEvts.filter(e=>(e.data_inicio||e.event_date||e.date||'').slice(0,10)===today);
-
-    /* Combinar: eventos da empresa + tarefas pessoais */
-    const allItems = [
-      ...todayEvts.map(e=>({ id:'sched_'+e.id, text:(e.titulo||e.title||''), done:false, source:'empresa', type:(e.tipo||e.type||'company'), notes:(e.descricao||e.notes), owner:(e.responsavel_nome||e.owner) })),
-      ...myTasks.map(t=>({ id:t.id, text:t.task_text||t.text||'', done:t.done===true||t.done==='true', source:'pessoal', type:'personal', prio:t.priority||'normal' }))
-    ];
+    const empresa = todayEvts.map(e => {
+      const id = 'sched_' + e.id;
+      return {
+        id, text: (e.titulo || e.title || 'Evento'), source: 'empresa',
+        done: _mydayIsDone(id, false), notes: (e.descricao || e.notes || ''), owner: (e.responsavel_nome || e.owner || '')
+      };
+    });
+    const pessoal = myTasks.map(t => ({
+      id: t.id, text: t.task_text || t.text || '', source: 'pessoal',
+      done: t.done === true || t.done === 'true', prio: t.priority || 'normal'
+    }));
+    const allItems = [...empresa, ...pessoal];
+    const doneCount = allItems.filter(i => i.done).length;
+    _mydayRenderProgress(doneCount, allItems.length);
 
     if(!allItems.length) {
-      el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">NENHUMA TAREFA PARA HOJE<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()">+ ADICIONAR TAREFA</button></div>`;
+      el.innerHTML = `<div class="myday-empty">Nenhuma tarefa para hoje.<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Adicionar tarefa</button></div>`;
       return;
     }
 
-    el.innerHTML = allItems.map(item=>`
-      <div class="task-item${item.done?' done':''}">
-        ${item.source==='pessoal'?`<div class="task-check${item.done?' checked':''}" onclick="toggleTask('${item.id}','${item.done}')">${item.done?'✓':''}</div>`:`<div style="width:17px;height:17px;border-radius:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.4);flex-shrink:0"><i class="fas fa-building"></i></div>`}
-        <div style="flex:1">
-          <div class="task-text" style="${item.done?'text-decoration:line-through':''}">${escHtml(item.text)}</div>
-          ${item.notes?`<div class="task-meta">${escHtml(item.notes)}</div>`:''}
-          ${item.owner&&item.source==='empresa'?`<div class="task-meta">Responsável: ${escHtml(item.owner)}</div>`:''}
-        </div>
-        <span class="task-source-badge">${item.source.toUpperCase()}</span>
-        ${item.source==='pessoal'?`<button class="btn btn-danger btn-sm" onclick="deleteTask('${item.id}')"><i class="fas fa-trash"></i></button>`:''}
-      </div>`).join('');
+    const renderSection = (title, items) => {
+      if(!items.length) return '';
+      const doneSec = items.filter(i => i.done).length;
+      return `
+        <div class="myday-section">
+          <div class="myday-section-hdr">
+            <span class="myday-section-title">${title}</span>
+            <span class="myday-section-count">${doneSec}/${items.length}</span>
+          </div>
+          ${items.map(_mydayTaskRow).join('')}
+        </div>`;
+    };
 
-    /* Data e contexto */
-    const hdr=document.querySelector('#page-myday .page-title');
-    if(hdr) hdr.innerHTML=`<i class="fas fa-crosshairs"></i> MEU DIA — <span style="font-family:var(--font-m);font-size:10px;color:var(--textsub)">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})}</span>`;
-  } catch(e){ el.innerHTML=`<div style="color:var(--textsub);padding:20px;font-family:var(--font-m)">Erro ao carregar tarefas.</div>`; }
+    el.innerHTML = renderSection('Cronograma da empresa', empresa) + renderSection('Minhas tarefas', pessoal);
+  } catch(e) {
+    el.innerHTML = `<div class="myday-empty" style="color:#b91c1c">Erro ao carregar o dia.</div>`;
+    _mydayRenderProgress(0, 0);
+  }
 }
 
 /* ── Tasks ── */
