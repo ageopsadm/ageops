@@ -5036,9 +5036,27 @@ body:has(#login-screen.visible){
       <button type="button" onclick="closeModal('modalCsNovoConteudo')" style="color:#888;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;font-weight:400" aria-label="Fechar">×</button>
     </div>
     <label for="csNovoProjectId">Projeto *</label>
-    <select id="csNovoProjectId" onchange="csOnNovoProjectChange()">
-      <option value="">Selecionar projeto…</option>
-    </select>
+    <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap">
+      <select id="csNovoProjectId" onchange="csOnNovoProjectChange()" style="flex:1;min-width:200px">
+        <option value="">Selecionar projeto…</option>
+      </select>
+      <button type="button" class="btn btn-ghost perm-guard-edit" onclick="csOpenCadastroProjetoCompleto()" style="white-space:nowrap;font-size:11px;padding:8px 12px" title="Abre o cadastro completo na aba Projetos">Projeto completo</button>
+    </div>
+    <div id="csNovoProjInline" style="display:none;margin-top:12px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+      <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#64748b;letter-spacing:.06em;margin-bottom:10px">CADASTRAR NOVO PROJETO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label for="csNovoProjClient" style="font-size:10px;color:#64748b">Cliente *</label>
+          <input type="text" id="csNovoProjClient" class="orc-input" placeholder="Nome do cliente" autocomplete="off" style="margin-top:4px;width:100%" />
+        </div>
+        <div>
+          <label for="csNovoProjName" style="font-size:10px;color:#64748b">Nome do projeto *</label>
+          <input type="text" id="csNovoProjName" class="orc-input" placeholder="Ex.: Campanha verão" autocomplete="off" style="margin-top:4px;width:100%" />
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary perm-guard-edit" onclick="csQuickCreateProject()" style="margin-top:12px;border-radius:8px;padding:8px 16px;font-size:11px"><i class="ti ti-device-floppy"></i> Salvar projeto</button>
+    </div>
+    <p id="csNovoProjHint" style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin:8px 0 0;line-height:1.4;display:none"></p>
     <label for="csNovoMaterial" style="margin-top:12px">Material / peça gravada</label>
     <select id="csNovoMaterial" onchange="csOnNovoMaterialChange()">
       <option value="">Selecione o projeto primeiro…</option>
@@ -10389,9 +10407,11 @@ async function fetchAgeProjectsScoped(limit = 1000) {
   const uname = String(currentUser?.username || '').trim();
   let qs = `?limit=${encodeURIComponent(limit)}`;
   if(cid && uname) {
-    qs += `&or=(company_id.eq.${cid},and(company_id.is.null,created_by.eq.${uname}))`;
+    const encCid = encodeURIComponent(String(cid));
+    const encU = encodeURIComponent(uname);
+    qs += `&or=(company_id.eq.${encCid},and(company_id.is.null,created_by.eq.${encU}))`;
   } else if(cid) {
-    qs += `&company_id=eq.${cid}`;
+    qs += `&company_id=eq.${encodeURIComponent(String(cid))}`;
   }
   const attempts = [`${qs}&deleted=neq.true`, qs];
   for(const qtry of attempts) {
@@ -14592,6 +14612,17 @@ async function saveProject() {
     await loadProjects();
     if(SUPABASE_IS_SOURCE_OF_TRUTH) await refreshLiveProjectsKpiCache().catch(()=>{});
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
+    if(window._csSelectProjectAfterSave && savedId) {
+      await postPopulateProjectSelects(String(savedId)).catch(() => {});
+      window._csSelectProjectAfterSave = false;
+      if(document.getElementById('modalCsNovoConteudo')) {
+        openModal('modalCsNovoConteudo');
+        const sel = document.getElementById('csNovoProjectId');
+        if(sel) { sel.value = String(savedId); csOnNovoProjectChange(); }
+      }
+    } else {
+      postPopulateProjectSelects().catch(() => {});
+    }
 
     if(integrationOk) {
       try {
@@ -20605,7 +20636,79 @@ function _csMaterialsFromOrcJson(itemsJson) {
   return out;
 }
 
-async function postPopulateProjectSelects() {
+function _ageProjIdForConteudos(p) {
+  const id = String(p?.id || '').trim();
+  if(!id || id.startsWith('sheet_')) return '';
+  return id;
+}
+
+function _csToggleNovoProjInline(show) {
+  const box = document.getElementById('csNovoProjInline');
+  if(box) box.style.display = show ? 'block' : 'none';
+}
+
+function csOpenCadastroProjetoCompleto() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
+  window._csSelectProjectAfterSave = true;
+  closeModal('modalCsNovoConteudo');
+  if(typeof openProjectModal === 'function') openProjectModal();
+  else if(typeof navigate === 'function') { navigate('projects'); toast('Use "+ Novo Projeto" na aba Projetos.', 'warn'); }
+}
+
+async function csQuickCreateProject() {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) return;
+  const client = document.getElementById('csNovoProjClient')?.value?.trim() || '';
+  const name = document.getElementById('csNovoProjName')?.value?.trim() || '';
+  if(!client || !name) {
+    try { toast('Informe cliente e nome do projeto.', 'warn'); } catch(_) {}
+    return;
+  }
+  const cid = currentUser?.company_id;
+  if(!cid) {
+    try { toast('Empresa não identificada.', 'warn'); } catch(_) {}
+    return;
+  }
+  const hoje = new Date().toISOString().slice(0, 10);
+  const payload = {
+    client_name: client,
+    project_name: name,
+    title: name,
+    category: 'Vídeo',
+    segment: '',
+    project_date: hoje,
+    total_value: 0,
+    cost: 0,
+    profit_pct: 0,
+    nps: 0,
+    is_new_client: false,
+    status: 'em_andamento',
+    created_by: currentUser?.username || 'unknown'
+  };
+  try {
+    const saved = await apiPost('age_projects', payload);
+    const row = Array.isArray(saved) ? saved[0] : saved;
+    const newId = row?.id ? String(row.id) : '';
+    if(!newId) {
+      try { toast('Projeto salvo, mas o ID não retornou. Atualize a página.', 'warn'); } catch(_) {}
+      await postPopulateProjectSelects();
+      return;
+    }
+    _projAllCache = [];
+    await postPopulateProjectSelects(newId);
+    const sel = document.getElementById('csNovoProjectId');
+    if(sel) {
+      sel.value = newId;
+      await csOnNovoProjectChange();
+    }
+    _csToggleNovoProjInline(false);
+    try { toast('Projeto cadastrado — já pode vincular o conteúdo.'); } catch(_) {}
+  } catch(e) {
+    console.warn('[csQuickCreateProject]', e);
+    try { toast(String(e?.message || e || 'Erro ao salvar projeto'), 'err'); } catch(_) {}
+  }
+}
+
+async function postPopulateProjectSelects(selectAfter) {
   let projs = [];
   try { projs = await fetchAgeProjectsScoped(500); } catch(_) { projs = []; }
   const selF = document.getElementById('postFilterProject');
@@ -20631,15 +20734,37 @@ async function postPopulateProjectSelects() {
     if(curM && [...selM.options].some(o => o.value === curM)) selM.value = curM;
   }
   const selCs = document.getElementById('csNovoProjectId');
+  const hint = document.getElementById('csNovoProjHint');
   if(selCs) {
     const curCs = selCs.value;
-    selCs.innerHTML = '<option value="">Selecionar projeto…</option>';
-    projs.forEach(p => {
-      if(!p?.id) return;
-      const lab = `${_ageProjDbClient(p)} — ${_ageProjDbTitle(p)}`.trim() || p.id;
-      selCs.insertAdjacentHTML('beforeend', `<option value="${escAttr(p.id)}">${escHtml(lab)}</option>`);
+    const linkable = projs
+      .map(p => ({ p, id: _ageProjIdForConteudos(p) }))
+      .filter(x => x.id)
+      .sort((a, b) => {
+        const la = `${_ageProjDbClient(a.p)} ${_ageProjDbTitle(a.p)}`.toLowerCase();
+        const lb = `${_ageProjDbClient(b.p)} ${_ageProjDbTitle(b.p)}`.toLowerCase();
+        return la.localeCompare(lb, 'pt');
+      });
+    selCs.innerHTML = '<option value="">Selecionar projeto…</option>'
+      + '<option value="__new_project__">+ Cadastrar novo projeto…</option>';
+    linkable.forEach(({ p, id }) => {
+      const lab = `${_ageProjDbClient(p)} — ${_ageProjDbTitle(p)}`.trim() || id;
+      selCs.insertAdjacentHTML('beforeend', `<option value="${escAttr(id)}">${escHtml(lab)}</option>`);
     });
-    if(curCs && [...selCs.options].some(o => o.value === curCs)) selCs.value = curCs;
+    const pick = (selectAfter) => {
+      if(selectAfter && [...selCs.options].some(o => o.value === selectAfter)) selCs.value = selectAfter;
+      else if(curCs && [...selCs.options].some(o => o.value === curCs)) selCs.value = curCs;
+    };
+    pick(selectAfter || null);
+    if(hint) {
+      if(!linkable.length) {
+        hint.style.display = 'block';
+        hint.textContent = 'Nenhum projeto no banco ainda. Escolha "+ Cadastrar novo projeto…" ou use Projeto completo.';
+      } else {
+        hint.style.display = 'none';
+        hint.textContent = '';
+      }
+    }
   }
 }
 
@@ -21220,6 +21345,7 @@ async function loadConteudosSociais() {
   }
   csPopulateClienteFilter();
   csRenderKanban();
+  postPopulateProjectSelects().catch(() => {});
 }
 
 function csOpenMarcarPostado(id) {
@@ -21352,6 +21478,13 @@ async function csOnNovoProjectChange() {
   const inpTit = document.getElementById('csNovoTitulo');
   if(!selMat) return;
   const baseOpts = '<option value="">Selecione a peça gravada…</option><option value="__custom__">Outro (digitar título)</option>';
+  if(pid === '__new_project__') {
+    _csToggleNovoProjInline(true);
+    selMat.innerHTML = baseOpts;
+    if(inpCli) inpCli.value = '';
+    return;
+  }
+  _csToggleNovoProjInline(false);
   if(!pid) {
     selMat.innerHTML = baseOpts;
     return;
@@ -21410,6 +21543,11 @@ function csOnNovoMaterialChange() {
 
 async function csOpenNovoModal() {
   await postPopulateProjectSelects();
+  _csToggleNovoProjInline(false);
+  const pc = document.getElementById('csNovoProjClient');
+  const pn = document.getElementById('csNovoProjName');
+  if(pc) pc.value = '';
+  if(pn) pn.value = '';
   const pid = document.getElementById('csNovoProjectId');
   if(pid) pid.value = '';
   const mat = document.getElementById('csNovoMaterial');
@@ -21439,8 +21577,8 @@ async function csConfirmNovoConteudo() {
   const dtVal = document.getElementById('csNovoScheduled').value;
   const assetUrl = (document.getElementById('csNovoAssetUrl')?.value || '').trim();
   const igAccount = _csNormalizeIgAccount(document.getElementById('csNovoInstagram')?.value || '');
-  if(!projectId) {
-    try { toast('Selecione o projeto ao qual o material pertence.', 'warn'); } catch(_) {}
+  if(!projectId || projectId === '__new_project__') {
+    try { toast(projectId === '__new_project__' ? 'Salve o novo projeto antes de adicionar o conteúdo.' : 'Selecione o projeto ao qual o material pertence.', 'warn'); } catch(_) {}
     return;
   }
   if(matSel && matSel !== '__custom__' && !titulo) titulo = matSel;
