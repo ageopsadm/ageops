@@ -1039,6 +1039,13 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 }
 .cal-day.other-month .cal-day-num { color: #ccc; }
 .cal-post-card:hover { filter: brightness(0.96); }
+.cal-post-card:active { cursor: grabbing; }
+.cal-post-card--dragging { opacity: .45; cursor: grabbing; }
+.cal-day--drop-target {
+  background: #eff6ff !important;
+  outline: 2px dashed #60a5fa;
+  outline-offset: -3px;
+}
 .cal-post-card--posted{
   background:#ecfdf5!important;border-left-color:#16a34a!important;opacity:.92;
 }
@@ -20534,37 +20541,118 @@ function postGoCriarConteudo(dateStr) {
   }, 220);
 }
 
-async function _postResetCalendarOnce() {
-  /* v3: rodar de novo após correção do bug UTC (post_date virava o dia anterior). */
-  const ck = 'age_postagens_reset_calendar_v3';
-  if(sessionStorage.getItem(ck)) return 0;
+async function _postFetchAllIncludingDeleted(companyId) {
+  const enc = encodeURIComponent(String(companyId));
+  const q = `?company_id=eq.${enc}&limit=1500`;
+  const d = await apiGet('age_social_posts', q);
+  const rows = Array.isArray(d?.data) ? d.data : [];
+  return rows.filter(_sbIsRowVisible);
+}
+
+async function _postRestoreDeletedOnce() {
+  /* Restaura peças que o reset anterior soft-deletou (deleted=true → false). */
+  const ck = 'age_postagens_restore_v1';
+  if(localStorage.getItem(ck)) return 0;
   const cid = currentUser?.company_id;
   if(!cid) return 0;
   let raw = [];
   try {
-    raw = await _csFetchSocialPosts(cid);
+    raw = await _postFetchAllIncludingDeleted(cid);
   } catch(e) {
-    console.warn('[_postResetCalendarOnce]', e);
+    console.warn('[_postRestoreDeletedOnce]', e);
     return 0;
   }
-  if(!raw.length) {
-    sessionStorage.setItem(ck, '1');
+  const targets = raw.filter(r => {
+    const del = r.deleted;
+    return del === true || del === 1 || String(del).toLowerCase() === 'true';
+  });
+  if(!targets.length) {
+    localStorage.setItem(ck, '1');
     return 0;
   }
   let n = 0;
-  for(const r of raw) {
+  for(const r of targets) {
     try {
-      await _csApiPatchSocial(r.id, { deleted: true });
+      await _csApiPatchSocial(r.id, { deleted: false });
       n++;
     } catch(e) {
-      console.warn('[_postResetCalendarOnce]', r.id, e);
+      console.warn('[_postRestoreDeletedOnce]', r.id, e);
     }
   }
-  sessionStorage.setItem(ck, '1');
+  localStorage.setItem(ck, '1');
   if(n) {
-    try { toast(`Calendário limpo: ${n} postagem(ns) antiga(s) removida(s). Crie novas peças em Conteúdos · Redes.`, 'ok'); } catch(_) {}
+    try { toast(`${n} peça(s) restaurada(s) no calendário.`, 'ok'); } catch(_) {}
   }
   return n;
+}
+
+/* ── Drag & drop entre dias do calendário de Postagens ── */
+let _postDragId = null;
+let _postDragFromDate = '';
+
+function postCardDragStart(e) {
+  const card = e.currentTarget;
+  const id = card.getAttribute('data-post-id') || '';
+  const from = card.getAttribute('data-post-date') || '';
+  if(!id) return;
+  if(typeof hasModuleEditForPage === 'function'
+     && !hasModuleEditForPage('postagens')
+     && !hasModuleEditForPage('conteudos-sociais')) {
+    e.preventDefault();
+    try { toast('Sem permissão para mover peças.', 'warn'); } catch(_) {}
+    return;
+  }
+  _postDragId = id;
+  _postDragFromDate = from;
+  card.classList.add('cal-post-card--dragging');
+  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function postCardDragEnd(e) {
+  const card = e.currentTarget;
+  card.classList.remove('cal-post-card--dragging');
+  document.querySelectorAll('.cal-day--drop-target').forEach(el => el.classList.remove('cal-day--drop-target'));
+  _postDragId = null;
+}
+
+function postDayDragOver(e) {
+  if(!_postDragId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('cal-day--drop-target');
+}
+
+function postDayDragLeave(e) {
+  e.currentTarget.classList.remove('cal-day--drop-target');
+}
+
+async function postDayDrop(e, toDate) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('cal-day--drop-target');
+  const id = e.dataTransfer.getData('text/plain') || _postDragId;
+  const from = _postDragFromDate;
+  _postDragId = null;
+  if(!id || !toDate || from === toDate) return;
+  const row = (_postagensCache || []).find(r => String(r.id) === String(id));
+  if(!row) return;
+  const prevDate = row.post_date;
+  row.post_date = toDate;
+  postRenderFromCache();
+  try {
+    await _csApiPatchSocial(id, { post_date: toDate });
+    try { toast(`Peça movida para ${_postFormatDateBr(toDate)}.`, 'ok'); } catch(_) {}
+    if(document.getElementById('page-conteudos-sociais')?.classList.contains('active')
+       && typeof loadConteudosSociais === 'function') {
+      loadConteudosSociais();
+    }
+  } catch(err) {
+    console.warn('[postDayDrop]', err);
+    row.post_date = prevDate;
+    postRenderFromCache();
+    try { toast(String(err?.message || 'Não foi possível mover a peça.'), 'err'); } catch(_) {}
+  }
 }
 
 function _postNetColor(net) {
@@ -22414,6 +22502,11 @@ try {
   window.postDiaBackToList = postDiaBackToList;
   window.postGoCriarConteudo = postGoCriarConteudo;
   window.postEditarNoKanban = postEditarNoKanban;
+  window.postCardDragStart = postCardDragStart;
+  window.postCardDragEnd = postCardDragEnd;
+  window.postDayDragOver = postDayDragOver;
+  window.postDayDragLeave = postDayDragLeave;
+  window.postDayDrop = postDayDrop;
 } catch(_) {}
 
 async function loadPostagens() {
@@ -22435,7 +22528,7 @@ async function loadPostagens() {
   const startStr = `${y}-${_pad2(m + 1)}-01`;
   const endStr = `${y}-${_pad2(m + 1)}-${_pad2(lastDay)}`;
   try {
-    await _postResetCalendarOnce();
+    await _postRestoreDeletedOnce();
     const raw = await _csFetchSocialPosts(cid);
     _postagensCache = raw.filter(r => {
       const ds = _csNormalizePostDateOnly(r.post_date);
@@ -22470,10 +22563,11 @@ function _postSmallCard(row) {
   const mat = escHtml(String(row.material || row.format || '—').slice(0, 28));
   const proj = escHtml(_postProjLabel(row).slice(0, 34));
   const tid = escAttr(String(row.id || ''));
-  const tip = escAttr(`${_postProjLabel(row)} · ${_postFormatTime(row)}${posted ? ' · Postado' : ''}`);
+  const tds = escAttr(_csNormalizePostDateOnly(row.post_date) || '');
+  const tip = escAttr(`${_postProjLabel(row)} · ${_postFormatTime(row)}${posted ? ' · Postado' : ''} · Arraste para mudar de data`);
   const badge = posted ? '<span class="cal-posted-badge">✓</span> ' : '';
   const cls = posted ? 'cal-post-card cal-post-card--posted' : 'cal-post-card';
-  return `<div class="${cls}" data-post-id="${tid}" style="margin-top:3px;padding:3px 6px;border-radius:4px;font-size:9px;line-height:1.3;cursor:pointer;background:${bg};border-left:2px solid ${borderCol};color:#111;overflow:hidden" title="${tip}">${badge}<span style="font-weight:700;color:${posted ? '#166534' : bc}">${tm}</span> · ${proj}<br><span style="opacity:.8;font-size:8px">${mat}</span></div>`;
+  return `<div class="${cls}" draggable="true" data-post-id="${tid}" data-post-date="${tds}" style="margin-top:3px;padding:3px 6px;border-radius:4px;font-size:9px;line-height:1.3;cursor:grab;background:${bg};border-left:2px solid ${borderCol};color:#111;overflow:hidden" title="${tip}">${badge}<span style="font-weight:700;color:${posted ? '#166534' : bc}">${tm}</span> · ${proj}<br><span style="opacity:.8;font-size:8px">${mat}</span></div>`;
 }
 
 function postRenderCalendar() {
@@ -22509,6 +22603,9 @@ function postRenderCalendar() {
     cell.className = 'cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '') + (allPosted ? ' has-posted' : '');
     cell.setAttribute('data-date', ds);
     cell.onclick = () => openPostDiaModal(ds, dayPosts);
+    cell.addEventListener('dragover', postDayDragOver);
+    cell.addEventListener('dragleave', postDayDragLeave);
+    cell.addEventListener('drop', e => postDayDrop(e, ds));
 
     const num = document.createElement('div');
     num.className = 'cal-day-num';
@@ -22521,6 +22618,8 @@ function postRenderCalendar() {
       wrap.innerHTML = _postSmallCard(row);
       const card = wrap.firstElementChild;
       if(card) {
+        card.addEventListener('dragstart', postCardDragStart);
+        card.addEventListener('dragend', postCardDragEnd);
         card.addEventListener('click', e => {
           e.stopPropagation();
           openPostDiaModal(ds, dayPosts);
