@@ -1039,6 +1039,18 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 }
 .cal-day.other-month .cal-day-num { color: #ccc; }
 .cal-post-card:hover { filter: brightness(0.96); }
+.cal-post-card--posted{
+  background:#ecfdf5!important;border-left-color:#16a34a!important;opacity:.92;
+}
+.cal-posted-badge{
+  display:inline-block;font-size:7px;font-weight:800;letter-spacing:.04em;
+  color:#166534;background:#bbf7d0;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;
+}
+.cal-day.has-posted .cal-day-num::after{
+  content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:#16a34a;
+}
+.post-dia-item--posted{border-color:#86efac;background:#f0fdf4;}
+.post-dia-posted-tag{font-size:9px;font-weight:700;color:#166534;background:#dcfce7;border-radius:4px;padding:2px 6px;}
 .post-dia-item{
   display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;
   text-align:left;padding:12px 14px;margin-bottom:8px;border:1px solid #e2e8f0;border-radius:10px;
@@ -3935,7 +3947,7 @@ body:has(#login-screen.visible){
             <select id="postFilterProject" class="cf-select" onchange="postApplyFiltersAndRender()">
               <option value="">Todos projetos</option>
             </select>
-            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openPostagemModal(null)"><i class="fas fa-plus"></i> Nova postagem</button>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="postGoCriarConteudo()"><i class="fas fa-columns"></i> Novo em Conteúdos</button>
           </div>
         </div>
         <div class="cal-header" style="margin-bottom:12px">
@@ -3945,10 +3957,10 @@ body:has(#login-screen.visible){
             <button class="cal-nav-btn" type="button" onclick="postCalNextMonth()" aria-label="Próximo mês">→</button>
             <button class="cal-today-btn" type="button" onclick="postCalGoToday()">HOJE</button>
           </div>
-          <button type="button" class="cal-new-btn perm-guard-edit" onclick="openPostagemModal(null)">+ NOVA POSTAGEM</button>
+          <button type="button" class="cal-new-btn perm-guard-edit" onclick="postGoCriarConteudo()">+ NOVO EM CONTEÚDOS</button>
         </div>
         <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:-4px 0 12px;line-height:1.45;max-width:820px">
-          Integrado com <b>Conteúdos · Redes</b>: o que você agenda no kanban aparece aqui no calendário. Clique no dia para ver todos os projetos/peças daquela data (horário, Instagram e link do material).
+          Calendário somente leitura: peças entram aqui ao serem criadas em <b>Conteúdos · Redes</b>. Ao marcar como postado no kanban, o dia mostra <span class="cal-posted-badge">✓ Postado</span> automaticamente.
         </p>
         <div id="postMonthWrap">
           <div class="cal-grid" id="postCalGrid">
@@ -4990,14 +5002,14 @@ body:has(#login-screen.visible){
     </div>
     <div id="postDiaListView">
       <div id="postDiaList" style="max-height:min(52vh,420px);overflow-y:auto;margin-bottom:12px"></div>
-      <button type="button" class="btn btn-primary btn-sm perm-guard-edit" style="width:100%" onclick="postDiaAddNew()"><i class="fas fa-plus"></i> Nova peça neste dia</button>
+      <button type="button" class="btn btn-primary btn-sm perm-guard-edit" style="width:100%" onclick="postDiaAddNew()"><i class="fas fa-columns"></i> Criar peça em Conteúdos · Redes</button>
     </div>
     <div id="postDiaDetailView" style="display:none">
       <button type="button" class="btn btn-ghost btn-sm" onclick="postDiaBackToList()" style="margin-bottom:14px;padding:6px 10px"><i class="fas fa-arrow-left"></i> Voltar à lista</button>
       <div id="postDiaDetailBody" class="post-dia-detail-grid"></div>
       <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="postDiaEditInConteudos()"><i class="fas fa-columns"></i> Editar no kanban</button>
-        <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="postDiaEditPostagem()"><i class="fas fa-pen"></i> Editar postagem</button>
+        <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="postDiaEditInConteudos()"><i class="fas fa-pen"></i> Editar peça</button>
         <a id="postDiaMaterialLink" class="btn btn-ghost btn-sm" href="#" target="_blank" rel="noopener noreferrer" style="display:none"><i class="fas fa-external-link-alt"></i> Abrir material</a>
       </div>
     </div>
@@ -20480,6 +20492,81 @@ let _postCalMonth = new Date().getMonth();
 let _postCalYear = new Date().getFullYear();
 let _postagensView = 'month';
 
+const _POST_KANBAN_STAGES = ['producao', 'aprovacao', 'pronto', 'postado'];
+
+function _postIsKanbanManaged(row) {
+  const s = String(row?.editorial_stage || '').toLowerCase().trim();
+  return _POST_KANBAN_STAGES.includes(s);
+}
+
+function _postIsPosted(row) {
+  const s = String(row?.editorial_stage || '').toLowerCase();
+  const st = String(row?.status || '').toLowerCase();
+  return s === 'postado' || st === 'postado';
+}
+
+function postEditarNoKanban(id) {
+  if(!id) return;
+  navigate('conteudos-sociais');
+  setTimeout(() => {
+    if(typeof csOpenEditar === 'function') csOpenEditar(id);
+  }, 280);
+}
+
+function postGoCriarConteudo(dateStr) {
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('conteudos-sociais')) {
+    try { toast('Sem permissão. Peça edição em Conteúdos · Redes.', 'warn'); } catch(_) {}
+    return;
+  }
+  navigate('conteudos-sociais');
+  setTimeout(async () => {
+    if(typeof csOpenNovoModal !== 'function') return;
+    await csOpenNovoModal();
+    const ds = dateStr ? _csNormalizePostDateOnly(dateStr) : '';
+    if(!ds) return;
+    const sched = document.getElementById('csNovoScheduled');
+    if(!sched) return;
+    const parts = ds.split('-').map(Number);
+    if(parts.length >= 3) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+      sched.value = _csToDatetimeLocal(d.getTime());
+    }
+  }, 220);
+}
+
+async function _postResetCalendarOnce() {
+  /* v3: rodar de novo após correção do bug UTC (post_date virava o dia anterior). */
+  const ck = 'age_postagens_reset_calendar_v3';
+  if(sessionStorage.getItem(ck)) return 0;
+  const cid = currentUser?.company_id;
+  if(!cid) return 0;
+  let raw = [];
+  try {
+    raw = await _csFetchSocialPosts(cid);
+  } catch(e) {
+    console.warn('[_postResetCalendarOnce]', e);
+    return 0;
+  }
+  if(!raw.length) {
+    sessionStorage.setItem(ck, '1');
+    return 0;
+  }
+  let n = 0;
+  for(const r of raw) {
+    try {
+      await _csApiPatchSocial(r.id, { deleted: true });
+      n++;
+    } catch(e) {
+      console.warn('[_postResetCalendarOnce]', r.id, e);
+    }
+  }
+  sessionStorage.setItem(ck, '1');
+  if(n) {
+    try { toast(`Calendário limpo: ${n} postagem(ns) antiga(s) removida(s). Crie novas peças em Conteúdos · Redes.`, 'ok'); } catch(_) {}
+  }
+  return n;
+}
+
 function _postNetColor(net) {
   const m = { instagram:'#db2777', facebook:'#1877f2', tiktok:'#111827', youtube:'#dc2626', linkedin:'#0a66c2', twitter:'#111', pinterest:'#bd081c', outro:'#64748b' };
   return m[String(net || '').toLowerCase()] || '#64748b';
@@ -20498,7 +20585,9 @@ function postApplyFiltersAndRender() {
 }
 
 function postFilteredRows() {
-  let rows = (Array.isArray(_postagensCache) ? _postagensCache : []).filter(_sbIsRowVisible);
+  let rows = (Array.isArray(_postagensCache) ? _postagensCache : [])
+    .filter(_sbIsRowVisible)
+    .filter(_postIsKanbanManaged);
   const net = document.getElementById('postFilterNetwork')?.value || '';
   const st = document.getElementById('postFilterStatus')?.value || '';
   const pid = document.getElementById('postFilterProject')?.value || '';
@@ -20592,7 +20681,7 @@ function postDiaShowList() {
   const list = document.getElementById('postDiaList');
   if(!list) return;
   if(!_postDiaRows.length) {
-    list.innerHTML = '<p style="color:#64748b;font-size:13px;line-height:1.5;margin:0 0 8px">Nenhuma peça neste dia. Cadastre em <b>Conteúdos · Redes</b> ou crie abaixo.</p>';
+    list.innerHTML = '<p style="color:#64748b;font-size:13px;line-height:1.5;margin:0 0 8px">Nenhuma peça neste dia. Crie em <b>Conteúdos · Redes</b>.</p>';
     return;
   }
   list.innerHTML = _postDiaRows.map(r => {
@@ -20602,8 +20691,11 @@ function postDiaShowList() {
     const mat = escHtml(String(r.material || r.format || '—').slice(0, 80));
     const net = escHtml(String(r.network || '—'));
     const bc = _postNetColor(r.network);
-    return `<button type="button" class="post-dia-item" onclick="postDiaShowDetail(${idJs})">
-      <span class="post-dia-item-proj" style="border-left:3px solid ${bc};padding-left:8px">${proj}</span>
+    const posted = _postIsPosted(r);
+    const postedTag = posted ? '<span class="post-dia-posted-tag">✓ Postado</span> ' : '';
+    const itemCls = posted ? 'post-dia-item post-dia-item--posted' : 'post-dia-item';
+    return `<button type="button" class="${itemCls}" onclick="postDiaShowDetail(${idJs})">
+      <span class="post-dia-item-proj" style="border-left:3px solid ${bc};padding-left:8px">${postedTag}${proj}</span>
       <span class="post-dia-item-meta">${tm} · ${net} · ${mat}</span>
     </button>`;
   }).join('');
@@ -20635,6 +20727,13 @@ function postDiaShowDetail(id) {
   const matLink = asset
     ? `<a href="${escAttr(asset)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;word-break:break-all">${escHtml(asset)}</a>`
     : '<span style="color:#94a3b8">Nenhum link cadastrado</span>';
+  const pub = String(row.public_url || '').trim();
+  const pubHtml = pub
+    ? `<a href="${escAttr(pub)}" target="_blank" rel="noopener noreferrer" style="color:#16a34a;word-break:break-all">${escHtml(pub)}</a>`
+    : '<span style="color:#94a3b8">—</span>';
+  const postedRow = _postIsPosted(row)
+    ? _postDetailRow('Publicado', '<span class="post-dia-posted-tag">✓ Postado</span>')
+    : '';
   body.innerHTML = [
     _postDetailRow('Projeto', escHtml(_postProjLabel(row))),
     _postDetailRow('Peça / material', escHtml(String(row.material || row.format || '—'))),
@@ -20642,6 +20741,8 @@ function postDiaShowDetail(id) {
     _postDetailRow('Rede', escHtml(String(row.network || '—'))),
     net === 'instagram' ? _postDetailRow('Instagram', escHtml(ig || '—')) : '',
     _postDetailRow('Estágio (kanban)', escHtml(_postStageLabel(row))),
+    postedRow,
+    _postIsPosted(row) ? _postDetailRow('Link da publicação', pubHtml) : '',
     _postDetailRow('Link do material', matLink),
     row.assigned_to ? _postDetailRow('Responsável', escHtml(String(row.assigned_to))) : '',
     row.notes ? _postDetailRow('Observações', escHtml(String(row.notes))) : '',
@@ -20655,26 +20756,7 @@ function postDiaBackToList() {
 function postDiaAddNew() {
   const ds = _postDiaDate;
   closeModal('modalPostDia');
-  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('postagens') && !hasModuleEditForPage('conteudos-sociais')) {
-    try { toast('Sem permissão para criar conteúdos.', 'warn'); } catch(_) {}
-    return;
-  }
-  if(typeof csOpenNovoModal === 'function') {
-    navigate('conteudos-sociais');
-    setTimeout(async () => {
-      await csOpenNovoModal();
-      const sched = document.getElementById('csNovoScheduled');
-      if(sched && ds) {
-        const parts = ds.split('-').map(Number);
-        if(parts.length >= 3) {
-          const d = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
-          sched.value = _csToDatetimeLocal(d.getTime());
-        }
-      }
-    }, 200);
-  } else {
-    openPostagemModal(null, ds);
-  }
+  postGoCriarConteudo(ds);
 }
 
 function postDiaEditInConteudos() {
@@ -20740,9 +20822,15 @@ function _socialPostMsFromValue(v) {
 
 function _socialPostEnsureDateOnly(v) {
   if(v == null || v === '') return v;
-  const ms = _socialPostMsFromValue(v);
+  const s = String(v).trim();
+  /* Já é YYYY-MM-DD (ou com tempo após): mantém o dia civil exatamente como veio.
+     Crucial para evitar bug UTC — new Date('2026-05-19') vira UTC meia-noite e,
+     em fusos negativos, converter para local devolve o dia anterior. */
+  const ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+  const ms = _socialPostMsFromValue(s);
   if(ms != null) return _csPostDateTimeParts(ms).post_date;
-  return String(v).slice(0, 10);
+  return s.slice(0, 10);
 }
 
 const _SOCIAL_POST_TS_KEYS = ['created_at', 'updated_at', 'published_at', 'remind_metrics_at'];
@@ -21960,6 +22048,7 @@ async function csConfirmMarcarPostado() {
     }
     closeModal('modalCsMarcarPostado');
     await loadConteudosSociais();
+    _postRefreshIfActive();
   } catch(err) {
     console.warn('[csConfirmMarcarPostado]', err);
     try { toast(String(err?.message || 'Erro ao salvar'), 'err'); } catch(_) {}
@@ -22295,9 +22384,15 @@ async function csConfirmNovoConteudo() {
     } catch(_) {}
     const sid = merged.id ? String(merged.id) : '';
     if(sid) {
-      setTimeout(() => { _csReloadConteudosPreserving([sid]).catch(() => {}); }, 600);
+      setTimeout(() => {
+        _csReloadConteudosPreserving([sid]).catch(() => {});
+        _postRefreshIfActive();
+      }, 600);
     } else {
-      setTimeout(() => { loadConteudosSociais().catch(() => {}); }, 600);
+      setTimeout(() => {
+        loadConteudosSociais().catch(() => {});
+        _postRefreshIfActive();
+      }, 600);
     }
   } catch(err) {
     console.warn('[csConfirmNovoConteudo]', err);
@@ -22317,6 +22412,8 @@ try {
   window.openPostDiaModal = openPostDiaModal;
   window.postDiaShowDetail = postDiaShowDetail;
   window.postDiaBackToList = postDiaBackToList;
+  window.postGoCriarConteudo = postGoCriarConteudo;
+  window.postEditarNoKanban = postEditarNoKanban;
 } catch(_) {}
 
 async function loadPostagens() {
@@ -22338,6 +22435,7 @@ async function loadPostagens() {
   const startStr = `${y}-${_pad2(m + 1)}-01`;
   const endStr = `${y}-${_pad2(m + 1)}-${_pad2(lastDay)}`;
   try {
+    await _postResetCalendarOnce();
     const raw = await _csFetchSocialPosts(cid);
     _postagensCache = raw.filter(r => {
       const ds = _csNormalizePostDateOnly(r.post_date);
@@ -22365,12 +22463,17 @@ function postRenderFromCache() {
 
 function _postSmallCard(row) {
   const bc = _postNetColor(row.network);
+  const posted = _postIsPosted(row);
+  const borderCol = posted ? '#16a34a' : bc;
+  const bg = posted ? '#ecfdf5' : `${bc}18`;
   const tm = escHtml(_postFormatTime(row));
   const mat = escHtml(String(row.material || row.format || '—').slice(0, 28));
   const proj = escHtml(_postProjLabel(row).slice(0, 34));
   const tid = escAttr(String(row.id || ''));
-  const tip = escAttr(`${_postProjLabel(row)} · ${_postFormatTime(row)}`);
-  return `<div class="cal-post-card" data-post-id="${tid}" style="margin-top:3px;padding:3px 6px;border-radius:4px;font-size:9px;line-height:1.3;cursor:pointer;background:${bc}18;border-left:2px solid ${bc};color:#111;overflow:hidden" title="${tip}"><span style="font-weight:700;color:${bc}">${tm}</span> · ${proj}<br><span style="opacity:.8;font-size:8px">${mat}</span></div>`;
+  const tip = escAttr(`${_postProjLabel(row)} · ${_postFormatTime(row)}${posted ? ' · Postado' : ''}`);
+  const badge = posted ? '<span class="cal-posted-badge">✓</span> ' : '';
+  const cls = posted ? 'cal-post-card cal-post-card--posted' : 'cal-post-card';
+  return `<div class="${cls}" data-post-id="${tid}" style="margin-top:3px;padding:3px 6px;border-radius:4px;font-size:9px;line-height:1.3;cursor:pointer;background:${bg};border-left:2px solid ${borderCol};color:#111;overflow:hidden" title="${tip}">${badge}<span style="font-weight:700;color:${posted ? '#166534' : bc}">${tm}</span> · ${proj}<br><span style="opacity:.8;font-size:8px">${mat}</span></div>`;
 }
 
 function postRenderCalendar() {
@@ -22400,9 +22503,10 @@ function postRenderCalendar() {
     const isOther = d.getMonth() !== _postCalMonth;
     const isToday = ds === todayStr;
     const dayPosts = (mappedByDay[ds] || []).slice().sort((a, b) => String(a.post_time || '').localeCompare(String(b.post_time || '')));
+    const allPosted = dayPosts.length > 0 && dayPosts.every(_postIsPosted);
 
     const cell = document.createElement('div');
-    cell.className = 'cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '');
+    cell.className = 'cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '') + (allPosted ? ' has-posted' : '');
     cell.setAttribute('data-date', ds);
     cell.onclick = () => openPostDiaModal(ds, dayPosts);
 
@@ -22449,7 +22553,7 @@ function postRenderList() {
   if(!tb) return;
   const rows = postFilteredRows();
   if(!rows.length) {
-    tb.innerHTML = '<tr><td colspan="7" class="table-empty">Nenhuma postagem neste período.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" class="table-empty">Nenhuma peça neste período. Crie em Conteúdos · Redes.</td></tr>';
     return;
   }
   tb.innerHTML = rows.map(r => {
@@ -22460,7 +22564,10 @@ function postRenderList() {
     const net = escHtml(String(r.network || '—'));
     const pj = escHtml(String(((r.client_name || '') + (r.client_name && r.project_name ? ' — ' : '') + (r.project_name || ''))).trim() || '—');
     const mat = escHtml(String(r.material || r.format || '—'));
-    const st = escHtml(String(r.status || '—'));
+    const stRaw = String(r.status || '—');
+    const st = _postIsPosted(r)
+      ? '<span class="cal-posted-badge">✓ Postado</span>'
+      : escHtml(stRaw);
     return `<tr>
       <td>${dt}</td>
       <td>${tm}</td>
@@ -22469,7 +22576,7 @@ function postRenderList() {
       <td>${mat}</td>
       <td>${st}</td>
       <td style="text-align:right;white-space:nowrap">
-        <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="openPostagemModalById('${idJs}')"><i class="fas fa-pen"></i></button>
+        <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="postEditarNoKanban('${idJs}')"><i class="fas fa-columns"></i></button>
       </td></tr>`;
   }).join('');
 }
@@ -22496,29 +22603,20 @@ async function openPostagemModal(row, dateStr) {
     document.getElementById('postFormAssigned').value = row.assigned_to || '';
     document.getElementById('postFormNotes').value = row.notes || '';
   } else {
-    document.getElementById('modalPostagemTitle').textContent = 'NOVA POSTAGEM';
-    document.getElementById('postFormId').value = '';
-    if(delBtn) delBtn.style.display = 'none';
-    document.getElementById('postFormDate').value = (dateStr || new Date().toISOString().slice(0, 10));
-    document.getElementById('postFormTime').value = '';
-    document.getElementById('postFormNetwork').value = 'instagram';
-    document.getElementById('postFormInstagram').value = '';
-    csOnCsRedeChange('post');
-    csRefreshInstagramAccountHints('post', '');
-    document.getElementById('postFormFormat').value = '';
-    document.getElementById('postFormProjectId').value = '';
-    document.getElementById('postFormMaterial').value = '';
-    document.getElementById('postFormAssetUrl').value = '';
-    document.getElementById('postFormCaption').value = '';
-    document.getElementById('postFormStatus').value = 'planejado';
-    document.getElementById('postFormAssigned').value = '';
-    document.getElementById('postFormNotes').value = '';
+    postGoCriarConteudo(dateStr);
+    return;
   }
   openModal('modalPostagem');
 }
 
 async function savePostagem() {
-  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('postagens')) {
+  const formId = document.getElementById('postFormId')?.value;
+  if(!formId) {
+    try { toast('Crie peças em Conteúdos · Redes. O calendário só exibe o que vem do kanban.', 'warn'); } catch(_) {}
+    postGoCriarConteudo(document.getElementById('postFormDate')?.value);
+    return;
+  }
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('postagens') && !hasModuleEditForPage('conteudos-sociais')) {
     toast('Sem permissão para editar postagens.', 'warn');
     return;
   }
