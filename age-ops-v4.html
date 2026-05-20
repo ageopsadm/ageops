@@ -3954,6 +3954,7 @@ body:has(#login-screen.visible){
             <select id="postFilterProject" class="cf-select" onchange="postApplyFiltersAndRender()">
               <option value="">Todos projetos</option>
             </select>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="postRestaurarPecasApagadas()" title="Restaura peças que foram removidas em limpezas anteriores"><i class="fas fa-undo"></i> Restaurar peças</button>
             <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="postGoCriarConteudo()"><i class="fas fa-columns"></i> Novo em Conteúdos</button>
           </div>
         </div>
@@ -20549,9 +20550,65 @@ async function _postFetchAllIncludingDeleted(companyId) {
   return rows.filter(_sbIsRowVisible);
 }
 
+async function _postRestoreAllDeleted(opts) {
+  const cid = currentUser?.company_id;
+  if(!cid) return 0;
+  let raw = [];
+  try {
+    raw = await _postFetchAllIncludingDeleted(cid);
+  } catch(e) {
+    console.warn('[_postRestoreAllDeleted]', e);
+    if(opts?.toastOnError) {
+      try { toast(String(e?.message || 'Não foi possível restaurar peças.'), 'err'); } catch(_) {}
+    }
+    return 0;
+  }
+  const targets = raw.filter(r => {
+    const del = r.deleted;
+    return del === true || del === 1 || String(del).toLowerCase() === 'true';
+  });
+  if(!targets.length) return 0;
+  let n = 0;
+  for(const r of targets) {
+    try {
+      await _csApiPatchSocial(r.id, { deleted: false });
+      n++;
+    } catch(e) {
+      console.warn('[_postRestoreAllDeleted]', r.id, e);
+    }
+  }
+  return n;
+}
+
+async function postRestaurarPecasApagadas() {
+  if(typeof hasModuleEditForPage === 'function'
+     && !hasModuleEditForPage('postagens')
+     && !hasModuleEditForPage('conteudos-sociais')) {
+    try { toast('Sem permissão para restaurar peças.', 'warn'); } catch(_) {}
+    return;
+  }
+  try { toast('Restaurando peças apagadas…', 'ok'); } catch(_) {}
+  const n = await _postRestoreAllDeleted({ toastOnError: true });
+  /* Reseta a flag para garantir que o restore automático não trave em outras sessões. */
+  try { localStorage.removeItem('age_postagens_restore_v1'); } catch(_) {}
+  if(n > 0) {
+    try { toast(`${n} peça(s) restaurada(s).`, 'ok'); } catch(_) {}
+  } else {
+    try { toast('Nenhuma peça apagada para restaurar.', 'ok'); } catch(_) {}
+  }
+  if(typeof loadPostagens === 'function') {
+    await loadPostagens();
+  }
+  if(document.getElementById('page-conteudos-sociais')?.classList.contains('active')
+     && typeof loadConteudosSociais === 'function') {
+    loadConteudosSociais();
+  }
+}
+
 async function _postRestoreDeletedOnce() {
-  /* Restaura peças que o reset anterior soft-deletou (deleted=true → false). */
-  const ck = 'age_postagens_restore_v1';
+  /* Restaura peças que o reset anterior soft-deletou (deleted=true → false).
+     v2: rerodar uma vez após o usuário relatar que ainda faltavam peças. */
+  const ck = 'age_postagens_restore_v2';
   if(localStorage.getItem(ck)) return 0;
   const cid = currentUser?.company_id;
   if(!cid) return 0;
@@ -22507,6 +22564,7 @@ try {
   window.postDayDragOver = postDayDragOver;
   window.postDayDragLeave = postDayDragLeave;
   window.postDayDrop = postDayDrop;
+  window.postRestaurarPecasApagadas = postRestaurarPecasApagadas;
 } catch(_) {}
 
 async function loadPostagens() {
