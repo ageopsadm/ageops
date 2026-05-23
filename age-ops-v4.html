@@ -4940,7 +4940,9 @@ body:has(#login-screen.visible){
     </div>
     <div id="postFormIgWrap" class="form-group cs-ig-field" style="margin-bottom:14px">
       <label class="form-label" style="font-size:11px;font-weight:700;color:#888">CONTA INSTAGRAM</label>
-      <input id="postFormInstagram" type="text" list="postFormIgList" placeholder="@marca_oficial" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
+      <input id="postFormInstagram" type="text" list="postFormIgList" placeholder="@marca_oficial" autocomplete="off"
+        oninput="csIgFieldInput(this)" onfocus="csIgFieldFocus(this)" onblur="csIgFieldBlur(this)"
+        style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111">
       <datalist id="postFormIgList"></datalist>
     </div>
     <div class="form-group" style="margin-bottom:14px">
@@ -5084,7 +5086,8 @@ body:has(#login-screen.visible){
     </select>
     <div id="csEditarIgWrap" class="cs-ig-field" style="margin-top:12px">
       <label for="csEditarInstagram">Conta Instagram</label>
-      <input type="text" id="csEditarInstagram" list="csEditarIgList" placeholder="@marca_oficial" autocomplete="off">
+      <input type="text" id="csEditarInstagram" list="csEditarIgList" placeholder="@marca_oficial" autocomplete="off"
+        oninput="csIgFieldInput(this)" onfocus="csIgFieldFocus(this)" onblur="csIgFieldBlur(this)">
       <datalist id="csEditarIgList"></datalist>
     </div>
     <label for="csEditarScheduled" style="margin-top:12px">Data e hora previstas</label>
@@ -5165,7 +5168,8 @@ body:has(#login-screen.visible){
     </select>
     <div id="csNovoIgWrap" class="cs-ig-field" style="margin-top:12px">
       <label for="csNovoInstagram">Conta Instagram</label>
-      <input type="text" id="csNovoInstagram" list="csNovoIgList" placeholder="@marca_oficial" autocomplete="off">
+      <input type="text" id="csNovoInstagram" list="csNovoIgList" placeholder="@marca_oficial" autocomplete="off"
+        oninput="csIgFieldInput(this)" onfocus="csIgFieldFocus(this)" onblur="csIgFieldBlur(this)">
       <datalist id="csNovoIgList"></datalist>
     </div>
     <label for="csNovoScheduled" style="margin-top:12px">Data e hora previstas</label>
@@ -21720,6 +21724,40 @@ function _csNormalizeIgAccount(v) {
   if(!s) return '';
   const h = s.replace(/^@+/, '');
   return h ? '@' + h : '';
+}
+
+/* Garante que o @ fique sempre fixo no início do input enquanto o usuário digita. */
+function csIgFieldInput(el) {
+  if(!el) return;
+  const raw = String(el.value || '');
+  /* Limpa @ extras e sufixos vazios; preserva caracteres válidos. */
+  const cleaned = raw.replace(/^@+/, '').replace(/^\s+/, '');
+  const next = cleaned ? '@' + cleaned : '@';
+  if(el.value !== next) {
+    const wasAtEnd = el.selectionStart === el.value.length;
+    el.value = next;
+    if(wasAtEnd) {
+      try { el.setSelectionRange(next.length, next.length); } catch(_) {}
+    }
+  }
+}
+
+function csIgFieldFocus(el) {
+  if(!el) return;
+  if(!el.value || el.value.trim() === '') {
+    el.value = '@';
+    try { el.setSelectionRange(1, 1); } catch(_) {}
+  }
+}
+
+function csIgFieldBlur(el) {
+  if(!el) return;
+  const v = String(el.value || '').trim();
+  if(!v || v === '@') {
+    el.value = '';
+    return;
+  }
+  el.value = _csNormalizeIgAccount(v);
 }
 
 function _csIgFieldIds(which) {
