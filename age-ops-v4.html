@@ -6074,6 +6074,50 @@ let _pendingInviteToken = null;
 let _pendingInviteRow = null;
 let _inviteLinkBuf = '';
 
+/* ───── Sessão local persistente (sobrevive a F5/refresh) ─────
+   Como a autenticação principal é contra age_users (não contra Supabase Auth),
+   salvamos o username em localStorage com TTL e, no bootstrap, recarregamos a
+   linha do age_users e reaplica a sessão. Isso evita "sair da conta" ao
+   atualizar a página quando o signInWithPassword do Supabase Auth falha. */
+const AGE_LOCAL_SESSION_KEY = 'ageops_session';
+const AGE_LOCAL_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; /* 30 dias */
+
+function _ageSaveLocalSession(username) {
+  try {
+    if(!username) return;
+    const payload = {
+      u: String(username).toLowerCase(),
+      exp: Date.now() + AGE_LOCAL_SESSION_TTL_MS
+    };
+    localStorage.setItem(AGE_LOCAL_SESSION_KEY, JSON.stringify(payload));
+  } catch(e) {}
+}
+
+function _ageReadLocalSession() {
+  try {
+    const raw = localStorage.getItem(AGE_LOCAL_SESSION_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    if(!obj || !obj.u) return null;
+    if(obj.exp && Date.now() > obj.exp) {
+      try { localStorage.removeItem(AGE_LOCAL_SESSION_KEY); } catch(_) {}
+      return null;
+    }
+    return obj;
+  } catch(e) {
+    return null;
+  }
+}
+
+function _ageClearLocalSession() {
+  try { localStorage.removeItem(AGE_LOCAL_SESSION_KEY); } catch(e) {}
+}
+
+function _ageRenewLocalSession() {
+  const cur = _ageReadLocalSession();
+  if(cur?.u) _ageSaveLocalSession(cur.u);
+}
+
 async function fetchAgeUserRow(username) {
   try {
     const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(String(username||'').trim().toLowerCase())}&limit=1`);
@@ -7194,6 +7238,8 @@ async function applyLoginSessionFromRow(row) {
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
   setTimeout(()=>{ try { updateTrialBanner(); } catch(e) {} }, 0);
   setTimeout(()=>{ try { bootstrapNotificationsUi(); } catch(e) {} }, 0);
+  /* Persiste a sessão local para sobreviver a refresh/F5. */
+  try { _ageSaveLocalSession(currentUser.username); } catch(_) {}
   return { ok: true };
 }
 
@@ -8386,6 +8432,37 @@ async function tryRestoreSupabaseSession() {
   return false;
 }
 
+/* Restaura sessão a partir do localStorage local (independente do supabase.auth).
+   Usado quando o usuário foi autenticado contra age_users no último login. */
+async function tryRestoreLocalSession() {
+  const sess = _ageReadLocalSession();
+  if(!sess?.u) return false;
+  /* Respeita opt-out do autologin do bootstrap admin. */
+  try {
+    if(sess.u === 'gustavowng' && localStorage.getItem('ageops_disable_autologin') === '1') {
+      return false;
+    }
+  } catch(_) {}
+  try {
+    const row = await fetchAgeUserRow(sess.u);
+    if(!row || row.active === false || row.active === 'false' || !_sbIsRowVisible(row)) {
+      _ageClearLocalSession();
+      return false;
+    }
+    const res = await applyLoginSessionFromRow(row);
+    if(res.ok) {
+      try { await initApp(); } catch(_) {}
+      /* Renova validade (rolling expiry) ao restaurar com sucesso. */
+      _ageRenewLocalSession();
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.warn('[restore local session]', e);
+    return false;
+  }
+}
+
 function showLoginError(msg) {
   const err = document.getElementById('loginErr');
   const btn = document.getElementById('loginBtn');
@@ -8547,6 +8624,7 @@ function emergencyReset() {
   try { localStorage.removeItem('age_ops_remember'); } catch(e){}
   try { localStorage.removeItem('ageops_remember'); } catch(e){}
   try { localStorage.removeItem('ageops_email'); } catch(e){}
+  try { _ageClearLocalSession(); } catch(e){}
   try { sessionStorage.clear(); } catch(e){}
   const err = document.getElementById('loginErr');
   if(err) { err.style.color='#16a34a'; err.textContent = '✓ Cache limpo! Tente logar agora.'; }
@@ -8566,6 +8644,7 @@ function emergencyReset() {
 
 async function doLogout() {
   try { sessionStorage.setItem('age_skip_autologin_gustavo', '1'); } catch(e) {}
+  try { _ageClearLocalSession(); } catch(e) {}
   const remembered = localStorage.getItem('ageops_remember');
   stopNotificationsPolling();
   _notifCache = [];
@@ -26569,8 +26648,10 @@ function _ageInit() {
 
 async function _ageBootstrap() {
   try {
-    const autoLogado = await tryRestoreSupabaseSession();
-    if(!autoLogado) {
+    /* Ordem: sessão local (age_users) → sessão Supabase Auth (JWT) → autologin do bootstrap admin → tela de login. */
+    let logado = await tryRestoreLocalSession();
+    if(!logado) logado = await tryRestoreSupabaseSession();
+    if(!logado) {
       const gustavoOk = await tryAutoLoginGustavowng();
       if(!gustavoOk) {
         mostrarTelaLogin();
