@@ -967,6 +967,71 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 }
 .task-item.myday-empresa{border-left:3px solid #0f172a}
 .task-item.myday-pessoal{border-left:3px solid #16a34a}
+.task-item.myday-designada{border-left:3px solid #f59e0b}
+
+/* ── Barra de progresso compacta (reutilizável) ── */
+.progress-card{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 16px;border:1px solid var(--bd);border-radius:10px;background:var(--bg2);
+  margin-bottom:14px;
+}
+.progress-card .progress-info{display:flex;flex-direction:column;gap:2px;min-width:120px}
+.progress-card .progress-title{font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--textsub);text-transform:uppercase}
+.progress-card .progress-count{font-family:var(--font-h);font-size:14px;font-weight:800;color:var(--text)}
+.progress-card .progress-bar-wrap{flex:1;min-width:160px;display:flex;flex-direction:column;gap:6px}
+.progress-card .progress-bar-track{
+  height:8px;border-radius:999px;background:rgba(0,0,0,.08);overflow:hidden;border:1px solid rgba(0,0,0,.05);
+}
+.progress-card .progress-bar-fill{
+  height:100%;border-radius:999px;background:linear-gradient(90deg,#16a34a,#22c55e);
+  width:0%;transition:width .35s ease;
+}
+.progress-card .progress-bar-fill.is-complete{background:linear-gradient(90deg,#16a34a,#0ea5e9)}
+.progress-card .progress-bar-fill.is-low{background:linear-gradient(90deg,#f59e0b,#fb923c)}
+.progress-card .progress-pct{font-family:var(--font-m);font-size:11px;font-weight:800;color:var(--text);min-width:42px;text-align:right}
+.progress-card.progress-card--mini{padding:8px 12px;margin-bottom:10px}
+.progress-card.progress-card--mini .progress-count{font-size:12px}
+
+/* ── MEU CALENDÁRIO (pessoal) ── */
+.mycal-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  margin-bottom:12px;padding:10px 14px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;
+}
+.mycal-nav{display:flex;align-items:center;gap:8px}
+.mycal-title{font-family:var(--font-h);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.mycal-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--font-m);font-size:9px;color:var(--textsub)}
+.mycal-dot{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:4px;vertical-align:middle}
+.mycal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.mycal-dow{
+  font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.12em;
+  color:var(--textsub);text-transform:uppercase;text-align:center;padding:6px 0;
+}
+.mycal-day{
+  min-height:108px;background:#fff;border:1px solid var(--bd);border-radius:8px;
+  padding:6px 8px;display:flex;flex-direction:column;gap:4px;cursor:pointer;
+  transition:transform .08s ease,box-shadow .12s ease;
+}
+.mycal-day:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.mycal-day.is-blank{background:transparent;border:1px dashed rgba(0,0,0,.06);cursor:default}
+.mycal-day.is-blank:hover{transform:none;box-shadow:none}
+.mycal-day.is-today{border-color:#16a34a;box-shadow:inset 0 0 0 1px #16a34a}
+.mycal-day.is-weekend{background:#fafafa}
+.mycal-daynum{font-family:var(--font-m);font-size:11px;font-weight:700;color:#222}
+.mycal-day.is-today .mycal-daynum{color:#16a34a}
+.mycal-items{display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.mycal-item{
+  font-family:var(--font-m);font-size:9px;line-height:1.25;padding:2px 6px;border-radius:4px;
+  border:1px solid rgba(0,0,0,.06);background:#f6f6f6;color:#222;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mycal-item.is-done{text-decoration:line-through;opacity:.55}
+.mycal-item.k-own{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.35);color:#166534}
+.mycal-item.k-assigned{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.35);color:#92400e}
+.mycal-item.k-event{background:rgba(15,23,42,.08);border-color:rgba(15,23,42,.2);color:#0f172a}
+.mycal-more{font-family:var(--font-m);font-size:8px;color:var(--textsub)}
+.mycal-empty{color:var(--textsub);font-family:var(--font-m);font-size:10px}
+.mycal-day-modal{max-width:560px}
+.mycal-day-list{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;padding-right:4px}
 
 /* ── CRONOGRAMA ── */
 .sched-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
@@ -2872,6 +2937,9 @@ body:has(#login-screen.visible){
       <button type="button" class="nav-item" data-page="mytasks" data-perm-module="mytasks" onclick="navigate('mytasks')">
         <i class="fas fa-tasks"></i><span>TAREFAS</span>
       </button>
+      <button type="button" class="nav-item" data-page="mycalendar" data-perm-module="mytasks" onclick="navigate('mycalendar')">
+        <i class="fas fa-calendar-day"></i><span>MEU CALENDÁRIO</span>
+      </button>
       <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')">
         <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
       </button>
@@ -2887,6 +2955,9 @@ body:has(#login-screen.visible){
       </button>
       <button type="button" class="nav-item" data-page="mytasks" data-perm-module="mytasks" onclick="navigate('mytasks')">
         <i class="fas fa-tasks"></i><span>MINHAS TAREFAS</span>
+      </button>
+      <button type="button" class="nav-item" data-page="mycalendar" data-perm-module="mytasks" onclick="navigate('mycalendar')">
+        <i class="fas fa-calendar-day"></i><span>MEU CALENDÁRIO</span>
       </button>
       <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')">
         <i class="fas fa-wallet"></i><span>FINANCEIRO PESSOAL</span>
@@ -4102,12 +4173,79 @@ body:has(#login-screen.visible){
       <!-- ══════════════════════════════════
            TAREFAS PAGE
       ══════════════════════════════════ -->
+      <!-- ══════════════════════════════════
+           MEU CALENDÁRIO (PESSOAL)
+      ══════════════════════════════════ -->
+      <div id="page-mycalendar" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-calendar-day"></i> MEU CALENDÁRIO</div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="myCalGoToday()" title="Hoje"><i class="fas fa-bullseye"></i> Hoje</button>
+            <button class="btn btn-primary btn-sm" onclick="openDayTaskModal('personal')"><i class="fas fa-plus"></i> Tarefa</button>
+          </div>
+        </div>
+        <div class="mycal-toolbar">
+          <div class="mycal-nav">
+            <button class="btn btn-ghost btn-sm" onclick="myCalPrev()"><i class="fas fa-chevron-left"></i></button>
+            <div class="mycal-title" id="mycalTitle">—</div>
+            <button class="btn btn-ghost btn-sm" onclick="myCalNext()"><i class="fas fa-chevron-right"></i></button>
+          </div>
+          <div class="mycal-legend">
+            <span><span class="mycal-dot" style="background:#16a34a"></span>Minhas tarefas</span>
+            <span><span class="mycal-dot" style="background:#f59e0b"></span>Atribuídas a mim</span>
+            <span><span class="mycal-dot" style="background:#0f172a"></span>Eventos da empresa</span>
+          </div>
+        </div>
+        <div id="mycalProgress" class="progress-card" style="display:none">
+          <div class="progress-info">
+            <div class="progress-title">Progresso do mês</div>
+            <div class="progress-count" id="mycalProgressCount">0 / 0</div>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="mycalProgressFill"></div></div>
+          </div>
+          <div class="progress-pct" id="mycalProgressPct">0%</div>
+        </div>
+        <div class="mycal-grid" id="mycalDowGrid">
+          <div class="mycal-dow">Dom</div><div class="mycal-dow">Seg</div><div class="mycal-dow">Ter</div>
+          <div class="mycal-dow">Qua</div><div class="mycal-dow">Qui</div><div class="mycal-dow">Sex</div><div class="mycal-dow">Sáb</div>
+        </div>
+        <div class="mycal-grid" id="mycalGrid" style="margin-top:4px"></div>
+      </div>
+
       <div id="page-mytasks" class="page">
         <div class="page-header">
           <div class="page-title"><i class="fas fa-tasks"></i> MINHAS TAREFAS</div>
-          <div class="page-actions">
+          <div class="page-actions" style="gap:8px;flex-wrap:wrap">
+            <select id="tasksFilterRange" class="cf-select" onchange="loadTasks()" title="Período">
+              <option value="all">Todas</option>
+              <option value="today">Hoje</option>
+              <option value="week">Esta semana</option>
+              <option value="month">Este mês</option>
+              <option value="overdue">Atrasadas</option>
+            </select>
+            <select id="tasksFilterKind" class="cf-select" onchange="loadTasks()" title="Tipo">
+              <option value="all">Todos tipos</option>
+              <option value="own">Minhas pessoais</option>
+              <option value="assigned">Atribuídas a mim</option>
+            </select>
+            <select id="tasksFilterStatus" class="cf-select" onchange="loadTasks()" title="Status">
+              <option value="all">Todos status</option>
+              <option value="open">Pendentes</option>
+              <option value="done">Concluídas</option>
+            </select>
             <button class="btn btn-primary btn-sm" onclick="openDayTaskModal('task')"><i class="fas fa-plus"></i> Tarefa</button>
           </div>
+        </div>
+        <div id="tasksProgress" class="progress-card" style="display:none">
+          <div class="progress-info">
+            <div class="progress-title">Progresso</div>
+            <div class="progress-count" id="tasksProgressCount">0 / 0</div>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="tasksProgressFill"></div></div>
+          </div>
+          <div class="progress-pct" id="tasksProgressPct">0%</div>
         </div>
         <div id="tasksList"></div>
       </div>
@@ -4883,6 +5021,30 @@ body:has(#login-screen.visible){
       <button class="btn btn-ghost" onclick="closeModal('modalFech')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveFech()"><i class="fas fa-save"></i> Salvar e Propagar Custo</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal Dia do calendário pessoal -->
+<div class="modal" id="modalMyCalDay">
+  <div class="modal-box mycal-day-modal">
+    <div class="modal-title">
+      <span id="modalMyCalDayTitle">Dia</span>
+      <button onclick="closeModal('modalMyCalDay')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="myCalDayProgress" class="progress-card progress-card--mini" style="display:none">
+      <div class="progress-info">
+        <div class="progress-title">Progresso do dia</div>
+        <div class="progress-count" id="myCalDayProgressCount">0 / 0</div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="myCalDayProgressFill"></div></div>
+      </div>
+      <div class="progress-pct" id="myCalDayProgressPct">0%</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="myCalAddTaskFromModal()"><i class="fas fa-plus"></i> Nova tarefa neste dia</button>
+    </div>
+    <div id="myCalDayList" class="mycal-day-list"></div>
   </div>
 </div>
 
@@ -6139,7 +6301,7 @@ function canViewPage(page) {
   if(page === 'cashflow') return _userIsAdminLike() || _userIsBootstrapAdmin();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
-  if(page === 'mytasks' || page === 'myfinance') return true;
+  if(page === 'mytasks' || page === 'myfinance' || page === 'mycalendar') return true;
   const keys = _permKeysForPage(page);
   if(!keys.length) return false;
   return keys.some(k => currentUser.permissions?.[k]?.view === true);
@@ -6151,7 +6313,7 @@ function hasModuleEditForPage(page) {
   if(page === 'cashflow') return _userIsAdminLike() || _userIsBootstrapAdmin();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
-  if(page === 'mytasks' || page === 'myfinance') return true;
+  if(page === 'mytasks' || page === 'myfinance' || page === 'mycalendar') return true;
   const keys = _permKeysForPage(page);
   if(!keys.length) return false;
   return keys.some(k => currentUser.permissions?.[k]?.edit === true);
@@ -9670,7 +9832,7 @@ const PAGE_TITLES = {
   contratos:'CONTRATOS',
   pagamentos:'PAGAMENTOS',
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA',
-  myday:'MEU DIA', mytasks:'TAREFAS', myfinance:'FINANCEIRO',
+  myday:'MEU DIA', mytasks:'TAREFAS', mycalendar:'MEU CALENDÁRIO', myfinance:'FINANCEIRO',
   profile:'MEU PERFIL',
   'equipe-permissoes':'EQUIPE & PERMISSÕES',
   'no-access':'ACESSO NEGADO',
@@ -9739,6 +9901,7 @@ function navigate(page) {
   }
   if(page==='myday')        loadMyDay();
   if(page==='mytasks')      loadTasks();
+  if(page==='mycalendar')   loadMyCalendar();
   if(page==='myfinance')    loadFinance();
   if(page==='profile')     loadProfile();
   if(page==='equipe-permissoes') loadEquipePermissoesPage();
@@ -23397,23 +23560,36 @@ function _mydayRenderProgress(done, total) {
 }
 function _mydayTaskRow(item) {
   const done = !!item.done;
-  const chk = item.source === 'pessoal'
-    ? `<div class="task-check${done ? ' checked' : ''}" onclick="toggleTask('${item.id}','${item.done}')">${done ? '✓' : ''}</div>`
-    : `<div class="task-check${done ? ' checked' : ''}" onclick="toggleMyDaySched('${item.id}',${done})">${done ? '✓' : ''}</div>`;
-  const chkFixed = chk.replace('</div>', '</div>');
-  const extra = item.source === 'pessoal'
-    ? `<button class="btn btn-danger btn-sm" onclick="deleteTask('${item.id}')"><i class="fas fa-trash"></i></button>`
+  let chk;
+  if(item.source === 'pessoal') {
+    chk = `<div class="task-check${done ? ' checked' : ''}" onclick="toggleTask('${item.id}','${item.done}')">${done ? '✓' : ''}</div>`;
+  } else if(item.source === 'designada') {
+    chk = `<div class="task-check${done ? ' checked' : ''}" onclick="toggleAssignedTask('${item.id}',${done})">${done ? '✓' : ''}</div>`;
+  } else {
+    chk = `<div class="task-check${done ? ' checked' : ''}" onclick="toggleMyDaySched('${item.id}',${done})">${done ? '✓' : ''}</div>`;
+  }
+  let extra = '';
+  if(item.source === 'pessoal') {
+    extra = `<button class="btn btn-ghost btn-sm" onclick="openDayTaskModal('personal','${item.id}')" title="Editar"><i class="fas fa-pen"></i></button>
+             <button class="btn btn-danger btn-sm" onclick="deleteTask('${item.id}')" title="Excluir"><i class="fas fa-trash"></i></button>`;
+  }
+  let cls = ' myday-pessoal';
+  let badge = 'PESSOAL';
+  if(item.source === 'empresa') { cls = ' myday-empresa'; badge = 'EMPRESA'; }
+  else if(item.source === 'designada') { cls = ' myday-designada'; badge = 'ATRIBUÍDA'; }
+  const byLine = item.source === 'designada' && item.assigned_by
+    ? `<div class="task-meta">Atribuída por ${escHtml(displayNameForUsername(item.assigned_by))}</div>`
     : '';
-  const cls = item.source === 'empresa' ? ' myday-empresa' : ' myday-pessoal';
   return `
       <div class="task-item${cls}${done ? ' done' : ''}">
-        ${chkFixed}
+        ${chk}
         <div style="flex:1">
           <div class="task-text" style="${done ? 'text-decoration:line-through' : ''}">${escHtml(item.text)}</div>
           ${item.notes ? `<div class="task-meta">${escHtml(item.notes)}</div>` : ''}
           ${item.owner && item.source === 'empresa' ? `<div class="task-meta">Responsável: ${escHtml(item.owner)}</div>` : ''}
+          ${byLine}
         </div>
-        <span class="task-source-badge">${item.source === 'empresa' ? 'EMPRESA' : 'PESSOAL'}</span>
+        <span class="task-source-badge">${badge}</span>
         ${extra}
       </div>`;
 }
@@ -23423,6 +23599,31 @@ function toggleMyDaySched(id, currentDone) {
   loadMyDay();
   toast(done ? 'Item do dia concluído!' : 'Item reaberto.');
 }
+async function _fetchAssignedTasksForUser(scope) {
+  /* scope: 'today' (due_date = hoje), 'range' (entre datas), 'all' */
+  const u = String(currentUser?.username || '').trim();
+  if(!u) return [];
+  try {
+    const uEnc = encodeURIComponent(u);
+    let qs = `?assigned_to=eq.${uEnc}&limit=400`;
+    if(scope && scope.startDate && scope.endDate) {
+      qs += `&due_date=gte.${encodeURIComponent(scope.startDate)}&due_date=lte.${encodeURIComponent(scope.endDate)}`;
+    }
+    const d = await apiGet('age_assigned_tasks', qs);
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    return rows.filter(_sbIsRowVisible);
+  } catch(e) {
+    console.warn('[fetchAssignedTasksForUser]', e);
+    return [];
+  }
+}
+
+function _assignedTaskIsDone(row) {
+  const st = String(row?.status || '').toLowerCase();
+  return st === 'concluida' || st === 'concluído' || st === 'concluido'
+    || row?.done === true || row?.done === 'true';
+}
+
 async function loadMyDay() {
   const el = document.getElementById('mydayList');
   if(!el) return;
@@ -23433,21 +23634,53 @@ async function loadMyDay() {
   try {
     const tasks = await fetchOwn('age_tasks');
     const myTasks = tasks.filter(t => (!t.day_date || String(t.day_date).slice(0, 10) === today));
-    const schedEvts = await fetchAll('age_team_calendar', 500);
-    const todayEvts = schedEvts.filter(e => (e.data_inicio || e.event_date || e.date || '').slice(0, 10) === today);
 
-    const empresa = todayEvts.map(e => {
+    /* Eventos do dia escopados por empresa + responsável (mesma lógica do cronograma). */
+    const cid = currentUser?.company_id;
+    const meName = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
+    const isAdmin = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
+      || ['admin','gestor'].includes(String(currentUser?.role||'').toLowerCase());
+    let todayEvts = [];
+    if(cid) {
+      let qs = `?company_id=eq.${encodeURIComponent(String(cid))}`
+        + `&data_inicio=eq.${encodeURIComponent(today)}`
+        + `&order=hora_inicio.asc`;
+      if(!isAdmin && meName) qs += `&responsavel_nome=eq.${encodeURIComponent(meName)}`;
+      try {
+        const d = await apiGet('age_team_calendar', qs);
+        todayEvts = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+      } catch(e) { todayEvts = []; }
+    }
+
+    /* Tarefas atribuídas pelo admin com prazo hoje. */
+    const assigned = await _fetchAssignedTasksForUser({ startDate: today, endDate: today });
+    /* Evitar duplicação: se um evento já gerou uma assignment, mostrar SÓ a assignment
+       (que tem status persistido no banco), removendo o espelho dele em "empresa". */
+    const assignedEventIds = new Set(
+      assigned.map(a => String(a.calendar_event_id || '')).filter(Boolean)
+    );
+    const empresaEvts = todayEvts.filter(e => !assignedEventIds.has(String(e.id)));
+
+    const empresa = empresaEvts.map(e => {
       const id = 'sched_' + e.id;
       return {
         id, text: (e.titulo || e.title || 'Evento'), source: 'empresa',
         done: _mydayIsDone(id, false), notes: (e.descricao || e.notes || ''), owner: (e.responsavel_nome || e.owner || '')
       };
     });
+    const designada = assigned.map(a => ({
+      id: a.id,
+      text: a.title || a.task_text || a.text || 'Tarefa atribuída',
+      source: 'designada',
+      done: _assignedTaskIsDone(a),
+      notes: a.notes || '',
+      assigned_by: a.assigned_by || ''
+    }));
     const pessoal = myTasks.map(t => ({
       id: t.id, text: t.task_text || t.text || '', source: 'pessoal',
       done: t.done === true || t.done === 'true', prio: t.priority || 'normal'
     }));
-    const allItems = [...empresa, ...pessoal];
+    const allItems = [...empresa, ...designada, ...pessoal];
     const doneCount = allItems.filter(i => i.done).length;
     _mydayRenderProgress(doneCount, allItems.length);
 
@@ -23469,45 +23702,122 @@ async function loadMyDay() {
         </div>`;
     };
 
-    el.innerHTML = renderSection('Cronograma da empresa', empresa) + renderSection('Minhas tarefas', pessoal);
+    el.innerHTML =
+      renderSection('Cronograma da empresa', empresa) +
+      renderSection('Tarefas atribuídas a mim', designada) +
+      renderSection('Minhas tarefas', pessoal);
   } catch(e) {
+    console.warn('[loadMyDay]', e);
     el.innerHTML = `<div class="myday-empty" style="color:#b91c1c">Erro ao carregar o dia.</div>`;
     _mydayRenderProgress(0, 0);
   }
 }
 
 /* ── Tasks ── */
+function _tasksRangeBounds(rangeKey) {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  const d = today.getDate();
+  const iso = (yy, mm, dd) => `${yy}-${String(mm+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  if(rangeKey === 'today') return { start: iso(y,m,d), end: iso(y,m,d) };
+  if(rangeKey === 'week') {
+    const dow = today.getDay();
+    const offsetToMonday = dow === 0 ? -6 : 1 - dow;
+    const start = new Date(y, m, d + offsetToMonday);
+    const end = new Date(start); end.setDate(start.getDate() + 6);
+    return {
+      start: iso(start.getFullYear(), start.getMonth(), start.getDate()),
+      end: iso(end.getFullYear(), end.getMonth(), end.getDate())
+    };
+  }
+  if(rangeKey === 'month') {
+    const last = new Date(y, m+1, 0).getDate();
+    return { start: iso(y,m,1), end: iso(y,m,last) };
+  }
+  return null;
+}
+
+function _taskDateMatches(dateStr, range) {
+  if(range === 'all') return true;
+  const ds = String(dateStr || '').slice(0,10);
+  if(range === 'overdue') {
+    if(!ds) return false;
+    const todayIso = new Date().toISOString().slice(0,10);
+    return ds < todayIso;
+  }
+  const bounds = _tasksRangeBounds(range);
+  if(!bounds) return true;
+  if(!ds) return range === 'all';
+  return ds >= bounds.start && ds <= bounds.end;
+}
+
 async function loadTasks() {
   const el=document.getElementById('tasksList');
   if(!el) return;
+  const range = document.getElementById('tasksFilterRange')?.value || 'all';
+  const kind = document.getElementById('tasksFilterKind')?.value || 'all';
+  const stFilter = document.getElementById('tasksFilterStatus')?.value || 'all';
+
   try {
     const myTasks=(await fetchOwn('age_tasks')).sort((a,b)=>(b.created_at||0)-(a.created_at||0));
+    /* Atribuídas: agora visível para qualquer usuário (admin/gestor/colaborador). */
     let assigned=[];
-    if(_userIsColaborador()) {
-      try {
-        const u = encodeURIComponent(currentUser.username);
+    try {
+      const u = encodeURIComponent(String(currentUser?.username || ''));
+      if(u) {
         const d = await apiGet('age_assigned_tasks', `?assigned_to=eq.${u}&limit=300`);
         assigned = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
-      } catch(e) { assigned=[]; }
-    }
-    const assignedRows = assigned.map(a => {
-      const st = String(a.status || '').toLowerCase();
-      const done = st === 'concluida' || st === 'concluído' || st === 'concluido' || a.done === true || a.done === 'true';
-      return {
-        _kind: 'assigned',
-        id: a.id,
-        task_text: a.title || a.task_text || a.text || '',
-        day_date: a.due_date,
-        priority: 'atribuída',
-        done,
-        assigned_by: a.assigned_by,
-        created_at: a.created_at || 0
-      };
-    });
+      }
+    } catch(e) { assigned=[]; }
+
+    const assignedRows = assigned.map(a => ({
+      _kind: 'assigned',
+      id: a.id,
+      task_text: a.title || a.task_text || a.text || '',
+      day_date: a.due_date,
+      priority: 'atribuída',
+      done: _assignedTaskIsDone(a),
+      assigned_by: a.assigned_by,
+      notes: a.notes || '',
+      created_at: a.created_at || 0
+    }));
     const ownRows = myTasks.map(t => ({ _kind: 'own', ...t }));
-    const merged = [...assignedRows, ...ownRows].sort((a,b)=>(b.created_at||0)-(a.created_at||0));
+    let merged = [...assignedRows, ...ownRows];
+
+    /* Filtros UI */
+    if(kind !== 'all') merged = merged.filter(it => (kind === 'own' ? it._kind === 'own' : it._kind === 'assigned'));
+    if(range !== 'all') merged = merged.filter(it => _taskDateMatches(it.day_date, range));
+    if(stFilter !== 'all') {
+      merged = merged.filter(it => {
+        const isDone = it.done === true || it.done === 'true';
+        return stFilter === 'done' ? isDone : !isDone;
+      });
+    }
+
+    /* Ordenação: pendentes primeiro, depois por data (mais próxima → mais distante) ou created_at desc. */
+    merged.sort((a,b) => {
+      const da = a.day_date ? String(a.day_date).slice(0,10) : '';
+      const db = b.day_date ? String(b.day_date).slice(0,10) : '';
+      const adone = (a.done===true||a.done==='true') ? 1 : 0;
+      const bdone = (b.done===true||b.done==='true') ? 1 : 0;
+      if(adone !== bdone) return adone - bdone;
+      if(da && db && da !== db) return da.localeCompare(db);
+      if(da && !db) return -1;
+      if(!da && db) return 1;
+      return (b.created_at||0) - (a.created_at||0);
+    });
+
+    /* Atualiza barra de progresso (escopo do filtro atual). */
+    _renderProgressBar({
+      cardId: 'tasksProgress',
+      countId: 'tasksProgressCount',
+      fillId: 'tasksProgressFill',
+      pctId: 'tasksProgressPct'
+    }, merged);
+
     if(!merged.length){
-      el.innerHTML=`<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:20px;text-align:center">Nenhuma tarefa. Clique em "+ Tarefa" para adicionar.</div>`;
+      el.innerHTML=`<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:20px;text-align:center">Nenhuma tarefa nesse filtro. Clique em "+ Tarefa" para adicionar.</div>`;
       return;
     }
     el.innerHTML=merged.map(item=>{
@@ -23520,6 +23830,7 @@ async function loadTasks() {
         <div style="flex:1">
           <div class="task-text" style="${chk?'text-decoration:line-through':''}">${escHtml(item.task_text||'')}</div>
           ${item.day_date?`<div class="task-meta">${fmtDate(item.day_date)}</div>`:''}
+          ${item.notes?`<div class="task-meta">${escHtml(item.notes)}</div>`:''}
           <div style="margin-top:4px"><span style="font-family:var(--font-m);font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35)">Atribuída por ${escHtml(byName)}</span></div>
         </div>
       </div>`;
@@ -23533,7 +23844,8 @@ async function loadTasks() {
           <div class="task-text">${escHtml(t.task_text||t.text||'')}</div>
           ${t.day_date?`<div class="task-meta">${fmtDate(t.day_date)} · ${t.priority||'normal'}</div>`:''}
         </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="openDayTaskModal('personal','${t.id}')" title="Editar"><i class="fas fa-pen"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
       </div>`;
     }).join('');
   } catch(e){ el.innerHTML=`<div style="color:var(--textsub);padding:20px">Erro.</div>`; }
@@ -23544,44 +23856,76 @@ async function toggleAssignedTask(id, currentDone) {
   const status = done ? 'concluida' : 'pendente';
   try {
     await apiPatch('age_assigned_tasks', id, { status });
-    await loadTasks();
     const my=document.getElementById('page-myday');
+    const tk=document.getElementById('page-mytasks');
+    const mc=document.getElementById('page-mycalendar');
     if(my?.classList.contains('active')) loadMyDay();
+    if(tk?.classList.contains('active')) loadTasks();
+    if(mc?.classList.contains('active')) loadMyCalendar();
     toast(done ? 'Tarefa concluída!' : 'Tarefa reaberta.');
   } catch(e){ toast('Erro ao atualizar tarefa','err'); }
 }
 
-function openDayTaskModal(type='personal') {
-  document.getElementById('modalTaskTitle').textContent = 'NOVA TAREFA';
-  document.getElementById('taskId').value   = '';
+async function openDayTaskModal(type='personal', id=null) {
   document.getElementById('taskType').value = type;
-  document.getElementById('taskText').value = '';
-  document.getElementById('taskDate').value = new Date().toISOString().slice(0,10);
-  document.getElementById('taskPrio').value = 'normal';
+  document.getElementById('taskId').value = id ? String(id) : '';
+  document.getElementById('modalTaskTitle').textContent = id ? 'EDITAR TAREFA' : 'NOVA TAREFA';
+  if(id) {
+    try {
+      const rec = await apiGet('age_tasks', `/${encodeURIComponent(id)}`);
+      const row = Array.isArray(rec?.data) ? rec.data[0] : (Array.isArray(rec) ? rec[0] : rec);
+      if(!row) {
+        toast('Tarefa não encontrada.', 'warn');
+        return;
+      }
+      document.getElementById('taskText').value = row.task_text || row.text || '';
+      document.getElementById('taskDate').value = (row.day_date || '').toString().slice(0,10) || new Date().toISOString().slice(0,10);
+      document.getElementById('taskPrio').value = row.priority || 'normal';
+    } catch(e) {
+      toast('Não foi possível carregar a tarefa.', 'err');
+      return;
+    }
+  } else {
+    document.getElementById('taskText').value = '';
+    document.getElementById('taskDate').value = new Date().toISOString().slice(0,10);
+    document.getElementById('taskPrio').value = 'normal';
+  }
   openModal('modalTask');
 }
 
 async function saveTask() {
   const text=document.getElementById('taskText').value.trim();
   if(!text){ toast('Preencha a tarefa','warn'); return; }
-  const payload={
+  const id = (document.getElementById('taskId')?.value || '').trim();
+  const payload = {
     task_text: text,
-    day_date:  document.getElementById('taskDate').value,
+    day_date:  document.getElementById('taskDate').value || null,
     priority:  document.getElementById('taskPrio').value,
-    done:      false,
-    owner:     currentUser.username,
-    created_by:currentUser.username
   };
+  if(!id) {
+    payload.done = false;
+    payload.owner = currentUser.username;
+    payload.created_by = currentUser.username;
+  }
   try {
-    await apiPost('age_tasks',payload);
+    if(id) {
+      const rec = await apiGet('age_tasks', `/${encodeURIComponent(id)}`);
+      const row = Array.isArray(rec?.data) ? rec.data[0] : (Array.isArray(rec) ? rec[0] : rec);
+      if(!_ownGuard(row)) return;
+      await apiPatch('age_tasks', id, payload);
+    } else {
+      await apiPost('age_tasks', payload);
+    }
     closeModal('modalTask');
-    toast('Tarefa criada!');
+    toast(id ? 'Tarefa atualizada!' : 'Tarefa criada!');
     /* Atualizar ambas as views */
     const my=document.getElementById('page-myday');
     const tk=document.getElementById('page-mytasks');
+    const mc=document.getElementById('page-mycalendar');
     if(my?.classList.contains('active')) loadMyDay();
     if(tk?.classList.contains('active')) loadTasks();
-  } catch(e){ toast('Erro ao criar tarefa','err'); }
+    if(mc?.classList.contains('active') && typeof loadMyCalendar === 'function') loadMyCalendar();
+  } catch(e){ toast(id ? 'Erro ao atualizar tarefa' : 'Erro ao criar tarefa','err'); }
 }
 
 async function toggleTask(id, currentDone) {
@@ -23593,8 +23937,10 @@ async function toggleTask(id, currentDone) {
     await apiPatch('age_tasks',id,{done});
     const my=document.getElementById('page-myday');
     const tk=document.getElementById('page-mytasks');
+    const mc=document.getElementById('page-mycalendar');
     if(my?.classList.contains('active')) loadMyDay();
     if(tk?.classList.contains('active')) loadTasks();
+    if(mc?.classList.contains('active')) loadMyCalendar();
   } catch(e){ toast('Erro','err'); }
 }
 
@@ -23606,10 +23952,321 @@ async function deleteTask(id) {
     await apiDel('age_tasks',id);
     const my=document.getElementById('page-myday');
     const tk=document.getElementById('page-mytasks');
+    const mc=document.getElementById('page-mycalendar');
     if(my?.classList.contains('active')) loadMyDay();
     if(tk?.classList.contains('active')) loadTasks();
+    if(mc?.classList.contains('active')) loadMyCalendar();
     toast('Tarefa removida');
   } catch(e){ toast('Erro','err'); }
+}
+
+/* ═══════════════════════════════════════════
+   Helper: barra de progresso reutilizável
+═══════════════════════════════════════════ */
+function _renderProgressBar(ids, items) {
+  /* items: array de objetos com .done (ou .status). Filtra itens "completáveis"
+     (descarta eventos sem mecanismo de conclusão real, como event sem assignment). */
+  const card = document.getElementById(ids.cardId);
+  const count = document.getElementById(ids.countId);
+  const fill = document.getElementById(ids.fillId);
+  const pct = document.getElementById(ids.pctId);
+  if(!card || !count || !fill || !pct) return;
+  const total = (items || []).length;
+  if(!total) {
+    card.style.display = 'none';
+    fill.classList.remove('is-complete','is-low');
+    fill.style.width = '0%';
+    return;
+  }
+  const done = items.filter(it => it.done === true || it.done === 'true').length;
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  card.style.display = '';
+  count.textContent = `${done} / ${total}`;
+  pct.textContent = `${percent}%`;
+  fill.style.width = `${percent}%`;
+  fill.classList.remove('is-complete','is-low');
+  if(percent >= 100) fill.classList.add('is-complete');
+  else if(percent < 25) fill.classList.add('is-low');
+}
+
+/* ═══════════════════════════════════════════
+   MEU CALENDÁRIO — visão mensal pessoal
+   Agrega: age_tasks (próprias) + age_assigned_tasks (atribuídas) + age_team_calendar (eventos da empresa relativos a mim)
+═══════════════════════════════════════════ */
+let myCalYear = new Date().getFullYear();
+let myCalMonth = new Date().getMonth();
+let _myCalCache = { items: [], byDay: new Map() };
+
+function _myCalIso(yy, mm, dd) {
+  return `${yy}-${String(mm+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+}
+function _myCalMonthLabel(yy, mm) {
+  const dt = new Date(yy, mm, 1);
+  const s = dt.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function myCalGoToday() {
+  myCalYear = new Date().getFullYear();
+  myCalMonth = new Date().getMonth();
+  loadMyCalendar();
+}
+function myCalPrev() {
+  myCalMonth -= 1;
+  if(myCalMonth < 0) { myCalMonth = 11; myCalYear -= 1; }
+  loadMyCalendar();
+}
+function myCalNext() {
+  myCalMonth += 1;
+  if(myCalMonth > 11) { myCalMonth = 0; myCalYear += 1; }
+  loadMyCalendar();
+}
+
+async function loadMyCalendar() {
+  const grid = document.getElementById('mycalGrid');
+  const title = document.getElementById('mycalTitle');
+  if(!grid) return;
+  if(title) title.textContent = _myCalMonthLabel(myCalYear, myCalMonth);
+
+  const firstDay = new Date(myCalYear, myCalMonth, 1);
+  const lastDayDate = new Date(myCalYear, myCalMonth+1, 0);
+  const startIso = _myCalIso(myCalYear, myCalMonth, 1);
+  const endIso = _myCalIso(myCalYear, myCalMonth, lastDayDate.getDate());
+
+  const items = [];
+  try {
+    /* 1) Tarefas pessoais do mês (ou sem data → relembradas em "hoje"). */
+    const own = await fetchOwn('age_tasks');
+    const todayIso = new Date().toISOString().slice(0,10);
+    const inToday = todayIso >= startIso && todayIso <= endIso;
+    for(const t of (own || [])) {
+      const dd = (t.day_date || '').toString().slice(0,10);
+      let dayKey = dd;
+      if(!dd && inToday) dayKey = todayIso;
+      if(!dayKey) continue;
+      if(dayKey < startIso || dayKey > endIso) continue;
+      items.push({
+        kind: 'own',
+        id: t.id,
+        day: dayKey,
+        text: t.task_text || t.text || '',
+        done: t.done === true || t.done === 'true',
+        priority: t.priority || 'normal'
+      });
+    }
+
+    /* 2) Tarefas atribuídas ao usuário, dentro do mês. */
+    const assigned = await _fetchAssignedTasksForUser({ startDate: startIso, endDate: endIso });
+    for(const a of assigned) {
+      const dd = (a.due_date || '').toString().slice(0,10);
+      if(!dd) continue;
+      if(dd < startIso || dd > endIso) continue;
+      items.push({
+        kind: 'assigned',
+        id: a.id,
+        day: dd,
+        text: a.title || a.task_text || 'Tarefa atribuída',
+        done: _assignedTaskIsDone(a),
+        assigned_by: a.assigned_by || '',
+        notes: a.notes || ''
+      });
+    }
+
+    /* 3) Eventos do cronograma da empresa, escopados por mim (responsável). */
+    const cid = currentUser?.company_id;
+    const meName = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
+    const isAdmin = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
+      || ['admin','gestor'].includes(String(currentUser?.role||'').toLowerCase());
+    if(cid) {
+      let qs = `?company_id=eq.${encodeURIComponent(String(cid))}`
+        + `&data_inicio=gte.${encodeURIComponent(startIso)}`
+        + `&data_inicio=lte.${encodeURIComponent(endIso)}`
+        + `&order=data_inicio.asc,hora_inicio.asc&limit=600`;
+      if(!isAdmin && meName) qs += `&responsavel_nome=eq.${encodeURIComponent(meName)}`;
+      try {
+        const d = await apiGet('age_team_calendar', qs);
+        const evts = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+        const assignedEventIds = new Set(assigned.map(a => String(a.calendar_event_id || '')));
+        for(const e of evts) {
+          const dd = (e.data_inicio || e.event_date || '').toString().slice(0,10);
+          if(!dd) continue;
+          if(dd < startIso || dd > endIso) continue;
+          /* Se o evento já gerou uma tarefa atribuída, mostramos só a tarefa (evita duplicata). */
+          if(assignedEventIds.has(String(e.id))) continue;
+          items.push({
+            kind: 'event',
+            id: e.id,
+            day: dd,
+            text: e.titulo || e.title || 'Evento',
+            done: _mydayIsDone('sched_' + e.id, false),
+            owner: e.responsavel_nome || e.owner || '',
+            notes: e.descricao || '',
+            time: (e.hora_inicio || '').toString().slice(0,5)
+          });
+        }
+      } catch(eE) { console.warn('[mycal events]', eE); }
+    }
+  } catch(eAll) {
+    console.warn('[loadMyCalendar]', eAll);
+  }
+
+  const byDay = new Map();
+  for(const it of items) {
+    if(!byDay.has(it.day)) byDay.set(it.day, []);
+    byDay.get(it.day).push(it);
+  }
+  _myCalCache = { items, byDay };
+
+  /* Barra de progresso do mês (todas as tarefas/eventos do mês). */
+  _renderProgressBar({
+    cardId: 'mycalProgress',
+    countId: 'mycalProgressCount',
+    fillId: 'mycalProgressFill',
+    pctId: 'mycalProgressPct'
+  }, items);
+
+  /* Render grid */
+  const startDow = firstDay.getDay();
+  const totalDays = lastDayDate.getDate();
+  const cells = [];
+  for(let i=0;i<startDow;i++) {
+    cells.push(`<div class="mycal-day is-blank"></div>`);
+  }
+  const todayIso = new Date().toISOString().slice(0,10);
+  for(let d=1; d<=totalDays; d++) {
+    const dayIso = _myCalIso(myCalYear, myCalMonth, d);
+    const dow = new Date(myCalYear, myCalMonth, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isToday = dayIso === todayIso;
+    const list = byDay.get(dayIso) || [];
+    const visible = list.slice(0, 3);
+    const overflow = list.length - visible.length;
+    const itemsHtml = visible.map(it => {
+      const cls = it.kind === 'own' ? 'k-own' : (it.kind === 'assigned' ? 'k-assigned' : 'k-event');
+      const doneCls = it.done ? ' is-done' : '';
+      const prefix = it.kind === 'event' && it.time ? `${it.time} · ` : '';
+      return `<div class="mycal-item ${cls}${doneCls}" title="${escAttr(it.text)}">${escHtml(prefix + it.text)}</div>`;
+    }).join('');
+    const more = overflow > 0 ? `<div class="mycal-more">+${overflow} mais</div>` : '';
+    cells.push(
+      `<div class="mycal-day${isWeekend ? ' is-weekend':''}${isToday ? ' is-today':''}" onclick="myCalOpenDay('${dayIso}')">
+        <div class="mycal-daynum">${d}</div>
+        <div class="mycal-items">${itemsHtml}${more}</div>
+      </div>`
+    );
+  }
+  /* Completar última semana com blanks para fechar a grade */
+  while(cells.length % 7 !== 0) cells.push(`<div class="mycal-day is-blank"></div>`);
+  grid.innerHTML = cells.join('');
+}
+
+async function _myCalToggleOwn(id, currentDone, day) {
+  await toggleTask(id, currentDone);
+  await loadMyCalendar();
+  myCalOpenDay(day);
+}
+async function _myCalToggleAssigned(id, currentDone, day) {
+  await toggleAssignedTask(id, currentDone);
+  await loadMyCalendar();
+  myCalOpenDay(day);
+}
+async function _myCalToggleEvent(id, currentDone, day) {
+  toggleMyDaySched('sched_' + id, currentDone);
+  await loadMyCalendar();
+  myCalOpenDay(day);
+}
+async function _myCalDeleteOwn(id, day) {
+  await deleteTask(id);
+  await loadMyCalendar();
+  myCalOpenDay(day);
+}
+
+function _myCalDayRowHtml(it) {
+  const doneCls = it.done ? ' done' : '';
+  const lineClr = it.done ? 'text-decoration:line-through' : '';
+  if(it.kind === 'own') {
+    return `
+      <div class="task-item myday-pessoal${doneCls}">
+        <div class="task-check${it.done?' checked':''}" onclick="_myCalToggleOwn('${it.id}','${it.done}','${it.day}')">${it.done?'✓':''}</div>
+        <div style="flex:1">
+          <div class="task-text" style="${lineClr}">${escHtml(it.text)}</div>
+          <div class="task-meta">Tarefa pessoal · ${escHtml(it.priority||'normal')}</div>
+        </div>
+        <span class="task-source-badge">PESSOAL</span>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modalMyCalDay');openDayTaskModal('personal','${it.id}')" title="Editar"><i class="fas fa-pen"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="_myCalDeleteOwn('${it.id}','${it.day}')" title="Excluir"><i class="fas fa-trash"></i></button>
+      </div>`;
+  }
+  if(it.kind === 'assigned') {
+    const by = displayNameForUsername(it.assigned_by);
+    return `
+      <div class="task-item myday-designada${doneCls}">
+        <div class="task-check${it.done?' checked':''}" onclick="_myCalToggleAssigned('${it.id}',${it.done},'${it.day}')">${it.done?'✓':''}</div>
+        <div style="flex:1">
+          <div class="task-text" style="${lineClr}">${escHtml(it.text)}</div>
+          <div class="task-meta">Atribuída por ${escHtml(by)}</div>
+          ${it.notes?`<div class="task-meta">${escHtml(it.notes)}</div>`:''}
+        </div>
+        <span class="task-source-badge">ATRIBUÍDA</span>
+      </div>`;
+  }
+  return `
+      <div class="task-item myday-empresa${doneCls}">
+        <div class="task-check${it.done?' checked':''}" onclick="_myCalToggleEvent('${it.id}',${it.done},'${it.day}')">${it.done?'✓':''}</div>
+        <div style="flex:1">
+          <div class="task-text" style="${lineClr}">${escHtml((it.time?it.time+' · ':'') + it.text)}</div>
+          ${it.owner?`<div class="task-meta">Responsável: ${escHtml(it.owner)}</div>`:''}
+          ${it.notes?`<div class="task-meta">${escHtml(it.notes)}</div>`:''}
+        </div>
+        <span class="task-source-badge">EMPRESA</span>
+      </div>`;
+}
+
+let _myCalDayCurrent = null;
+function myCalOpenDay(dayIso) {
+  _myCalDayCurrent = dayIso;
+  const list = (_myCalCache.byDay && _myCalCache.byDay.get(dayIso)) || [];
+  const ttl = document.getElementById('modalMyCalDayTitle');
+  if(ttl) {
+    const dt = new Date(dayIso + 'T12:00:00');
+    const label = dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    ttl.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+  }
+  _renderProgressBar({
+    cardId: 'myCalDayProgress',
+    countId: 'myCalDayProgressCount',
+    fillId: 'myCalDayProgressFill',
+    pctId: 'myCalDayProgressPct'
+  }, list);
+  const cont = document.getElementById('myCalDayList');
+  if(cont) {
+    if(!list.length) {
+      cont.innerHTML = `<div class="mycal-empty" style="padding:18px;text-align:center">Nenhuma tarefa ou evento neste dia.</div>`;
+    } else {
+      const sorted = [...list].sort((a,b) => {
+        const at = a.kind === 'event' ? (a.time||'') : '';
+        const bt = b.kind === 'event' ? (b.time||'') : '';
+        if(at && bt && at !== bt) return at.localeCompare(bt);
+        const ad = a.done ? 1 : 0; const bd = b.done ? 1 : 0;
+        if(ad !== bd) return ad - bd;
+        return 0;
+      });
+      cont.innerHTML = sorted.map(_myCalDayRowHtml).join('');
+    }
+  }
+  openModal('modalMyCalDay');
+}
+
+function myCalAddTaskFromModal() {
+  closeModal('modalMyCalDay');
+  /* abre o modal de nova tarefa pré-preenchido com o dia clicado */
+  document.getElementById('taskType').value = 'personal';
+  document.getElementById('taskId').value = '';
+  document.getElementById('modalTaskTitle').textContent = 'NOVA TAREFA';
+  document.getElementById('taskText').value = '';
+  document.getElementById('taskDate').value = _myCalDayCurrent || new Date().toISOString().slice(0,10);
+  document.getElementById('taskPrio').value = 'normal';
+  openModal('modalTask');
 }
 
 /* ═══════════════════════════════════════════
