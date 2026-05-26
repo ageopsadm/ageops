@@ -1,3 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <image href="favicon.png" x="0" y="0" width="256" height="256" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="48" fill="#0f172a"/>
+  <text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Plus Jakarta Sans', 'Inter', system-ui, sans-serif"
+        font-size="92" font-weight="900" letter-spacing="-2" fill="#ffffff">AGE</text>
 </svg>
