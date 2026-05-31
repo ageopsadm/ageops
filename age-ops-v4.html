@@ -16938,6 +16938,32 @@ function orcBuilderGetFinancials() {
   };
 }
 
+/** Financeiro a partir de um objeto builder salvo (não lê o DOM) — usado no PDF interno da lista. */
+function _orcFinancialsFromBuilder(b) {
+  const diarias = parseInt(b?.diarias, 10) || 1;
+  const margemPct = parseFloat(b?.margemPct || 0) || 0;
+  const margem = margemPct / 100;
+  let totalEquipe = 0;
+  let totalCustoEquipe = 0;
+  const linhasEquipe = (b?.equipe || []).map(m => {
+    const f = _orcMembroFinance(m, diarias);
+    totalEquipe += f.cobrada;
+    totalCustoEquipe += f.custo;
+    return Object.assign({ membro: m }, f);
+  });
+  const totalCatalogo = (b?.catalogo || []).reduce((sum, i) => sum + ((i.valorUnit || 0) * (i.quantidade || 1)), 0);
+  const totalDespesas = (b?.despesas || []).reduce((sum, d) => sum + (d.valor || 0), 0);
+  const subtotal = totalEquipe + totalCatalogo + totalDespesas;
+  const valorMargem = subtotal * margem;
+  const totalFinal = subtotal + valorMargem;
+  const margemBrutaEquipe = totalEquipe - totalCustoEquipe;
+  return {
+    diarias, totalEquipe, totalCustoEquipe, margemBrutaEquipe, linhasEquipe,
+    totalCatalogo, totalDespesas, subtotal, valorMargem, totalFinal, margemPct,
+    margemModo: b?.margemModo || 'diluida', fatorDiluicao: subtotal > 0 ? totalFinal / subtotal : 1
+  };
+}
+
 function orcSerializeBuilder() {
   const m = document.getElementById('orc-margem');
   return {
@@ -17219,29 +17245,32 @@ function _orcUpdateCabecalhoPreview() {
     : `No PDF: <strong>Proposta ${escHtml(marca)}</strong> <span style="color:#94a3b8">(informe o cliente)</span>`;
 }
 
-/** Escopo ao cliente: só entregas, sem preço nem menção a taxa/margem. */
-function _orcClienteEscopoHtml(diarias) {
-  const escopoLinhas = [];
-  (window._orcEquipe || []).forEach(m => {
-    const cat = FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '';
-    escopoLinhas.push({
+/** Linhas de escopo (sem preço) a partir dos arrays do builder. */
+function _orcEscopoLinhas(equipe, catalogo, despesas, diarias) {
+  const d = parseInt(diarias, 10) || 1;
+  const linhas = [];
+  (equipe || []).forEach(m => {
+    const cat = (typeof FUNCOES_AUDIOVISUAL !== 'undefined' && m.categoriaId) ? (FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '') : '';
+    linhas.push({
       title: m.nome,
-      sub: `${cat} · ${m.quantidade} profissional(is) · ${diarias} diária${diarias > 1 ? 's' : ''} de gravação`
+      sub: `${cat ? cat + ' · ' : ''}${m.quantidade || 1} profissional(is) · ${d} diária${d > 1 ? 's' : ''} de gravação`
     });
   });
-  (window._orcCatalogo || []).filter(i => i.descricao).forEach(i => {
-    escopoLinhas.push({
-      title: i.descricao,
-      sub: `Produto / serviço · quantidade ${i.quantidade || 1}`
-    });
+  (catalogo || []).filter(i => i.descricao).forEach(i => {
+    linhas.push({ title: i.descricao, sub: `Produto / serviço · quantidade ${i.quantidade || 1}` });
   });
-  (window._orcDespesas || []).filter(d => d.descricao).forEach(d => {
-    escopoLinhas.push({ title: d.descricao, sub: 'Despesa prevista na produção' });
+  (despesas || []).filter(d2 => d2.descricao).forEach(d2 => {
+    linhas.push({ title: d2.descricao, sub: 'Despesa prevista na produção' });
   });
-  if(!escopoLinhas.length) {
+  return linhas;
+}
+
+/** HTML do escopo (lista com ✓), sem preços — design único do cliente. */
+function _orcEscopoHtmlFromLinhas(linhas) {
+  if(!linhas || !linhas.length) {
     return '<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>';
   }
-  return escopoLinhas.map(it => `
+  return linhas.map(it => `
     <div style="display:flex;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start;gap:10px">
       <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
       <div style="min-width:0;flex:1">
@@ -17251,49 +17280,50 @@ function _orcClienteEscopoHtml(diarias) {
     </div>`).join('');
 }
 
-function atualizarPreview() {
-  const preview = document.getElementById('orc-preview-content');
-  if(!preview) return;
-  const fin = orcBuilderGetFinancials();
-  const diarias = fin.diarias;
-  const margem = fin.margemPct;
-  const titulo = document.getElementById('orc-titulo')?.value?.trim() || 'Orçamento';
-  const cliente = document.getElementById('orc-cliente')?.value?.trim() || '';
-  const descricao = document.getElementById('orc-descricao')?.value?.trim() || '';
-  const data = document.getElementById('orc-data')?.value;
-  const validade = document.getElementById('orc-validade')?.value;
-  const pdfm = _orcPdfMetaFromForm();
-  const numRef = window._orcProposalNum || String(Date.now()).slice(-6);
-  const emissaoStr = data ? new Date(data + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
-  const validadeStr = validade ? new Date(validade + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-  const eventIso = pdfm.dataEvento || '';
-  const eventStr = eventIso ? new Date(eventIso + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-  const marca = _orcPropostaEmissor();
-  const resumoPag = (pdfm.resumoPagamento || '').trim() || 'Pagamento à vista';
-  const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
-  const sans = 'font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif';
+/** Compat: escopo ao cliente a partir do DOM (builder em window._orc*). */
+function _orcClienteEscopoHtml(diarias) {
+  return _orcEscopoHtmlFromLinhas(_orcEscopoLinhas(window._orcEquipe, window._orcCatalogo, window._orcDespesas, diarias));
+}
 
+/**
+ * Renderiza o documento do cliente (design único P&B) a partir de um view-model.
+ * Usado tanto no preview do modal quanto no PDF gerado pela lista — garante que
+ * o que é entregue ao cliente tenha EXATAMENTE o mesmo design do preview.
+ * vm: { titulo, cliente, descricao, dataIso, emissaoStr, validadeStr, eventStr,
+ *       marca, resumoPag, numRef, totalFinal, parcelas, pix, favorecido,
+ *       aprovadoPor, escopoHtml }
+ */
+function _orcRenderClienteInner(vm) {
+  const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  const sans = 'font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
   const subLinha = (left, right) => `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;gap:12px">
     <span style="${mono};font-size:9px;letter-spacing:.22em;color:#737373">${escHtml(left)}</span>
     <span style="${mono};font-size:9px;letter-spacing:.12em;color:#737373">${escHtml(right)}</span>
   </div>`;
 
-  const escopoHtml = _orcClienteEscopoHtml(diarias);
-  _orcUpdateCabecalhoPreview();
+  const titulo = vm.titulo || 'Orçamento';
+  const cliente = vm.cliente || '';
+  const descricao = vm.descricao || '';
+  const emissaoStr = vm.emissaoStr || new Date().toLocaleDateString('pt-BR');
+  const validadeStr = vm.validadeStr || '';
+  const eventStr = vm.eventStr || '';
+  const marca = vm.marca || 'Age Ops';
+  const resumoPag = (vm.resumoPag || '').trim() || 'Pagamento à vista';
+  const numRef = vm.numRef || String(Date.now()).slice(-6);
+  const tot = vm.totalFinal || 0;
 
-  const doisParc = pdfm.parcelas === '2';
-  const tot = fin.totalFinal;
+  const doisParc = vm.parcelas === '2';
   const p1 = Math.round((tot / 2) * 100) / 100;
   const p2 = Math.round((tot - p1) * 100) / 100;
+  const d1Parcela = emissaoStr;
   let d2Parcela = validadeStr;
-  if(doisParc && !validadeStr && data) {
-    const t2 = new Date(data + 'T12:00:00');
+  if(doisParc && !validadeStr && vm.dataIso) {
+    const t2 = new Date(vm.dataIso + 'T12:00:00');
     t2.setDate(t2.getDate() + 5);
     d2Parcela = t2.toLocaleDateString('pt-BR');
   }
-  const d1Parcela = emissaoStr;
 
-  let cronHtml = '';
+  let cronHtml;
   if(doisParc) {
     cronHtml = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">
@@ -17326,30 +17356,30 @@ function atualizarPreview() {
       </div>`;
   }
 
-  const pixLinha = (pdfm.pix || pdfm.favorecido) ? `
+  const pixLinha = (vm.pix || vm.favorecido) ? `
     <div style="background:#000;color:#fff;margin-top:28px;padding:18px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:20px">
       <div>
         <div style="${mono};font-size:9px;letter-spacing:.22em;opacity:.75">CHAVE PIX</div>
-        <div style="font-size:18px;font-weight:800;margin-top:6px">${escHtml(pdfm.pix || '—')}</div>
+        <div style="font-size:18px;font-weight:800;margin-top:6px">${escHtml(vm.pix || '—')}</div>
       </div>
       <div style="text-align:right">
         <div style="${mono};font-size:9px;letter-spacing:.22em;opacity:.75">FAVORECIDO</div>
-        <div style="font-size:15px;font-weight:800;margin-top:6px;max-width:280px">${escHtml(pdfm.favorecido || '—')}</div>
+        <div style="font-size:15px;font-weight:800;margin-top:6px;max-width:280px">${escHtml(vm.favorecido || '—')}</div>
       </div>
     </div>` : '';
 
-  const rodapeAprov = pdfm.aprovadoPor ? `
+  const rodapeAprov = vm.aprovadoPor ? `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:28px;padding-top:18px;border-top:1px solid #e5e5e5;flex-wrap:wrap;gap:12px">
       <div>
         <div style="${mono};font-size:9px;letter-spacing:.2em;color:#737373">APROVADO POR</div>
-        <div style="font-weight:700;font-size:15px;margin-top:6px;color:#111">${escHtml(pdfm.aprovadoPor)}</div>
+        <div style="font-weight:700;font-size:15px;margin-top:6px;color:#111">${escHtml(vm.aprovadoPor)}</div>
       </div>
       <div style="${mono};font-size:11px;color:#737373;text-align:right">Formalização em ${escHtml(emissaoStr)}</div>
     </div>` : '';
 
   const subtCab = 'Confirmação de orçamento' + (eventStr ? ` · Gravação ${eventStr}` : (titulo && titulo !== 'Orçamento' ? ` · ${titulo}` : ''));
 
-  preview.innerHTML = `
+  return `
     <div style="${sans};color:#111;line-height:1.45;background:#fff">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:20px;border-bottom:1px solid #000">
         <div style="min-width:0;flex:1">
@@ -17368,7 +17398,7 @@ function atualizarPreview() {
       <div style="background:#000;color:#fff;margin-top:20px;padding:18px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:flex-end">
         <div>
           <div style="${mono};font-size:9px;letter-spacing:.28em;opacity:.8">ORÇAMENTO / PROPOSTA</div>
-          <div style="font-size:26px;font-weight:800;margin-top:8px">${fmtBRL(fin.totalFinal)}</div>
+          <div style="font-size:26px;font-weight:800;margin-top:8px">${fmtBRL(tot)}</div>
           <div style="font-size:12px;opacity:.85;margin-top:4px">${escHtml(resumoPag)}</div>
         </div>
         <div style="text-align:right">
@@ -17381,11 +17411,11 @@ function atualizarPreview() {
 
       <div style="margin-top:28px">
         ${subLinha('ESCOPO CONTRATADO', 'ENTREGAS CONFIRMADAS')}
-        ${escopoHtml}
+        ${vm.escopoHtml || ''}
       </div>
       <div style="background:#000;color:#fff;margin-top:20px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-weight:800;font-size:14px">Valor total da proposta</span>
-        <span style="font-size:24px;font-weight:800">${fmtBRL(fin.totalFinal)}</span>
+        <span style="font-size:24px;font-weight:800">${fmtBRL(tot)}</span>
       </div>
 
       <div style="margin-top:28px">
@@ -17402,6 +17432,107 @@ function atualizarPreview() {
       </div>
     </div>
   `;
+}
+
+function atualizarPreview() {
+  const preview = document.getElementById('orc-preview-content');
+  if(!preview) return;
+  const fin = orcBuilderGetFinancials();
+  const diarias = fin.diarias;
+  const pdfm = _orcPdfMetaFromForm();
+  const data = document.getElementById('orc-data')?.value;
+  const validade = document.getElementById('orc-validade')?.value;
+  _orcUpdateCabecalhoPreview();
+  const vm = {
+    titulo: document.getElementById('orc-titulo')?.value?.trim() || 'Orçamento',
+    cliente: document.getElementById('orc-cliente')?.value?.trim() || '',
+    descricao: document.getElementById('orc-descricao')?.value?.trim() || '',
+    dataIso: data || '',
+    emissaoStr: data ? new Date(data + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+    validadeStr: validade ? new Date(validade + 'T00:00:00').toLocaleDateString('pt-BR') : '',
+    eventStr: pdfm.dataEvento ? new Date(pdfm.dataEvento + 'T00:00:00').toLocaleDateString('pt-BR') : '',
+    marca: _orcPropostaEmissor(),
+    resumoPag: (pdfm.resumoPagamento || '').trim() || 'Pagamento à vista',
+    numRef: window._orcProposalNum || String(Date.now()).slice(-6),
+    totalFinal: fin.totalFinal,
+    parcelas: pdfm.parcelas,
+    pix: pdfm.pix,
+    favorecido: pdfm.favorecido,
+    aprovadoPor: pdfm.aprovadoPor,
+    escopoHtml: _orcClienteEscopoHtml(diarias)
+  };
+  preview.innerHTML = _orcRenderClienteInner(vm);
+}
+
+/** Monta o view-model do documento do cliente a partir de uma linha salva (builder v2). */
+function _orcClienteVmFromRow(o, b) {
+  const diarias = parseInt(b.diarias, 10) || 1;
+  const pdfm = b.pdfMeta || {};
+  const marca = (b.propostaEmissor || pdfm.propostaEmissor || '').trim()
+    || (currentUser?.company_name || '').trim() || 'Age Ops';
+  return {
+    titulo: b.titulo || o.project_name || 'Orçamento',
+    cliente: o.client_name || '',
+    descricao: b.descricao || o.notes || '',
+    dataIso: o.date || '',
+    emissaoStr: o.date ? new Date(o.date + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+    validadeStr: o.validity ? new Date(o.validity + 'T00:00:00').toLocaleDateString('pt-BR') : '',
+    eventStr: pdfm.dataEvento ? new Date(pdfm.dataEvento + 'T00:00:00').toLocaleDateString('pt-BR') : '',
+    marca,
+    resumoPag: (pdfm.resumoPagamento || '').trim() || o.payment_terms || 'Pagamento à vista',
+    numRef: o.numero || '',
+    totalFinal: parseFloat(o.total_value) || 0,
+    parcelas: pdfm.parcelas || '1',
+    pix: pdfm.pix || '',
+    favorecido: pdfm.favorecido || '',
+    aprovadoPor: pdfm.aprovadoPor || '',
+    escopoHtml: _orcEscopoHtmlFromLinhas(_orcEscopoLinhas(b.equipe, b.catalogo, b.despesas, diarias))
+  };
+}
+
+/** Abre janela de impressão com o documento do cliente (design único). */
+function _orcOpenClientePrintWindow(inner, vm) {
+  const titulo = `${vm.marca || 'Orçamento'} — ${vm.numRef || 'Proposta'}`;
+  const doc = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>${escHtml(titulo)}</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #e5e5e5; }
+  .sheet { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 16mm 15mm; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.12); }
+  .no-print { text-align: center; padding: 20px; font-family: system-ui, sans-serif; }
+  .no-print button { padding: 10px 28px; background: #000; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: .5px; }
+  @media print {
+    html, body { background: #fff !important; }
+    .sheet { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; box-shadow: none !important; padding: 14mm 14mm !important; page-break-after: avoid; }
+    .no-print { display: none !important; }
+    [style*="background:#000"], [style*="background: #000"] { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">${inner}</div>
+  <div class="no-print">
+    <p style="font-size:13px;color:#525252;margin-bottom:12px">Clique em <strong>Imprimir / Salvar como PDF</strong> para baixar o orçamento.</p>
+    <button onclick="window.print()">&#128438; Imprimir / Salvar como PDF</button>
+  </div>
+  ${'<script>'}
+  window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });
+  ${'<\/script>'}
+</body>
+</html>`;
+  const pw = window.open('', '_blank', 'width=900,height=760,scrollbars=yes');
+  if(!pw) {
+    toast('Pop-up bloqueado! Permita pop-ups para este site e tente novamente.', 'err');
+    return false;
+  }
+  pw.document.open();
+  pw.document.write(doc);
+  pw.document.close();
+  return true;
 }
 
 function initOrcamentoBuilder(resetState) {
@@ -17624,18 +17755,38 @@ function gerarPDFCliente() {
   toast('PDF cliente gerado');
 }
 
-function gerarPDFInterno() {
-  const client = document.getElementById('orc-cliente')?.value?.trim();
-  if(!client) { toast('Informe o nome do cliente', 'err'); return; }
-  const fin = orcBuilderGetFinancials();
+/* Gera o PDF interno (custos + margem). Sem argumento: lê o builder do modal.
+   Com (builder, ctx): gera a partir de uma linha salva (botão na lista). */
+function gerarPDFInterno(srcBuilder, srcCtx) {
+  let fin, client, tituloProj, emStr, valStr, catalogo, despesas;
+  if(srcBuilder) {
+    fin = _orcFinancialsFromBuilder(srcBuilder);
+    client = (srcCtx && srcCtx.client) || '—';
+    tituloProj = srcBuilder.titulo || (srcCtx && srcCtx.titulo) || 'Projeto';
+    emStr = (srcCtx && srcCtx.emStr) || '—';
+    valStr = (srcCtx && srcCtx.valStr) || '—';
+    catalogo = srcBuilder.catalogo || [];
+    despesas = srcBuilder.despesas || [];
+  } else {
+    client = document.getElementById('orc-cliente')?.value?.trim();
+    if(!client) { toast('Informe o nome do cliente', 'err'); return; }
+    fin = orcBuilderGetFinancials();
+    tituloProj = document.getElementById('orc-titulo')?.value || 'Projeto';
+    const dtEm = document.getElementById('orc-data')?.value;
+    const dtVal = document.getElementById('orc-validade')?.value;
+    emStr = dtEm ? new Date(dtEm + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    valStr = dtVal ? new Date(dtVal + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    catalogo = window._orcCatalogo || [];
+    despesas = window._orcDespesas || [];
+  }
   const diarias = fin.diarias;
+  /* Custo total = equipe + produtos/serviços + despesas (produtos/despesas são repasse: custo = cobrado). */
+  const custoOperacionalTotal = fin.totalCustoEquipe + fin.totalCatalogo + fin.totalDespesas;
+  const lucroTotal = fin.totalFinal - custoOperacionalTotal;
+  const margemRealPct = fin.totalFinal > 0 ? (lucroTotal / fin.totalFinal * 100) : 0;
   const modoPdf = fin.margemModo === 'diluida'
     ? '<p style="font-size:11px;color:#166534;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total.</p>'
     : '<p style="font-size:11px;color:#9a3412;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total.</p>';
-  const dtEm = document.getElementById('orc-data')?.value;
-  const dtVal = document.getElementById('orc-validade')?.value;
-  const emStr = dtEm ? new Date(dtEm + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-  const valStr = dtVal ? new Date(dtVal + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
   const wrap = document.createElement('div');
   wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:Rajdhani,sans-serif;font-size:13px;line-height:1.45;width:794px';
   const eqRows = (fin.linhasEquipe || []).map(l => {
@@ -17653,18 +17804,18 @@ function gerarPDFInterno() {
       <td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:${margemCor}">${fmtBRL(l.margem)}</td>
     </tr>`;
   }).join('');
-  const catRows = (window._orcCatalogo || []).filter(i => i.descricao).map(i => `
+  const catRows = (catalogo || []).filter(i => i.descricao).map(i => `
     <tr><td colspan="3" style="padding:6px;border-bottom:1px solid #eee">${escHtml(i.descricao)}</td>
     <td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${i.quantidade||1}</td>
     <td colspan="2"></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL((i.valorUnit||0)*(i.quantidade||1))}</td>
     <td colspan="2"></td></tr>`).join('');
-  const despRows = (window._orcDespesas || []).filter(d => d.descricao).map(d => `
+  const despRows = (despesas || []).filter(d => d.descricao).map(d => `
     <tr><td colspan="3" style="padding:6px;border-bottom:1px solid #eee">${escHtml(d.descricao)}</td>
     <td colspan="4"></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL(d.valor||0)}</td>
     <td colspan="2"></td></tr>`).join('');
   wrap.innerHTML = `
     <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;letter-spacing:0.5px;margin-bottom:16px;color:#666">DOCUMENTO INTERNO — NÃO ENVIAR AO CLIENTE</div>
-    <h1 style="font-size:20px;margin-bottom:8px">Breakdown financeiro — ${escHtml(document.getElementById('orc-titulo')?.value || 'Projeto')}</h1>
+    <h1 style="font-size:20px;margin-bottom:8px">Breakdown financeiro — ${escHtml(tituloProj)}</h1>
     <p style="opacity:.75;margin-bottom:6px">Cliente: ${escHtml(client)}</p>
     <p style="font-size:11px;color:#475569;margin-bottom:20px;line-height:1.6">
       <strong>Emissão:</strong> ${escHtml(emStr)} &nbsp;·&nbsp; <strong>Validade:</strong> ${escHtml(valStr)}
@@ -17703,28 +17854,60 @@ function gerarPDFInterno() {
         <div style="font-size:18px;font-weight:800;margin-top:4px;color:#1d4ed8">${fmtBRL(fin.valorMargem)}</div>
       </div>
     </div>
-    ${(catRows || despRows) ? `<h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Produtos, serviços e despesas</h2>
+    ${(catRows || despRows) ? `<h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Produtos, serviços e despesas (repasse — custo = cobrado)</h2>
     <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px">
       <tbody>${catRows}${despRows}</tbody>
     </table>` : ''}
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #000;font-size:13px">
       <span>Subtotal operacional (cobrado)</span><strong>${fmtBRL(fin.subtotal)}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
-      <span>Custo operacional estimado (equipe)</span><strong style="color:#92400e">${fmtBRL(fin.totalCustoEquipe)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#475569">
+      <span>&nbsp;&nbsp;• Custo da equipe</span><span>${fmtBRL(fin.totalCustoEquipe)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#475569">
+      <span>&nbsp;&nbsp;• Produtos / serviços</span><span>${fmtBRL(fin.totalCatalogo)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#475569">
+      <span>&nbsp;&nbsp;• Despesas</span><span>${fmtBRL(fin.totalDespesas)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-top:1px solid #e2e8f0">
+      <span>Custo total estimado (equipe + produtos + despesas)</span><strong style="color:#92400e">${fmtBRL(custoOperacionalTotal)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:6px 0"><span>Margem agência (${fin.margemPct}%)</span><strong style="color:#15803d">${fmtBRL(fin.valorMargem)}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:800;border-top:2px solid #000">
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-top:6px">
+      <span style="font-weight:700">Lucro estimado total <span style="font-size:11px;color:#15803d">(${margemRealPct.toFixed(1)}% do total)</span></span><strong style="color:#15803d">${fmtBRL(lucroTotal)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:800;border-top:2px solid #000;margin-top:6px">
       <span>Total cobrado do cliente</span><span>${fmtBRL(fin.totalFinal)}</span></div>
-    <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Diária custo: cadastro em colaboradores ou campo CUSTO no builder. Ajuste antes de fechar o orçamento.</p>
+    <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Lucro = total cobrado − custo total. Produtos/serviços e despesas entram como repasse (custo igual ao cobrado); a margem vem do markup da equipe + margem da agência. Diária custo: cadastro em colaboradores ou campo CUSTO no builder.</p>
   `;
   const opt = {
     margin: [8, 8, 8, 8],
-    filename: `Orcamento_INTERNO_${(document.getElementById('orc-titulo')?.value || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
+    filename: `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
     image: { type: 'jpeg', quality: 0.95 },
     html2canvas: { scale: 2 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   html2pdf().set(opt).from(wrap).save();
   toast('PDF interno gerado');
+}
+
+/** Gera o PDF interno (custos + margem) a partir de um orçamento salvo (botão da lista). */
+async function orcGenPDFInterno(id) {
+  let o = null;
+  try { o = await apiGet('age_orcamentos', `/${id}`).catch(()=>null); } catch(e) {}
+  if(!o || !o.id) {
+    const orcs = await fetchAll('age_orcamentos', 300).catch(()=>[]);
+    o = orcs.find(x => x.id === id) || null;
+  }
+  if(!o) { toast('Orçamento não encontrado', 'err'); return; }
+  let builder = null;
+  try {
+    const raw = JSON.parse(o.items_json || 'null');
+    if(raw && typeof raw === 'object' && raw.version === 2) builder = raw;
+  } catch(e) {}
+  if(!builder) { toast('Orçamento antigo: abra e salve novamente para gerar o interno detalhado.', 'warn'); return; }
+  const ctx = {
+    client: o.client_name || '—',
+    titulo: builder.titulo || o.project_name || 'Projeto',
+    emStr: o.date ? new Date(o.date + 'T00:00:00').toLocaleDateString('pt-BR') : '—',
+    valStr: o.validity ? new Date(o.validity + 'T00:00:00').toLocaleDateString('pt-BR') : '—'
+  };
+  gerarPDFInterno(builder, ctx);
 }
 
 function buildPlanosParceriaPdfHtml(yearlyOpt) {
@@ -18410,8 +18593,11 @@ async function loadOrcamentos() {
         <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <div class="orc-val">${fmtBRL(o.total_value||0)}</div>
           <div style="display:flex;gap:5px;justify-content:flex-end">
-            <button onclick="event.stopPropagation();orcGenPDF('${o.id}')" class="btn btn-ghost btn-sm" style="font-size:9px;color:#ef4444;border-color:rgba(239,68,68,.3)" title="Baixar PDF">
+            <button onclick="event.stopPropagation();orcGenPDF('${o.id}')" class="btn btn-ghost btn-sm" style="font-size:9px;color:#ef4444;border-color:rgba(239,68,68,.3)" title="PDF do cliente (mesmo design do preview)">
               <i class="fas fa-file-pdf"></i> PDF
+            </button>
+            <button onclick="event.stopPropagation();orcGenPDFInterno('${o.id}')" class="btn btn-ghost btn-sm" style="font-size:9px;color:#7c3aed;border-color:rgba(124,58,237,.3)" title="PDF interno — custos e margem">
+              <i class="fas fa-lock"></i> Interno
             </button>
             <button onclick="event.stopPropagation();orcCardClick('${o.id}')" class="btn btn-ghost btn-sm" style="font-size:9px" title="Editar orçamento">
               <i class="fas fa-pen"></i>
@@ -18554,6 +18740,20 @@ async function _orcGenPDFFromObject(o) {
     else if(Array.isArray(raw)) items = raw;
   } catch(e) { items=[]; }
   try { discounts= JSON.parse(o.discounts_json||'[]');}catch(e){ discounts=[]; }
+
+  /* Orçamentos v2 (builder atual): usam o MESMO design do preview entregue ao cliente. */
+  if(builderV2) {
+    const vm = _orcClienteVmFromRow(o, builderV2);
+    const inner = _orcRenderClienteInner(vm);
+    const okWin = _orcOpenClientePrintWindow(inner, vm);
+    if(!okWin) return;
+    toast('📄 Janela de impressão aberta — salve como PDF');
+    if(o.id && (o.status === 'rascunho' || !o.status)) {
+      await apiPatch('age_orcamentos', o.id, { status: 'enviado' }).catch(()=>{});
+      loadOrcamentos();
+    }
+    return;
+  }
 
   const subtotal   = parseFloat(o.subtotal)||0;
   const impostoV   = parseFloat(o.imposto_valor)||0;
@@ -25168,6 +25368,46 @@ async function openPagamentoModal(editId) {
   openModal('modalPagamento');
 }
 
+/* Extrai a mensagem real do PostgREST de um erro do api() (que vem como "... (400) {json}"). */
+function _payFriendlyError(e) {
+  const raw = String(e?.message || e || '');
+  const jm = raw.match(/\{[\s\S]*\}/);
+  if(jm) {
+    try {
+      const o = JSON.parse(jm[0]);
+      return o.message || o.hint || o.details || raw;
+    } catch(_) {}
+  }
+  return raw || 'Erro desconhecido';
+}
+
+/* Escreve em age_payments tolerando colunas inexistentes no schema (PGRST204 /
+   "Could not find the 'X' column"). Remove a coluna problemática e tenta de novo,
+   evitando que o salvamento inteiro falhe por causa de uma coluna ausente. */
+async function _agePaymentWrite(method, id, payload) {
+  const body = { ...payload };
+  const dropped = [];
+  for(let attempt = 0; attempt < 8; attempt++) {
+    try {
+      if(method === 'PATCH') return await apiPatch('age_payments', id, body);
+      return await apiPost('age_payments', body);
+    } catch(e) {
+      const msg = String(e?.message || e || '');
+      const m = msg.match(/Could not find the '([^']+)' column/i)
+        || msg.match(/'([^']+)' column of 'age_payments'/i)
+        || msg.match(/column "?([a-zA-Z0-9_]+)"? of relation "?age_payments"? does not exist/i);
+      const col = m && m[1];
+      if(col && Object.prototype.hasOwnProperty.call(body, col)) {
+        delete body[col];
+        dropped.push(col);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error('Falha ao salvar pagamento após remover colunas ausentes: ' + dropped.join(', '));
+}
+
 async function savePagamento() {
   if(!hasModuleEditForPage('pagamentos')) { toast('Sem permissão de edição.', 'warn'); return; }
 
@@ -25256,9 +25496,9 @@ async function savePagamento() {
     console.log('[DEBUG payload]', JSON.stringify(payload));
     let payId = editId;
     if(editId) {
-      await apiPatch('age_payments', editId, payload);
+      await _agePaymentWrite('PATCH', editId, payload);
     } else {
-      const saved = await _fetchSaveAgePayment(payload);
+      const saved = await _agePaymentWrite('POST', null, payload);
       payId = Array.isArray(saved) ? saved[0]?.id : saved?.id;
     }
     if(payId && colabSelId && !editId && _normStatus(status) === 'pendente') {
@@ -25277,7 +25517,7 @@ async function savePagamento() {
     if(fin?.classList.contains('active')) loadFinance();
   } catch(e) {
     console.error('[savePagamento]', e);
-    toast('Erro ao salvar pagamento.', 'err');
+    toast('Erro ao salvar pagamento: ' + _payFriendlyError(e), 'err');
   }
 }
 
@@ -25324,7 +25564,7 @@ async function confirmMarkAsPaid() {
     if(fin?.classList.contains('active')) loadFinance();
   } catch(e) {
     console.error('[confirmMarkAsPaid]', e);
-    toast('Erro ao atualizar.', 'err');
+    toast('Erro ao confirmar pagamento: ' + _payFriendlyError(e), 'err');
   }
 }
 
@@ -25337,7 +25577,7 @@ async function marcarComoPago(id, dataPagamento, comprovante) {
     paid_at: new Date(String(dataPagamento||_payToday())+'T12:00:00.000Z').toISOString(),
     comprovante_url: comprovante || null
   };
-  await apiPatch('age_payments', id, patch);
+  await _agePaymentWrite('PATCH', id, patch);
   if(prev?.colaborador_id) {
     await _notifyColaboradorPay('pago', {
       id,
