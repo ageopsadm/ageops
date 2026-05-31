@@ -15,9 +15,10 @@ AÇÕES DISPONÍVEIS:
 - criar_projeto
 - criar_cliente
 - criar_orcamento
-- criar_evento
+- criar_evento     (compromisso/evento no calendário; pode ser atribuído a um colaborador)
 - criar_gasto
-- criar_tarefa
+- criar_tarefa     (tarefa; se houver um colaborador alvo, ela é atribuída a ele)
+- atribuir_tarefa  (atribuir uma tarefa diretamente a um colaborador)
 - consultar
 - desconhecido
 
@@ -66,14 +67,16 @@ Para criar_orcamento:
 Para criar_evento:
 {
   "acao": "criar_evento",
-  "confirmacao": "Marcar [titulo] no dia [data] às [hora]?",
+  "confirmacao": "Marcar [titulo] no dia [data] às [hora] (para [colaborador])?",
   "dados": {
     "titulo": "string",
     "data_inicio": "YYYY-MM-DD",
+    "data_fim": "YYYY-MM-DD ou null (preencha em eventos de vários dias, ex.: 'de 29 a 30 de junho')",
     "hora_inicio": "HH:MM:00 ou null",
     "hora_fim": "HH:MM:00 ou null",
-    "tipo": "reuniao|gravacao|entrega|prazo|edicao|outro",
-    "responsavel_nome": "string ou null",
+    "tipo": "projeto|reuniao|gravacao|entrega|prazo|edicao|deslocamento|outro",
+    "colaborador_nome": "string ou null (nome do colaborador a quem o compromisso é atribuído)",
+    "responsavel_nome": "string ou null (igual a colaborador_nome quando houver)",
     "descricao": "string ou null"
   }
 }
@@ -93,11 +96,25 @@ Para criar_gasto:
 Para criar_tarefa:
 {
   "acao": "criar_tarefa",
-  "confirmacao": "Criar tarefa [titulo] para [responsavel]?",
+  "confirmacao": "Criar tarefa [titulo] para [dia]?",
   "dados": {
     "titulo": "string",
     "descricao": "string ou null",
+    "colaborador_nome": "string ou null (preencha quando a tarefa for para outra pessoa)",
     "responsavel_nome": "string ou null",
+    "prazo": "YYYY-MM-DD ou null",
+    "prioridade": "alta|media|baixa"
+  }
+}
+
+Para atribuir_tarefa (use quando o comando designar/atribuir uma tarefa a um colaborador):
+{
+  "acao": "atribuir_tarefa",
+  "confirmacao": "Atribuir tarefa [titulo] a [colaborador] para [dia]?",
+  "dados": {
+    "titulo": "string",
+    "descricao": "string ou null",
+    "colaborador_nome": "string (nome do colaborador alvo)",
     "prazo": "YYYY-MM-DD ou null",
     "prioridade": "alta|media|baixa"
   }
@@ -117,8 +134,16 @@ Para desconhecido:
 
 REGRAS:
 - Sempre responda em português brasileiro
-- Datas relativas: 'sexta' = próxima sexta, 'amanhã' = dia seguinte
+- Datas relativas: 'sexta' = próxima sexta, 'amanhã' = dia seguinte. Use contexto.data_iso como hoje.
+- "dia 05" / "dia 5" sem mês = dia 05 do mês atual (contexto.mes/contexto.ano)
+- Intervalos ("de 29 a 30 de junho", "dia 29 e 30") → data_inicio = primeiro dia, data_fim = último dia
 - Valores: '50k' = 50000, 'R$1.200' = 1200
+- ATRIBUIÇÃO A COLABORADORES: o contexto traz "colaboradores" (lista de nomes da empresa).
+  Quando o comando disser "para [Fulano]", "designe para [Fulano]", "atribua a [Fulano]",
+  use o nome exatamente como aparece na lista de colaboradores em colaborador_nome.
+- Se o comando é um COMPROMISSO/EVENTO com data e horário (gravação, reunião, entrega) e
+  menciona um colaborador, use criar_evento com colaborador_nome (ele aparece no calendário dele).
+- Se o comando é uma TAREFA a ser feita por um colaborador, use atribuir_tarefa.
 - Retorne APENAS o JSON, sem markdown
 - Se faltar informação importante, use null`;
 

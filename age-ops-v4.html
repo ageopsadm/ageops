@@ -5421,6 +5421,11 @@ body:has(#login-screen.visible){
       </select>
       <div style="font-family:var(--font-m);font-size:9px;color:#888;margin-top:4px">Opcional — cria vínculo em tarefas atribuídas (visão semanal).</div>
     </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label" style="font-size:11px;font-weight:700;color:#888">MINI-TAREFAS DO PROJETO</label>
+      <textarea id="seSubtasks" rows="3" placeholder="Uma por linha. Ex.:&#10;Reservar equipamento&#10;Confirmar locação&#10;Preparar roteiro" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;resize:vertical"></textarea>
+      <div style="font-family:var(--font-m);font-size:9px;color:#888;margin-top:4px">Cada linha vira uma tarefa com a data do evento e aparece na aba <strong>Tarefas</strong>. Se houver responsável atribuído acima, as mini-tarefas vão para ele.</div>
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center">
       <button type="button" class="btn btn-primary" onclick="saveCalendarEvent()" style="flex:1;min-width:140px;padding:12px;border-radius:8px;font-weight:700"><i class="fas fa-save"></i> Salvar evento</button>
       <button type="button" class="btn btn-ghost" onclick="closeSchedModal()">Cancelar</button>
@@ -6310,6 +6315,11 @@ const PAGE_PERM_KEYS = {
   'equipe-permissoes': []
 };
 
+/* Ferramentas da ÁREA PESSOAL do colaborador: sempre liberadas automaticamente,
+   sem necessidade de marcar permissão. Meu Dia, Minhas Tarefas, Meu Calendário e
+   Financeiro Pessoal andam juntos e interligados. */
+const PERSONAL_AUTO_MODULES = ['myday', 'mytasks', 'mycalendar', 'myfinance'];
+
 function _permKeysForPage(page) {
   return PAGE_PERM_KEYS[page] || [];
 }
@@ -6344,7 +6354,7 @@ function canViewPage(page) {
   if(page === 'cashflow') return _userIsAdminLike() || _userIsBootstrapAdmin();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
-  if(page === 'mytasks' || page === 'myfinance' || page === 'mycalendar') return true;
+  if(PERSONAL_AUTO_MODULES.includes(page)) return true;
   const keys = _permKeysForPage(page);
   if(!keys.length) return false;
   return keys.some(k => currentUser.permissions?.[k]?.view === true);
@@ -6356,7 +6366,7 @@ function hasModuleEditForPage(page) {
   if(page === 'cashflow') return _userIsAdminLike() || _userIsBootstrapAdmin();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
-  if(page === 'mytasks' || page === 'myfinance' || page === 'mycalendar') return true;
+  if(PERSONAL_AUTO_MODULES.includes(page)) return true;
   const keys = _permKeysForPage(page);
   if(!keys.length) return false;
   return keys.some(k => currentUser.permissions?.[k]?.edit === true);
@@ -6388,15 +6398,16 @@ async function hydrateUserPermissions() {
   } catch(e) {
     console.warn('[hydrateUserPermissions]', e);
   }
-  currentUser.permissions.mytasks = { view: true, edit: true };
-  currentUser.permissions.myfinance = { view: true, edit: true };
+  PERSONAL_AUTO_MODULES.forEach(k => {
+    currentUser.permissions[k] = { view: true, edit: true };
+  });
 }
 
 function _canShowNavModule(mod) {
   if(!mod) return true;
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
-  if(mod === 'mytasks' || mod === 'myfinance') return true;
+  if(PERSONAL_AUTO_MODULES.includes(mod)) return true;
   return currentUser.permissions?.[mod]?.view === true;
 }
 
@@ -6566,10 +6577,11 @@ async function openPermissoesModalFor(username) {
     ['relatorios', 'Relatórios']
   ];
   const persRows = [
+    ['myday', 'Meu Dia', true],
     ['mytasks', 'Minhas Tarefas', true],
-    ['cronograma', 'Cronograma', false],
+    ['mycalendar', 'Meu Calendário', true],
     ['myfinance', 'Fin. Pessoal', true],
-    ['myday', 'Meu Dia', false]
+    ['cronograma', 'Cronograma', false]
   ];
 
   let html = `<div style="font-family:var(--font-b);font-size:10px;font-weight:700;color:#94a3b8;margin:10px 0 6px">ÁREA CORPORATIVA</div>
@@ -7263,6 +7275,27 @@ function displayNameForUsername(un) {
   const x = String(un || '').toLowerCase();
   const r = _ageUsersCache.find(u => String(u.username || '').toLowerCase() === x);
   return (r && r.name) ? r.name : (un || '—');
+}
+
+/** Resolve um username a partir de um nome (ou username) digitado/ditado.
+ *  Tolerante a maiúsculas/acentos e a correspondências parciais (ex.: "Gabriel Pequeno"). */
+function usernameForDisplayName(nameOrUser) {
+  const raw = String(nameOrUser || '').trim();
+  if(!raw) return '';
+  const norm = s => String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ').trim();
+  const target = norm(raw);
+  if(!target) return '';
+  /* match exato por username ou nome */
+  let r = _ageUsersCache.find(u => norm(u.username) === target || norm(u.name) === target);
+  if(r) return r.username;
+  /* match parcial pelo nome (primeiro nome, contém, etc.) */
+  r = _ageUsersCache.find(u => norm(u.name).includes(target) || target.includes(norm(u.name)) && norm(u.name));
+  if(r) return r.username;
+  /* devolve o texto original (será tratado como username/responsável livre) */
+  return raw;
 }
 
 /** Usuários escolhidos no modal de projeto (missão → cronograma). */
@@ -8687,22 +8720,23 @@ let aiCurrentResult = null;
 const AI_EDGE_URL = `${String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '')}/functions/v1/ai-command`;
 
 const aiActionIcons = {
-  criar_projeto:   '📁',
-  criar_cliente:   '👤',
-  criar_orcamento: '📄',
-  criar_evento:    '📅',
-  criar_gasto:     '💸',
-  criar_tarefa:    '✅',
-  consultar:       '🔍',
-  desconhecido:    '❓'
+  criar_projeto:    '📁',
+  criar_cliente:    '👤',
+  criar_orcamento:  '📄',
+  criar_evento:     '📅',
+  criar_gasto:      '💸',
+  criar_tarefa:     '✅',
+  atribuir_tarefa:  '🤝',
+  consultar:        '🔍',
+  desconhecido:     '❓'
 };
 
 const aiLabels = {
   nome: 'Nome', titulo: 'Título', cliente_nome: 'Cliente',
   valor_total: 'Valor', valor: 'Valor', data_entrega: 'Prazo',
-  data_inicio: 'Data', data: 'Data', hora_inicio: 'Horário', hora_fim: 'Até',
+  data_inicio: 'Data', data_fim: 'Data fim', data: 'Data', hora_inicio: 'Horário', hora_fim: 'Até',
   tipo: 'Tipo', responsavel_nome: 'Responsável',
-  prioridade: 'Prioridade', validade_dias: 'Validade',
+  colaborador_nome: 'Atribuir a', prioridade: 'Prioridade', validade_dias: 'Validade',
   descricao: 'Descrição', contato: 'Contato',
   email: 'E-mail', telefone: 'Telefone',
   categoria: 'Categoria', empresa: 'Empresa', prazo: 'Prazo'
@@ -8795,17 +8829,19 @@ function _aiRefreshListsAfterAction(acao) {
     if(acao === 'criar_orcamento') {
       if(pageActive('page-orcamentos') && typeof loadOrcamentos === 'function') loadOrcamentos();
     }
-    if(acao === 'criar_evento') {
-      if(pageActive('page-cronograma') && typeof loadCalendarEvents === 'function') loadCalendarEvents();
+    if(acao === 'criar_evento' || acao === 'atribuir_tarefa') {
+      if(pageActive('page-cronograma')) {
+        if(typeof loadCalendarEvents === 'function') loadCalendarEvents();
+        if(typeof loadCronograma === 'function') loadCronograma();
+      }
     }
     if(acao === 'criar_gasto') {
       if(pageActive('page-cashflow') && typeof loadCashflow === 'function') loadCashflow();
     }
-    if(acao === 'criar_tarefa') {
-      const my = document.getElementById('page-myday');
-      const tk = document.getElementById('page-mytasks');
-      if(my?.classList.contains('active') && typeof loadMyDay === 'function') loadMyDay();
-      if(tk?.classList.contains('active') && typeof loadTasks === 'function') loadTasks();
+    if(acao === 'criar_tarefa' || acao === 'atribuir_tarefa' || acao === 'criar_evento') {
+      if(pageActive('page-myday') && typeof loadMyDay === 'function') loadMyDay();
+      if(pageActive('page-mytasks') && typeof loadTasks === 'function') loadTasks();
+      if(pageActive('page-mycalendar') && typeof loadMyCalendar === 'function') loadMyCalendar();
     }
   } catch(e) { console.warn('[ai refresh]', e); }
 }
@@ -8880,13 +8916,23 @@ async function aiProcessCommand() {
   document.getElementById('ai-success-block').style.display = 'none';
 
   try {
+    if(!_ageUsersCache.length) { try { await refreshAgeUsersCache(); } catch(e) {} }
+    const colaboradores = _ageUsersCache
+      .filter(u => _normalizeRole(u.role) === 'colaborador' && u.active !== false && u.active !== 'false')
+      .map(u => u.name || u.username)
+      .filter(Boolean);
+    const _isAdminLike = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
+      || ['admin','gestor'].includes(String(currentUser?.role || '').toLowerCase());
     const contexto = {
       empresa: currentUser?.company_name || '',
       usuario: currentUser?.nome || currentUser?.name || '',
       data_hoje: new Date().toLocaleDateString('pt-BR'),
+      data_iso: new Date().toISOString().slice(0, 10),
       dia_semana: ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][new Date().getDay()],
       ano: new Date().getFullYear(),
-      mes: new Date().getMonth() + 1
+      mes: new Date().getMonth() + 1,
+      eh_admin: _isAdminLike,
+      colaboradores
     };
 
     const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
@@ -9052,26 +9098,82 @@ async function aiExecuteAction() {
 
     } else if(acao === 'criar_evento') {
       const tipo = _aiCalTipo(d.tipo);
+      /* "Atribuir a / responsável": resolve para um colaborador da empresa, se possível. */
+      const assigneeRaw = String(d.colaborador_nome || d.responsavel_nome || '').trim();
+      let assigneeUsername = '';
+      let assigneeName = '';
+      if(assigneeRaw) {
+        if(!_ageUsersCache.length) { try { await refreshAgeUsersCache(); } catch(e) {} }
+        assigneeUsername = usernameForDisplayName(assigneeRaw);
+        assigneeName = displayNameForUsername(assigneeUsername) || assigneeRaw;
+      }
+      const dataFim = (d.data_fim != null && String(d.data_fim).trim()) ? String(d.data_fim).slice(0, 10) : null;
+      const dataIni = String(d.data_inicio || '').slice(0, 10);
+      /* Evento de vários dias → marca dia inteiro automaticamente. */
+      const multiDia = !!(dataFim && dataIni && dataFim > dataIni);
       const payload = {
         company_id: currentUser?.company_id || null,
         titulo: String(d.titulo || '').trim(),
         descricao: (d.descricao != null && String(d.descricao).trim()) ? String(d.descricao).trim() : null,
-        data_inicio: String(d.data_inicio || '').slice(0, 10),
-        data_fim: null,
-        hora_inicio: _aiCalTimeToHMS(d.hora_inicio),
-        hora_fim: _aiCalTimeToHMS(d.hora_fim),
+        data_inicio: dataIni,
+        data_fim: dataFim,
+        hora_inicio: multiDia ? null : _aiCalTimeToHMS(d.hora_inicio),
+        hora_fim: multiDia ? null : _aiCalTimeToHMS(d.hora_fim),
         tipo,
-        responsavel_nome: (d.responsavel_nome != null && String(d.responsavel_nome).trim()) ? String(d.responsavel_nome).trim() : null,
+        responsavel_nome: assigneeName || null,
         cor: _aiCoresTipoCal[tipo] || '#6b7280',
-        dia_inteiro: false,
+        dia_inteiro: multiDia,
         status: 'confirmado',
         created_at: Date.now(),
         updated_at: Date.now()
       };
       if(!payload.company_id) throw new Error('Empresa não definida.');
       if(!payload.titulo || !payload.data_inicio) throw new Error('Título e data são obrigatórios.');
-      await apiPost('age_team_calendar', payload);
-      mensagemSucesso = `Evento "${payload.titulo}" adicionado ao cronograma!`;
+      const savedEv = await apiPost('age_team_calendar', payload);
+      const evRow = Array.isArray(savedEv) ? savedEv[0] : savedEv;
+      /* Se foi atribuído a um colaborador, cria a tarefa atribuída → aparece no
+         Meu Dia / Minhas Tarefas / Meu Calendário dele. */
+      if(assigneeUsername && evRow?.id) {
+        await syncAssignedTaskFromCalendar(evRow, assigneeUsername, payload.titulo, payload.data_inicio, payload.descricao || '');
+        mensagemSucesso = `Compromisso "${payload.titulo}" criado e atribuído a ${assigneeName}!`;
+      } else {
+        mensagemSucesso = `Evento "${payload.titulo}" adicionado ao cronograma!`;
+      }
+
+    } else if(acao === 'atribuir_tarefa') {
+      const titulo = String(d.titulo || '').trim();
+      if(!titulo) throw new Error('Título da tarefa é obrigatório.');
+      const alvoRaw = String(d.colaborador_nome || d.responsavel_nome || '').trim();
+      if(!alvoRaw) throw new Error('Informe para qual colaborador atribuir a tarefa.');
+      if(!_ageUsersCache.length) { try { await refreshAgeUsersCache(); } catch(e) {} }
+      const alvoUsername = usernameForDisplayName(alvoRaw);
+      const alvoNome = displayNameForUsername(alvoUsername) || alvoRaw;
+      const day = d.prazo ? String(d.prazo).slice(0, 10) : new Date().toISOString().slice(0, 10);
+      const me = currentUser?.username || 'unknown';
+      const posted = await apiPost('age_assigned_tasks', {
+        assigned_to: alvoUsername,
+        assigned_by: me,
+        title: titulo,
+        due_date: day,
+        status: 'pendente',
+        notes: (d.descricao != null && String(d.descricao).trim()) ? String(d.descricao).trim() : '',
+        deleted: false
+      });
+      try {
+        if(String(alvoUsername).toLowerCase() !== String(me).toLowerCase()) {
+          const niceDue = day ? new Date(day + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+          const tid = posted?.id || '';
+          await createNotification({
+            username: alvoUsername,
+            type: 'tarefa_atribuida',
+            title: 'Nova tarefa atribuída',
+            message: `${displayNameForUsername(me)} atribuiu '${titulo.replace(/'/g, '′')}' para você — vence em ${niceDue}`,
+            link: 'mytasks',
+            dedupe_key: tid ? `asgt_${tid}_${alvoUsername}` : undefined
+          });
+        }
+      } catch(eN) { console.warn('[atribuir_tarefa notif]', eN); }
+      mensagemSucesso = `Tarefa "${titulo}" atribuída a ${alvoNome}!`;
 
     } else if(acao === 'criar_gasto') {
       const valor = parseFloat(d.valor);
@@ -9089,19 +9191,53 @@ async function aiExecuteAction() {
     } else if(acao === 'criar_tarefa') {
       const titulo = String(d.titulo || '').trim();
       if(!titulo) throw new Error('Título da tarefa é obrigatório.');
-      const owner = String(d.responsavel_nome || '').trim() || (currentUser?.username || 'unknown');
       const day = d.prazo ? String(d.prazo).slice(0, 10) : new Date().toISOString().slice(0, 10);
+      const me = currentUser?.username || 'unknown';
       const textParts = [titulo];
       if(d.descricao) textParts.push(String(d.descricao));
-      await apiPost('age_tasks', {
-        task_text: textParts.join(' — '),
-        day_date: day,
-        priority: _aiTaskPriority(d.prioridade),
-        done: false,
-        owner,
-        created_by: currentUser?.username || 'unknown'
-      });
-      mensagemSucesso = `Tarefa "${titulo}" criada!`;
+      /* Se um responsável (colaborador) diferente do usuário for indicado, vira tarefa
+         ATRIBUÍDA (aparece no Meu Dia / Tarefas / Calendário dele). Senão, tarefa pessoal. */
+      const alvoRaw = String(d.colaborador_nome || d.responsavel_nome || '').trim();
+      let alvoUsername = '';
+      if(alvoRaw) {
+        if(!_ageUsersCache.length) { try { await refreshAgeUsersCache(); } catch(e) {} }
+        alvoUsername = usernameForDisplayName(alvoRaw);
+      }
+      if(alvoUsername && String(alvoUsername).toLowerCase() !== String(me).toLowerCase()) {
+        const alvoNome = displayNameForUsername(alvoUsername) || alvoRaw;
+        const posted = await apiPost('age_assigned_tasks', {
+          assigned_to: alvoUsername,
+          assigned_by: me,
+          title: titulo,
+          due_date: day,
+          status: 'pendente',
+          notes: (d.descricao != null && String(d.descricao).trim()) ? String(d.descricao).trim() : '',
+          deleted: false
+        });
+        try {
+          const niceDue = day ? new Date(day + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+          const tid = posted?.id || '';
+          await createNotification({
+            username: alvoUsername,
+            type: 'tarefa_atribuida',
+            title: 'Nova tarefa atribuída',
+            message: `${displayNameForUsername(me)} atribuiu '${titulo.replace(/'/g, '′')}' para você — vence em ${niceDue}`,
+            link: 'mytasks',
+            dedupe_key: tid ? `asgt_${tid}_${alvoUsername}` : undefined
+          });
+        } catch(eN) { console.warn('[criar_tarefa notif]', eN); }
+        mensagemSucesso = `Tarefa "${titulo}" atribuída a ${alvoNome}!`;
+      } else {
+        await apiPost('age_tasks', {
+          task_text: textParts.join(' — '),
+          day_date: day,
+          priority: _aiTaskPriority(d.prioridade),
+          done: false,
+          owner: me,
+          created_by: me
+        });
+        mensagemSucesso = `Tarefa "${titulo}" criada!`;
+      }
     } else {
       return;
     }
@@ -23432,6 +23568,7 @@ async function openNewEventModal(dateStr) {
   document.getElementById('calEventId').value = '';
   document.getElementById('seTitle').value = '';
   document.getElementById('seNotes').value = '';
+  { const _st = document.getElementById('seSubtasks'); if(_st) _st.value = ''; }
   document.getElementById('seDate').value = dateStr || new Date().toISOString().slice(0, 10);
   document.getElementById('seEndDate').value = '';
   document.getElementById('seStartTime').value = '';
@@ -23455,6 +23592,7 @@ async function openEditEventModal(eventId) {
   if(assignRow) assignRow.style.display = 'none';
   document.getElementById('calEventId').value = ev.id || '';
   document.getElementById('seTitle').value = (ev.titulo || '').toString();
+  { const _st = document.getElementById('seSubtasks'); if(_st) _st.value = ''; }
   const parsed = _calParseDescricao(ev.descricao);
   document.getElementById('seNotes').value = parsed.descLimpa;
   document.getElementById('seProjectId').value = parsed.projetoId || '';
@@ -23467,6 +23605,62 @@ async function openEditEventModal(eventId) {
   document.getElementById('seStatus').value = (ev.status || 'confirmado').toString();
   document.getElementById('seDiaInteiro').checked = ev.dia_inteiro === true || ev.dia_inteiro === 'true';
   openModal('modalSchedEvent');
+}
+
+/**
+ * Cria mini-tarefas (uma por linha) vinculadas a um evento/projeto do calendário.
+ * - Com responsável atribuído  → vira tarefa atribuída ao colaborador (age_assigned_tasks),
+ *   aparecendo em Minhas Tarefas, Meu Dia e Meu Calendário dele.
+ * - Sem responsável            → vira tarefa pessoal do próprio usuário (age_tasks).
+ * Em ambos os casos herda a data do evento, alimentando a aba Tarefas.
+ */
+async function _createCalendarSubtasks({ text, assignTo, dueDate, eventTitle }) {
+  const lines = String(text || '')
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean);
+  if(!lines.length) return;
+  const day = (dueDate || '').toString().slice(0, 10) || new Date().toISOString().slice(0, 10);
+  const refNote = eventTitle ? `Mini-tarefa de: ${eventTitle}` : 'Mini-tarefa do calendário';
+  const me = currentUser?.username || 'unknown';
+  for(const titulo of lines) {
+    try {
+      if(assignTo) {
+        const posted = await apiPost('age_assigned_tasks', {
+          assigned_to: assignTo,
+          assigned_by: me,
+          title: titulo,
+          due_date: day,
+          status: 'pendente',
+          notes: refNote,
+          deleted: false
+        });
+        try {
+          if(String(assignTo).toLowerCase() !== String(me).toLowerCase()) {
+            const niceDue = day ? new Date(day + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+            const tid = posted?.id || '';
+            await createNotification({
+              username: assignTo,
+              type: 'tarefa_atribuida',
+              title: 'Nova mini-tarefa atribuída',
+              message: `${displayNameForUsername(me)} atribuiu '${titulo.replace(/'/g, '′')}' para você — vence em ${niceDue}`,
+              link: 'mytasks',
+              dedupe_key: tid ? `asgt_${tid}_${assignTo}` : undefined
+            });
+          }
+        } catch(eN) { console.warn('[subtask notif]', eN); }
+      } else {
+        await apiPost('age_tasks', {
+          task_text: titulo,
+          day_date: day,
+          priority: 'normal',
+          done: false,
+          owner: me,
+          created_by: me
+        });
+      }
+    } catch(eS) { console.warn('[createCalendarSubtask]', titulo, eS); }
+  }
 }
 
 async function saveCalendarEvent() {
@@ -23511,11 +23705,19 @@ async function saveCalendarEvent() {
       savedRow = await apiPost('age_team_calendar', payload);
     }
     const row = Array.isArray(savedRow) ? savedRow[0] : savedRow;
-    const assignTo = document.getElementById('seAssignTo')?.value?.trim() || '';
+    const _assignRow = document.getElementById('schedAssignRow');
+    const _assignVisible = _assignRow && _assignRow.style.display !== 'none';
+    const assignTo = _assignVisible ? (document.getElementById('seAssignTo')?.value?.trim() || '') : '';
     if(assignTo && row?.id) {
       const notesSync = _calParseDescricao(payload.descricao).descLimpa || '';
       await syncAssignedTaskFromCalendar(row, assignTo, payload.titulo, payload.data_inicio, notesSync);
     }
+    await _createCalendarSubtasks({
+      text: document.getElementById('seSubtasks')?.value || '',
+      assignTo,
+      dueDate: payload.data_inicio,
+      eventTitle: payload.titulo
+    });
     closeSchedModal();
     loadCalendarEvents();
     await loadCronograma().catch(()=>{});
@@ -23745,6 +23947,7 @@ async function openSchedEventModal(date='') {
   document.getElementById('modalSchedTitle').textContent = 'NOVO EVENTO';
   document.getElementById('calEventId').value = '';
   document.getElementById('seTitle').value = '';
+  { const _st = document.getElementById('seSubtasks'); if(_st) _st.value = ''; }
   document.getElementById('seDate').value = date || new Date().toISOString().slice(0, 10);
   document.getElementById('seEndDate').value = '';
   document.getElementById('seStartTime').value = '';
@@ -23772,6 +23975,7 @@ async function viewSchedEvent(id) {
   document.getElementById('modalSchedTitle').textContent = 'EDITAR EVENTO';
   document.getElementById('calEventId').value = ev.id;
   document.getElementById('seTitle').value = ev.titulo || ev.title || '';
+  { const _st = document.getElementById('seSubtasks'); if(_st) _st.value = ''; }
   const parsed = _calParseDescricao(ev.descricao || ev.notes);
   document.getElementById('seNotes').value = parsed.descLimpa;
   document.getElementById('seProjectId').value = parsed.projetoId || '';
@@ -25282,13 +25486,18 @@ async function _ensurePayProjects() {
   } catch(e) { _payProjectsCache = []; }
   const sel = document.getElementById('pay-projeto-id');
   if(!sel) return;
-  const rows = [..._payProjectsCache].sort((a, b) =>
-    (_ageProjDbTitle(a) || '').localeCompare(_ageProjDbTitle(b) || '', 'pt-BR', { sensitivity: 'base' }));
+  const rows = [..._payProjectsCache].sort((a, b) => {
+    const ka = `${_ageProjDbClient(a)} ${_ageProjDbTitle(a)}`.trim();
+    const kb = `${_ageProjDbClient(b)} ${_ageProjDbTitle(b)}`.trim();
+    return ka.localeCompare(kb, 'pt-BR', { sensitivity: 'base' });
+  });
   sel.innerHTML = '<option value="">— Nenhum projeto —</option>' + rows.map(p => {
     const tid = escAttr(String(p.id));
     const title = _ageProjDbTitle(p) || '(sem nome)';
+    const cliente = _ageProjDbClient(p);
+    const base = cliente ? `${cliente} — ${title}` : title;
     const st = p.status ? String(p.status).trim() : '';
-    const label = st ? `${title} — ${st}` : title;
+    const label = st ? `${base} — ${st}` : base;
     return `<option value="${tid}">${escHtml(label)}</option>`;
   }).join('');
 }
@@ -25451,7 +25660,14 @@ async function savePagamento() {
   }
   if(projeto_id && !projeto_nome && _payProjectsCache.length) {
     const p = _payProjectsCache.find(x => String(x.id) === String(projeto_id));
-    projeto_nome = p ? ((_ageProjDbTitle(p) || '') + (p.status ? ` — ${p.status}` : '')) : null;
+    if(p) {
+      const cli = _ageProjDbClient(p);
+      const tit = _ageProjDbTitle(p) || '';
+      const base = cli ? `${cli} — ${tit}` : tit;
+      projeto_nome = base + (p.status ? ` — ${p.status}` : '');
+    } else {
+      projeto_nome = null;
+    }
   }
   const observacoes   = document.getElementById('payObs').value.trim() || null;
   const recorrente    = document.getElementById('payRecorrente').checked === true;
@@ -26970,6 +27186,10 @@ if(document.readyState === 'loading') {
           class="ai-suggestion-btn">💸 Novo gasto</button>
         <button type="button" onclick="aiSetCommand('Criar tarefa editar vídeo Heineken para João, prazo amanhã')"
           class="ai-suggestion-btn">✅ Nova tarefa</button>
+        <button type="button" onclick="aiSetCommand('Atribuir tarefa preparar roteiro para Gabriel Pequeno, prazo sexta')"
+          class="ai-suggestion-btn">🤝 Atribuir tarefa</button>
+        <button type="button" onclick="aiSetCommand('Gravação ao vivo do SULPA dia 05, designar para Gabriel Pequeno')"
+          class="ai-suggestion-btn">📅 Compromisso p/ colaborador</button>
       </div>
     </div>
 
