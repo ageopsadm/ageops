@@ -1,7 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const CLAUDE_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
-const CLAUDE_MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-3-5-haiku-20241022';
+/* Haiku 4.5 — ID oficial Anthropic (maio/2026). Override: secret ANTHROPIC_MODEL */
+const CLAUDE_MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-haiku-4-5-20251001';
+const CLAUDE_MODEL_FALLBACKS = [
+  'claude-haiku-4-5-20251001',
+  'claude-haiku-4-5',
+  'claude-3-5-haiku-20241022',
+  'claude-3-haiku-20240307'
+];
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -214,43 +221,61 @@ serve(async (req) => {
 
     const contexto = body?.contexto ?? {};
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 2048,
-        system: SYSTEM_PROMPT,
-        messages: [{
-          role: 'user',
-          content: `Contexto atual: ${JSON.stringify(contexto)}\n\nComando: "${comando}"`
-        }]
-      })
-    });
+    const modelsToTry = [
+      CLAUDE_MODEL,
+      ...CLAUDE_MODEL_FALLBACKS.filter((m) => m !== CLAUDE_MODEL)
+    ];
 
-    let claudeData: Record<string, unknown>;
-    try {
-      claudeData = await response.json();
-    } catch {
-      return jsonResponse({
-        acao: 'erro',
-        resposta: `Resposta inválida da Anthropic (HTTP ${response.status}).`
+    let response: Response | null = null;
+    let claudeData: Record<string, unknown> = {};
+    let modelUsed = modelsToTry[0];
+    let lastErrMsg = '';
+
+    for (const modelId of modelsToTry) {
+      modelUsed = modelId;
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: modelId,
+          max_tokens: 2048,
+          system: SYSTEM_PROMPT,
+          messages: [{
+            role: 'user',
+            content: `Contexto atual: ${JSON.stringify(contexto)}\n\nComando: "${comando}"`
+          }]
+        })
       });
+
+      try {
+        claudeData = await response.json();
+      } catch {
+        return jsonResponse({
+          acao: 'erro',
+          resposta: `Resposta inválida da Anthropic (HTTP ${response.status}).`
+        });
+      }
+
+      if (response.ok) break;
+
+      const errObj = claudeData?.error as { message?: string; type?: string } | undefined;
+      lastErrMsg = errObj?.message
+        || String(claudeData?.message || '')
+        || `HTTP ${response.status}`;
+      const isModelErr = /model/i.test(lastErrMsg) || errObj?.type === 'not_found_error';
+      console.warn('[ai-command] model failed:', modelId, lastErrMsg);
+      if (!isModelErr) break;
     }
 
-    if (!response.ok) {
-      const errObj = claudeData?.error as { message?: string } | undefined;
-      const msg = errObj?.message
-        || String(claudeData?.message || '')
-        || `Anthropic retornou HTTP ${response.status}`;
+    if (!response || !response.ok) {
       console.error('[ai-command] Anthropic error:', claudeData);
       return jsonResponse({
         acao: 'erro',
-        resposta: `IA indisponível: ${msg}. Verifique ANTHROPIC_API_KEY e o modelo (${CLAUDE_MODEL}).`
+        resposta: `IA indisponível: ${lastErrMsg}. Modelo tentado: ${modelUsed}. Use ANTHROPIC_MODEL=claude-haiku-4-5-20251001 no Supabase Secrets.`
       });
     }
 
