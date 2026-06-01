@@ -8716,6 +8716,7 @@ document.getElementById('login-email')?.addEventListener('keydown', function(e){
 // ══════════════════════════════════════════════════
 
 let aiCurrentResult = null;
+let _aiExecuting = false;
 
 const AI_EDGE_URL = `${String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '')}/functions/v1/ai-command`;
 
@@ -8726,6 +8727,7 @@ const aiActionIcons = {
   criar_evento:     '📅',
   criar_gasto:      '💸',
   criar_tarefa:     '✅',
+  criar_tarefas:    '✅',
   atribuir_tarefa:  '🤝',
   consultar:        '🔍',
   desconhecido:     '❓'
@@ -8736,7 +8738,7 @@ const aiLabels = {
   valor_total: 'Valor', valor: 'Valor', data_entrega: 'Prazo',
   data_inicio: 'Data', data_fim: 'Data fim', data: 'Data', hora_inicio: 'Horário', hora_fim: 'Até',
   tipo: 'Tipo', responsavel_nome: 'Responsável',
-  colaborador_nome: 'Atribuir a', prioridade: 'Prioridade', validade_dias: 'Validade',
+  colaborador_nome: 'Atribuir a', tarefas: 'Tarefas', prioridade: 'Prioridade', validade_dias: 'Validade',
   descricao: 'Descrição', contato: 'Contato',
   email: 'E-mail', telefone: 'Telefone',
   categoria: 'Categoria', empresa: 'Empresa', prazo: 'Prazo'
@@ -8777,6 +8779,57 @@ function _aiTaskPriority(p) {
   if(s === 'baixa') return 'baixa';
   if(s === 'media' || s === 'média' || s === 'normal') return 'normal';
   return 'normal';
+}
+
+function _aiTomorrowISO() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Extrai lista de tarefas do payload da IA (array ou texto com vírgulas). */
+function _aiExtractTaskTitles(d) {
+  const data = d || {};
+  if(Array.isArray(data.tarefas)) {
+    return data.tarefas.map(t => String(t || '').trim()).filter(Boolean);
+  }
+  if(Array.isArray(data.titulos)) {
+    return data.titulos.map(t => String(t || '').trim()).filter(Boolean);
+  }
+  const raw = String(data.titulo || data.texto || '').trim();
+  if(!raw) return [];
+  if(/[,;]/.test(raw)) {
+    const parts = raw.split(/[,;]+/).map(s => s.trim()).filter(s => s.length > 1);
+    if(parts.length > 1) return parts;
+  }
+  return [raw];
+}
+
+function _aiNormalizeAction(acao) {
+  const a = String(acao || '').toLowerCase().trim();
+  if(a === 'criar_tarefas' || a === 'criar_varias_tarefas' || a === 'criar_variastarefas') return 'criar_tarefas';
+  if(a === 'criar_tarefa_pessoal' || a === 'criar_tarefas_pessoais') return 'criar_tarefas';
+  return a;
+}
+
+async function _aiCreatePersonalTasks(titles, day, priority) {
+  const me = currentUser?.username || 'unknown';
+  const prio = _aiTaskPriority(priority);
+  let ok = 0;
+  for(const titulo of titles) {
+    const text = String(titulo || '').trim();
+    if(!text) continue;
+    await apiPost('age_tasks', {
+      task_text: text,
+      day_date: day,
+      priority: prio,
+      done: false,
+      owner: me,
+      created_by: me
+    });
+    ok++;
+  }
+  return ok;
 }
 
 function _aiCalTimeToHMS(t) {
@@ -8838,7 +8891,7 @@ function _aiRefreshListsAfterAction(acao) {
     if(acao === 'criar_gasto') {
       if(pageActive('page-cashflow') && typeof loadCashflow === 'function') loadCashflow();
     }
-    if(acao === 'criar_tarefa' || acao === 'atribuir_tarefa' || acao === 'criar_evento') {
+    if(acao === 'criar_tarefa' || acao === 'criar_tarefas' || acao === 'atribuir_tarefa' || acao === 'criar_evento') {
       if(pageActive('page-myday') && typeof loadMyDay === 'function') loadMyDay();
       if(pageActive('page-mytasks') && typeof loadTasks === 'function') loadTasks();
       if(pageActive('page-mycalendar') && typeof loadMyCalendar === 'function') loadMyCalendar();
@@ -8947,6 +9000,7 @@ async function aiProcessCommand() {
     });
 
     const resultado = await response.json();
+    if(resultado && resultado.acao) resultado.acao = _aiNormalizeAction(resultado.acao);
     aiCurrentResult = resultado;
 
     document.getElementById('ai-loading').style.display = 'none';
@@ -8966,7 +9020,7 @@ async function aiProcessCommand() {
 
       const dados = resultado.dados || {};
       const linhas = Object.entries(dados)
-        .filter(([, v]) => v !== null && v !== undefined && v !== '')
+        .filter(([k, v]) => v !== null && v !== undefined && v !== '' && k !== 'tarefas' && k !== 'pessoal')
         .map(([k, v]) => {
           const label = aiLabels[k] || k;
           let valor = v;
@@ -8983,9 +9037,19 @@ async function aiProcessCommand() {
             </span>
           </div>`;
         }).join('');
+      const taskList = _aiExtractTaskTitles(dados);
+      const tasksHtml = taskList.length
+        ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #eee">
+            <div style="font-size:11px;color:#999;margin-bottom:6px">${taskList.length} tarefa(s)</div>
+            <ol style="margin:0;padding-left:18px;font-size:12px;color:#111;line-height:1.5">
+              ${taskList.map(t => `<li>${escHtml(t)}</li>`).join('')}
+            </ol></div>`
+        : '';
 
       document.getElementById('ai-data-preview').innerHTML =
-        linhas || '<span style="color:#999">Dados extraídos do comando</span>';
+        (linhas || tasksHtml)
+          ? (linhas + tasksHtml)
+          : '<span style="color:#999">Dados extraídos do comando</span>';
     }
 
   } catch (err) {
@@ -8999,9 +9063,17 @@ async function aiProcessCommand() {
 
 // Executar a ação confirmada
 async function aiExecuteAction() {
-  if(!aiCurrentResult) return;
-  const { acao, dados } = aiCurrentResult;
-  const d = dados || {};
+  if(!aiCurrentResult || _aiExecuting) return;
+  const acao = _aiNormalizeAction(aiCurrentResult.acao);
+  const d = aiCurrentResult.dados || {};
+  _aiExecuting = true;
+  const confirmBtn = document.querySelector('#ai-confirm-block button[onclick*="aiExecuteAction"]');
+  const prevBtnText = confirmBtn ? confirmBtn.textContent : '';
+  if(confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Criando…';
+    confirmBtn.style.opacity = '0.7';
+  }
 
   try {
     let mensagemSucesso = '';
@@ -9188,57 +9260,74 @@ async function aiExecuteAction() {
       });
       mensagemSucesso = `Gasto de R$${Number(valor).toLocaleString('pt-BR')} registrado!`;
 
+    } else if(acao === 'criar_tarefas') {
+      const titles = _aiExtractTaskTitles(d);
+      if(!titles.length) throw new Error('Nenhuma tarefa identificada na lista.');
+      const day = d.prazo ? String(d.prazo).slice(0, 10) : _aiTomorrowISO();
+      const n = await _aiCreatePersonalTasks(titles, day, d.prioridade);
+      if(!n) throw new Error('Não foi possível salvar as tarefas.');
+      const nice = day ? new Date(day + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+      mensagemSucesso = `${n} tarefa${n > 1 ? 's' : ''} pessoais criadas para ${nice}!`;
+
     } else if(acao === 'criar_tarefa') {
-      const titulo = String(d.titulo || '').trim();
-      if(!titulo) throw new Error('Título da tarefa é obrigatório.');
+      const titles = _aiExtractTaskTitles(d);
       const day = d.prazo ? String(d.prazo).slice(0, 10) : new Date().toISOString().slice(0, 10);
       const me = currentUser?.username || 'unknown';
-      const textParts = [titulo];
-      if(d.descricao) textParts.push(String(d.descricao));
-      /* Se um responsável (colaborador) diferente do usuário for indicado, vira tarefa
-         ATRIBUÍDA (aparece no Meu Dia / Tarefas / Calendário dele). Senão, tarefa pessoal. */
-      const alvoRaw = String(d.colaborador_nome || d.responsavel_nome || '').trim();
-      let alvoUsername = '';
-      if(alvoRaw) {
-        if(!_ageUsersCache.length) { try { await refreshAgeUsersCache(); } catch(e) {} }
-        alvoUsername = usernameForDisplayName(alvoRaw);
-      }
-      if(alvoUsername && String(alvoUsername).toLowerCase() !== String(me).toLowerCase()) {
-        const alvoNome = displayNameForUsername(alvoUsername) || alvoRaw;
-        const posted = await apiPost('age_assigned_tasks', {
-          assigned_to: alvoUsername,
-          assigned_by: me,
-          title: titulo,
-          due_date: day,
-          status: 'pendente',
-          notes: (d.descricao != null && String(d.descricao).trim()) ? String(d.descricao).trim() : '',
-          deleted: false
-        });
-        try {
-          const niceDue = day ? new Date(day + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
-          const tid = posted?.id || '';
-          await createNotification({
-            username: alvoUsername,
-            type: 'tarefa_atribuida',
-            title: 'Nova tarefa atribuída',
-            message: `${displayNameForUsername(me)} atribuiu '${titulo.replace(/'/g, '′')}' para você — vence em ${niceDue}`,
-            link: 'mytasks',
-            dedupe_key: tid ? `asgt_${tid}_${alvoUsername}` : undefined
-          });
-        } catch(eN) { console.warn('[criar_tarefa notif]', eN); }
-        mensagemSucesso = `Tarefa "${titulo}" atribuída a ${alvoNome}!`;
+
+      /* Várias tarefas no mesmo comando (vírgulas) → lote pessoal. */
+      if(titles.length > 1 || d.pessoal === true || d.pessoal === 'true') {
+        const n = await _aiCreatePersonalTasks(titles.length ? titles : [String(d.titulo || '')], day, d.prioridade);
+        if(!n) throw new Error('Não foi possível salvar as tarefas.');
+        mensagemSucesso = `${n} tarefa${n > 1 ? 's' : ''} criadas!`;
       } else {
-        await apiPost('age_tasks', {
-          task_text: textParts.join(' — '),
-          day_date: day,
-          priority: _aiTaskPriority(d.prioridade),
-          done: false,
-          owner: me,
-          created_by: me
-        });
-        mensagemSucesso = `Tarefa "${titulo}" criada!`;
+        const titulo = titles[0] || String(d.titulo || '').trim();
+        if(!titulo) throw new Error('Título da tarefa é obrigatório.');
+        const textParts = [titulo];
+        if(d.descricao) textParts.push(String(d.descricao));
+        const alvoRaw = String(d.colaborador_nome || d.responsavel_nome || '').trim();
+        let alvoUsername = '';
+        if(alvoRaw) {
+          if(!_ageUsersCache.length) { try { await refreshAgeUsersCache(); } catch(e) {} }
+          alvoUsername = usernameForDisplayName(alvoRaw);
+        }
+        if(alvoUsername && String(alvoUsername).toLowerCase() !== String(me).toLowerCase()) {
+          const alvoNome = displayNameForUsername(alvoUsername) || alvoRaw;
+          const posted = await apiPost('age_assigned_tasks', {
+            assigned_to: alvoUsername,
+            assigned_by: me,
+            title: titulo,
+            due_date: day,
+            status: 'pendente',
+            notes: (d.descricao != null && String(d.descricao).trim()) ? String(d.descricao).trim() : '',
+            deleted: false
+          });
+          try {
+            const niceDue = day ? new Date(day + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+            const tid = posted?.id || '';
+            await createNotification({
+              username: alvoUsername,
+              type: 'tarefa_atribuida',
+              title: 'Nova tarefa atribuída',
+              message: `${displayNameForUsername(me)} atribuiu '${titulo.replace(/'/g, '′')}' para você — vence em ${niceDue}`,
+              link: 'mytasks',
+              dedupe_key: tid ? `asgt_${tid}_${alvoUsername}` : undefined
+            });
+          } catch(eN) { console.warn('[criar_tarefa notif]', eN); }
+          mensagemSucesso = `Tarefa "${titulo}" atribuída a ${alvoNome}!`;
+        } else {
+          await apiPost('age_tasks', {
+            task_text: textParts.join(' — '),
+            day_date: day,
+            priority: _aiTaskPriority(d.prioridade),
+            done: false,
+            owner: me,
+            created_by: me
+          });
+          mensagemSucesso = `Tarefa "${titulo}" criada!`;
+        }
       }
     } else {
+      toast(`Ação "${acao || '?'}" não reconhecida. Atualize a página e tente de novo.`, 'warn');
       return;
     }
 
@@ -9255,7 +9344,14 @@ async function aiExecuteAction() {
 
   } catch (err) {
     console.error('Erro ao executar ação AI:', err);
-    alert('Erro ao executar. Verifique o console.');
+    toast((err && err.message) ? err.message : 'Erro ao executar. Verifique o console.', 'err');
+  } finally {
+    _aiExecuting = false;
+    if(confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = prevBtnText || '✓ CONFIRMAR E CRIAR';
+      confirmBtn.style.opacity = '';
+    }
   }
 }
 

@@ -17,7 +17,8 @@ AÇÕES DISPONÍVEIS:
 - criar_orcamento
 - criar_evento     (compromisso/evento no calendário; pode ser atribuído a um colaborador)
 - criar_gasto
-- criar_tarefa     (tarefa; se houver um colaborador alvo, ela é atribuída a ele)
+- criar_tarefa     (uma única tarefa)
+- criar_tarefas    (várias tarefas pessoais de uma vez; use quando o usuário listar itens separados por vírgula)
 - atribuir_tarefa  (atribuir uma tarefa diretamente a um colaborador)
 - consultar
 - desconhecido
@@ -93,7 +94,7 @@ Para criar_gasto:
   }
 }
 
-Para criar_tarefa:
+Para criar_tarefa (apenas UMA tarefa):
 {
   "acao": "criar_tarefa",
   "confirmacao": "Criar tarefa [titulo] para [dia]?",
@@ -104,6 +105,18 @@ Para criar_tarefa:
     "responsavel_nome": "string ou null",
     "prazo": "YYYY-MM-DD ou null",
     "prioridade": "alta|media|baixa"
+  }
+}
+
+Para criar_tarefas (VÁRIAS tarefas pessoais — lista separada por vírgula, "para mim", "meu pessoal"):
+{
+  "acao": "criar_tarefas",
+  "confirmacao": "Criar [N] tarefas pessoais para [dia]?",
+  "dados": {
+    "tarefas": ["string", "string", "..."],
+    "prazo": "YYYY-MM-DD ou null",
+    "prioridade": "alta|media|baixa",
+    "pessoal": true
   }
 }
 
@@ -144,6 +157,10 @@ REGRAS:
 - Se o comando é um COMPROMISSO/EVENTO com data e horário (gravação, reunião, entrega) e
   menciona um colaborador, use criar_evento com colaborador_nome (ele aparece no calendário dele).
 - Se o comando é uma TAREFA a ser feita por um colaborador, use atribuir_tarefa.
+- LISTA DE TAREFAS PESSOAIS: se o usuário pedir várias tarefas para si ("para mim", "meu pessoal", "minhas tarefas")
+  e separar itens por vírgula, use criar_tarefas com array "tarefas" (um item por tarefa, texto curto).
+  NÃO coloque colaborador_nome em criar_tarefas. Nomes citados no texto da tarefa (Gabriel, Victoria…) são contexto, não destinatário.
+- "amanhã" → prazo = dia seguinte a contexto.data_iso
 - Retorne APENAS o JSON, sem markdown
 - Se faltar informação importante, use null`;
 
