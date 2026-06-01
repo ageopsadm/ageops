@@ -9275,6 +9275,11 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+/* Ao voltar à aba ou virar o mês, calendários abertos acompanham o mês vigente. */
+document.addEventListener('visibilitychange', function() {
+  if(document.visibilityState === 'visible') _syncOpenCalendarsToCurrentMonth();
+});
+
 /* ═══════════════════════════════════════════
    CLOCK
 ═══════════════════════════════════════════ */
@@ -10109,13 +10114,15 @@ function navigate(page) {
   if(page==='pagamentos')   loadPagamentosPage();
   if(page==='colaboradores') loadColaboradores();
   if(page==='cronograma')  {
-    calYear = new Date().getFullYear();
-    calMonth = new Date().getMonth();
+    _resetCalToCurrentMonth();
     loadCalendarEvents();
   }
   if(page==='myday')        loadMyDay();
   if(page==='mytasks')      loadTasks();
-  if(page==='mycalendar')   loadMyCalendar();
+  if(page==='mycalendar')  {
+    _resetMyCalToCurrentMonth();
+    loadMyCalendar();
+  }
   if(page==='myfinance')    loadFinance();
   if(page==='profile')     loadProfile();
   if(page==='equipe-permissoes') loadEquipePermissoesPage();
@@ -21000,6 +21007,68 @@ function _monthTitle(y, m){
   return `${meses[m]} ${y}`;
 }
 
+/** Evento aparece no dia se data_inicio ≤ dia ≤ data_fim (ou só início). */
+function _calEventOnDay(ev, dayIso) {
+  const ini = String(ev?.data_inicio || ev?.event_date || ev?.date || '').slice(0, 10);
+  if(!ini || !dayIso) return false;
+  const fim = String(ev?.data_fim || '').slice(0, 10) || ini;
+  return dayIso >= ini && dayIso <= fim;
+}
+
+/** Evento intersecta o intervalo [startIso, endIso] do mês visível. */
+function _calEventOverlapsRange(ev, startIso, endIso) {
+  const ini = String(ev?.data_inicio || ev?.event_date || ev?.date || '').slice(0, 10);
+  if(!ini) return false;
+  const fim = String(ev?.data_fim || '').slice(0, 10) || ini;
+  return ini <= endIso && fim >= startIso;
+}
+
+/** Responsável / nome no evento corresponde ao usuário logado (tolerante a variações). */
+function _personMatchesMe(nameOrUser) {
+  const raw = String(nameOrUser || '').trim();
+  if(!raw) return false;
+  const meName = (currentUser?.name || currentUser?.nome || '').toString().trim();
+  const meUser = String(currentUser?.username || '').toString().trim();
+  const norm = s => String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+  const t = norm(raw);
+  if(meUser && norm(meUser) === t) return true;
+  if(meName && norm(meName) === t) return true;
+  if(meName && meName.length >= 3 && (t.includes(norm(meName)) || norm(meName).includes(t))) return true;
+  return false;
+}
+
+function _resetCalToCurrentMonth() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+}
+
+function _resetMyCalToCurrentMonth() {
+  const now = new Date();
+  myCalYear = now.getFullYear();
+  myCalMonth = now.getMonth();
+}
+
+/** Ao voltar à aba / virar o mês, alinha calendários abertos ao mês civil atual. */
+function _syncOpenCalendarsToCurrentMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  if(document.getElementById('page-cronograma')?.classList.contains('active')) {
+    if(calYear !== y || calMonth !== m) {
+      _resetCalToCurrentMonth();
+      loadCalendarEvents();
+    }
+  }
+  if(document.getElementById('page-mycalendar')?.classList.contains('active')) {
+    if(myCalYear !== y || myCalMonth !== m) {
+      _resetMyCalToCurrentMonth();
+      loadMyCalendar();
+    }
+  }
+}
+
 function renderCalendar() {
   const grid = document.getElementById('calGrid');
   const titleEl = document.getElementById('calTitle');
@@ -21014,17 +21083,17 @@ function renderCalendar() {
   const first = new Date(calYear, calMonth, 1);
   const startDow = first.getDay(); // 0=dom
   const start = new Date(calYear, calMonth, 1 - startDow);
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = _localDateKeyFromDate(new Date());
 
   for(let i=0;i<42;i++){
     const d = new Date(start);
     d.setDate(start.getDate()+i);
-    const ds = d.toISOString().slice(0,10);
+    const ds = _localDateKeyFromDate(d);
     const isOther = d.getMonth() !== calMonth;
     const isToday = ds === todayStr;
 
     const dayEvts = (Array.isArray(calEvents)?calEvents:[])
-      .filter(e => (e.data_inicio||'').slice(0,10) === ds)
+      .filter(e => _calEventOnDay(e, ds))
       .sort((a,b)=> String(a.hora_inicio||'').localeCompare(String(b.hora_inicio||'')));
 
     const cell = document.createElement('div');
@@ -21070,8 +21139,7 @@ function calNextMonth() {
   loadCalendarEvents();
 }
 function calGoToday() {
-  calYear = new Date().getFullYear();
-  calMonth = new Date().getMonth();
+  _resetCalToCurrentMonth();
   loadCalendarEvents();
 }
 
@@ -23531,29 +23599,42 @@ async function loadCalendarEvents() {
   const lastDay = new Date(calYear, calMonth+1, 0).getDate();
   const endDate = `${calYear}-${_pad2(calMonth+1)}-${_pad2(lastDay)}`;
 
-  try {
-    const isAdmin = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
-      || ['admin','gestor'].includes(String(currentUser?.role||'').toLowerCase());
+  const isAdmin = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
+    || ['admin','gestor'].includes(String(currentUser?.role||'').toLowerCase());
 
+  try {
     if(!cid) throw new Error('company_id não definido');
 
+    /* Busca eventos que intersectam o mês (inclui multi-dia: 29–30 jun, etc.). */
     let qs = `?company_id=eq.${encodeURIComponent(String(cid))}`
-      + `&data_inicio=gte.${encodeURIComponent(startDate)}`
       + `&data_inicio=lte.${encodeURIComponent(endDate)}`
-      + `&order=data_inicio.asc,hora_inicio.asc`;
-
-    if(!isAdmin) {
-      const nm = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
-      if(nm) qs += `&responsavel_nome=eq.${encodeURIComponent(nm)}`;
-    }
+      + `&or=(data_fim.gte.${encodeURIComponent(startDate)},and(data_fim.is.null,data_inicio.gte.${encodeURIComponent(startDate)}))`
+      + `&order=data_inicio.asc,hora_inicio.asc&limit=800`;
 
     const d = await apiGet('age_team_calendar', qs);
-    const rows = Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []);
-    calEvents = rows.filter(_sbIsRowVisible);
+    let rows = Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []);
+    rows = rows.filter(_sbIsRowVisible).filter(e => _calEventOverlapsRange(e, startDate, endDate));
+
+    /* Colaborador: só eventos em que é responsável (match flexível de nome). */
+    if(!isAdmin) {
+      rows = rows.filter(e => _personMatchesMe(e.responsavel_nome || e.owner || ''));
+    }
+
+    calEvents = rows;
     renderCalendar();
   } catch(err) {
-    console.warn('Erro ao carregar calendário:', err);
-    calEvents = [];
+    console.warn('Erro ao carregar calendário (query ampla):', err);
+    try {
+      const d2 = await apiGet('age_team_calendar',
+        `?company_id=eq.${encodeURIComponent(String(cid))}&order=data_inicio.asc&limit=800`);
+      let rows2 = Array.isArray(d2?.data) ? d2.data : (Array.isArray(d2) ? d2 : []);
+      rows2 = rows2.filter(_sbIsRowVisible).filter(e => _calEventOverlapsRange(e, startDate, endDate));
+      if(!isAdmin) rows2 = rows2.filter(e => _personMatchesMe(e.responsavel_nome || e.owner || ''));
+      calEvents = rows2;
+    } catch(e2) {
+      console.warn('Erro ao carregar calendário (fallback):', e2);
+      calEvents = [];
+    }
     renderCalendar();
   }
 }
@@ -23880,35 +23961,9 @@ async function integrarProjetoColaboradorAposAtribuicao(projetoSalvo, assigneeUs
   await criarTarefaAutomatica(projetoSalvo, assigneeUsername, prazo);
 }
 
+/** Legado: cronograma da equipe usa o calendário mensal (#calGrid). */
 async function loadCronograma() {
-  try {
-    let evts = await fetchAll('age_team_calendar',500);
-    if(_userIsColaborador()) {
-      const uid = encodeURIComponent(currentUser.username);
-      const asg = await apiGet('age_assigned_tasks', `?assigned_to=eq.${uid}&limit=600`);
-      const rows = (Array.isArray(asg?.data) ? asg.data : []).filter(_sbIsRowVisible);
-      const allowed = new Set();
-      rows.forEach(r => {
-        if(r.calendar_event_id) allowed.add(String(r.calendar_event_id));
-      });
-      const myNm = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
-      evts = evts.filter(e => {
-        if(allowed.has(String(e.id))) return true;
-        const rn = (e.responsavel_nome || '').toString().trim();
-        return !!(myNm && rn && rn.toLowerCase() === myNm.toLowerCase());
-      });
-    }
-    _schedEvents = evts;
-  } catch(e){ _schedEvents=[]; }
-  const titleEl = document.querySelector('#page-cronograma .page-title');
-  if(titleEl) {
-    titleEl.innerHTML = _userIsColaborador()
-      ? '<i class="fas fa-calendar-alt"></i> MEU CRONOGRAMA'
-      : '<i class="fas fa-calendar-alt"></i> CRONOGRAMA DA EMPRESA';
-  }
-  const actions = document.querySelector('#page-cronograma .page-actions');
-  if(actions) actions.style.display = hasModuleEditForPage('cronograma') ? '' : 'none';
-  renderSched();
+  await loadCalendarEvents();
 }
 
 function renderSched() {
@@ -24117,20 +24172,20 @@ async function loadMyDay() {
     const tasks = await fetchOwn('age_tasks');
     const myTasks = tasks.filter(t => (!t.day_date || String(t.day_date).slice(0, 10) === today));
 
-    /* Eventos do dia escopados por empresa + responsável (mesma lógica do cronograma). */
+    /* Eventos de hoje (inclui compromissos multi-dia que atravessam o dia). */
     const cid = currentUser?.company_id;
-    const meName = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
-    const isAdmin = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
-      || ['admin','gestor'].includes(String(currentUser?.role||'').toLowerCase());
     let todayEvts = [];
     if(cid) {
       let qs = `?company_id=eq.${encodeURIComponent(String(cid))}`
-        + `&data_inicio=eq.${encodeURIComponent(today)}`
-        + `&order=hora_inicio.asc`;
-      if(!isAdmin && meName) qs += `&responsavel_nome=eq.${encodeURIComponent(meName)}`;
+        + `&data_inicio=lte.${encodeURIComponent(today)}`
+        + `&or=(data_fim.gte.${encodeURIComponent(today)},and(data_fim.is.null,data_inicio.gte.${encodeURIComponent(today)}))`
+        + `&order=hora_inicio.asc&limit=200`;
       try {
         const d = await apiGet('age_team_calendar', qs);
-        todayEvts = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+        todayEvts = (Array.isArray(d?.data) ? d.data : [])
+          .filter(_sbIsRowVisible)
+          .filter(e => _calEventOnDay(e, today))
+          .filter(e => _personMatchesMe(e.responsavel_nome || e.owner || ''));
       } catch(e) { todayEvts = []; }
     }
 
@@ -24489,8 +24544,7 @@ function _myCalMonthLabel(yy, mm) {
 }
 
 function myCalGoToday() {
-  myCalYear = new Date().getFullYear();
-  myCalMonth = new Date().getMonth();
+  _resetMyCalToCurrentMonth();
   loadMyCalendar();
 }
 function myCalPrev() {
@@ -24554,37 +24608,42 @@ async function loadMyCalendar() {
       });
     }
 
-    /* 3) Eventos do cronograma da empresa, escopados por mim (responsável). */
+    /* 3) Eventos/compromissos em que sou responsável (Meu Calendário = visão pessoal, inclusive admin). */
     const cid = currentUser?.company_id;
-    const meName = (currentUser?.name || currentUser?.nome || currentUser?.username || '').toString().trim();
-    const isAdmin = (typeof _userIsAdminLike === 'function' && _userIsAdminLike())
-      || ['admin','gestor'].includes(String(currentUser?.role||'').toLowerCase());
+    const assignedEventIds = new Set(assigned.map(a => String(a.calendar_event_id || '')).filter(Boolean));
     if(cid) {
       let qs = `?company_id=eq.${encodeURIComponent(String(cid))}`
-        + `&data_inicio=gte.${encodeURIComponent(startIso)}`
         + `&data_inicio=lte.${encodeURIComponent(endIso)}`
+        + `&or=(data_fim.gte.${encodeURIComponent(startIso)},and(data_fim.is.null,data_inicio=gte.${encodeURIComponent(startIso)}))`
         + `&order=data_inicio.asc,hora_inicio.asc&limit=600`;
-      if(!isAdmin && meName) qs += `&responsavel_nome=eq.${encodeURIComponent(meName)}`;
       try {
         const d = await apiGet('age_team_calendar', qs);
-        const evts = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
-        const assignedEventIds = new Set(assigned.map(a => String(a.calendar_event_id || '')));
+        let evts = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+        evts = evts.filter(e => _calEventOverlapsRange(e, startIso, endIso));
+        evts = evts.filter(e => _personMatchesMe(e.responsavel_nome || e.owner || '') || assignedEventIds.has(String(e.id)));
         for(const e of evts) {
-          const dd = (e.data_inicio || e.event_date || '').toString().slice(0,10);
-          if(!dd) continue;
-          if(dd < startIso || dd > endIso) continue;
-          /* Se o evento já gerou uma tarefa atribuída, mostramos só a tarefa (evita duplicata). */
           if(assignedEventIds.has(String(e.id))) continue;
-          items.push({
-            kind: 'event',
-            id: e.id,
-            day: dd,
-            text: e.titulo || e.title || 'Evento',
-            done: _mydayIsDone('sched_' + e.id, false),
-            owner: e.responsavel_nome || e.owner || '',
-            notes: e.descricao || '',
-            time: (e.hora_inicio || '').toString().slice(0,5)
-          });
+          const ini = (e.data_inicio || e.event_date || '').toString().slice(0, 10);
+          const fim = (e.data_fim || '').toString().slice(0, 10) || ini;
+          if(!ini) continue;
+          for(let cursor = ini; cursor <= fim && cursor <= endIso; ) {
+            if(cursor >= startIso) {
+              items.push({
+                kind: 'event',
+                id: e.id,
+                day: cursor,
+                text: e.titulo || e.title || 'Evento',
+                done: _mydayIsDone('sched_' + e.id, false),
+                owner: e.responsavel_nome || e.owner || '',
+                notes: e.descricao || '',
+                time: (e.hora_inicio || '').toString().slice(0, 5)
+              });
+            }
+            const next = new Date(cursor + 'T12:00:00');
+            next.setDate(next.getDate() + 1);
+            cursor = _localDateKeyFromDate(next);
+            if(cursor <= ini) break;
+          }
         }
       } catch(eE) { console.warn('[mycal events]', eE); }
     }
