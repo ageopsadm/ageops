@@ -8999,7 +8999,19 @@ async function aiProcessCommand() {
       body: JSON.stringify({ comando, contexto })
     });
 
-    const resultado = await response.json();
+    let resultado = {};
+    try {
+      resultado = await response.json();
+    } catch(parseErr) {
+      console.warn('[ai-command] JSON inválido', parseErr);
+      resultado = { acao: 'erro', resposta: `Servidor respondeu HTTP ${response.status}. Verifique o deploy da edge function ai-command.` };
+    }
+    if(!response.ok && resultado.acao !== 'erro') {
+      resultado = {
+        acao: 'erro',
+        resposta: resultado.resposta || `Assistente indisponível (HTTP ${response.status}). Confira ANTHROPIC_API_KEY no Supabase.`
+      };
+    }
     if(resultado && resultado.acao) resultado.acao = _aiNormalizeAction(resultado.acao);
     aiCurrentResult = resultado;
 
@@ -9011,6 +9023,7 @@ async function aiProcessCommand() {
       document.getElementById('ai-response-block').style.display = 'block';
       document.getElementById('ai-response-text').textContent =
         resultado.resposta || 'Não entendi o comando.';
+      if(resultado.acao === 'erro') toast(resultado.resposta || 'Erro no assistente', 'err');
     } else {
       document.getElementById('ai-confirm-block').style.display = 'block';
       document.getElementById('ai-action-icon').textContent =

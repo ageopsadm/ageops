@@ -1,7 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const CLAUDE_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
-const CLAUDE_MODEL = 'claude-haiku-20240307';
+const CLAUDE_MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-3-5-haiku-20241022';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json'
+};
 
 const SYSTEM_PROMPT = `Você é o assistente de comando do Age Ops,
 um sistema de gestão para produtoras audiovisuais brasileiras.
@@ -164,19 +171,48 @@ REGRAS:
 - Retorne APENAS o JSON, sem markdown
 - Se faltar informação importante, use null`;
 
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: CORS_HEADERS });
+}
+
+function stripMarkdownJson(raw: string) {
+  let t = String(raw || '').trim();
+  if(t.startsWith('```')) {
+    t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  }
+  return t;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
-        'Access-Control-Allow-Methods': 'POST'
-      }
+    return new Response('ok', { headers: CORS_HEADERS });
+  }
+
+  if (req.method !== 'POST') {
+    return jsonResponse({ acao: 'erro', resposta: 'Método não permitido.' }, 405);
+  }
+
+  if (!CLAUDE_API_KEY || !String(CLAUDE_API_KEY).trim()) {
+    return jsonResponse({
+      acao: 'erro',
+      resposta: 'ANTHROPIC_API_KEY não configurada no Supabase. Vá em Project Settings → Edge Functions → Secrets e adicione ANTHROPIC_API_KEY com sua chave da Anthropic, depois rode: supabase functions deploy ai-command'
     });
   }
 
   try {
-    const { comando, contexto } = await req.json();
+    let body: { comando?: string; contexto?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return jsonResponse({ acao: 'erro', resposta: 'Corpo da requisição inválido (JSON esperado).' });
+    }
+
+    const comando = String(body?.comando || '').trim();
+    if (!comando) {
+      return jsonResponse({ acao: 'erro', resposta: 'Digite um comando para o assistente.' });
+    }
+
+    const contexto = body?.contexto ?? {};
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -187,7 +223,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: SYSTEM_PROMPT,
         messages: [{
           role: 'user',
@@ -196,33 +232,57 @@ serve(async (req) => {
       })
     });
 
-    const claudeData = await response.json();
-    const texto = claudeData.content[0].text;
-
-    let resultado;
+    let claudeData: Record<string, unknown>;
     try {
-      resultado = JSON.parse(texto);
+      claudeData = await response.json();
     } catch {
-      resultado = { acao: 'desconhecido', resposta: texto };
+      return jsonResponse({
+        acao: 'erro',
+        resposta: `Resposta inválida da Anthropic (HTTP ${response.status}).`
+      });
     }
 
-    return new Response(JSON.stringify(resultado), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
+    if (!response.ok) {
+      const errObj = claudeData?.error as { message?: string } | undefined;
+      const msg = errObj?.message
+        || String(claudeData?.message || '')
+        || `Anthropic retornou HTTP ${response.status}`;
+      console.error('[ai-command] Anthropic error:', claudeData);
+      return jsonResponse({
+        acao: 'erro',
+        resposta: `IA indisponível: ${msg}. Verifique ANTHROPIC_API_KEY e o modelo (${CLAUDE_MODEL}).`
+      });
+    }
+
+    const content = claudeData?.content as Array<{ type?: string; text?: string }> | undefined;
+    const texto = content?.find((b) => b?.type === 'text')?.text
+      || content?.[0]?.text
+      || '';
+
+    if (!texto) {
+      console.error('[ai-command] empty content:', claudeData);
+      return jsonResponse({
+        acao: 'erro',
+        resposta: 'A IA não retornou texto. Tente um comando mais curto.'
+      });
+    }
+
+    const cleaned = stripMarkdownJson(texto);
+    let resultado: Record<string, unknown>;
+    try {
+      resultado = JSON.parse(cleaned);
+    } catch {
+      resultado = { acao: 'desconhecido', resposta: cleaned };
+    }
+
+    return jsonResponse(resultado);
 
   } catch (err) {
-    return new Response(JSON.stringify({
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[ai-command] unhandled:', err);
+    return jsonResponse({
       acao: 'erro',
-      resposta: 'Erro ao processar comando.'
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
+      resposta: `Erro interno: ${msg}`
     });
   }
 });
