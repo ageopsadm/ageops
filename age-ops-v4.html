@@ -3828,7 +3828,7 @@ body:has(#login-screen.visible){
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;background:rgba(0,0,0,.04);border-radius:10px">
                   <label style="font-size:13px;font-weight:600;white-space:nowrap">Diárias de gravação:</label>
                   <input type="number" id="orc-diarias" value="1" min="1" max="30" style="width:70px;text-align:center;font-size:18px;font-weight:700;border:2px solid #000;border-radius:8px;padding:4px" onchange="recalcularEquipe()" />
-                  <span style="font-size:13px;opacity:.6">dia(s) de gravação para toda a equipe</span>
+                  <span style="font-size:13px;opacity:.6">dia(s) padrão para toda a equipe — dá pra sobrepor por função abaixo</span>
                 </div>
                 <div id="orc-equipe-lista">
                   <div style="text-align:center;padding:32px;opacity:.4;font-size:13px">Clique em &quot;+ Adicionar função&quot; para montar sua equipe</div>
@@ -17144,9 +17144,19 @@ function _orcDefaultDiariaCusto(nome, diariaCobrada, funcaoId) {
   return cob > 0 ? Math.round(cob * 0.7) : 0;
 }
 
+/** Diárias efetivas de uma função: usa a sobreposição por função se informada, senão a diária geral da equipe. */
+function _orcMembroDiarias(m, diariasGlobal) {
+  const g = parseInt(diariasGlobal, 10) || 1;
+  if(m && m.diariasFuncao != null && m.diariasFuncao !== '') {
+    const dv = parseInt(m.diariasFuncao, 10);
+    if(dv > 0) return dv;
+  }
+  return g;
+}
+
 function _orcMembroFinance(m, diarias) {
   const q = parseInt(m.quantidade, 10) || 1;
-  const d = parseInt(diarias, 10) || 1;
+  const d = _orcMembroDiarias(m, diarias);
   const diariaCobrada = parseFloat(m.diaria) || 0;
   const diariaCusto = m.diariaCusto != null && m.diariaCusto !== ''
     ? (parseFloat(m.diariaCusto) || 0)
@@ -17333,7 +17343,7 @@ function renderEquipe() {
     const f = _orcMembroFinance(m, diarias);
     const custoVal = m.diariaCusto != null ? m.diariaCusto : f.diariaCusto;
     return `
-    <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto auto;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f0f0f0">
+    <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto auto auto;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f0f0f0">
       <div style="min-width:0">
         <div style="font-weight:600;font-size:14px">${escHtml(m.nome)}</div>
         <div style="font-size:11px;opacity:.5">${escHtml(FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '')}</div>
@@ -17343,6 +17353,12 @@ function renderEquipe() {
         <input type="number" value="${m.quantidade}" min="1"
           style="width:50px;text-align:center;border:1px solid #ddd;border-radius:6px;padding:4px"
           onchange="window._orcEquipe[${idx}].quantidade=parseInt(this.value)||1;recalcularTotais();" />
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10px;opacity:.5;margin-bottom:2px" title="Diárias só desta função. Vazio = segue a diária geral da equipe.">DIÁRIAS</div>
+        <input type="number" value="${m.diariasFuncao != null && m.diariasFuncao !== '' ? m.diariasFuncao : ''}" min="1" placeholder="${diarias}"
+          style="width:56px;text-align:center;border:1px solid #bfdbfe;border-radius:6px;padding:4px;background:#eff6ff"
+          onchange="window._orcEquipe[${idx}].diariasFuncao=(this.value===''?null:(parseInt(this.value)||null));renderEquipe();recalcularTotais();" />
       </div>
       <div style="text-align:center">
         <div style="font-size:10px;opacity:.5;margin-bottom:2px" title="Valor cobrado do cliente">COBRAR</div>
@@ -17379,7 +17395,6 @@ function removerMembroEquipe(idx) {
 }
 
 function recalcularEquipe() {
-  window._orcEquipe.forEach(m => { m.diarias = parseInt(document.getElementById('orc-diarias')?.value || 1, 10); });
   renderEquipe();
   recalcularTotais();
 }
@@ -17503,9 +17518,10 @@ function _orcEscopoLinhas(equipe, catalogo, despesas, diarias) {
   const linhas = [];
   (equipe || []).forEach(m => {
     const cat = (typeof FUNCOES_AUDIOVISUAL !== 'undefined' && m.categoriaId) ? (FUNCOES_AUDIOVISUAL[m.categoriaId]?.label || '') : '';
+    const dm = _orcMembroDiarias(m, d);
     linhas.push({
       title: m.nome,
-      sub: `${cat ? cat + ' · ' : ''}${m.quantidade || 1} profissional(is) · ${d} diária${d > 1 ? 's' : ''} de gravação`
+      sub: `${cat ? cat + ' · ' : ''}${m.quantidade || 1} profissional(is) · ${dm} diária${dm > 1 ? 's' : ''} de gravação`
     });
   });
   (catalogo || []).filter(i => i.descricao).forEach(i => {
