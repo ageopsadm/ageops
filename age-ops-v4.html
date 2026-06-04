@@ -12302,8 +12302,9 @@ async function loadDashToolsOverview() {
   if(!wrap) return;
 
   const [
-    pays, cashflow, orcs, contratos, posts, tasks, assigned, npsResp
+    projetos, pays, cashflow, orcs, contratos, posts, tasks, assigned, npsResp
   ] = await Promise.all([
+    fetchAll('age_projects', 800).catch(()=>[]),
     fetchAll('age_payments', 800).catch(()=>[]),
     fetchAll('age_cashflow', 1500).catch(()=>[]),
     fetchAll('age_orcamentos', 300).catch(()=>[]),
@@ -12317,6 +12318,23 @@ async function loadDashToolsOverview() {
   const cards = [];
   const _today = (typeof _payToday === 'function') ? _payToday() : new Date().toISOString().slice(0,10);
   const _st = (v) => (typeof _normStatus === 'function') ? _normStatus(v) : String(v||'').toLowerCase();
+
+  /* ── Projetos ── */
+  try {
+    const ativos = (projetos || []).filter(p => (typeof _projRowNotDeleted === 'function') ? _projRowNotDeleted(p) : true);
+    const total = ativos.length;
+    let andamento = 0, concluidos = 0, fat = 0;
+    ativos.forEach(p => {
+      const s = (typeof _projStatusNormDash === 'function') ? _projStatusNormDash(p.status) : String(p.status||'').toLowerCase();
+      if(['em_andamento','in_progress'].includes(s)) andamento++;
+      else if(['concluido','completed'].includes(s)) concluidos++;
+      fat += parseFloat(p.total_value || 0) || 0;
+    });
+    cards.push(_dashToolCard({
+      icon:'fa-folder-open', color:'#2563eb', label:'PROJETOS',
+      value: `${total}`, sub: `${andamento} em andamento · ${concluidos} concluído(s) · ${fmtBRL(fat)}`, page:'projects'
+    }));
+  } catch(_) {}
 
   /* ── Pagamentos ── */
   try {
