@@ -3204,6 +3204,17 @@ body:has(#login-screen.visible){
           </div>
         </div>
 
+        <!-- ══ OPERAÇÃO 360 — todas as ferramentas ══ -->
+        <div class="panel" id="dashToolsOverviewPanel" style="margin-bottom:14px">
+          <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span><i class="fas fa-layer-group" style="color:#6366f1"></i> OPERAÇÃO 360 — TODAS AS FERRAMENTAS</span>
+            <span style="font-family:var(--font-m);font-size:8px;color:var(--textsub);opacity:.7">visão geral atual</span>
+          </div>
+          <div id="dashToolsOverview" class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:8px">
+            <div style="grid-column:1/-1;opacity:.5;padding:8px;font-family:var(--font-m);font-size:10px">Carregando ferramentas…</div>
+          </div>
+        </div>
+
         <!-- Inteligência operacional (admin / gestor) -->
         <div id="dashIntelSection" class="dash-intel-section" style="display:none;margin-bottom:16px">
           <div class="dash-intel-head">Inteligência operacional</div>
@@ -12242,6 +12253,9 @@ async function loadDashboard() {
     /* Análise corporativa profunda — 2021-2025 via HIST_SUMMARY; 2026 via Supabase */
     renderDeepAnalysis(filtered, { fat, cost: custoTotal, lucro, margem, avgNps, nTotal, nNovos, ticket, medMes, bestM, bestV, supa2026 });
 
+    /* Operação 360 — resumo de todas as ferramentas (não bloqueia os KPIs) */
+    loadDashToolsOverview().catch(()=>{});
+
     if(window._dashRefreshTimer) clearInterval(window._dashRefreshTimer);
     window._dashRefreshTimer = setInterval(() => {
       const pd = document.getElementById('page-dashboard');
@@ -12256,6 +12270,159 @@ async function loadDashboard() {
       const el = document.getElementById(id); if(el) el.textContent = '—';
     });
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   OPERAÇÃO 360 — resumo de TODAS as ferramentas no dashboard.
+   Cruza Pagamentos, Fluxo de caixa, Orçamentos, Contratos,
+   Conteúdos/Postagens, Tarefas/Cronograma e NPS num único painel.
+═══════════════════════════════════════════════════════════════ */
+function _dashToolCard({ icon, color, label, value, sub, page }) {
+  const click = page ? `onclick="navigate('${page}')" style="cursor:pointer;border-left:3px solid ${color}" title="Abrir ${escHtml(label)}"` : `style="border-left:3px solid ${color}"`;
+  return `
+    <div class="kpi-card" ${click}>
+      <div class="kpi-label"><i class="fas ${icon}" style="color:${color};margin-right:4px"></i>${escHtml(label)}</div>
+      <div class="kpi-val" style="color:${color};font-size:18px">${value}</div>
+      <div class="kpi-sub">${sub || ''}</div>
+    </div>`;
+}
+
+function _dashCfVal(r) {
+  if(r == null) return 0;
+  const vt = parseFloat(r.valor_total);
+  if(!isNaN(vt) && vt !== 0) return vt;
+  const q = parseFloat(r.quantidade) || 0;
+  const vu = parseFloat(r.valor_unitario) || 0;
+  if(q || vu) return q * vu;
+  return parseFloat(r.valor || r.amount || 0) || 0;
+}
+
+async function loadDashToolsOverview() {
+  const wrap = document.getElementById('dashToolsOverview');
+  if(!wrap) return;
+
+  const [
+    pays, cashflow, orcs, contratos, posts, tasks, assigned, npsResp
+  ] = await Promise.all([
+    fetchAll('age_payments', 800).catch(()=>[]),
+    fetchAll('age_cashflow', 1500).catch(()=>[]),
+    fetchAll('age_orcamentos', 300).catch(()=>[]),
+    fetchAll('age_contracts', 3000).catch(()=>[]),
+    fetchAll('age_social_posts', 1500).catch(()=>[]),
+    fetchAll('age_tasks', 1500).catch(()=>[]),
+    fetchAll('age_assigned_tasks', 1500).catch(()=>[]),
+    fetchAll('age_nps_respostas', 800).catch(()=>[])
+  ]);
+
+  const cards = [];
+  const _today = (typeof _payToday === 'function') ? _payToday() : new Date().toISOString().slice(0,10);
+  const _st = (v) => (typeof _normStatus === 'function') ? _normStatus(v) : String(v||'').toLowerCase();
+
+  /* ── Pagamentos ── */
+  try {
+    let pend = 0, atras = 0, pago = 0, aPagarVal = 0, pagoVal = 0;
+    (pays || []).forEach(p => {
+      let s = _st(p.status);
+      const venc = String(p.data_vencimento || p.due_date || p.vencimento || '').slice(0,10);
+      if(s === 'pendente' && venc && venc < _today) s = 'atrasado';
+      const v = parseFloat(p.valor ?? p.amount ?? p.total ?? 0) || 0;
+      if(s === 'pago') { pago++; pagoVal += v; }
+      else if(s === 'atrasado') { atras++; aPagarVal += v; }
+      else if(s === 'pendente') { pend++; aPagarVal += v; }
+    });
+    cards.push(_dashToolCard({
+      icon:'fa-money-bill-wave', color: atras>0 ? '#dc2626' : '#0891b2', label:'PAGAMENTOS',
+      value: fmtBRL(aPagarVal), sub: `${pend} pendente(s) · ${atras} atrasado(s) · ${pago} pago(s)`, page:'pagamentos'
+    }));
+  } catch(_) {}
+
+  /* ── Fluxo de caixa (corporativo) ── */
+  try {
+    let receitas = 0, custos = 0;
+    (cashflow || []).forEach(r => {
+      const tipo = String(r.tipo || '').toLowerCase();
+      const v = _dashCfVal(r);
+      if(tipo === 'receita') receitas += v;
+      else if(tipo === 'custo_fixo' || tipo === 'custo_variavel' || tipo.startsWith('custo')) custos += v;
+    });
+    const saldo = receitas - custos;
+    cards.push(_dashToolCard({
+      icon:'fa-wallet', color: saldo>=0 ? '#16a34a' : '#dc2626', label:'FLUXO DE CAIXA',
+      value: fmtBRL(saldo), sub: `entradas ${fmtBRL(receitas)} · saídas ${fmtBRL(custos)}`, page:'cashflow'
+    }));
+  } catch(_) {}
+
+  /* ── Orçamentos ── */
+  try {
+    const total = (orcs || []).length;
+    let aprov = 0, env = 0, valPipe = 0, valAprov = 0;
+    (orcs || []).forEach(o => {
+      const s = String(o.status || 'rascunho').toLowerCase();
+      const v = parseFloat(o.total_value || 0) || 0;
+      if(s === 'aprovado') { aprov++; valAprov += v; }
+      else if(s === 'enviado') { env++; valPipe += v; }
+      else if(s === 'rascunho') { valPipe += v; }
+    });
+    const taxa = total > 0 ? Math.round((aprov / total) * 100) : 0;
+    cards.push(_dashToolCard({
+      icon:'fa-file-invoice-dollar', color:'#7c3aed', label:'ORÇAMENTOS',
+      value: `${total}`, sub: `${aprov} aprov. (${taxa}%) · em proposta ${fmtBRL(valPipe)}`, page:'orcamentos'
+    }));
+  } catch(_) {}
+
+  /* ── Contratos ── */
+  try {
+    const total = (contratos || []).length;
+    const projComContrato = new Set((contratos || []).map(c => String(c.project_id || c.project_name || '')).filter(Boolean)).size;
+    cards.push(_dashToolCard({
+      icon:'fa-file-signature', color:'#0d9488', label:'CONTRATOS',
+      value: `${total}`, sub: `${projComContrato} projeto(s) com contrato`, page:'contratos'
+    }));
+  } catch(_) {}
+
+  /* ── Conteúdos / Postagens ── */
+  try {
+    const total = (posts || []).length;
+    let postado = 0;
+    (posts || []).forEach(p => {
+      const stage = String(p.editorial_stage || '').toLowerCase();
+      const s = String(p.status || '').toLowerCase();
+      if(stage === 'postado' || s === 'postado') postado++;
+    });
+    const pend = total - postado;
+    cards.push(_dashToolCard({
+      icon:'fa-share-nodes', color:'#db2777', label:'CONTEÚDOS',
+      value: `${total}`, sub: `${postado} postado(s) · ${pend} em produção`, page:'conteudos-sociais'
+    }));
+  } catch(_) {}
+
+  /* ── Tarefas (próprias + designadas) ── */
+  try {
+    let totalT = 0, doneT = 0;
+    (tasks || []).forEach(t => { totalT++; if(t.done === true || t.done === 'true') doneT++; });
+    (assigned || []).forEach(a => {
+      totalT++;
+      const s = String(a.status || '').toLowerCase();
+      if(s === 'concluida' || s === 'concluída' || a.done === true || a.done === 'true') doneT++;
+    });
+    const pct = totalT > 0 ? Math.round((doneT / totalT) * 100) : 0;
+    cards.push(_dashToolCard({
+      icon:'fa-list-check', color:'#2563eb', label:'TAREFAS',
+      value: `${pct}%`, sub: `${doneT}/${totalT} concluída(s)`, page:'cronograma'
+    }));
+  } catch(_) {}
+
+  /* ── NPS (módulo de respostas) ── */
+  try {
+    const notas = (npsResp || []).map(r => parseFloat(r.nota_geral)).filter(n => !isNaN(n) && n > 0);
+    const media = notas.length ? (notas.reduce((s,n)=>s+n,0) / notas.length) : 0;
+    cards.push(_dashToolCard({
+      icon:'fa-star', color:'#f59e0b', label:'NPS (PESQUISAS)',
+      value: media > 0 ? media.toFixed(1) : '—', sub: `${notas.length} resposta(s)`, page:'nps'
+    }));
+  } catch(_) {}
+
+  wrap.innerHTML = cards.join('') || `<div style="grid-column:1/-1;opacity:.5;padding:8px;font-family:var(--font-m);font-size:10px">Sem dados das ferramentas.</div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
