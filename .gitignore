@@ -6,3 +6,6 @@
 # Logs / artefatos locais
 *.log
 .DS_Store
+
+# Dependências
+node_modules/
