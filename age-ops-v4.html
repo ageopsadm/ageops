@@ -4973,6 +4973,15 @@ body:has(#login-screen.visible){
         </div>
       </div>
     </div>
+
+    <!-- Ficha integrada: relacionados (pagamentos, conteúdos, tarefas) -->
+    <div id="projRelacionadosWrap" style="display:none;margin-top:18px;border-top:1px dashed var(--bd);padding-top:14px">
+      <div style="font-family:var(--font-h),sans-serif;font-size:11px;letter-spacing:2px;color:var(--textsub);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-diagram-project"></i> RELACIONADOS A ESTE PROJETO
+      </div>
+      <div id="projRelacionados"></div>
+    </div>
+
     <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('modalProject')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveProject()"><i class="fas fa-save"></i> Salvar</button>
@@ -10535,6 +10544,28 @@ async function apiPatch(table, id, body)   { return api('PATCH',  table, id, bod
 async function apiPut(table, id, body)     { return api('PUT',    table, id, body); }
 async function apiDel(table, id)           { return api('DELETE', table, id); }
 
+/* Escreve em qualquer tabela tolerando colunas inexistentes no schema (PGRST204 /
+   "Could not find the 'X' column"). Remove a coluna problemática e tenta de novo.
+   method: 'POST' | 'PATCH'. */
+async function _ageWriteResilient(table, method, id, payload) {
+  const body = { ...payload };
+  for(let attempt = 0; attempt < 10; attempt++) {
+    try {
+      if(method === 'PATCH') return await apiPatch(table, id, body);
+      return await apiPost(table, body);
+    } catch(e) {
+      const msg = String(e?.message || e || '');
+      const m = msg.match(/Could not find the '([^']+)' column/i)
+        || msg.match(/'([^']+)' column of '[^']+'/i)
+        || msg.match(/column "?([a-zA-Z0-9_]+)"? of relation "?[a-zA-Z0-9_]+"? does not exist/i);
+      const col = m && m[1];
+      if(col && Object.prototype.hasOwnProperty.call(body, col)) { delete body[col]; continue; }
+      throw e;
+    }
+  }
+  throw new Error('Falha ao salvar em ' + table + ' após remover colunas ausentes.');
+}
+
 /* ═══════════════════════════════════════════
    NOTIFICAÇÕES INTERNAS (age_notifications)
 ═══════════════════════════════════════════ */
@@ -11502,6 +11533,64 @@ function _projResolveCostRaw(p, fechByProjectId) {
   const fech = fechByProjectId && p.id != null ? fechByProjectId.get(p.id) : null;
   if(fech && fech.custo_total != null && fech.custo_total !== '') return parseFloat(fech.custo_total) || 0;
   return parseFloat(p.cost) || 0;
+}
+
+function _payNormStatusSimple(s) {
+  s = String(s || '').toLowerCase();
+  if(s.includes('pag')) return 'pago';
+  if(s.includes('cancel')) return 'cancelado';
+  if(s.includes('atras')) return 'atrasado';
+  return 'pendente';
+}
+
+/* Soma de pagamentos vinculados a um projeto (pago e total) — base do "custo real". */
+function _projPaysSummary(projId, pays) {
+  const linked = (pays || []).filter(p => String(p.projeto_id || '') === String(projId));
+  let pago = 0, pendente = 0;
+  linked.forEach(p => {
+    const v = parseFloat(p.valor ?? p.amount ?? 0) || 0;
+    const st = _payNormStatusSimple(p.status);
+    if(st === 'pago') pago += v;
+    else if(st !== 'cancelado') pendente += v;
+  });
+  return { linked, pago, pendente, count: linked.length };
+}
+
+/* Integração Projetos ↔ Financeiro: garante um fechamento para o projeto, refletindo o
+   custo real (pagamentos pagos vinculados) quando houver. Não sobrescreve fechamento
+   manual existente, exceto com force=true. Como o dashboard já lê custo de age_fechamento,
+   o número se propaga automaticamente sem alterar a lógica original do dashboard. */
+async function _projEnsureFechamento(projId, opts = {}) {
+  const { force = false } = opts;
+  if(!projId) return;
+  let proj = null;
+  try { proj = await apiGet('age_projects', `/${projId}`); } catch(_) {}
+  if(!proj) return;
+  const fechs = await fetchAll('age_fechamento', 2000).catch(() => []);
+  const existing = fechs.find(f => String(f.project_id || '') === String(projId));
+  if(existing && !force) return existing.id;
+
+  const pays = await fetchAll('age_payments', 5000).catch(() => []);
+  const { pago } = _projPaysSummary(projId, pays);
+  const projCost = parseFloat(proj.cost) || 0;
+  const existingCusto = existing && existing.custo_total != null && existing.custo_total !== '' ? (parseFloat(existing.custo_total) || 0) : 0;
+  /* Nunca reduzir o custo já conhecido: usa o maior entre pagamentos pagos, custo estimado
+     e custo do fechamento existente. Evita inflar margem indevidamente. */
+  const custo = Math.max(pago, projCost, existingCusto);
+  const payload = {
+    project_id: projId,
+    client_name: _ageProjDbClient(proj),
+    project_name: _ageProjDbTitle(proj),
+    total_value: parseFloat(proj.total_value) || 0,
+    custo_total: custo,
+    date: new Date().toISOString().slice(0, 10),
+    created_by: currentUser?.username || 'unknown'
+  };
+  try {
+    if(existing) await _ageWriteResilient('age_fechamento', 'PATCH', existing.id, { custo_total: custo });
+    else await _ageWriteResilient('age_fechamento', 'POST', null, payload);
+  } catch(e) { console.warn('[_projEnsureFechamento]', e); }
+  return existing?.id || true;
 }
 
 function calcularReceitaProjetos(projetos) {
@@ -15148,6 +15237,120 @@ function openProjectModal(proj=null) {
   loadProjectCosts(proj?.id).catch(()=>{});
   openModal('modalProject');
   _populateProjectAssignSelect().catch(()=>{});
+  const relWrap = document.getElementById('projRelacionadosWrap');
+  const realPid = proj?.id && !String(proj.id).startsWith('sheet_') ? proj.id : null;
+  if(relWrap) {
+    if(realPid) { relWrap.style.display = ''; loadProjectRelated(realPid).catch(()=>{}); }
+    else { relWrap.style.display = 'none'; const r = document.getElementById('projRelacionados'); if(r) r.innerHTML = ''; }
+  }
+}
+
+/* Ficha integrada do projeto: reúne pagamentos, conteúdos (postagens) e tarefas
+   vinculados ao projeto, além do resumo de custo real vs estimado. */
+async function loadProjectRelated(projId) {
+  const box = document.getElementById('projRelacionados');
+  if(!box) return;
+  box.innerHTML = `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:8px">Carregando relacionados…</div>`;
+  let proj = null;
+  try { proj = await apiGet('age_projects', `/${projId}`); } catch(_) {}
+  const [pays, posts, tasksOwn, tasksAssigned, fechs] = await Promise.all([
+    fetchAll('age_payments', 5000).catch(() => []),
+    fetchAll('age_social_posts', 5000).catch(() => []),
+    fetchAll('age_tasks', 5000).catch(() => []),
+    fetchAll('age_assigned_tasks', 5000).catch(() => []),
+    fetchAll('age_fechamento', 2000).catch(() => [])
+  ]);
+
+  const pidStr = String(projId);
+  const pSum = _projPaysSummary(projId, pays);
+  const projCost = parseFloat(proj?.cost) || 0;
+  const custoReal = pSum.pago > 0 ? pSum.pago : projCost;
+  const receita = parseFloat(proj?.total_value) || 0;
+  const margem = receita > 0 ? ((receita - custoReal) / receita * 100) : 0;
+  const fech = (fechs || []).find(f => String(f.project_id || '') === pidStr);
+
+  const relPosts = (posts || []).filter(p => String(p.project_id || '') === pidStr);
+  const relTasksOwn = (tasksOwn || []).filter(t => String(t.project_id || t.projeto_id || '') === pidStr);
+  const relTasksAssigned = (tasksAssigned || []).filter(t => String(t.project_id || t.projeto_id || '') === pidStr);
+  const totalTasks = relTasksOwn.length + relTasksAssigned.length;
+  const doneTasks = relTasksOwn.filter(t => t.done === true || t.done === 'true' || String(t.status || '').toLowerCase().includes('conclu')).length
+    + relTasksAssigned.filter(t => t.done === true || t.done === 'true' || t.completed === true || String(t.status || '').toLowerCase().includes('conclu')).length;
+  const postados = relPosts.filter(p => String(p.editorial_stage || p.status || '').toLowerCase() === 'postado' || p.published_at).length;
+
+  const money = (v) => fmtBRL(v);
+  const chip = (label, val, color) => `<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;min-width:120px">
+    <div style="font-size:9px;letter-spacing:1px;color:var(--textsub)">${label}</div>
+    <div style="font-weight:700;font-size:13px${color ? `;color:${color}` : ''}">${val}</div>
+  </div>`;
+
+  let html = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+    ${chip('RECEITA', money(receita))}
+    ${chip('CUSTO ESTIMADO', money(projCost))}
+    ${chip('CUSTO REAL (PAGOS)', money(pSum.pago), pSum.pago > 0 ? '#dc2626' : 'var(--textsub)')}
+    ${chip('MARGEM (REAL)', margem.toFixed(1) + '%', margem >= 30 ? '#16a34a' : '#d97706')}
+  </div>`;
+
+  /* Pagamentos */
+  html += `<div style="margin-bottom:6px;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:space-between">
+    <span><i class="fas fa-money-bill-wave" style="color:#dc2626;margin-right:6px"></i>Pagamentos (${pSum.count})</span>
+    ${hasModuleEditForPage('pagamentos') ? `<button type="button" onclick="_projSyncCustoReal('${escAttr(pidStr)}')" class="btn btn-ghost" style="font-size:10px;padding:4px 8px" title="Atualiza o custo do fechamento com os pagamentos pagos">Sincronizar custo real</button>` : ''}
+  </div>`;
+  if(pSum.count) {
+    html += `<div style="margin-bottom:12px">` + pSum.linked.slice(0, 8).map(p => {
+      const st = _payNormStatusSimple(p.status);
+      const col = st === 'pago' ? '#16a34a' : st === 'atrasado' ? '#dc2626' : '#d97706';
+      return `<div style="display:flex;justify-content:space-between;gap:8px;font-family:var(--font-m);font-size:11px;padding:5px 0;border-bottom:1px solid var(--bd)">
+        <span>${escHtml(p.nome_destinatario || p.descricao || '—')}</span>
+        <span style="white-space:nowrap">${money(parseFloat(p.valor ?? p.amount ?? 0) || 0)} · <b style="color:${col}">${st}</b></span>
+      </div>`;
+    }).join('') + `</div>`;
+  } else {
+    html += `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;margin-bottom:12px">Nenhum pagamento vinculado.</div>`;
+  }
+
+  /* Conteúdos */
+  html += `<div style="margin-bottom:6px;font-weight:700;font-size:12px"><i class="fas fa-bullhorn" style="color:#7c3aed;margin-right:6px"></i>Conteúdos (${relPosts.length}) — ${postados} postados</div>`;
+  if(relPosts.length) {
+    html += `<div style="margin-bottom:12px">` + relPosts.slice(0, 8).map(p => {
+      const stg = String(p.editorial_stage || p.status || '—').toLowerCase();
+      return `<div style="display:flex;justify-content:space-between;gap:8px;font-family:var(--font-m);font-size:11px;padding:5px 0;border-bottom:1px solid var(--bd)">
+        <span>${escHtml(p.material || p.caption || p.network || '—')}${p.post_date ? ` · ${fmtDate(String(p.post_date).slice(0, 10))}` : ''}</span>
+        <span style="white-space:nowrap"><b>${escHtml(stg)}</b></span>
+      </div>`;
+    }).join('') + `</div>`;
+  } else {
+    html += `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;margin-bottom:12px">Nenhum conteúdo vinculado.</div>`;
+  }
+
+  /* Tarefas */
+  html += `<div style="margin-bottom:6px;font-weight:700;font-size:12px"><i class="fas fa-tasks" style="color:#0d9488;margin-right:6px"></i>Tarefas (${doneTasks}/${totalTasks} concluídas)</div>`;
+  const allTasks = [...relTasksAssigned, ...relTasksOwn];
+  if(allTasks.length) {
+    html += `<div>` + allTasks.slice(0, 10).map(t => {
+      const done = t.done === true || t.done === 'true' || t.completed === true || String(t.status || '').toLowerCase().includes('conclu');
+      return `<div style="display:flex;justify-content:space-between;gap:8px;font-family:var(--font-m);font-size:11px;padding:5px 0;border-bottom:1px solid var(--bd)">
+        <span>${done ? '✅ ' : '⬜ '}${escHtml(t.title || t.titulo || t.descricao || '—')}</span>
+        <span style="white-space:nowrap;color:var(--textsub)">${t.due_date ? fmtDate(String(t.due_date).slice(0, 10)) : ''}</span>
+      </div>`;
+    }).join('') + `</div>`;
+  } else {
+    html += `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px">Nenhuma tarefa vinculada.</div>`;
+  }
+
+  box.innerHTML = html;
+}
+
+/* Botão "Sincronizar custo real": força o fechamento a refletir os pagamentos pagos. */
+async function _projSyncCustoReal(projId) {
+  if(!hasModuleEditForPage('pagamentos')) { toast('Sem permissão.', 'warn'); return; }
+  try {
+    await _projEnsureFechamento(projId, { force: true });
+    toast('Custo real sincronizado no fechamento.', 'ok');
+    await loadProjectRelated(projId);
+  } catch(e) {
+    console.warn('[_projSyncCustoReal]', e);
+    toast('Não foi possível sincronizar o custo real.', 'err');
+  }
 }
 
 function calcProjMargin() {
@@ -15316,6 +15519,13 @@ async function saveProject() {
       }
       integrationOk = integrationOkCount === assignees.length;
     }
+
+    /* Projeto concluído → garante fechamento (com custo real dos pagamentos, se houver) */
+    try {
+      if(savedId && ['concluido', 'completed'].includes(_projStatusNormDash(statusVal))) {
+        await _projEnsureFechamento(savedId);
+      }
+    } catch(eF) { console.warn('[auto-fechamento]', eF); }
 
     closeModal('modalProject');
     if(integrationOk && assignees.length) {
@@ -18267,6 +18477,59 @@ function loadOrcBuilderFromRow(o) {
   recalcularTotais();
 }
 
+/* Integração Orçamento → Projeto: ao aprovar um orçamento, cria um projeto correspondente
+   (cliente, valor cobrado e custo estimado da equipe), sem duplicar. */
+async function _orcGarantirProjeto(orcId, ctx) {
+  if(!orcId) return;
+  const markKey = 'age_orc_proj_' + orcId;
+  try { if(localStorage.getItem(markKey)) return; } catch(_) {}
+  /* Dedup via banco (quando a coluna orcamento_id existir) */
+  try {
+    const existing = await apiGet('age_projects', `?orcamento_id=eq.${encodeURIComponent(orcId)}&select=id&limit=1`);
+    const rows = existing?.data || (Array.isArray(existing) ? existing : []);
+    if(rows && rows.length) { try { localStorage.setItem(markKey, String(rows[0].id)); } catch(_) {} return rows[0].id; }
+  } catch(_) {}
+
+  const fin = _orcFinancialsFromBuilder(ctx.builder || {});
+  const total = fin.totalFinal || 0;
+  const custo = (fin.totalCustoEquipe || 0) + (fin.totalCatalogo || 0) + (fin.totalDespesas || 0);
+  const profit_pct = total > 0 ? +(((total - custo) / total) * 100).toFixed(1) : 0;
+  const nome = ctx.titulo || ('Orçamento ' + (ctx.numero || ''));
+  const payload = {
+    client_name: ctx.client,
+    project_name: nome,
+    title: nome,
+    category: 'Vídeo',
+    total_value: total,
+    cost: custo,
+    profit_pct,
+    status: 'em_andamento',
+    is_new_client: false,
+    created_by: currentUser?.username || 'unknown',
+    orcamento_id: orcId,
+    origem: 'orcamento'
+  };
+  try {
+    const saved = await _ageWriteResilient('age_projects', 'POST', null, payload);
+    const row = Array.isArray(saved) ? saved[0] : saved;
+    const pid = row?.id;
+    if(pid) { try { localStorage.setItem(markKey, String(pid)); } catch(_) {} }
+    toast('Projeto criado a partir do orçamento aprovado.', 'ok');
+    try {
+      const admins = await _fetchCompanyAdminUsernames(currentUser?.company_id);
+      for(const a of admins) {
+        await createNotification({
+          username: a, type: 'projeto_criado', title: 'Projeto criado de orçamento',
+          message: `Orçamento de ${ctx.client} aprovado virou projeto`, link: 'projects',
+          dedupe_key: `orc2proj_${orcId}_${a}`
+        });
+      }
+    } catch(_) {}
+    try { if(document.getElementById('page-projetos')?.classList.contains('active') && typeof loadProjects === 'function') loadProjects(); } catch(_) {}
+    return pid;
+  } catch(e) { console.warn('[orc2proj]', e); }
+}
+
 async function salvarOrcamento(status) {
   const st = status || 'rascunho';
   const client = document.getElementById('orc-cliente')?.value?.trim();
@@ -18333,6 +18596,7 @@ async function salvarOrcamento(status) {
             });
           }
         } catch(eN) { console.warn('[notif orc save]', eN); }
+        try { await _orcGarantirProjeto(_orcEditId, { client, titulo: payload.project_name, builder, numero: payload.numero }); } catch(eP) { console.warn('[orc2proj save]', eP); }
       }
     } else {
       const ins = await apiPost('age_orcamentos', payload);
@@ -18353,6 +18617,7 @@ async function salvarOrcamento(status) {
             });
           }
         } catch(eN) { console.warn('[notif orc save]', eN); }
+        try { await _orcGarantirProjeto(newId, { client, titulo: payload.project_name, builder, numero: (ins && (ins.numero || ins[0]?.numero)) || payload.numero }); } catch(eP) { console.warn('[orc2proj save]', eP); }
       }
     }
     closeOrcModal();
@@ -26271,6 +26536,7 @@ async function savePagamento() {
         status: 'pendente'
       });
     }
+    if(projeto_id) { try { await _projEnsureFechamento(projeto_id); } catch(eF) { console.warn('[pay→fech]', eF); } }
     closeModal('modalPagamento');
     toast(editId ? 'Pagamento atualizado.' : 'Pagamento criado.');
     await loadPagamentosPage();
@@ -26348,6 +26614,9 @@ async function marcarComoPago(id, dataPagamento, comprovante) {
       paid_at: patch.paid_at
     });
   }
+  /* Pagamento confirmado e vinculado a projeto → reflete custo real no fechamento */
+  const _projVinc = prev?.projeto_id;
+  if(_projVinc) { try { await _projEnsureFechamento(_projVinc, { force: true }); } catch(eF) { console.warn('[pay pago→fech]', eF); } }
 }
 
 /* ═══════════════════════════════════════════
