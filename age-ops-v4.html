@@ -18728,7 +18728,7 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
       </tr></thead>
       <tbody>${eqRows || '<tr><td colspan="9" style="padding:12px;opacity:.5">Nenhum profissional</td></tr>'}</tbody>
     </table>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;font-size:12px">
+    <div class="pdf-keep" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;font-size:12px;page-break-inside:avoid">
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px">
         <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.08em">Equipe — cobrado do cliente</div>
         <div style="font-size:18px;font-weight:800;margin-top:4px">${fmtBRL(fin.totalEquipe)}</div>
@@ -18750,6 +18750,7 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
     <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px">
       <tbody>${catRows}${despRows}</tbody>
     </table>` : ''}
+    <div class="pdf-keep" style="page-break-inside:avoid">
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #000;font-size:13px">
       <span>Subtotal operacional (cobrado)</span><strong>${fmtBRL(fin.subtotal)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#475569">
@@ -18765,16 +18766,26 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
       <span style="font-weight:700">Lucro estimado total <span style="font-size:11px;color:#15803d">(${margemRealPct.toFixed(1)}% do total)</span></span><strong style="color:#15803d">${fmtBRL(lucroTotal)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:800;border-top:2px solid #000;margin-top:6px">
       <span>Total cobrado do cliente</span><span>${fmtBRL(fin.totalFinal)}</span></div>
+    </div>
     <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Lucro = total cobrado − custo total. Produtos/serviços e despesas entram como repasse (custo igual ao cobrado); a margem vem do markup da equipe + margem da agência. Diária custo: cadastro em colaboradores ou campo CUSTO no builder.</p>
   `;
   const opt = {
-    margin: [8, 8, 8, 8],
+    margin: [10, 8, 12, 8],
     filename: `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
     image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 820 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.pdf-keep'] }
   };
-  html2pdf().set(opt).from(wrap).save();
+  /* Renderiza com o elemento anexado ao DOM (fora da tela) para o html2canvas medir
+     a altura completa — evita corte do conteúdo. */
+  wrap.style.position = 'fixed';
+  wrap.style.left = '-10000px';
+  wrap.style.top = '0';
+  document.body.appendChild(wrap);
+  html2pdf().set(opt).from(wrap).save()
+    .then(() => { try { document.body.removeChild(wrap); } catch(_) {} })
+    .catch(() => { try { document.body.removeChild(wrap); } catch(_) {} });
   toast('PDF interno gerado');
 }
 
