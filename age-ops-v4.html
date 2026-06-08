@@ -3421,7 +3421,7 @@ body:has(#login-screen.visible){
           <div style="display:flex;flex-direction:column;gap:0;overflow:hidden;background:#f8fafc;border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:12px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <div style="font-family:var(--font-m);font-size:8px;color:#666;letter-spacing:.14em;text-transform:uppercase;font-weight:700">
-                <i class="fas fa-list" style="margin-right:5px;color:#2563eb"></i>PROJETOS 2026
+                <i class="fas fa-list" style="margin-right:5px;color:#2563eb"></i>PROJETOS
               </div>
               <div id="fechProjCount" style="font-family:var(--font-m);font-size:9px;color:#888;background:#e2e8f0;padding:1px 7px;border-radius:10px">—</div>
             </div>
@@ -14312,6 +14312,13 @@ async function loadProjects(opts) {
     /* Mantém fechamento / lista DB alinhados ao Supabase após qualquer reload de projetos */
     _fechAllFechs = Array.isArray(dbFechs) ? dbFechs : [];
     _fechAllProjects = Array.isArray(dbProjects) ? dbProjects : [];
+    _fechUnifiedList = _fechBuildUnifiedList(dbProjects, dbFechs);
+    if(document.getElementById('page-fechamento')?.classList.contains('active')) {
+      _renderProjList();
+      if(_fechSelectedProj !== null && _fechSelectedProj < _fechUnifiedList.length) {
+        _renderFechPanel(_fechSelectedProj);
+      }
+    }
     renderProjTable();
     renderProjKpis(_projAllCache);
     renderProjMonthBars(_projAllCache);
@@ -14751,14 +14758,14 @@ async function saveSheetCell(inp) {
           /* Atualizar margem no projeto também */
           await apiPatch('age_projects', pid, { profit_pct: newMarg }).catch(()=>{});
 
-          /* Se painel do fechamento estiver aberto para este projeto → re-renderizar */
-          if(_fechSelectedProj === sidx) {
+          const fechIdx = _fechIdxByProjectId(pid);
+          if(fechIdx >= 0 && _fechSelectedProj === fechIdx) {
             _fechAllFechs = _fechAllFechs.map(f => f.id === linkedFech.id ? {...f,...fechPatch} : f);
-            _renderFechPanel(sidx);
+            _renderFechPanel(fechIdx);
           }
         } else if(sheetRow || cached) {
-          /* Sem fechamento vinculado: apenas atualizar o painel se estiver aberto */
-          if(_fechSelectedProj === sidx) _renderFechPanel(sidx);
+          const fechIdx = _fechIdxByProjectId(pid);
+          if(fechIdx >= 0 && _fechSelectedProj === fechIdx) _renderFechPanel(fechIdx);
         }
       }
 
@@ -14782,8 +14789,9 @@ async function saveSheetCell(inp) {
   } else {
     /* Projeto apenas na planilha (sem ID banco): salvar inline atualiza apenas a memória.
        Dados persistem após Sync (botão acima da tabela). */
-    if((field === 'cost' || field === 'total_value') && _fechSelectedProj === sidx) {
-      _renderFechPanel(sidx);
+    const fechIdxLegacy = pid ? _fechIdxByProjectId(pid) : -1;
+    if((field === 'cost' || field === 'total_value') && fechIdxLegacy >= 0 && _fechSelectedProj === fechIdxLegacy) {
+      _renderFechPanel(fechIdxLegacy);
     }
     /* Mostrar aviso sutil que o projeto ainda não está no banco */
     if(cell) {
@@ -15540,8 +15548,10 @@ async function saveProject() {
       toast(costsOk ? 'Projeto e custos salvos com sucesso!' : 'Projeto salvo, mas houve erro ao salvar os custos. Tente novamente.', costsOk ? 'ok' : 'warn');
     }
     _fechAllProjects = [];
+    _fechUnifiedList = [];
     _projAllCache = [];
     await loadProjects();
+    if(document.getElementById('page-fechamento')?.classList.contains('active')) loadFechamento();
     if(SUPABASE_IS_SOURCE_OF_TRUTH) await refreshLiveProjectsKpiCache().catch(()=>{});
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
     if(window._csSelectProjectAfterSave && savedId) {
@@ -15614,46 +15624,158 @@ function exportProjectsCSV() {
    Esquerda: card de cada projeto da planilha
    Direita:  painel de fechamento editável inline
 ═══════════════════════════════════════════ */
-let _fechSelectedProj = null;   /* índice na PROJ_2026_SHEET */
+let _fechSelectedProj = null;   /* índice em _fechUnifiedList */
 let _fechAllFechs     = [];
 let _fechAllProjects  = [];
+let _fechUnifiedList  = [];
 let _fechSearchTerm   = '';
+
+function _fechSheetKey(cliente, projeto) {
+  return String(cliente || '').trim().toLowerCase() + '||' + String(projeto || '').trim().toLowerCase();
+}
+
+/** Monta lista unificada: projetos do Supabase (aba Projetos) + planilha legada sem duplicar. */
+function _fechBuildUnifiedList(dbProjects, dbFechs) {
+  const fechs = dbFechs || [];
+  const rows = [];
+  const matchedDbIds = new Set();
+
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+    for(const p of (dbProjects || [])) {
+      if(!p?.id || p.deleted === true || p.deleted === 'true') continue;
+      const fech = fechs.find(f => String(f.project_id || '') === String(p.id));
+      const costFromFech = fech ? (parseFloat(fech.custo_total) || 0) : null;
+      const costFinal = costFromFech !== null ? costFromFech : (parseFloat(p.cost) || 0);
+      const fat = parseFloat(p.total_value) || 0;
+      const payD = p.payment_date ? String(p.payment_date).slice(0, 10) : '';
+      const projD = p.project_date ? String(p.project_date).slice(0, 10) : '';
+      const mes = payD ? parseInt(payD.substring(5, 7), 10) : (projD ? parseInt(projD.substring(5, 7), 10) : 1);
+      rows.push({
+        id: p.id,
+        client_name: _ageProjDbClient(p),
+        project_name: _ageProjDbTitle(p),
+        total_value: fat,
+        cost: costFinal,
+        segment: p.segment || '',
+        category: p.category || 'Vídeo',
+        mes: mes || 1,
+        is_new_client: p.is_new_client === true || p.is_new_client === 'true',
+        _dbRow: p,
+        _sheetRow: null,
+        _dbOnly: true
+      });
+      matchedDbIds.add(p.id);
+    }
+    return rows.sort((a, b) =>
+      (a.client_name + ' ' + a.project_name).localeCompare(b.client_name + ' ' + b.project_name, 'pt'));
+  }
+
+  const sheetKeys = new Set();
+  for(const s of PROJ_2026_SHEET) {
+    const db = (dbProjects || []).find(p =>
+      _fechSheetKey(_ageProjDbClient(p), _ageProjDbTitle(p)) === _fechSheetKey(s.cliente, s.projeto));
+    if(db?.id) matchedDbIds.add(db.id);
+    const fech = db ? fechs.find(f => String(f.project_id || '') === String(db.id)) : fechs.find(f =>
+      _fechSheetKey(f.client_name, f.project_name) === _fechSheetKey(s.cliente, s.projeto));
+    const costFromFech = fech ? (parseFloat(fech.custo_total) || 0) : null;
+    const costFinal = costFromFech !== null ? costFromFech : (db ? (parseFloat(db.cost) || 0) : (s.cost || 0));
+    rows.push({
+      id: db?.id || ('sheet_' + rows.length),
+      client_name: db ? _ageProjDbClient(db) : (s.cliente || ''),
+      project_name: db ? _ageProjDbTitle(db) : (s.projeto || ''),
+      total_value: db ? (parseFloat(db.total_value) || 0) : (s.fat || 0),
+      cost: costFinal,
+      segment: db?.segment || s.seg || '',
+      category: db?.category || s.cat || 'Vídeo',
+      mes: s.mes || 1,
+      is_new_client: db ? (db.is_new_client === true || db.is_new_client === 'true') : !!s.novo,
+      _dbRow: db || null,
+      _sheetRow: s,
+      _dbOnly: false
+    });
+    sheetKeys.add(_fechSheetKey(s.cliente, s.projeto));
+  }
+  for(const p of (dbProjects || [])) {
+    if(!p?.id || matchedDbIds.has(p.id)) continue;
+    const fech = fechs.find(f => String(f.project_id || '') === String(p.id));
+    const costFromFech = fech ? (parseFloat(fech.custo_total) || 0) : null;
+    const costFinal = costFromFech !== null ? costFromFech : (parseFloat(p.cost) || 0);
+    const fat = parseFloat(p.total_value) || 0;
+    const payD = p.payment_date ? String(p.payment_date).slice(0, 10) : '';
+    const projD = p.project_date ? String(p.project_date).slice(0, 10) : '';
+    const mes = payD ? parseInt(payD.substring(5, 7), 10) : (projD ? parseInt(projD.substring(5, 7), 10) : 1);
+    rows.push({
+      id: p.id,
+      client_name: _ageProjDbClient(p),
+      project_name: _ageProjDbTitle(p),
+      total_value: fat,
+      cost: costFinal,
+      segment: p.segment || '',
+      category: p.category || 'Vídeo',
+      mes: mes || 1,
+      is_new_client: p.is_new_client === true || p.is_new_client === 'true',
+      _dbRow: p,
+      _sheetRow: null,
+      _dbOnly: true
+    });
+  }
+  return rows;
+}
+
+function _fechIdxByProjectId(pid) {
+  if(pid == null || pid === '') return -1;
+  return (_fechUnifiedList || []).findIndex(r => String(r.id) === String(pid));
+}
+
+function _fechFindFechForRow(row) {
+  if(!row) return null;
+  const byId = row.id && !String(row.id).startsWith('sheet_')
+    ? _fechAllFechs.find(f => String(f.project_id || '') === String(row.id))
+    : null;
+  if(byId) return byId;
+  return _fechAllFechs.find(f =>
+    _fechSheetKey(f.client_name, f.project_name) === _fechSheetKey(row.client_name, row.project_name)) || null;
+}
 
 /* ── popular select do modal (mantido para compatibilidade) ── */
 async function _populateFechProjSelect() {
   const sel = document.getElementById('fProjId');
   if(!sel) return;
-  if(!_fechAllProjects.length) {
+  if(!_fechUnifiedList.length && !_fechAllProjects.length) {
     _fechAllProjects = await fetchAgeProjectsScoped(300).catch(()=>[]);
+    _fechUnifiedList = _fechBuildUnifiedList(_fechAllProjects, _fechAllFechs);
   }
   sel.innerHTML = '<option value="">— Selecionar projeto —</option>' +
-    PROJ_2026_SHEET.map((s, i) => {
-      const db = _fechAllProjects.find(p =>
-        (p.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-        (p.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase()
-      );
-      return `<option value="${db?.id||'sheet_'+i}">${escHtml(s.cliente)} — ${escHtml(s.projeto)}</option>`;
-    }).join('');
+    (_fechUnifiedList || []).map(r =>
+      `<option value="${escAttr(String(r.id))}">${escHtml(r.client_name)} — ${escHtml(r.project_name)}</option>`
+    ).join('');
 }
 
 async function loadFechamento() {
-  /* Renderiza a lista de projetos imediatamente (sem esperar o banco)
-     para que o usuário veja os projetos da planilha enquanto carrega */
-  _renderProjList();
+  const el = document.getElementById('fechProjList');
+  if(el) {
+    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80px;color:#aaa;font-family:var(--font-m);font-size:10px;gap:6px">
+      <i class="fas fa-spinner fa-spin" style="font-size:16px;color:#cbd5e1"></i>Carregando projetos…</div>`;
+  }
 
   try {
     const [fechamentos, projects] = await Promise.all([
-      fetchAll('age_fechamento', 300).catch(()=>[]),
-      fetchAgeProjectsScoped(300).catch(()=>[])
+      fetchAll('age_fechamento', 500).catch(()=>[]),
+      fetchAgeProjectsScoped(1000).catch(()=>[])
     ]);
     _fechAllFechs    = fechamentos;
     _fechAllProjects = projects;
+    _fechUnifiedList = _fechBuildUnifiedList(projects, fechamentos);
     await _populateFechProjSelect();
-    _renderProjList();   /* re-renderiza com badges de status (FECH./ABERTO) */
-    if(_fechSelectedProj !== null) _renderFechPanel(_fechSelectedProj);
+    _renderProjList();
+    if(_fechSelectedProj !== null && _fechSelectedProj < _fechUnifiedList.length) {
+      _renderFechPanel(_fechSelectedProj);
+    } else if(_fechSelectedProj !== null) {
+      _fechSelectedProj = null;
+    }
   } catch(e) {
     console.error('loadFechamento error:', e);
-    /* Mesmo com erro, a lista de projetos da planilha já está visível */
+    if(el) el.innerHTML = `<div style="color:#ef4444;padding:16px;font-family:var(--font-m);font-size:11px">Erro ao carregar projetos.</div>`;
   }
 }
 
@@ -15662,7 +15784,7 @@ function filterFechSearch() {
   _renderProjList();
 }
 
-/* Renderiza a lista de cards de projetos na coluna esquerda */
+/* Renderiza a lista de cards de projetos na coluna esquerda (sincronizada com age_projects) */
 function _renderProjList() {
   const el = document.getElementById('fechProjList');
   if(!el) return;
@@ -15670,57 +15792,46 @@ function _renderProjList() {
   const MONTH_COLORS = ['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2','#db2777','#d97706','#4f46e5','#0d9488','#f59e0b','#dc2626','#6366f1'];
   const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-  let list = PROJ_2026_SHEET.map((s, i) => ({ s, i }));
+  let list = (_fechUnifiedList || []).map((row, i) => ({ row, i }));
   if(_fechSearchTerm) {
-    list = list.filter(({ s }) =>
-      (s.cliente||'').toLowerCase().includes(_fechSearchTerm) ||
-      (s.projeto||'').toLowerCase().includes(_fechSearchTerm) ||
-      (s.seg||'').toLowerCase().includes(_fechSearchTerm)
+    list = list.filter(({ row }) =>
+      (row.client_name||'').toLowerCase().includes(_fechSearchTerm) ||
+      (row.project_name||'').toLowerCase().includes(_fechSearchTerm) ||
+      (row.segment||'').toLowerCase().includes(_fechSearchTerm)
     );
   }
 
-  /* Atualizar contador */
   const countEl = document.getElementById('fechProjCount');
-  if(countEl) countEl.textContent = list.length + ' projeto' + (list.length!==1?'s':'');
+  if(countEl) countEl.textContent = list.length + ' projeto' + (list.length !== 1 ? 's' : '');
 
   if(!list.length) {
-    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80px;color:#aaa;font-family:var(--font-m);font-size:10px;gap:4px">
-      <i class="fas fa-search" style="font-size:14px;color:#cbd5e1"></i>
-      Nenhum projeto encontrado
+    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100px;color:#aaa;font-family:var(--font-m);font-size:10px;gap:6px;text-align:center;padding:12px">
+      <i class="fas fa-folder-open" style="font-size:18px;color:#cbd5e1"></i>
+      ${_fechSearchTerm ? 'Nenhum projeto encontrado' : 'Nenhum projeto na aba Projetos.<br>Crie um projeto para registrar o fechamento.'}
     </div>`;
     return;
   }
 
-  el.innerHTML = list.map(({ s, i }) => {
-    /* Verificar se já tem fechamento vinculado ao banco */
-    const db   = _fechAllProjects.find(p =>
-      (p.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-      (p.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase()
-    );
-    const fech = db ? _fechAllFechs.find(f => f.project_id === db.id) : null;
-    /* Também buscar por client_name/project_name como fallback */
-    const fechFallback = !fech ? _fechAllFechs.find(f =>
-      (f.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-      (f.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase()
-    ) : null;
-    const activeFech = fech || fechFallback;
+  el.innerHTML = list.map(({ row, i }) => {
+    const activeFech = _fechFindFechForRow(row);
     const hasFech = !!activeFech;
     const isSelected = _fechSelectedProj === i;
-    const mesColor = MONTH_COLORS[(s.mes||1)-1] || '#2563eb';
-    const mesLabel = MESES[(s.mes||1)-1] || '';
+    const mesColor = MONTH_COLORS[(row.mes || 1) - 1] || '#2563eb';
+    const mesLabel = MESES[(row.mes || 1) - 1] || '';
+    const fat = row.total_value || 0;
 
-    return `<div class="fech-proj-card${isSelected?' selected':''}" onclick="selectFechProj(${i})" style="position:relative">
+    return `<div class="fech-proj-card${isSelected ? ' selected' : ''}" onclick="selectFechProj(${i})" style="position:relative">
       <div style="display:flex;align-items:center;gap:9px">
         <div style="flex-shrink:0;width:36px;height:36px;border-radius:7px;background:${mesColor}18;border:1.5px solid ${mesColor}40;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1">
           <span style="font-family:var(--font-m);font-size:8px;color:${mesColor};letter-spacing:.04em;font-weight:700">${mesLabel}</span>
-          <span style="font-family:var(--font-m);font-size:6px;color:${mesColor}99">${s.mes}</span>
+          <span style="font-family:var(--font-m);font-size:6px;color:${mesColor}99">${row.mes || '—'}</span>
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-family:var(--font-b);font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(s.cliente)}">${escHtml(s.cliente)}</div>
-          <div style="font-family:var(--font-m);font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(s.projeto)}">${escHtml(s.projeto)}</div>
+          <div style="font-family:var(--font-b);font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escAttr(row.client_name)}">${escHtml(row.client_name)}</div>
+          <div style="font-family:var(--font-m);font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escAttr(row.project_name)}">${escHtml(row.project_name)}</div>
         </div>
         <div style="flex-shrink:0;text-align:right">
-          <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#1e293b">${fmtBRLk(s.fat)}</div>
+          <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#1e293b">${fmtBRLk(fat)}</div>
           ${hasFech
             ? `<span style="display:inline-block;font-size:7px;font-family:var(--font-m);background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;padding:1px 6px;border-radius:3px;margin-top:2px;font-weight:700">✓ FECHADO</span>`
             : `<span style="display:inline-block;font-size:7px;font-family:var(--font-m);background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:1px 6px;border-radius:3px;margin-top:2px;font-weight:700">ABERTO</span>`
@@ -15742,45 +15853,35 @@ function _renderFechPanel(idx) {
   const detail = document.getElementById('fechDetail');
   if(!detail) return;
 
-  const s  = PROJ_2026_SHEET[idx];
-  if(!s) return;
+  const row = (_fechUnifiedList || [])[idx];
+  if(!row) return;
 
-  const db   = _fechAllProjects.find(p =>
-    (p.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-    (p.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase()
-  );
-  /* Buscar fechamento: primeiro por project_id, depois por nome como fallback */
-  const fechById   = db ? _fechAllFechs.find(f => f.project_id === db.id) : null;
-  const fechByName = !fechById ? _fechAllFechs.find(f =>
-    (f.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-    (f.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase()
-  ) : null;
-  const fech = fechById || fechByName;
+  const db = row._dbRow || _fechAllProjects.find(p => String(p.id) === String(row.id)) || null;
+  const fech = _fechFindFechForRow(row);
 
-  /* Valores do fechamento existente ou da planilha */
-  const val       = parseFloat(fech?.total_value ?? s.fat)    || 0;
-  const custoTotal= parseFloat(fech?.custo_total  ?? s.cost)  || 0;
-  const imposto   = parseFloat(fech?.imposto)                  || 0;
-  const custos    = JSON.parse(fech?.custos_json || '[]');
-  const lucro     = val - custoTotal;
-  const margin    = val>0 ? Math.round(lucro/val*100) : 0;
-  const mCol      = getMarginColor(margin);
-  const fechStatus= fech?.status || 'aberto';
-  const fechNotes = fech?.notes  || '';
-  const hasFech   = !!fech;
+  const val        = parseFloat(fech?.total_value ?? row.total_value) || 0;
+  const custoTotal = parseFloat(fech?.custo_total ?? row.cost) || 0;
+  const imposto    = parseFloat(fech?.imposto) || 0;
+  const custos     = JSON.parse(fech?.custos_json || '[]');
+  const lucro      = val - custoTotal;
+  const margin     = val > 0 ? Math.round(lucro / val * 100) : 0;
+  const mCol       = getMarginColor(margin);
+  const fechNotes  = fech?.notes || '';
+  const hasFech    = !!fech;
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const valSource  = hasFech ? 'do fechamento' : (db ? 'do projeto' : 'estimado');
 
   detail.innerHTML = `
     <!-- Cabeçalho do projeto -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:10px">
       <div style="min-width:0">
-        <div style="font-family:var(--font-h);font-size:16px;font-weight:700;color:#111;line-height:1.2;margin-bottom:4px">${escHtml(s.cliente)}</div>
-        <div style="font-size:12px;color:#555;margin-bottom:4px">${escHtml(s.projeto)}</div>
+        <div style="font-family:var(--font-h);font-size:16px;font-weight:700;color:#111;line-height:1.2;margin-bottom:4px">${escHtml(row.client_name)}</div>
+        <div style="font-size:12px;color:#555;margin-bottom:4px">${escHtml(row.project_name)}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <span style="font-family:var(--font-m);font-size:9px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:3px">${MESES[(s.mes||1)-1]||''}</span>
-          <span style="font-family:var(--font-m);font-size:9px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:3px">${escHtml(s.seg||'')}</span>
-          <span style="font-family:var(--font-m);font-size:9px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:3px">${escHtml(s.cat||'')}</span>
-          ${s.novo?'<span class="badge badge-novo" style="font-size:8px">NOVO</span>':''}
+          <span style="font-family:var(--font-m);font-size:9px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:3px">${MESES[(row.mes||1)-1]||''}</span>
+          <span style="font-family:var(--font-m);font-size:9px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:3px">${escHtml(row.segment||'')}</span>
+          <span style="font-family:var(--font-m);font-size:9px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:3px">${escHtml(row.category||'')}</span>
+          ${row.is_new_client ? '<span class="badge badge-novo" style="font-size:8px">NOVO</span>' : ''}
         </div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
@@ -15795,12 +15896,12 @@ function _renderFechPanel(idx) {
       <div class="kpi-card" style="padding:10px 12px;border-left:3px solid #2563eb">
         <div class="kpi-label">FATURAMENTO</div>
         <div class="kpi-val blue" style="font-size:13px">${fmtBRL(val)}</div>
-        <div class="kpi-sub">da planilha</div>
+        <div class="kpi-sub">${valSource}</div>
       </div>
       <div class="kpi-card" style="padding:10px 12px;border-left:3px solid #dc2626">
         <div class="kpi-label">CUSTO TOTAL</div>
         <div class="kpi-val red" style="font-size:13px">${fmtBRL(custoTotal)}</div>
-        <div class="kpi-sub">${imposto>0?'incl. R$'+imposto.toFixed(0)+' impostos':hasFech?'do fechamento':'da planilha'}</div>
+        <div class="kpi-sub">${imposto>0?'incl. R$'+imposto.toFixed(0)+' impostos':hasFech?'do fechamento':valSource}</div>
       </div>
       <div class="kpi-card" style="padding:10px 12px;border-left:3px solid ${lucro>=0?'#16a34a':'#dc2626'}">
         <div class="kpi-label">LUCRO</div>
@@ -15934,8 +16035,8 @@ function recalcFechPanel() {
 }
 
 async function saveFechPanel(idx) {
-  const s       = PROJ_2026_SHEET[idx];
-  if(!s) return;
+  const row = (_fechUnifiedList || [])[idx];
+  if(!row) return;
   const val     = parseFloat(document.getElementById('fpVal')?.value)  || 0;
   const imp     = parseFloat(document.getElementById('fpImp')?.value)  || 0;
   const date    = document.getElementById('fpDate')?.value  || new Date().toISOString().slice(0,10);
@@ -15946,21 +16047,18 @@ async function saveFechPanel(idx) {
   const custoItens = _panelCustos.reduce((s,c)=>s+(parseFloat(c.val)||0), 0);
   const custoTotal = custoItens + imp;
 
-  /* Se ainda não tem ID do banco, buscar ao vivo */
-  if(!dbProjId) {
-    const fresh = await fetchAgeProjectsScoped(300).catch(()=>[]);
+  if(!dbProjId || String(dbProjId).startsWith('sheet_')) {
+    const fresh = await fetchAgeProjectsScoped(1000).catch(()=>[]);
     _fechAllProjects = fresh;
     const db = fresh.find(p =>
-      (p.client_name||'').toLowerCase() === (s.cliente||'').toLowerCase() &&
-      (p.project_name||'').toLowerCase() === (s.projeto||'').toLowerCase()
-    );
-    dbProjId = db?.id || '';
+      _fechSheetKey(_ageProjDbClient(p), _ageProjDbTitle(p)) === _fechSheetKey(row.client_name, row.project_name));
+    dbProjId = db?.id || (String(row.id).startsWith('sheet_') ? '' : row.id);
   }
 
   const payload = {
     project_id:   dbProjId || null,
-    client_name:  s.cliente,
-    project_name: s.projeto,
+    client_name:  row.client_name,
+    project_name: row.project_name,
     total_value:  val,
     imposto:      imp,
     custo_total:  custoTotal,
@@ -15988,41 +16086,25 @@ async function deleteFechProj(fechId, idx) {
     const fech = _fechAllFechs.find(f=>f.id===fechId);
     await apiDel('age_fechamento', fechId);
 
-    /* Reverter custo na planilha em memória para o valor original */
     if(fech) {
-      const sheetEntry = PROJ_2026_SHEET[idx];
-      if(sheetEntry) {
-        /* Restaurar custo original da planilha hard-coded */
-        const origSheet = PROJ_2026_SHEET[idx];
-        /* custo volta para o valor da linha original — já está em sheetEntry
-           (se o usuário não alterou, será o valor hardcoded) */
-        sheetEntry.lucro  = sheetEntry.fat - sheetEntry.cost;
-        sheetEntry.margin = sheetEntry.fat>0 ? Math.round(sheetEntry.lucro/sheetEntry.fat*100) : 0;
-      }
-      /* Zerar custo no banco do projeto vinculado */
-      const dbProj = _fechAllProjects.find(p=>p.id===fech.project_id) ||
-                     _fechAllProjects.find(p=>
-                       (p.client_name||'').toLowerCase()===(fech.client_name||'').toLowerCase() &&
-                       (p.project_name||'').toLowerCase()===(fech.project_name||'').toLowerCase()
-                     );
+      const row = (_fechUnifiedList || [])[idx];
+      const dbProj = _fechAllProjects.find(p => String(p.id) === String(fech.project_id)) ||
+        _fechAllProjects.find(p =>
+          _fechSheetKey(_ageProjDbClient(p), _ageProjDbTitle(p)) === _fechSheetKey(fech.client_name, fech.project_name));
       if(dbProj) {
+        const fat = parseFloat(dbProj.total_value) || 0;
         let costRev = 0;
         let pctRev = 0;
-        const fat = parseFloat(dbProj.total_value) || 0;
         if(SUPABASE_IS_SOURCE_OF_TRUTH) {
           const curCost = parseFloat(dbProj.cost) || 0;
           const fechC = parseFloat(fech.custo_total) || 0;
           costRev = Math.max(0, curCost - fechC);
           pctRev = fat > 0 ? Math.round((fat - costRev) / fat * 100) : 0;
         } else {
-          const s = PROJ_2026_SHEET[idx];
-          costRev = s?.cost || 0;
-          pctRev = s?.margin || 0;
+          costRev = row?.cost || row?._sheetRow?.cost || 0;
+          pctRev = row?._sheetRow?.margin || 0;
         }
-        await apiPatch('age_projects', dbProj.id, {
-          cost:       costRev,
-          profit_pct: pctRev
-        }).catch(()=>{});
+        await apiPatch('age_projects', dbProj.id, { cost: costRev, profit_pct: pctRev }).catch(()=>{});
       }
     }
 
