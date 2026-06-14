@@ -578,14 +578,19 @@
 
 <script>
 /* ═════════════════════════════════════════
-   NPS PUBLIC PAGE — Age Ops
+   NPS PUBLIC PAGE — Age Ops (Supabase)
+   Cliente: anônimo · Equipe: vê etapa + label interno da campanha
 ═════════════════════════════════════════ */
+const SUPABASE_URL = 'https://wiiewucszdbbcxzivnyo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
+
 const TOTAL_STEPS = 4;
 let currentStep   = 1;
 let campanhaData  = null;
 let indicariaVal  = null;
 let moodVal       = null;
 let notaGeral     = null;
+let jaRespondeu   = false;
 
 const subNotas = {
   nota_comunicacao: 0,
@@ -594,10 +599,44 @@ const subNotas = {
   nota_experiencia: 0,
 };
 
+function sbHeaders(extra) {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    ...(extra || {})
+  };
+}
+
+async function sbGet(table, query) {
+  const url = `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/${table}?${query}`;
+  const r = await fetch(url, { headers: sbHeaders({ Accept: 'application/json' }) });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  return r.json();
+}
+
+async function sbPost(table, body) {
+  const url = `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/${table}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: sbHeaders({ Prefer: 'return=representation' }),
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  const data = await r.json();
+  return Array.isArray(data) ? data[0] : data;
+}
+
 /* ── Lê token da URL ── */
 function getToken() {
   const p = new URLSearchParams(window.location.search);
-  return p.get('t') || '';
+  return (p.get('t') || '').trim();
 }
 
 /* ── Feedback de nota ── */
@@ -623,23 +662,37 @@ window.addEventListener('DOMContentLoaded', async () => {
   const token = getToken();
   if (!token) { show('stateError'); return; }
   try {
-    // busca campanha pelo token
-    const r = await fetch(`tables/age_nps_campanhas?limit=500`);
-    const data = await r.json();
-    const campanha = (data.data || []).find(c => c.token === token);
+    const enc = encodeURIComponent(token);
+    const rows = await sbGet(
+      'age_nps_campanhas',
+      `token=eq.${enc}&select=token,etapa,ativo,data_expiracao&limit=1`
+    );
+    const campanha = Array.isArray(rows) ? rows[0] : null;
     if (!campanha) { show('stateError'); return; }
-    if (!campanha.ativo) { show('stateExpired'); return; }
-    if (campanha.data_expiracao && new Date(campanha.data_expiracao) < new Date()) {
+    if (campanha.ativo === false) { show('stateExpired'); return; }
+    if (campanha.data_expiracao && new Date(campanha.data_expiracao + 'T23:59:59') < new Date()) {
       show('stateExpired'); return;
     }
+
+    const prev = await sbGet(
+      'age_nps_respostas',
+      `token=eq.${enc}&select=id&limit=1`
+    );
+    if (Array.isArray(prev) && prev.length) {
+      jaRespondeu = true;
+      document.getElementById('successMsg').innerHTML =
+        '<div>Este link já recebeu uma avaliação. Obrigado!</div>';
+      show('stateSuccess');
+      return;
+    }
+
     campanhaData = campanha;
-    // atualiza hero com a etapa
     document.getElementById('etapaBadge').innerHTML =
       `<i class="fas fa-tag"></i> ${campanha.etapa || 'Avaliação geral'}`;
     show('stateForm');
     updateStepUI();
-  } catch(e) {
-    console.error(e);
+  } catch (e) {
+    console.error('[nps]', e);
     show('stateError');
   }
 });
@@ -806,28 +859,22 @@ async function submitNps() {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando…';
 
   const payload = {
-    campanha_token: campanhaData.token,
+    token: campanhaData.token,
     etapa_avaliada: campanhaData.etapa,
-    nota_geral:     notaGeral,
+    nota_geral: notaGeral,
     nota_comunicacao: subNotas.nota_comunicacao || null,
-    nota_qualidade:   subNotas.nota_qualidade   || null,
-    nota_prazo:       subNotas.nota_prazo       || null,
+    nota_qualidade: subNotas.nota_qualidade || null,
+    nota_prazo: subNotas.nota_prazo || null,
     nota_experiencia: subNotas.nota_experiencia || null,
-    ponto_positivo:  document.getElementById('pontoPositivo').value.trim()  || null,
-    ponto_melhoria:  document.getElementById('pontoMelhoria').value.trim()  || null,
-    comentario_livre:document.getElementById('comentarioLivre').value.trim()|| null,
-    indicaria:       indicariaVal,
-    humor:           moodVal,
-    respondido_em:   Date.now(),
-    // NUNCA salvamos: nome, e-mail, IP, projeto, cliente
+    ponto_positivo: document.getElementById('pontoPositivo').value.trim() || null,
+    ponto_melhoria: document.getElementById('pontoMelhoria').value.trim() || null,
+    comentario_livre: document.getElementById('comentarioLivre').value.trim() || null,
+    indicaria: indicariaVal,
+    respondido_em: new Date().toISOString()
   };
 
   try {
-    await fetch('tables/age_nps_respostas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    await sbPost('age_nps_respostas', payload);
     // Sucesso
     const notaLabel = notaGeral >= 9 ? '🎉 Promotor' : notaGeral >= 7 ? '😊 Neutro' : '😔 Detrator';
     document.getElementById('successMsg').innerHTML = `

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <script src="https://assets.pagar.me/pagarme-js/4.18/pagarme.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AGE SOCIALS — Sistema Operacional</title>
+<title>AGE OPS — Sistema Operacional</title>
 <!-- Favicon: PNG é a fonte principal (256x256). ICO como fallback universal.
      Cache-busting (?v=5) força navegadores a recarregar o ícone. -->
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png?v=5" />
@@ -23,7 +23,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════
-   AGE SOCIALS — DESIGN SYSTEM · LIGHT EDITORIAL
+   AGE OPS — DESIGN SYSTEM · LIGHT EDITORIAL
 ═══════════════════════════════════════════ */
 :root {
   --bg:     #f8f8f8;
@@ -825,7 +825,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .dash-period-btn.active-period{background:rgba(37,99,235,.18)!important;color:#60a5fa!important;font-weight:700}
 
 /* ══════════════════════════════════════════
-   ORÇAMENTOS — Age Socials Style
+   ORÇAMENTOS — AGE OPS Style
 ══════════════════════════════════════════ */
 .orc-card{
   background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:9px;
@@ -4644,10 +4644,10 @@ body:has(#login-screen.visible){
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:16px">
       <div style="font-size:10px;font-weight:700;color:#1e40af;margin-bottom:5px"><i class="fas fa-shield-alt" style="margin-right:5px"></i>COMO FUNCIONA O ANONIMATO</div>
       <div style="font-size:10px;color:#374151;line-height:1.65">
-        • O cliente recebe um link sem menção ao projeto ou nome da empresa<br>
-        • Você não saberá <b>qual projeto</b> gerou cada resposta — apenas a <b>etapa avaliada</b><br>
-        • O cliente se sente livre para ser honesto sem medo de julgamento<br>
-        • Internamente você vê apenas a nota, etapa e comentários
+        • O cliente recebe um link <b>sem nome do projeto</b> — só vê a etapa (ex.: Gravação)<br>
+        • Use <b>Kit completo</b> para gerar os 6 links de uma vez (reunião → entrega)<br>
+        • A <b>identificação interna</b> fica só para vocês — o cliente nunca vê<br>
+        • Cada resposta é anônima: nota, etapa e comentários para análise
       </div>
     </div>
 
@@ -4655,12 +4655,12 @@ body:has(#login-screen.visible){
       <label class="form-label">ETAPA A AVALIAR *</label>
       <select id="npsEtapa" style="width:100%">
         <option value="">— Selecione a etapa —</option>
-        <option>Pós-briefing / Alinhamento inicial</option>
-        <option>Pós-gravação</option>
-        <option>Pós-entrega do material</option>
-        <option>Avaliação geral do projeto</option>
-        <option>Atendimento e comunicação</option>
-        <option>Resultado final</option>
+        <option>1. Reunião inicial / Alinhamento</option>
+        <option>2. Pós-briefing / Pré-produção</option>
+        <option>3. Gravação / Produção</option>
+        <option>4. Edição / Pós-produção</option>
+        <option>5. Entrega final / Aprovação</option>
+        <option>6. Avaliação geral do projeto</option>
       </select>
     </div>
 
@@ -4678,12 +4678,39 @@ body:has(#login-screen.visible){
       <input id="npsExpiracao" type="date" style="width:100%">
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid rgba(0,0,0,.07)">
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid rgba(0,0,0,.07);flex-wrap:wrap">
       <button class="btn btn-ghost" onclick="closeModal('modalNpsCampanha')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="gerarNpsKitCompleto()" title="Gera um link para cada etapa do fluxo">
+        <i class="fas fa-layer-group"></i> Kit completo (6 links)
+      </button>
       <button class="btn btn-primary" onclick="gerarNpsLink()">
         <i class="fas fa-link"></i> Gerar Link e Copiar
       </button>
     </div>
+  </div>
+</div>
+
+<!-- Modal link NPS pronto para enviar -->
+<div class="modal" id="modalNpsLinkReady">
+  <div class="modal-box" style="max-width:480px;width:96vw">
+    <div class="modal-title">
+      <span>LINK NPS PRONTO</span>
+      <button type="button" onclick="closeModal('modalNpsLinkReady')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="font-family:var(--font-m);font-size:11px;color:#16a34a;margin-bottom:10px;font-weight:700">
+      <i class="fas fa-check-circle"></i> Link gerado — envie ao cliente
+    </div>
+    <div id="npsLinkReadyEtapa" style="font-size:10px;color:var(--textsub);margin-bottom:10px"></div>
+    <label class="form-label" style="margin-bottom:6px">Link da avaliação (anônima)</label>
+    <input type="text" readonly id="npsLinkReadyText" style="width:100%;font-size:10px;line-height:1.45;padding:10px;border-radius:8px;background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:var(--font-m)">
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button type="button" class="btn btn-secondary" onclick="copiarNpsLinkReady()"><i class="fas fa-copy"></i> Copiar link</button>
+      <button type="button" class="btn btn-secondary" onclick="compartilharNpsLinkReadyWhatsApp()"><i class="fab fa-whatsapp"></i> Enviar no WhatsApp</button>
+      <button type="button" class="btn btn-primary" onclick="closeModal('modalNpsLinkReady')" style="margin-left:auto">Fechar</button>
+    </div>
+    <p style="font-family:var(--font-m);font-size:9px;color:#64748b;margin:12px 0 0;line-height:1.5">
+      O cliente vê só a etapa do projeto — a identificação interna fica só com vocês.
+    </p>
   </div>
 </div>
 
@@ -10477,9 +10504,10 @@ async function api(method, table, id='', body=null) {
   const _qHasId = q.has('id');
   if(_tcid && _tenantShouldFilterTable(table)) {
     if((method === 'GET' || method === 'PATCH' || method === 'DELETE') && !q.has('company_id')) {
-      /* GET com or=(...) já define o escopo — não ANDar company_id */
-      /* GET/PATCH/DELETE por id=eq.<uuid>: não ANDar company_id — senão linhas com company_id null no BD não batem e PATCH atualiza 0 linhas */
+      /* age_nps_respostas não tem company_id — escopo via token da campanha no loadNps() */
+      const skipCompanyCol = table === 'age_nps_respostas';
       const skipAutoCompany =
+        skipCompanyCol ||
         (method === 'GET' && q.has('or')) ||
         (_qHasId && (
           method === 'PATCH' ||
@@ -12671,7 +12699,7 @@ function renderDeepAnalysis(filtered2026, kpis) {
   <!-- DIAGNÓSTICO PROFUNDO -->
   ${(()=>{
     /* ════════════════════════════════════════════════════════════
-       MOTOR DE DIAGNÓSTICO PROFUNDO — Age Socials 2026
+       MOTOR DE DIAGNÓSTICO PROFUNDO — AGE OPS 2026
        Analisa 15 dimensões: financeira, comercial, operacional,
        estratégica, risco, eficiência e crescimento.
     ════════════════════════════════════════════════════════════ */
@@ -13243,7 +13271,7 @@ function renderDeepAnalysis(filtered2026, kpis) {
 
   <!-- LINHA 4: Síntese executiva -->
   <div class="panel" style="margin-bottom:6px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border:none">
-    <div class="panel-title" style="color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.1)"><i class="fas fa-file-contract" style="color:#4ade80"></i> SÍNTESE EXECUTIVA — Diagnóstico Age Socials 2026</div>
+    <div class="panel-title" style="color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.1)"><i class="fas fa-file-contract" style="color:#4ade80"></i> SÍNTESE EXECUTIVA — Diagnóstico AGE OPS 2026</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:4px 0" class="responsive-3col">
       ${[
         {
@@ -13317,7 +13345,7 @@ function renderDeepAnalysis(filtered2026, kpis) {
     const gapProj    = META - projecaoAt;
     const semsRest   = mRest * 4.33;
 
-    /* ── Pacotes Age Socials com metas semanais ── */
+    /* ── Pacotes AGE OPS com metas semanais ── */
     const PKGS_META = [
       { id:'videoclipe',        nome:'Videoclipe',            preco:8000,  margem:0.525, cor:'#7c3aed', icone:'fa-film',          desc:'Clipe completo 16:9 + vertical + grade' },
       { id:'institucional',     nome:'Vídeo Institucional',   preco:8000,  margem:0.60,  cor:'#2563eb', icone:'fa-building',      desc:'Institucional completo + trilha + master' },
@@ -16953,14 +16981,14 @@ async function saveKanbanNotes(idx, kid) {
 function openKanbanCardModal() { /* não usado — projetos vêm da planilha */ }
 
 /* ═══════════════════════════════════════════
-   ORÇAMENTOS — Age Socials
+   ORÇAMENTOS — AGE OPS
    Catálogo baseado na Tabela Mãe V1 (22.04.2026)
    Ticket médio R$3-8k · Margem 30-32%
 ═══════════════════════════════════════════ */
 
 /* ── Catálogo de serviços (Tabela Mãe) ── */
 /* ═══════════════════════════════════════════════════════════════
-   CATÁLOGO DE PACOTES — Age Socials (Tabela Mãe V1 · 22.04.2026)
+   CATÁLOGO DE PACOTES — AGE OPS (Tabela Mãe V1 · 22.04.2026)
    Cada pacote contém:
    - price:       valor para o cliente
    - costBase:    custo operacional mínimo (interno, não vai ao PDF)
@@ -19823,12 +19851,14 @@ async function _orcGenPDFFromObject(o) {
       <p class="notes-text">${escHtml(o.notes)}</p>
     </div>` : '';
 
+  const orcMarca = escHtml((currentUser?.company_name || '').trim() || 'AGE OPS');
+
   /* ── Documento completo da janela de impressão ── */
   const doc = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Age Socials — ${escHtml(o.numero||'Orçamento')}</title>
+<title>${orcMarca} — ${escHtml(o.numero||'Orçamento')}</title>
 <style>
 /* ── Reset & base ── */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -19948,8 +19978,8 @@ html,body{background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font
   <!-- Cabeçalho -->
   <header class="header">
     <div>
-      <div class="brand-name">Age Socials</div>
-      <div class="brand-sub">Producao de Conteudo Digital</div>
+      <div class="brand-name">${orcMarca}</div>
+      <div class="brand-sub">Proposta Comercial · AGE OPS</div>
     </div>
     <div class="header-right">
       <div class="prop-label">Proposta Comercial</div>
@@ -20012,8 +20042,8 @@ html,body{background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font
   <!-- Rodapé -->
   <footer class="footer">
     <div>
-      <div class="foot-brand">Age Socials</div>
-      <div class="foot-sub">age.socials@gmail.com | @agesocials</div>
+      <div class="foot-brand">${orcMarca}</div>
+      <div class="foot-sub">Sistema Operacional · AGE OPS</div>
     </div>
     <div class="foot-center">
       <div class="foot-lbl">Proposta</div>
@@ -20068,7 +20098,7 @@ ${'<\/script>'}
 }
 
 /* ═══════════════════════════════════════════
-   CALCULADORA DE VIABILIDADE — Age Socials
+   CALCULADORA DE VIABILIDADE — AGE OPS
    Uso interno: não vai ao PDF do cliente
 ═══════════════════════════════════════════ */
 
@@ -21528,20 +21558,87 @@ async function deleteCfRow(id) {
 let _npsCampanhas = [];
 let _npsRespostas = [];
 
+const NPS_ETAPAS_FLUXO = [
+  '1. Reunião inicial / Alinhamento',
+  '2. Pós-briefing / Pré-produção',
+  '3. Gravação / Produção',
+  '4. Edição / Pós-produção',
+  '5. Entrega final / Aprovação',
+  '6. Avaliação geral do projeto'
+];
+
+function _npsCampanhaByToken(token) {
+  return _npsCampanhas.find(c => String(c.token) === String(token));
+}
+
+async function _fetchNpsRespostasScoped(campanhas) {
+  const tokens = (campanhas || []).map(c => c.token).filter(Boolean);
+  if(!tokens.length) return [];
+  try {
+    const enc = tokens.map(t => encodeURIComponent(String(t))).join(',');
+    const d = await apiGet('age_nps_respostas', `?token=in.(${enc})&limit=500&order=created_at.desc`);
+    return (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
+  } catch(e) {
+    console.warn('[fetchNpsRespostas]', e);
+    return [];
+  }
+}
+
 function gerarToken() {
   return 'nps-' + Math.random().toString(36).substr(2,9) + Date.now().toString(36);
 }
 
 function getNpsPageUrl(token) {
-  // URL da página pública de NPS
   const base = window.location.href.replace(/\/[^/]*$/, '/').replace('age-ops-v4.html','');
   return `${base}nps.html?t=${token}`;
+}
+
+function _npsWhatsAppMessage(url, etapa) {
+  const et = (etapa || 'sua experiência conosco').trim();
+  return (
+    'Olá! 👋\n\n' +
+    'Gostaríamos da sua avaliação sobre a etapa:\n' +
+    `*${et}*\n\n` +
+    'É rápida, anônima e nos ajuda muito a melhorar:\n' +
+    url +
+    '\n\nObrigado!'
+  );
+}
+
+function shareNpsWhatsApp(token) {
+  const url = getNpsPageUrl(token);
+  const camp = _npsCampanhaByToken(token);
+  const msg = _npsWhatsAppMessage(url, camp?.etapa);
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+}
+
+function showNpsLinkReadyModal(url, etapa) {
+  const inp = document.getElementById('npsLinkReadyText');
+  const etEl = document.getElementById('npsLinkReadyEtapa');
+  if(inp) inp.value = url;
+  if(etEl) etEl.textContent = etapa ? 'Etapa: ' + etapa : '';
+  window._npsLinkReadyUrl = url;
+  window._npsLinkReadyEtapa = etapa || '';
+  openModal('modalNpsLinkReady');
+}
+
+function copiarNpsLinkReady() {
+  const t = document.getElementById('npsLinkReadyText')?.value || window._npsLinkReadyUrl || '';
+  if(!t) return;
+  navigator.clipboard.writeText(t).then(() => toast('Link copiado!', 'ok')).catch(() => toast('Não foi possível copiar', 'err'));
+}
+
+function compartilharNpsLinkReadyWhatsApp() {
+  const url = document.getElementById('npsLinkReadyText')?.value || window._npsLinkReadyUrl || '';
+  if(!url) return;
+  const msg = _npsWhatsAppMessage(url, window._npsLinkReadyEtapa);
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
 }
 
 async function loadNps() {
   try {
     _npsCampanhas = await fetchAll('age_nps_campanhas', 200).catch(() => []);
-    _npsRespostas = await fetchAll('age_nps_respostas', 500).catch(() => []);
+    _npsRespostas = await _fetchNpsRespostasScoped(_npsCampanhas);
     renderNpsKpis();
     renderNpsInsights();
     renderNpsListas();
@@ -21581,23 +21678,48 @@ function renderNpsInsights() {
   if(!_npsRespostas.length) {
     el.innerHTML = `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;font-size:10px;color:#1e40af">
       <i class="fas fa-info-circle" style="margin-right:6px"></i>
-      Nenhuma resposta recebida ainda. Gere um link e envie para seus clientes avaliarem de forma anônima.
+      Nenhuma resposta recebida ainda. Gere um link por etapa (ou o kit completo) e envie ao cliente após cada fase do projeto.
     </div>`;
     return;
   }
+
+  const porEtapa = {};
+  NPS_ETAPAS_FLUXO.forEach(e => { porEtapa[e] = { n: 0, sum: 0 }; });
+  _npsRespostas.forEach(r => {
+    const et = r.etapa_avaliada || 'Outros';
+    if(!porEtapa[et]) porEtapa[et] = { n: 0, sum: 0 };
+    const nota = parseFloat(r.nota_geral) || 0;
+    if(nota > 0) { porEtapa[et].n++; porEtapa[et].sum += nota; }
+  });
+  const etapaRows = Object.entries(porEtapa)
+    .filter(([, v]) => v.n > 0)
+    .map(([et, v]) => {
+      const avg = (v.sum / v.n).toFixed(1);
+      const cor = avg >= 9 ? '#16a34a' : avg >= 7 ? '#d97706' : '#dc2626';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f8fafc;border-radius:6px;border-left:3px solid ${cor}">
+        <span style="font-size:10px;font-weight:600;color:#374151">${escHtml(et)}</span>
+        <span style="font-size:11px;font-weight:800;color:${cor}">${avg} ★ <span style="font-weight:500;color:#94a3b8">(${v.n})</span></span>
+      </div>`;
+    }).join('');
+
   const destaques = _npsRespostas.filter(r => r.ponto_positivo || r.comentario_livre).slice(0,3);
   el.innerHTML = `
+  ${etapaRows ? `<div class="panel" style="margin-bottom:10px">
+    <div class="panel-title"><i class="fas fa-chart-line"></i> MÉDIA POR ETAPA DO PROJETO</div>
+    <div style="display:flex;flex-direction:column;gap:6px">${etapaRows}</div>
+  </div>` : ''}
   <div class="panel" style="border:1px solid rgba(245,158,11,.2);background:linear-gradient(135deg,rgba(245,158,11,.03),#fff)">
-    <div class="panel-title" style="color:#d97706"><i class="fas fa-quote-left" style="color:#d97706"></i> DESTAQUES DAS RESPOSTAS — O que seus clientes disseram</div>
+    <div class="panel-title" style="color:#d97706"><i class="fas fa-quote-left" style="color:#d97706"></i> DESTAQUES — feedback anônimo dos clientes</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" class="responsive-3col">
       ${destaques.length ? destaques.map(r => {
         const nota = r.nota_geral || 0;
         const cor  = nota >= 9 ? '#16a34a' : nota >= 7 ? '#d97706' : '#dc2626';
         const texto = r.comentario_livre || r.ponto_positivo || '';
+        const camp = _npsCampanhaByToken(r.token);
         return `<div style="background:#f8fafc;border-radius:8px;padding:12px;border-left:3px solid ${cor}">
           <div style="font-size:18px;font-weight:900;color:${cor};font-family:var(--font-h);margin-bottom:6px">${nota}/10 ★</div>
           <div style="font-size:10px;color:#374151;line-height:1.6;font-style:italic">"${escHtml(texto.substring(0,150))}${texto.length>150?'…':''}"</div>
-          <div style="font-size:8px;color:#94a3b8;margin-top:6px">${r.etapa_avaliada || 'Avaliação geral'}</div>
+          <div style="font-size:8px;color:#94a3b8;margin-top:6px">${escHtml(r.etapa_avaliada || 'Geral')}${camp?.label_interno ? ' · ref. interna: '+escHtml(camp.label_interno.substring(0,40)) : ''}</div>
         </div>`;
       }).join('') : '<div style="font-size:10px;color:#94a3b8;grid-column:1/-1;padding:10px 0">Nenhum comentário ainda.</div>'}
     </div>
@@ -21618,8 +21740,9 @@ function renderNpsCampanhas() {
     return;
   }
   el.innerHTML = lista.map(c => {
-    const resps = _npsRespostas.filter(r => r.campanha_token === c.token).length;
+    const resps = _npsRespostas.filter(r => String(r.token) === String(c.token)).length;
     const url   = getNpsPageUrl(c.token);
+    const tokJs = String(c.token || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return `
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px 14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
@@ -21632,13 +21755,16 @@ function renderNpsCampanhas() {
           <span style="font-size:9px;font-weight:700;color:#2563eb">${resps} resp.</span>
         </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <input readonly value="${url}" style="flex:1;font-size:8px;padding:4px 6px;border:1px solid var(--bd);border-radius:4px;background:rgba(0,0,0,.04);color:var(--textsub)">
-        <button onclick="navigator.clipboard.writeText('${url}').then(()=>toast('Link copiado!'))"
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input readonly value="${url}" style="flex:1;min-width:140px;font-size:8px;padding:4px 6px;border:1px solid var(--bd);border-radius:4px;background:rgba(0,0,0,.04);color:var(--textsub)">
+        <button onclick="navigator.clipboard.writeText('${url.replace(/'/g, "\\'")}').then(()=>toast('Link copiado!'))"
           style="padding:4px 8px;font-size:9px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap">
           <i class="fas fa-copy"></i> Copiar
         </button>
-        ${c.ativo ? `<button onclick="encerrarCampanha('${c.id}')"
+        ${c.ativo ? `<button onclick="shareNpsWhatsApp('${tokJs}')"
+          style="padding:4px 8px;font-size:9px;background:#16a34a;color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap">
+          <i class="fab fa-whatsapp"></i> WhatsApp</button>` : ''}
+        ${c.ativo ? `<button onclick="encerrarCampanha('${String(c.id).replace(/'/g, "\\'")}')"
           style="padding:4px 8px;font-size:9px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;cursor:pointer">
           Encerrar</button>` : ''}
       </div>
@@ -21660,6 +21786,8 @@ function renderNpsRespostas() {
     const cor    = nota >= 9 ? '#16a34a' : nota >= 7 ? '#d97706' : '#dc2626';
     const label  = nota >= 9 ? 'PROMOTOR' : nota >= 7 ? 'NEUTRO' : 'DETRATOR';
     const dt     = r.respondido_em || r.created_at;
+    const camp   = _npsCampanhaByToken(r.token);
+    const refInt = camp?.label_interno ? `<span style="font-size:8px;color:#64748b;display:block;margin-top:2px"><i class="fas fa-lock" style="font-size:7px"></i> ${escHtml(camp.label_interno)}</span>` : '';
     return `
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;border-left:4px solid ${cor}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -21685,8 +21813,8 @@ function renderNpsRespostas() {
       ${r.ponto_melhoria ? `<div style="font-size:9px;color:#d97706;margin-bottom:3px"><b>△</b> ${escHtml(r.ponto_melhoria.substring(0,100))}</div>` : ''}
       ${r.comentario_livre ? `<div style="font-size:9px;color:#64748b;font-style:italic">"${escHtml(r.comentario_livre.substring(0,120))}…"</div>` : ''}
       <div style="display:flex;justify-content:space-between;margin-top:5px">
-        <span style="font-size:8px;color:#94a3b8">${escHtml(r.etapa_avaliada||'Geral')}</span>
-        <span style="font-size:8px;color:${r.indicaria?'#16a34a':'#dc2626'};font-weight:600">${r.indicaria?'✅ Indicaria':'❌ Não indicaria'}</span>
+        <span style="font-size:8px;color:#94a3b8">${escHtml(r.etapa_avaliada||'Geral')}${refInt}</span>
+        <span style="font-size:8px;color:${r.indicaria?'#16a34a':'#dc2626'};font-weight:600">${r.indicaria===true?'✅ Indicaria':r.indicaria===false?'❌ Não indicaria':'—'}</span>
       </div>
     </div>`;
   }).join('');
@@ -21694,7 +21822,29 @@ function renderNpsRespostas() {
 
 function openNpsCampanhaModal() {
   const modal = document.getElementById('modalNpsCampanha');
+  const et = document.getElementById('npsEtapa');
+  const lb = document.getElementById('npsLabelInterno');
+  const ex = document.getElementById('npsExpiracao');
+  if(et) et.value = '';
+  if(lb) lb.value = '';
+  if(ex) ex.value = '';
   if(modal) modal.classList.add('open');
+}
+
+async function _criarCampanhaNps(etapa, label, expira) {
+  const token = gerarToken();
+  const payload = {
+    token,
+    etapa,
+    label_interno: label,
+    ativo: true,
+    criado_por: currentUser?.name || currentUser?.username || 'Equipe',
+    data_criacao: new Date().toISOString(),
+    data_expiracao: expira || null,
+    respostas_count: 0,
+  };
+  await apiPost('age_nps_campanhas', payload);
+  return { token, url: getNpsPageUrl(token) };
 }
 
 async function gerarNpsLink() {
@@ -21702,28 +21852,36 @@ async function gerarNpsLink() {
   const label   = document.getElementById('npsLabelInterno').value.trim();
   const expira  = document.getElementById('npsExpiracao').value;
   if(!etapa) { toast('Selecione a etapa a avaliar','err'); return; }
-  const token   = gerarToken();
-  const payload = {
-    token,
-    etapa,
-    label_interno: label,
-    ativo: true,
-    criado_por: currentUser?.name || 'Equipe',
-    data_criacao: new Date().toISOString(),
-    data_expiracao: expira || null,
-    respostas_count: 0,
-  };
   try {
-    await apiPost('age_nps_campanhas', payload);
+    const { url } = await _criarCampanhaNps(etapa, label, expira || null);
     closeModal('modalNpsCampanha');
-    toast('Link gerado! Copiando…');
     await loadNps();
-    // Auto-copiar o link
-    setTimeout(() => {
-      const url = getNpsPageUrl(token);
-      navigator.clipboard.writeText(url).then(() => toast('Link copiado para a área de transferência!'));
-    }, 500);
-  } catch(e) { toast('Erro ao gerar link','err'); }
+    showNpsLinkReadyModal(url, etapa);
+  } catch(e) { toast('Erro ao gerar link: ' + (e.message || e), 'err'); }
+}
+
+async function gerarNpsKitCompleto() {
+  const label = document.getElementById('npsLabelInterno').value.trim();
+  const expira = document.getElementById('npsExpiracao').value;
+  if(!label) {
+    toast('Preencha a identificação interna (ex.: Cliente X — Projeto Y)','err');
+    return;
+  }
+  if(!confirm(`Gerar 6 links (reunião → entrega) para "${label}"?`)) return;
+  try {
+    const urls = [];
+    for(const etapa of NPS_ETAPAS_FLUXO) {
+      const { url } = await _criarCampanhaNps(etapa, label, expira || null);
+      urls.push(`${etapa}\n${url}`);
+    }
+    closeModal('modalNpsCampanha');
+    await loadNps();
+    const bloco = urls.join('\n\n');
+    await navigator.clipboard.writeText(bloco);
+    toast('Kit completo: 6 links copiados! Envie cada um na etapa correspondente.', 'ok');
+  } catch(e) {
+    toast('Erro ao gerar kit: ' + (e.message || e), 'err');
+  }
 }
 
 async function encerrarCampanha(id) {
@@ -27044,6 +27202,7 @@ function relPDF(id) {
   const r = _relCache.find(x => String(x.id) === String(id));
   if(!r) { toast('Relatório não encontrado','err'); return; }
 
+  const relMarca = escHtml((currentUser?.company_name || '').trim() || 'AGE OPS');
   const mesLabel = _MESES_FULL[(r.mes||1)-1]||'';
   const margem   = r.fat > 0 ? Math.round((r.fat - r.cost) / r.fat * 100) : 0;
   const lucro    = (r.fat||0) - (r.cost||0);
@@ -27063,7 +27222,7 @@ function relPDF(id) {
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Relatório — ${escHtml(r.projeto)} · Age Socials</title>
+<title>Relatório — ${escHtml(r.projeto)} · ${relMarca}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:#fff;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;line-height:1.4}
@@ -27116,8 +27275,8 @@ html,body{background:#fff;font-family:Arial,Helvetica,sans-serif;font-size:12px;
 
   <div class="hd">
     <div>
-      <div class="brand">Age Socials</div>
-      <div class="brand-sub">Relatório de Projeto · 2026</div>
+      <div class="brand">${relMarca}</div>
+      <div class="brand-sub">Relatório de Projeto · AGE OPS · 2026</div>
     </div>
     <div class="hd-right">
       <div class="hd-lbl">Período</div>
@@ -27158,7 +27317,7 @@ html,body{background:#fff;font-family:Arial,Helvetica,sans-serif;font-size:12px;
   </div>
 
   <div class="ft">
-    <span>Age Socials — Documento interno</span>
+    <span>${relMarca} — Documento interno · AGE OPS</span>
     <span>${escHtml(r.cliente)} · ${escHtml(r.projeto)}</span>
     <span>Gerado em ${new Date().toLocaleDateString('pt-BR')}</span>
   </div>
@@ -27186,6 +27345,7 @@ ${'<\/script>'}
 /* ─── EXPORTAR TODOS (consolidado) ─── */
 function relExportAll() {
   if(!_relCache.length){ toast('Nenhum relatório para exportar','err'); return; }
+  const relMarca = escHtml((currentUser?.company_name || '').trim() || 'AGE OPS');
   const totalFat   = _relCache.reduce((s,r)=>s+(r.fat||0),0);
   const totalLucro = _relCache.reduce((s,r)=>s+(r.fat||0)-(r.cost||0),0);
   const npsArr     = _relCache.filter(r=>r.nps>0);
@@ -27208,7 +27368,7 @@ function relExportAll() {
   }).join('');
 
   const doc = `<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatórios Consolidados — Age Socials 2026</title>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatórios Consolidados — ${relMarca} · AGE OPS 2026</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Arial,sans-serif;color:#111;background:#fff;font-size:11px}
@@ -27229,7 +27389,7 @@ th{background:#f8fafc;padding:8px 10px;font-size:8px;text-transform:uppercase;le
 </style></head>
 <body style="display:flex;flex-direction:column;min-height:100vh">
 <div class="hd">
-  <div><div class="brand">Age Socials</div><div class="brand-sub">Consolidado de Relatórios · 2026</div></div>
+  <div><div class="brand">${relMarca}</div><div class="brand-sub">Consolidado de Relatórios · AGE OPS · 2026</div></div>
   <div class="hd-r">Gerado em ${new Date().toLocaleDateString('pt-BR')}<br>${_relCache.length} projetos analisados</div>
 </div>
 <div class="kpis">
@@ -27247,7 +27407,7 @@ th{background:#f8fafc;padding:8px 10px;font-size:8px;text-transform:uppercase;le
   <tbody>${rows}</tbody>
 </table>
 <div class="ft">
-  <span>Age Socials — Documento interno</span>
+  <span>${relMarca} — Documento interno · AGE OPS</span>
   <span>Meta anual: R$ 300.000 · Realizado: ${fmtBRL(totalFat)}</span>
 </div>
 <div class="no-print">
@@ -27282,7 +27442,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 /* ╔═══════════════════════════════════════════════════════════════╗
-   ║           PIPELINE KANBAN — Age Socials                       ║
+   ║           PIPELINE KANBAN — AGE OPS                       ║
    ║  Funcionalidades:                                             ║
    ║  • Kanban com 4 colunas + coluna Perdidos                    ║
    ║  • Drag-and-drop entre colunas                               ║
