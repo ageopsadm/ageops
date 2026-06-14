@@ -95,7 +95,7 @@
   .hero {
     min-height: 100vh;
     display: flex; flex-direction: column; justify-content: center;
-    padding-top: 90px;
+    padding-top: 48px;
   }
   .hero-grid {
     position: absolute; top: 0; right: 0; width: 55%; height: 100%;
@@ -205,6 +205,14 @@
   .plan-card { border: 1px solid var(--gray-border); padding: 32px 28px; background: var(--white); display: flex; flex-direction: column; }
   .plan-card-featured { border: 2px solid var(--black); }
   .plan-badge { font-family: var(--font-h); font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fff; background: var(--black); padding: 4px 10px; display: inline-block; margin-bottom: 20px; align-self: flex-start; }
+  .plan-badge-beta { background: transparent; color: var(--black); border: 1px solid var(--black); }
+  .plan-save { font-family: var(--font-h); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--black); border: 1px solid var(--gray-border); padding: 4px 8px; display: inline-block; margin-bottom: 16px; align-self: flex-start; }
+  .beta-strip {
+    background: var(--black); color: rgba(255,255,255,0.75); text-align: center;
+    padding: 12px 20px; font-family: var(--font-b); font-size: 14px;
+    margin-top: 58px; position: relative; z-index: 9998;
+  }
+  .beta-strip a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
   .plan-name { font-family: var(--font-h); font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--black); margin-bottom: 8px; }
   .plan-desc { font-family: var(--font-b); font-size: 12px; color: var(--gray-text); margin-bottom: 24px; line-height: 1.4; }
   .plan-price-old { font-family: var(--font-b); font-size: 12px; color: #aaa; text-decoration: line-through; margin-bottom: 4px; }
@@ -270,11 +278,17 @@
     <a href="#solucao">Solução</a>
     <a href="#comparativo">Comparativo</a>
     <a href="#planos">Planos</a>
+    <a href="beta-desenvolvedor.html">Beta</a>
   </div>
   <div class="topbar-actions">
     <a href="age-ops-v4.html" class="btn-auth btn-signup">Entrar<span class="lbl-full"> na sua conta</span></a>
   </div>
 </nav>
+
+<div class="beta-strip">
+  🚀 <strong>Beta aberta:</strong> 7 dias grátis sem cartão · +23 dias ao cadastrar cartão · planos a partir de <strong>R$49,90/mês</strong>.
+  <a href="beta-desenvolvedor.html">Saiba como entrar →</a>
+</div>
 
 <!-- ══════════ HERO ══════════ -->
 <section class="section section-dark hero" id="hero">
@@ -393,7 +407,7 @@
         <tr><td>ChatGPT Plus / Claude</td><td>Análise inteligente dos dados do negócio</td><td class="price-col">R$100 – R$200</td><td class="check">✓</td></tr>
         <tr><td>Monday / Asana / Trello</td><td>Pipeline, kanban, tarefas da equipe</td><td class="price-col">R$60 – R$200</td><td class="check">✓</td></tr>
         <tr><td>Planilha de fechamento</td><td>Fechamento financeiro por projeto</td><td class="price-col">Tempo = dinheiro</td><td class="check">✓</td></tr>
-        <tr class="highlight-row"><td>Total separado</td><td>Fragmentado, sem integração</td><td class="price-col">R$349 – R$849/mês</td><td style="font-family:var(--font-h);font-size:12px;font-weight:900;color:var(--black)">R$147</td></tr>
+        <tr class="highlight-row"><td>Total separado</td><td>Fragmentado, sem integração</td><td class="price-col">R$349 – R$849/mês</td><td style="font-family:var(--font-h);font-size:12px;font-weight:900;color:var(--black)">a partir de R$49,90</td></tr>
       </tbody>
     </table>
     <div class="quote-box">
@@ -409,16 +423,18 @@
     <div class="section-title">ESCOLHA SEU PLANO</div>
     <div class="sep"></div>
     <div style="font-family:var(--font-b);font-size:14px;color:var(--gray-text);margin-bottom:6px">
-      ⚡ <strong>Plano Fundador:</strong> primeiras 100 vagas com desconto vitalício. Todos os planos começam com <strong>7 dias grátis</strong>.
+      🚀 <strong>Programa Beta:</strong> 7 dias grátis sem cartão + 23 dias extras ao cadastrar cartão. Preços especiais de usuário desenvolvedor. <a href="beta-desenvolvedor.html" style="color:var(--black);font-weight:600;text-decoration:underline;text-underline-offset:3px">Ver detalhes →</a>
     </div>
     <div class="plans-grid">
 
       <div class="plan-card">
-        <div class="plan-name">SOLO</div>
-        <div class="plan-desc">Freelancer e produtor solo. Tudo para profissionalizar a operação.</div>
+        <span class="plan-badge plan-badge-beta">Usuário dev</span>
+        <div class="plan-name">Freelancer</div>
+        <div class="plan-desc">Produtor solo. Tudo para profissionalizar a operação.</div>
         <div class="plan-price-old">R$147/mês</div>
-        <div class="plan-price">R$97</div>
-        <div class="plan-period">/mês · vitalício para fundadores</div>
+        <div class="plan-price">R$49,90</div>
+        <div class="plan-period">/mês · preço beta · 7 dias grátis sem cartão</div>
+        <span class="plan-save">−66% vs. oficial</span>
         <div class="plan-divider"></div>
         <ul class="plan-features">
           <li><span class="ok">✓</span> Dashboard & KPIs</li>
@@ -438,8 +454,9 @@
         <div class="plan-name">PRODUTORA</div>
         <div class="plan-desc">Produtoras em crescimento com equipe. Operação completa com até 5 colaboradores.</div>
         <div class="plan-price-old">R$297/mês</div>
-        <div class="plan-price">R$197</div>
-        <div class="plan-period">/mês · vitalício para fundadores</div>
+        <div class="plan-price">R$99,90</div>
+        <div class="plan-period">/mês · preço beta · 7 dias grátis sem cartão</div>
+        <span class="plan-save">−66% vs. oficial</span>
         <div class="plan-divider"></div>
         <ul class="plan-features">
           <li><span class="ok">✓</span> Tudo do Solo</li>
@@ -454,11 +471,13 @@
       </div>
 
       <div class="plan-card">
+        <span class="plan-badge plan-badge-beta">Usuário dev</span>
         <div class="plan-name">AGÊNCIA</div>
         <div class="plan-desc">Agências completas. Sem limites, com histórico total e inteligência de dados.</div>
         <div class="plan-price-old">R$597/mês</div>
-        <div class="plan-price">R$397</div>
-        <div class="plan-period">/mês · vitalício para fundadores</div>
+        <div class="plan-price">R$199,90</div>
+        <div class="plan-period">/mês · preço beta · 7 dias grátis sem cartão</div>
+        <span class="plan-save">−66% vs. oficial</span>
         <div class="plan-divider"></div>
         <ul class="plan-features">
           <li><span class="ok">✓</span> Tudo do Produtora</li>
@@ -490,7 +509,7 @@
     </div>
     <div class="referral-flow">
       <div class="ref-step"><div class="ref-icon">01</div><div class="ref-label">Compartilhe</div><div class="ref-desc">Envie seu link único para amigos do nicho</div></div>
-      <div class="ref-step"><div class="ref-icon">02</div><div class="ref-label">Eles testam</div><div class="ref-desc">Cadastro com 7 dias grátis pelo seu link</div></div>
+      <div class="ref-step"><div class="ref-icon">02</div><div class="ref-label">Eles testam</div><div class="ref-desc">7 dias grátis sem cartão pelo seu link</div></div>
       <div class="ref-step"><div class="ref-icon">03</div><div class="ref-label">Convertem</div><div class="ref-desc">Eles assinam e você acumula indicações</div></div>
       <div class="ref-step"><div class="ref-icon">04</div><div class="ref-label">Você ganha</div><div class="ref-desc">Benefícios automáticos, sem burocracia</div></div>
     </div>
@@ -505,8 +524,8 @@
     <div class="sep"></div>
     <div class="faq-grid">
       <div class="faq-card">
-        <div class="faq-q">"R$147 é caro pra mim agora."</div>
-        <div class="faq-a">Um orçamento mal feito custa R$500 a R$5.000. Um projeto sem contrato pode custar até R$50k. O Age Ops se paga no primeiro mês — e como fundador você paga R$97.</div>
+        <div class="faq-q">"O que é usuário desenvolvedor?"</div>
+        <div class="faq-a">Quem entra na beta agora: usa o app real, manda feedback e paga preços especiais (R$49,90 / R$99,90 / R$199,90) travados enquanto a assinatura estiver ativa — mesmo depois do lançamento oficial.</div>
       </div>
       <div class="faq-card">
         <div class="faq-q">"Já uso planilha e funciona."</div>
@@ -530,7 +549,7 @@
   <div class="inner" style="position:relative;z-index:2">
     <div class="section-label section-label-white" style="justify-content:center">Próximo passo</div>
     <div class="cta-title">ENTRE NO COCKPIT</div>
-    <div class="cta-sub">7 dias grátis. Sem cartão para começar. O mercado audiovisual brasileiro está esperando por isso.</div>
+    <div class="cta-sub">7 dias grátis sem cartão. Cadastre o cartão depois e ganhe +23 dias de teste antes da cobrança.</div>
     <div class="hero-cta" style="justify-content:center">
       <a href="age-ops-v4.html?signup=1" class="btn-cta btn-cta-primary">Criar minha conta →</a>
       <a href="age-ops-v4.html" class="btn-cta btn-cta-ghost">Já tenho conta</a>
@@ -543,6 +562,7 @@
 <footer class="footer">
   <div class="footer-logo">AGE OPS</div>
   <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+    <a href="beta-desenvolvedor.html" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Beta</a>
     <a href="age-ops-v4.html" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Entrar</a>
     <a href="age-ops-v4.html?signup=1" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Criar conta</a>
     <small>© 2026 AGE OPS · Sistema Operacional</small>

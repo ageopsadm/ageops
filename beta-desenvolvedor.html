@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGE OPS — Programa Beta · Usuário Desenvolvedor</title>
+<meta name="description" content="Entre na beta do Age Ops, ajude a lapidar as ferramentas e garanta preços especiais de usuário desenvolvedor: a partir de R$49,90/mês.">
+<link rel="icon" type="image/png" href="favicon.png?v=5" />
+<link rel="shortcut icon" href="favicon.ico?v=5" />
+<meta name="theme-color" content="#111111" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #111111; --white: #ffffff; --gray-light: #f5f5f5; --gray-mid: #eeeeee;
+    --gray-text: #666666; --gray-border: rgba(0,0,0,0.1);
+    --font-h: 'Orbitron', sans-serif; --font-b: 'Rajdhani', sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-b); background: #fff; color: var(--black); font-size: 15px; line-height: 1.6; }
+  a { text-decoration: none; color: inherit; }
+
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--gray-border);
+    padding: 14px 40px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-logo { font-family: var(--font-h); font-size: 16px; font-weight: 900; letter-spacing: 4px; }
+  .topbar-nav { display: flex; gap: 24px; align-items: center; }
+  .topbar-nav a { font-family: var(--font-h); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; color: var(--gray-text); text-transform: uppercase; }
+  .topbar-nav a:hover { color: var(--black); }
+  .btn-auth { font-family: var(--font-h); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 10px 20px; border: 1px solid var(--black); background: var(--black); color: #fff; }
+  .btn-auth:hover { background: #333; }
+
+  .section { padding: 110px 80px; position: relative; overflow: hidden; }
+  .section-dark { background: var(--black); color: #fff; }
+  .section-light { background: #fff; }
+  .section-gray { background: var(--gray-mid); }
+  .inner { max-width: 1180px; margin: 0 auto; }
+
+  .hero { min-height: 85vh; display: flex; align-items: center; padding-top: 80px; }
+  .hero-grid {
+    position: absolute; top: 0; right: 0; width: 55%; height: 100%;
+    background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none;
+  }
+  .beta-pill {
+    display: inline-block; font-family: var(--font-h); font-size: 9px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; padding: 8px 16px; margin-bottom: 28px;
+    border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.7);
+  }
+  .hero-title { font-family: var(--font-h); font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: 3px; text-transform: uppercase; line-height: 1.15; margin-bottom: 20px; max-width: 720px; }
+  .hero-sub { font-family: var(--font-b); font-size: clamp(17px, 2.5vw, 21px); color: rgba(255,255,255,0.65); max-width: 620px; line-height: 1.65; margin-bottom: 40px; }
+  .hero-sub strong { color: #fff; }
+
+  .btn-cta { font-family: var(--font-h); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 16px 36px; display: inline-flex; align-items: center; gap: 10px; transition: all .2s; }
+  .btn-cta-primary { background: #fff; color: var(--black); border: 1px solid #fff; }
+  .btn-cta-primary:hover { background: rgba(255,255,255,0.85); }
+  .btn-cta-ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+  .btn-cta-ghost:hover { background: rgba(255,255,255,0.06); }
+  .hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .section-label { font-family: var(--font-h); font-size: 9px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--gray-text); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+  .section-label::before { content: ''; width: 20px; height: 1px; background: var(--gray-text); }
+  .section-label-white { color: rgba(255,255,255,0.4); }
+  .section-label-white::before { background: rgba(255,255,255,0.4); }
+  .section-title { font-family: var(--font-h); font-size: clamp(24px, 4vw, 34px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 20px; }
+  .sep { width: 40px; height: 2px; background: var(--black); margin: 20px 0; }
+  .sep-white { background: rgba(255,255,255,0.2); }
+  .section-body { font-size: 17px; color: var(--gray-text); max-width: 640px; line-height: 1.7; }
+  .section-body-white { color: rgba(255,255,255,0.6); }
+
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+  .step-card { border: 1px solid var(--gray-border); padding: 28px 24px; background: #fff; }
+  .step-num { font-family: var(--font-h); font-size: 28px; font-weight: 900; color: rgba(0,0,0,0.12); margin-bottom: 10px; }
+  .step-title { font-family: var(--font-h); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+  .step-desc { font-size: 14px; color: var(--gray-text); line-height: 1.55; }
+
+  .benefits { list-style: none; margin-top: 28px; display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
+  .benefits li { font-size: 16px; color: rgba(255,255,255,0.65); display: flex; gap: 12px; align-items: flex-start; }
+  .benefits li::before { content: '—'; color: rgba(255,255,255,0.35); font-weight: 700; flex-shrink: 0; }
+
+  .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+  .plan-card { border: 1px solid var(--gray-border); padding: 32px 28px; background: #fff; display: flex; flex-direction: column; }
+  .plan-card-featured { border: 2px solid var(--black); }
+  .plan-badge { font-family: var(--font-h); font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fff; background: var(--black); padding: 4px 10px; display: inline-block; margin-bottom: 16px; align-self: flex-start; }
+  .plan-badge-beta { background: #fff; color: var(--black); border: 1px solid var(--black); }
+  .plan-name { font-family: var(--font-h); font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+  .plan-desc { font-size: 12px; color: var(--gray-text); margin-bottom: 20px; line-height: 1.4; }
+  .plan-price-old { font-size: 12px; color: #aaa; text-decoration: line-through; margin-bottom: 4px; }
+  .plan-price { font-family: var(--font-h); font-size: 32px; font-weight: 900; letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
+  .plan-period { font-size: 11px; color: var(--gray-text); margin-bottom: 20px; }
+  .plan-save { font-family: var(--font-h); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--black); border: 1px solid var(--black); padding: 4px 8px; display: inline-block; margin-bottom: 20px; align-self: flex-start; }
+  .plan-divider { height: 1px; background: var(--gray-border); margin-bottom: 18px; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; flex: 1; font-size: 13px; color: var(--gray-text); }
+  .plan-features li .ok { color: var(--black); font-weight: 700; margin-right: 6px; }
+  .plan-btn { font-family: var(--font-h); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 14px; text-align: center; border: 1px solid var(--black); background: transparent; color: var(--black); transition: all .2s; }
+  .plan-btn:hover { background: var(--black); color: #fff; }
+  .plan-btn-featured { background: var(--black); color: #fff; }
+  .plan-btn-featured:hover { background: #333; }
+
+  .notice-box { margin-top: 32px; border: 1px solid var(--gray-border); padding: 24px 28px; background: var(--gray-light); max-width: 720px; }
+  .notice-box p { font-size: 15px; color: var(--gray-text); line-height: 1.65; }
+  .notice-box strong { color: var(--black); }
+
+  .final-cta { text-align: center; }
+  .cta-title { font-family: var(--font-h); font-size: clamp(28px, 4vw, 40px); font-weight: 900; letter-spacing: 3px; margin-bottom: 16px; }
+  .cta-sub { font-size: 18px; color: rgba(255,255,255,0.5); max-width: 520px; margin: 0 auto 40px; line-height: 1.6; }
+
+  .footer { background: var(--black); color: rgba(255,255,255,0.4); padding: 36px 80px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .footer-logo { font-family: var(--font-h); font-size: 13px; font-weight: 900; letter-spacing: 3px; color: #fff; }
+  .footer a { font-family: var(--font-h); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+
+  @media (max-width: 900px) {
+    .topbar, .footer { padding-left: 18px; padding-right: 18px; }
+    .section { padding: 80px 22px; }
+    .topbar-nav { display: none; }
+    .steps-grid, .plans-grid { grid-template-columns: 1fr; }
+    .btn-auth .lbl-full { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="/" class="topbar-logo">AGE OPS</a>
+  <div class="topbar-nav">
+    <a href="/">Início</a>
+    <a href="#como-funciona">Como funciona</a>
+    <a href="#planos-beta">Planos beta</a>
+  </div>
+  <a href="age-ops-v4.html" class="btn-auth">Entrar<span class="lbl-full"> na conta</span></a>
+</nav>
+
+<section class="section section-dark hero">
+  <div class="hero-grid"></div>
+  <div class="inner" style="position:relative;z-index:2">
+    <div class="beta-pill">Programa beta · Usuário desenvolvedor</div>
+    <h1 class="hero-title">Entre agora.<br>Lapide o sistema.<br>Pague menos.</h1>
+    <p class="hero-sub">
+      O Age Ops está em <strong>beta pública</strong>. Cadastre-se, use 7 dias grátis <strong>sem cartão</strong>, ajude a lapidar o sistema e garanta preço especial de usuário desenvolvedor — com <strong>+23 dias de teste</strong> ao cadastrar o cartão.
+    </p>
+    <div class="hero-cta">
+      <a href="age-ops-v4.html?signup=1" class="btn-cta btn-cta-primary">Quero entrar na beta →</a>
+      <a href="#planos-beta" class="btn-cta btn-cta-ghost">Ver preços especiais</a>
+    </div>
+  </div>
+</section>
+
+<section class="section section-light" id="como-funciona">
+  <div class="inner">
+    <div class="section-label">Como funciona</div>
+    <div class="section-title">VOCÊ AJUDA A CONSTRUIR</div>
+    <div class="sep"></div>
+    <div class="section-body">
+      Não é um teste fake. É o sistema operacional real rodando na sua produtora ou agência — com acesso antecipado, canal direto de feedback e um desconto exclusivo por entrar enquanto ainda estamos lapidando cada módulo.
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Cadastre-se na beta</div>
+        <div class="step-desc">Crie sua conta e use 7 dias grátis sem cartão. Escolha o plano beta depois, se quiser.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Use no dia a dia</div>
+        <div class="step-desc">Projetos, orçamentos, pipeline, fechamento — tudo integrado. Quanto mais você usa, melhor fica.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">Dê feedback</div>
+        <div class="step-desc">Bug, ideia, fluxo confuso? Seu retorno entra direto no roadmap. Você molda a ferramenta com a gente.</div>
+      </div>
+    </div>
+    <div class="notice-box">
+      <p><strong>Preço travado na beta:</strong> quem assinar como usuário desenvolvedor mantém o valor especial enquanto a assinatura estiver ativa. Quando sairmos da beta, novos clientes pagarão os preços oficiais — você não.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark">
+  <div class="inner">
+    <div class="section-label section-label-white">Benefícios</div>
+    <div class="section-title" style="color:#fff">O QUE VOCÊ GANHA</div>
+    <div class="sep sep-white"></div>
+    <ul class="benefits">
+      <li>Acesso completo ao Age Ops durante a fase beta</li>
+      <li>Preço de usuário desenvolvedor — até 66% abaixo do valor oficial</li>
+      <li>7 dias grátis sem cartão para testar tudo</li>
+      <li>+23 dias de teste ao cadastrar cartão (após o 7º dia)</li>
+      <li>Influência real no produto: suas dores viram features</li>
+      <li>Suporte prioritário para quem está construindo junto</li>
+      <li>Valor especial garantido enquanto sua assinatura estiver ativa</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section section-gray" id="planos-beta">
+  <div class="inner">
+    <div class="section-label">Planos beta</div>
+    <div class="section-title">PREÇOS USUÁRIO DESENVOLVEDOR</div>
+    <div class="sep"></div>
+    <div class="section-body" style="margin-bottom:8px">
+      Valores exclusivos para quem entrar <strong>agora</strong>, enquanto o app e o site estão em beta. Preços oficiais após o lançamento público.
+    </div>
+    <div class="plans-grid">
+
+      <div class="plan-card">
+        <span class="plan-badge plan-badge-beta">Usuário dev</span>
+        <div class="plan-name">Freelancer</div>
+        <div class="plan-desc">Produtor solo ou freelancer que quer profissionalizar a operação.</div>
+        <div class="plan-price-old">R$147/mês oficial</div>
+        <div class="plan-price">R$49,90</div>
+        <div class="plan-period">/mês · beta · 7 dias grátis sem cartão</div>
+        <span class="plan-save">Economia de 66%</span>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="ok">✓</span> Dashboard, projetos e pipeline</li>
+          <li><span class="ok">✓</span> Orçamentos em PDF</li>
+          <li><span class="ok">✓</span> Clientes, contratos e fechamento</li>
+          <li><span class="ok">✓</span> 1 colaborador incluso</li>
+          <li><span class="ok">✓</span> 7 dias grátis sem cartão</li>
+          <li><span class="ok">✓</span> +23 dias ao cadastrar cartão</li>
+        </ul>
+        <a href="age-ops-v4.html?signup=1" class="plan-btn">Entrar na beta</a>
+      </div>
+
+      <div class="plan-card plan-card-featured">
+        <span class="plan-badge">Mais popular</span>
+        <div class="plan-name">Produtora</div>
+        <div class="plan-desc">Produtoras com equipe — operação completa com colaboradores.</div>
+        <div class="plan-price-old">R$297/mês oficial</div>
+        <div class="plan-price">R$99,90</div>
+        <div class="plan-period">/mês · beta · 7 dias grátis sem cartão</div>
+        <span class="plan-save">Economia de 66%</span>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="ok">✓</span> Tudo do Freelancer</li>
+          <li><span class="ok">✓</span> NPS e equipe com permissões</li>
+          <li><span class="ok">✓</span> Tarefas e cronograma corporativo</li>
+          <li><span class="ok">✓</span> Até 5 colaboradores</li>
+          <li><span class="ok">✓</span> 7 dias grátis sem cartão</li>
+          <li><span class="ok">✓</span> +23 dias ao cadastrar cartão</li>
+        </ul>
+        <a href="age-ops-v4.html?signup=1" class="plan-btn plan-btn-featured">Entrar na beta</a>
+      </div>
+
+      <div class="plan-card">
+        <span class="plan-badge plan-badge-beta">Usuário dev</span>
+        <div class="plan-name">Agência</div>
+        <div class="plan-desc">Agências completas — histórico, relatórios e IA sem limites.</div>
+        <div class="plan-price-old">R$597/mês oficial</div>
+        <div class="plan-price">R$199,90</div>
+        <div class="plan-period">/mês · beta · 7 dias grátis sem cartão</div>
+        <span class="plan-save">Economia de 66%</span>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="ok">✓</span> Tudo do Produtora</li>
+          <li><span class="ok">✓</span> Colaboradores ilimitados</li>
+          <li><span class="ok">✓</span> Histórico 2021–2026</li>
+          <li><span class="ok">✓</span> Relatórios e IA completa</li>
+          <li><span class="ok">✓</span> 7 dias grátis sem cartão</li>
+          <li><span class="ok">✓</span> +23 dias ao cadastrar cartão</li>
+        </ul>
+        <a href="age-ops-v4.html?signup=1" class="plan-btn">Entrar na beta</a>
+      </div>
+
+    </div>
+    <div class="notice-box" style="margin-top:28px">
+      <p>Os valores acima são exclusivos do <strong>Programa Usuário Desenvolvedor</strong>. Trial: <strong>7 dias grátis sem cartão</strong> + <strong>23 dias extras</strong> ao cadastrar cartão. Após a beta, planos oficiais: R$147, R$297 e R$597/mês.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark final-cta">
+  <div class="hero-grid"></div>
+  <div class="inner" style="position:relative;z-index:2">
+    <div class="section-label section-label-white" style="justify-content:center">Próximo passo</div>
+    <div class="cta-title">SEJA UM DOS PRIMEIROS</div>
+    <p class="cta-sub">7 dias grátis sem cartão. Cadastre o cartão depois e ganhe +23 dias antes da primeira cobrança.</p>
+    <div class="hero-cta" style="justify-content:center">
+      <a href="age-ops-v4.html?signup=1" class="btn-cta btn-cta-primary">Criar conta na beta →</a>
+      <a href="/" class="btn-cta btn-cta-ghost">Voltar ao site</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-logo">AGE OPS</div>
+  <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+    <a href="/">Início</a>
+    <a href="age-ops-v4.html">Entrar</a>
+    <a href="age-ops-v4.html?signup=1">Cadastro beta</a>
+    <small style="font-family:var(--font-h);font-size:9px;letter-spacing:2px;text-transform:uppercase">© 2026 AGE OPS · Beta</small>
+  </div>
+</footer>
+
+</body>
+</html>

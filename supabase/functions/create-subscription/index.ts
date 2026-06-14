@@ -12,7 +12,8 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
-    const { card_hash, plan_id, customer, username: _username, company_id: _company_id } = await req.json()
+    const body = await req.json()
+    const { card_hash, plan_id, customer, username: _username, company_id: _company_id, trial_days: trialDaysRaw } = body
 
     if (!card_hash || !plan_id) {
       return new Response(JSON.stringify({ error: 'card_hash e plan_id são obrigatórios.' }), {
@@ -41,7 +42,8 @@ serve(async (req) => {
       })
     }
 
-    // Criar assinatura com trial 7 dias (planos já criados com trial_days: 7)
+    // Assinatura: trial de 23 dias após cadastro do cartão (7 dias grátis sem cartão vêm antes, no app)
+    const trialDays = Math.min(365, Math.max(1, parseInt(String(trialDaysRaw ?? 23), 10) || 23))
     const subResp = await fetch('https://api.pagar.me/1/subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,7 +52,7 @@ serve(async (req) => {
         plan_id: plan_id,
         card_hash: card_hash,
         customer_id: cust.id,
-        trial_days: 7,
+        trial_days: trialDays,
         postback_url: 'https://wiiewucszdbbcxzivnyo.supabase.co/functions/v1/pagarme-webhook',
       }),
     })

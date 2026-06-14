@@ -2608,8 +2608,9 @@ body:has(#login-screen.visible){
         <h2 class="reg-step-title">Conta criada com sucesso! 🎉</h2>
         <p class="reg-step-sub">Suas informações foram registradas com segurança.</p>
         <div class="reg-summary" id="regSummaryBox"></div>
-        <div class="reg-trial-note"><strong>Próximo passo:</strong> escolha seu plano com <strong>7 dias grátis</strong>. Sem cobrança no cadastro.</div>
-        <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="showPostSignupPlans()">Escolher meu plano <i class="fas fa-arrow-right"></i></button>
+        <div class="reg-trial-note"><strong>7 dias grátis</strong> para usar tudo, <strong>sem cartão</strong>. Depois, cadastre o cartão e ganhe <strong>+23 dias</strong> de teste antes da primeira cobrança.</div>
+        <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="enterAppFreeTrialNoCard()">Entrar no Age Ops <i class="fas fa-arrow-right"></i></button>
+        <button type="button" onclick="showPostSignupPlans()" style="display:block;width:100%;margin-top:12px;background:none;border:none;color:#64748b;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">Ver planos e escolher agora</button>
       </div>
     </div>
 
@@ -2620,7 +2621,7 @@ body:has(#login-screen.visible){
       <div class="plans-overlay-inner">
         <div class="plans-header">
           <h1 id="plansWelcomeTitle">Bem-vindo</h1>
-          <p>Escolha o plano. Sete dias de trial; cobrança só após o período.</p>
+          <p>7 dias grátis sem cartão. Cadastre o cartão depois e ganhe +23 dias de teste.</p>
           <div class="plans-toggle" role="tablist">
             <button type="button" id="planBillMonthly" class="active" onclick="setPlanBillingToggle('monthly')">Mensal</button>
             <button type="button" id="planBillYearly" onclick="setPlanBillingToggle('yearly')">Anual</button>
@@ -2636,12 +2637,13 @@ body:has(#login-screen.visible){
           </button>
         </div>
         <div class="plans-footer">
-          <span>Trial 7 dias</span>
+          <span>7 dias sem cartão</span>
+          <span>+23 dias com cartão</span>
           <span>Cancele quando quiser</span>
-          <span>Pagamento seguro</span>
         </div>
         <div style="text-align:center;margin-top:20px">
-          <button type="button" onclick="closePlansOverlay()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit">Deixar para depois</button>
+          <button type="button" onclick="enterAppFreeTrialNoCard()" style="background:none;border:none;color:#111;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;margin-bottom:10px;display:block;width:100%">Continuar sem cartão (7 dias grátis)</button>
+          <button type="button" onclick="closePlansOverlay()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit">Entrar com plano padrão</button>
         </div>
       </div>
     </div>
@@ -2653,7 +2655,7 @@ body:has(#login-screen.visible){
   <div class="plans-overlay-inner">
     <div class="plans-header">
       <h1>Planos</h1>
-      <p>Atualize seu plano. Trial de 7 dias; cobrança após o período.</p>
+      <p>Atualize seu plano. 7 dias grátis sem cartão; +23 dias ao cadastrar cartão.</p>
       <div class="plans-toggle" role="tablist">
         <button type="button" id="planBillMonthlyG" class="active" onclick="setPlanBillingToggleGlobal('monthly')">Mensal</button>
         <button type="button" id="planBillYearlyG" onclick="setPlanBillingToggleGlobal('yearly')">Anual</button>
@@ -2667,8 +2669,8 @@ body:has(#login-screen.visible){
       </button>
     </div>
     <div class="plans-footer">
-      <span>Trial 7 dias</span>
-      <span>Cancele quando quiser</span>
+      <span>7 dias sem cartão</span>
+      <span>+23 dias com cartão</span>
       <span>Pagamento seguro</span>
     </div>
     <div style="text-align:center;margin-top:20px">
@@ -2683,7 +2685,7 @@ body:has(#login-screen.visible){
     <div class="modal-body">
       <button type="button" class="modal-close" onclick="closeModal('modalPagarmePlan')" style="float:right;background:none;border:none;color:#888;font-size:18px;cursor:pointer">&times;</button>
       <h2 style="font-size:15px;font-weight:700;margin:0 0 6px;letter-spacing:.06em;text-transform:uppercase">Adicionar cartão</h2>
-      <p style="font-size:12px;color:#666;margin:0 0 18px;line-height:1.5">Sem cobrança agora. Após 7 dias inicia a assinatura.</p>
+      <p style="font-size:12px;color:#666;margin:0 0 18px;line-height:1.5">Sem cobrança agora. Após cadastrar o cartão, você ganha <strong>+23 dias</strong> de teste antes da primeira cobrança (ideal após os 7 dias grátis iniciais).</p>
       <div class="pg-field">
         <label>Número do cartão</label>
         <input class="login-input" id="pgCardNum" type="text" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" oninput="maskPgCardNum(this)">
@@ -7736,7 +7738,7 @@ async function submitAdminRegister() {
 
     const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
     const trialEnds = new Date();
-    trialEnds.setDate(trialEnds.getDate() + 14);
+    trialEnds.setDate(trialEnds.getDate() + TRIAL_DAYS_NO_CARD);
 
     const companyFull = {
       name: fantasy,
@@ -7883,9 +7885,6 @@ async function submitAdminRegister() {
 
     regWizardGoStep(3);
     showGlobal('', false);
-    setTimeout(() => {
-      try { showPostSignupPlans(); } catch(e2) { console.warn(e2); }
-    }, 200);
   } catch(e) {
     console.error('[signup]', e);
     showGlobal(String(e?.message || e || 'Erro ao criar conta. Verifique o Supabase.'), false);
@@ -9529,19 +9528,23 @@ function _fmtMoney(n) {
   }
 }
 
-/** Valores exibidos e usados no resumo do checkout — alinhados aos planos no Pagar.me (PAGARME_PLANS ids inalterados). */
+/** Programa beta: 7 dias grátis sem cartão + 23 dias extras após cadastrar cartão. */
+const TRIAL_DAYS_NO_CARD = 7;
+const TRIAL_DAYS_AFTER_CARD = 23;
+
+/** Valores exibidos — Programa Beta Usuário Desenvolvedor (checkout Pagar.me: alinhar plan IDs depois). */
 const planos = {
   solo: {
-    mensal: { valor: 0.01, valorDisplay: 'R$0,01' },
-    anual:  { valor: 0.01, valorDisplay: 'R$0,01' }
+    mensal: { valor: 49.90, valorDisplay: 'R$49,90' },
+    anual:  { valor: 499.00, valorDisplay: 'R$499,00' }
   },
   produtora: {
-    mensal: { valor: 0.01, valorDisplay: 'R$0,01' },
-    anual:  { valor: 0.01, valorDisplay: 'R$0,01' }
+    mensal: { valor: 99.90, valorDisplay: 'R$99,90' },
+    anual:  { valor: 999.00, valorDisplay: 'R$999,00' }
   },
   agencia: {
-    mensal: { valor: 0.01, valorDisplay: 'R$0,01' },
-    anual:  { valor: 0.01, valorDisplay: 'R$0,01' }
+    mensal: { valor: 199.90, valorDisplay: 'R$199,90' },
+    anual:  { valor: 1999.00, valorDisplay: 'R$1.999,00' }
   }
 };
 
@@ -9569,9 +9572,9 @@ function buildPlanCardsHtml(ctx) {
   const strikeSolo = `${soloR.valorDisplay}/mês`;
   const strikeProd = `${prodR.valorDisplay}/mês`;
   const strikeAg = `${agR.valorDisplay}/mês`;
-  const depSolo = `por 7 dias · depois ${soloR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
-  const depProd = `por 7 dias · depois ${prodR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
-  const depAg = `por 7 dias · depois ${agR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depSolo = `${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias ao cadastrar cartão · depois ${soloR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depProd = `${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias ao cadastrar cartão · depois ${prodR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depAg = `${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias ao cadastrar cartão · depois ${agR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
 
   const soloFeat = [
     'Dashboard, projetos, orçamentos, pipeline, clientes',
@@ -9714,7 +9717,7 @@ function selectPlanOffer(key) {
   if (sum) {
     sum.innerHTML =
       `<strong>Plano ${planNames[key]} (${ciclo})</strong><br>${row.valorDisplay} hoje · depois <strong>${row.valorDisplay}/${m ? 'ano' : 'mês'}</strong>` +
-      `<div style="margin-top:10px;color:#666;line-height:1.5">Trial de 7 dias · valores de teste R$0,01.</div>`;
+      `<div style="margin-top:10px;color:#666;line-height:1.5">${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias extras ao cadastrar cartão após o 7º dia.</div>`;
   }
   try {
     const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '');
@@ -9744,24 +9747,61 @@ function showPostSignupPlans() {
 function closePlansOverlay() {
   document.getElementById('plansPostSignupLayer')?.classList.remove('open');
   document.getElementById('plansPostSignupLayer')?.setAttribute('aria-hidden', 'true');
-  skipPlanDefaultEnter();
+  enterAppFreeTrialNoCard();
 }
 
-async function skipPlanDefaultEnter() {
-  if(!_regPendingSessionRow?.id) return;
+function _calcTrialEndAfterCard(userRow) {
+  const now = Date.now();
+  const freeEndMs = userRow?.trial_ends_at ? new Date(userRow.trial_ends_at).getTime() : 0;
+  const stillInFreePhase = !userRow?.pagarme_subscription_id && freeEndMs > now;
+  if (stillInFreePhase) {
+    return new Date(freeEndMs + TRIAL_DAYS_AFTER_CARD * 86400000);
+  }
+  return new Date(now + TRIAL_DAYS_AFTER_CARD * 86400000);
+}
+
+async function enterAppFreeTrialNoCard(planKey) {
+  if (!_regPendingSessionRow?.id) {
+    toast('Sessão expirada. Faça login.', 'warn');
+    return;
+  }
+  const m = String(planKey || window._planSelecionado || '').match(/^(solo|produtora|agencia)/i);
+  const pk = m ? m[1].toLowerCase() : (_pendingPlanKey || 'produtora');
+  const bill = _planBillSignup === 'yearly' ? 'annual' : 'monthly';
   const trialEnd = new Date();
-  trialEnd.setDate(trialEnd.getDate() + 7);
+  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS_NO_CARD);
   try {
     await apiPatch('age_users', _regPendingSessionRow.id, {
-      plan: 'produtora',
-      plan_billing: 'monthly',
+      plan: pk,
+      plan_billing: bill,
       subscription_status: 'trial',
       trial_ends_at: trialEnd.toISOString()
     });
-  } catch(e) { console.warn(e); }
-  const row = await fetchAgeUserRow(_regPendingSessionRow.username);
+  } catch (e) { console.warn(e); }
+  const uname = _regPendingSessionRow.username;
+  document.getElementById('plansPostSignupLayer')?.classList.remove('open');
   _regPendingSessionRow = null;
+  const row = await fetchAgeUserRow(uname);
   await applyLoginSessionFromRow(row);
+  navigate('dashboard');
+  toast(`${TRIAL_DAYS_NO_CARD} dias grátis ativados — sem cartão.`, 'ok');
+  try { updateTrialBanner(); } catch (_) {}
+}
+
+function escolherPlanoSemCartao(planKey) {
+  try { window._planSelecionado = planKey; } catch (_) {}
+  const g = String(planKey || '').trim();
+  const full = g.match(/^(solo|produtora|agencia)_(mensal|anual)$/i);
+  if (full) {
+    _planBillSignup = full[2].toLowerCase() === 'anual' ? 'yearly' : 'monthly';
+    document.getElementById('planBillMonthly')?.classList.toggle('active', _planBillSignup === 'monthly');
+    document.getElementById('planBillYearly')?.classList.toggle('active', _planBillSignup === 'yearly');
+  }
+  enterAppFreeTrialNoCard(planKey);
+}
+
+async function skipPlanDefaultEnter() {
+  await enterAppFreeTrialNoCard();
 }
 
 function openPlansOverlayGlobal() {
@@ -9893,7 +9933,8 @@ async function pagarmeCreateSubscriptionEdge(cardHash, planId, customer, usernam
       plan_id: planId,
       customer,
       username,
-      company_id: companyId ?? null
+      company_id: companyId ?? null,
+      trial_days: TRIAL_DAYS_AFTER_CARD
     })
   });
   let data = {};
@@ -9972,7 +10013,8 @@ async function confirmPagarmeTrial() {
   if (tx) tx.textContent = 'Processando...';
 
   try {
-    const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const rowUser = _planCheckoutCtx === 'signup' ? _regPendingSessionRow : currentUser;
+    const trialEnd = _calcTrialEndAfterCard(rowUser);
     const slug = _planSlugForPayload();
     let payload = {
       plan: slug,
@@ -10034,7 +10076,7 @@ async function confirmPagarmeTrial() {
       const row = await fetchAgeUserRow(pendingUser);
       await applyLoginSessionFromRow(row);
       navigate('dashboard');
-      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : 'Trial iniciado. 7 dias gratuitos.', 'ok');
+      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : `Cartão cadastrado. +${TRIAL_DAYS_AFTER_CARD} dias de teste antes da cobrança.`, 'ok');
     } else if (currentUser?.id) {
       await apiPatch('age_users', currentUser.id, payload);
       Object.assign(currentUser, payload);
@@ -10045,7 +10087,7 @@ async function confirmPagarmeTrial() {
       closeModal('modalPagarmePlan');
       closePlansOverlayGlobal();
       navigate('dashboard');
-      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : 'Trial iniciado. 7 dias gratuitos.', 'ok');
+      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : `Cartão cadastrado. +${TRIAL_DAYS_AFTER_CARD} dias de teste antes da cobrança.`, 'ok');
       updateTrialBanner();
     } else {
       setPgModalError('Sessão inválida. Entre na conta ou refaça o cadastro para concluir o plano.');
@@ -10090,16 +10132,30 @@ function updateTrialBanner() {
   const pl = _effectiveUserPlan();
   const planSlug = ['solo', 'produtora', 'agencia'].includes(pl) ? pl : 'produtora';
   const afterRow = _planPrecoRow(planSlug, false);
+  const hasCard = !!(currentUser?.pagarme_subscription_id);
   const escolher = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Escolher plano</button>`;
+  const addCard = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Cadastrar cartão</button>`;
   if(days > 3) {
     bar.className = '';
-    bar.innerHTML = `Trial · <strong>${days}</strong> dias restantes · ${escolher}`;
+    if (!hasCard) {
+      bar.innerHTML = `Trial grátis · <strong>${days}</strong> dia(s) sem cartão · após o 7º dia, cadastre o cartão e ganhe +${TRIAL_DAYS_AFTER_CARD} dias · ${addCard}`;
+    } else {
+      bar.innerHTML = `Trial · <strong>${days}</strong> dias até a primeira cobrança · ${escolher}`;
+    }
   } else if(days > 0) {
     bar.classList.add('warn');
-    bar.innerHTML = `Trial · ${days} dia(s) restantes · cobrança ${afterRow.valorDisplay} após ${ends.toLocaleDateString('pt-BR')} · ${escolher}`;
+    if (!hasCard) {
+      bar.innerHTML = `Trial · ${days} dia(s) sem cartão · cadastre o cartão e ganhe +${TRIAL_DAYS_AFTER_CARD} dias extras · ${addCard}`;
+    } else {
+      bar.innerHTML = `Trial · ${days} dia(s) restantes · cobrança ${afterRow.valorDisplay} após ${ends.toLocaleDateString('pt-BR')} · ${escolher}`;
+    }
   } else {
     bar.classList.add('danger');
-    bar.innerHTML = `Trial encerrado · cobrança conforme plano · ${escolher}`;
+    if (!hasCard) {
+      bar.innerHTML = `Período grátis encerrado · cadastre o cartão para +${TRIAL_DAYS_AFTER_CARD} dias de teste · ${addCard}`;
+    } else {
+      bar.innerHTML = `Trial encerrado · cobrança conforme plano · ${escolher}`;
+    }
   }
 }
 
