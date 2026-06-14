@@ -1,64 +1,553 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AGE OPS — Carregando...</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png?v=5" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon.png?v=5" />
-  <link rel="shortcut icon" href="favicon.ico?v=5" />
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon.png?v=5" />
-  <meta name="theme-color" content="#0f172a" />
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{
-      background:#111;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      height:100vh;
-      font-family:'Segoe UI',sans-serif;
-    }
-    .loader{text-align:center;color:#fff}
-    .logo{
-      font-size:36px;
-      font-weight:900;
-      letter-spacing:.1em;
-      margin-bottom:6px;
-      color:#fff;
-    }
-    .logo span{color:#22c55e}
-    .sub{
-      font-size:10px;
-      color:#555;
-      letter-spacing:.25em;
-      text-transform:uppercase;
-      margin-bottom:32px;
-    }
-    .spinner{
-      width:32px;height:32px;
-      border:2.5px solid rgba(255,255,255,.08);
-      border-top-color:#22c55e;
-      border-radius:50%;
-      animation:spin .7s linear infinite;
-      margin:0 auto 16px;
-    }
-    .msg{font-size:11px;color:#444;letter-spacing:.05em}
-    @keyframes spin{to{transform:rotate(360deg)}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGE OPS — Sistema Operacional para Produtoras e Agências</title>
+<meta name="description" content="O Age Ops substitui planilhas, Notion, contratos e fechamento manual por uma única plataforma com inteligência de dados, feita para o mercado audiovisual brasileiro.">
+<link rel="icon" type="image/png" href="favicon.png?v=5" />
+<link rel="shortcut icon" href="favicon.ico?v=5" />
+<meta name="theme-color" content="#111111" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black: #111111;
+    --white: #ffffff;
+    --gray-light: #f5f5f5;
+    --gray-mid: #eeeeee;
+    --gray-text: #666666;
+    --gray-border: rgba(0,0,0,0.1);
+    --font-h: 'Orbitron', sans-serif;
+    --font-b: 'Rajdhani', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-b);
+    background: #ffffff;
+    color: var(--black);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  a { text-decoration: none; color: inherit; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--gray-border);
+    padding: 14px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 9999;
+    transition: padding .2s;
+  }
+  .topbar-logo {
+    font-family: var(--font-h); font-size: 16px; font-weight: 900;
+    letter-spacing: 4px; color: var(--black);
+  }
+  .topbar-nav { display: flex; gap: 28px; align-items: center; }
+  .topbar-nav a {
+    font-family: var(--font-h); font-size: 10px; font-weight: 600;
+    letter-spacing: 1.5px; color: var(--gray-text); text-transform: uppercase;
+    transition: color .2s;
+  }
+  .topbar-nav a:hover { color: var(--black); }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn-auth {
+    font-family: var(--font-h); font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 10px 20px; cursor: pointer; transition: all .2s;
+    display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  }
+  .btn-login {
+    border: 1px solid var(--black); background: transparent; color: var(--black);
+  }
+  .btn-login:hover { background: var(--gray-mid); }
+  .btn-signup {
+    border: 1px solid var(--black); background: var(--black); color: #fff;
+  }
+  .btn-signup:hover { background: #333; }
+
+  .nav-toggle { display: none; background: none; border: none; cursor: pointer; flex-direction: column; gap: 5px; }
+  .nav-toggle span { width: 22px; height: 2px; background: var(--black); display: block; }
+
+  /* ── SECTIONS ── */
+  .section {
+    width: 100%;
+    padding: 110px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .section-dark { background: var(--black); color: var(--white); }
+  .section-light { background: var(--white); color: var(--black); }
+  .section-gray { background: var(--gray-mid); color: var(--black); }
+  .inner { max-width: 1180px; margin: 0 auto; }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding-top: 90px;
+  }
+  .hero-grid {
+    position: absolute; top: 0; right: 0; width: 55%; height: 100%;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none;
+  }
+  .hero-tag {
+    font-family: var(--font-h); font-size: 10px; font-weight: 600;
+    letter-spacing: 4px; color: rgba(255,255,255,0.4);
+    text-transform: uppercase; margin-bottom: 36px;
+  }
+  .hero-logo {
+    font-family: var(--font-h); font-size: clamp(48px, 9vw, 92px); font-weight: 900;
+    letter-spacing: clamp(6px, 1.5vw, 14px); line-height: 1; color: #fff; margin-bottom: 10px;
+  }
+  .hero-sub {
+    font-family: var(--font-h); font-size: 11px; font-weight: 400;
+    letter-spacing: 6px; color: rgba(255,255,255,0.35);
+    text-transform: uppercase; margin-bottom: 44px;
+  }
+  .hero-line { width: 60px; height: 2px; background: rgba(255,255,255,0.2); margin-bottom: 36px; }
+  .hero-headline {
+    font-family: var(--font-b); font-size: clamp(20px, 3vw, 26px); font-weight: 300;
+    color: rgba(255,255,255,0.7); max-width: 640px; line-height: 1.55; margin-bottom: 48px;
+  }
+  .hero-headline strong { color: #fff; font-weight: 600; }
+  .hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .btn-cta {
+    font-family: var(--font-h); font-size: 12px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 16px 36px; cursor: pointer; transition: all .2s;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-cta-primary { background: #fff; color: var(--black); border: 1px solid #fff; }
+  .btn-cta-primary:hover { background: rgba(255,255,255,0.85); }
+  .btn-cta-ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+  .btn-cta-ghost:hover { background: rgba(255,255,255,0.06); }
+
+  .btn-cta-dark { background: var(--black); color: #fff; border: 1px solid var(--black); }
+  .btn-cta-dark:hover { background: #333; }
+
+  /* ── SECTION HEADERS ── */
+  .section-label {
+    font-family: var(--font-h); font-size: 9px; font-weight: 700;
+    letter-spacing: 4px; text-transform: uppercase; color: var(--gray-text);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::before { content: ''; width: 20px; height: 1px; background: var(--gray-text); display: inline-block; }
+  .section-label-white { color: rgba(255,255,255,0.4); }
+  .section-label-white::before { background: rgba(255,255,255,0.4); }
+
+  .section-title {
+    font-family: var(--font-h); font-size: clamp(26px, 4vw, 36px); font-weight: 800;
+    letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 22px;
+  }
+  .section-title-white { color: #fff; }
+
+  .sep { width: 40px; height: 2px; background: var(--black); margin: 22px 0; }
+  .sep-white { background: rgba(255,255,255,0.2); }
+
+  .section-body {
+    font-family: var(--font-b); font-size: 17px; font-weight: 400;
+    line-height: 1.7; color: var(--gray-text); max-width: 640px;
+  }
+  .section-body-white { color: rgba(255,255,255,0.6); }
+
+  /* ── CARDS ── */
+  .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+  .card { border: 1px solid var(--gray-border); padding: 28px 24px; background: var(--white); }
+  .card-dark { border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); }
+  .card-number { font-family: var(--font-h); font-size: 36px; font-weight: 900; color: var(--black); line-height: 1; margin-bottom: 8px; letter-spacing: -1px; }
+  .card-number-white { color: rgba(255,255,255,0.15); }
+  .card-label { font-family: var(--font-h); font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--black); margin-bottom: 8px; }
+  .card-label-white { color: rgba(255,255,255,0.8); }
+  .card-desc { font-family: var(--font-b); font-size: 13px; color: var(--gray-text); line-height: 1.5; }
+  .card-desc-white { color: rgba(255,255,255,0.45); }
+
+  /* ── MODULES ── */
+  .modules-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px; }
+  .module-chip {
+    border: 1px solid rgba(255,255,255,0.08); padding: 14px 14px;
+    font-family: var(--font-h); font-size: 9px; letter-spacing: 1px;
+    color: rgba(255,255,255,0.5); text-transform: uppercase;
+  }
+
+  /* ── TABLE ── */
+  .comp-table { width: 100%; border-collapse: collapse; margin-top: 32px; font-family: var(--font-b); font-size: 14px; }
+  .comp-table th { font-family: var(--font-h); font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 14px 16px; text-align: left; border-bottom: 2px solid var(--black); color: var(--black); }
+  .comp-table td { padding: 14px 16px; border-bottom: 1px solid var(--gray-border); color: var(--gray-text); vertical-align: middle; }
+  .comp-table tr:last-child td { border-bottom: none; }
+  .comp-table .highlight-row td { color: var(--black); font-weight: 700; background: var(--gray-mid); }
+  .comp-table .highlight-row td:first-child { font-family: var(--font-h); font-size: 11px; letter-spacing: 1px; }
+  .check { color: #111; font-weight: 700; font-size: 16px; }
+  .price-col { font-family: var(--font-h); font-size: 11px; letter-spacing: 1px; }
+
+  /* ── QUOTE ── */
+  .quote-box { border-left: 3px solid var(--black); padding: 24px 32px; background: var(--gray-mid); margin: 32px 0 0; }
+  .quote-box-white { border-left: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.04); }
+  .quote-text { font-family: var(--font-b); font-size: 18px; font-weight: 500; line-height: 1.6; color: var(--black); font-style: italic; }
+  .quote-text-white { color: rgba(255,255,255,0.8); }
+
+  /* ── PLANS ── */
+  .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+  .plan-card { border: 1px solid var(--gray-border); padding: 32px 28px; background: var(--white); display: flex; flex-direction: column; }
+  .plan-card-featured { border: 2px solid var(--black); }
+  .plan-badge { font-family: var(--font-h); font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fff; background: var(--black); padding: 4px 10px; display: inline-block; margin-bottom: 20px; align-self: flex-start; }
+  .plan-name { font-family: var(--font-h); font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--black); margin-bottom: 8px; }
+  .plan-desc { font-family: var(--font-b); font-size: 12px; color: var(--gray-text); margin-bottom: 24px; line-height: 1.4; }
+  .plan-price-old { font-family: var(--font-b); font-size: 12px; color: #aaa; text-decoration: line-through; margin-bottom: 4px; }
+  .plan-price { font-family: var(--font-h); font-size: 28px; font-weight: 900; color: var(--black); letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
+  .plan-period { font-family: var(--font-b); font-size: 11px; color: var(--gray-text); margin-bottom: 24px; }
+  .plan-divider { height: 1px; background: var(--gray-border); margin-bottom: 20px; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; flex: 1; }
+  .plan-features li { font-family: var(--font-b); font-size: 13px; color: var(--gray-text); display: flex; align-items: center; gap: 8px; }
+  .plan-features li .ok { color: var(--black); font-weight: 700; font-size: 14px; }
+  .plan-features li .locked { font-size: 10px; color: #ccc; }
+  .plan-btn {
+    font-family: var(--font-h); font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; padding: 14px; text-align: center; cursor: pointer;
+    border: 1px solid var(--black); background: transparent; color: var(--black); transition: all .2s;
+  }
+  .plan-btn:hover { background: var(--black); color: #fff; }
+  .plan-btn-featured { background: var(--black); color: #fff; }
+  .plan-btn-featured:hover { background: #333; }
+
+  /* ── REFERRAL ── */
+  .referral-flow { display: flex; align-items: stretch; gap: 0; margin-top: 40px; flex-wrap: wrap; }
+  .ref-step { flex: 1; min-width: 150px; padding: 28px 20px; border: 1px solid rgba(255,255,255,0.08); text-align: center; }
+  .ref-icon { font-family: var(--font-h); font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 10px; }
+  .ref-label { font-family: var(--font-h); font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin-bottom: 6px; }
+  .ref-desc { font-family: var(--font-b); font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.4; }
+
+  /* ── FAQ ── */
+  .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; }
+  .faq-card { padding: 24px; border: 1px solid var(--gray-border); background: var(--white); }
+  .faq-q { font-family: var(--font-h); font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--gray-text); text-transform: uppercase; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--gray-border); }
+  .faq-a { font-family: var(--font-b); font-size: 14px; color: var(--black); line-height: 1.6; }
+
+  /* ── FINAL CTA ── */
+  .final-cta { text-align: center; }
+  .final-cta .big-number { font-family: var(--font-h); font-size: 120px; font-weight: 900; color: rgba(255,255,255,0.04); position: absolute; right: -10px; bottom: -20px; line-height: 1; pointer-events: none; letter-spacing: -4px; }
+  .cta-title { font-family: var(--font-h); font-size: clamp(32px, 5vw, 44px); font-weight: 900; letter-spacing: 4px; color: #fff; margin-bottom: 18px; line-height: 1.1; }
+  .cta-sub { font-family: var(--font-b); font-size: 18px; color: rgba(255,255,255,0.5); margin: 0 auto 44px; max-width: 480px; line-height: 1.6; }
+
+  /* ── FOOTER ── */
+  .footer { background: var(--black); color: rgba(255,255,255,0.4); padding: 40px 80px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .footer-logo { font-family: var(--font-h); font-size: 13px; font-weight: 900; letter-spacing: 3px; color: #fff; }
+  .footer small { font-family: var(--font-h); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .topbar { padding: 12px 18px; }
+    .topbar-nav { display: none; }
+    .section { padding: 70px 22px; }
+    .footer { padding: 30px 22px; }
+    .cards-grid, .modules-grid, .plans-grid, .faq-grid { grid-template-columns: 1fr; }
+    .btn-auth { padding: 9px 14px; font-size: 9px; }
+    .btn-auth .lbl-full { display: none; }
+  }
+</style>
 </head>
 <body>
-  <div class="loader">
-    <div class="logo">AGE<span>OPS</span></div>
-    <div class="sub">Sistema Operacional v4.0</div>
-    <div class="spinner"></div>
-    <div class="msg">Carregando sistema...</div>
+
+<!-- ══════════ TOPBAR ══════════ -->
+<nav class="topbar">
+  <a href="#hero" class="topbar-logo">AGE OPS</a>
+  <div class="topbar-nav">
+    <a href="#problema">Problema</a>
+    <a href="#solucao">Solução</a>
+    <a href="#comparativo">Comparativo</a>
+    <a href="#planos">Planos</a>
   </div>
-  <script>
-    /* Setar auto-login antes de navegar */
-    try { sessionStorage.setItem('_age_autologin', 'gustavowng'); } catch(e){}
-    /* Redirecionar imediatamente para o sistema */
-    window.location.replace('age-ops-v4.html?_al=1');
-  </script>
+  <div class="topbar-actions">
+    <a href="age-ops-v4.html" class="btn-auth btn-signup">Entrar<span class="lbl-full"> na sua conta</span></a>
+  </div>
+</nav>
+
+<!-- ══════════ HERO ══════════ -->
+<section class="section section-dark hero" id="hero">
+  <div class="hero-grid"></div>
+  <div class="inner" style="position:relative;z-index:2">
+    <div class="hero-tag">Sistema Operacional para Produtoras e Agências</div>
+    <div class="hero-logo">AGE OPS</div>
+    <div class="hero-sub">SISTEMA OPERACIONAL v4.0</div>
+    <div class="hero-line"></div>
+    <div class="hero-headline">
+      Do balão ao avião.<br>
+      <strong>A cabine de comando completa para você pilotar seu negócio audiovisual com precisão total.</strong>
+    </div>
+    <div class="hero-cta">
+      <a href="age-ops-v4.html?signup=1" class="btn-cta btn-cta-primary">Começar grátis →</a>
+      <a href="age-ops-v4.html" class="btn-cta btn-cta-ghost">Entrar na minha conta</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PROBLEMA ══════════ -->
+<section class="section section-light" id="problema">
+  <div class="inner">
+    <div class="section-label">O Problema</div>
+    <div class="section-title">VOCÊ PILOTA SEM INSTRUMENTOS</div>
+    <div class="sep"></div>
+    <div class="section-body">
+      A maioria dos gestores de produtoras e agências audiovisuais no Brasil toca o negócio no escuro — sem saber exatamente quanto lucram por projeto, quais clientes dão prejuízo, quando o caixa vai fechar no vermelho.
+    </div>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-number">73%</div>
+        <div class="card-label">Usam planilhas</div>
+        <div class="card-desc">Das produtoras brasileiras ainda gerenciam projetos e finanças em Excel e WhatsApp.</div>
+      </div>
+      <div class="card">
+        <div class="card-number">R$8k</div>
+        <div class="card-label">Perda média/ano</div>
+        <div class="card-desc">Valor médio perdido por erros de precificação e orçamentos mal calculados.</div>
+      </div>
+      <div class="card">
+        <div class="card-number">6+</div>
+        <div class="card-label">Ferramentas usadas</div>
+        <div class="card-desc">Média de apps separados que um gestor usa para tocar a operação — sem integração.</div>
+      </div>
+    </div>
+    <div class="quote-box">
+      <div class="quote-text">"Você já perdeu dinheiro num projeto que achava que estava indo bem? Já se perguntou por que no fim do mês a conta não fecha, mesmo com a agenda cheia?"</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ SOLUÇÃO ══════════ -->
+<section class="section section-dark" id="solucao">
+  <div class="inner">
+    <div class="section-label section-label-white">A Solução</div>
+    <div class="section-title section-title-white">UM SISTEMA. TUDO INTEGRADO.</div>
+    <div class="sep sep-white"></div>
+    <div class="section-body section-body-white">
+      O Age Ops substitui todas as ferramentas fragmentadas por uma única plataforma construída especificamente para o mercado audiovisual brasileiro — com inteligência nos dados para você tomar as decisões certas no momento certo.
+    </div>
+    <div class="cards-grid">
+      <div class="card card-dark">
+        <div class="card-number card-number-white">01</div>
+        <div class="card-label card-label-white">Gestão Completa</div>
+        <div class="card-desc card-desc-white">Projetos, pipeline, orçamentos, contratos, cronograma e fechamento em um só lugar.</div>
+      </div>
+      <div class="card card-dark">
+        <div class="card-number card-number-white">02</div>
+        <div class="card-label card-label-white">Inteligência Real</div>
+        <div class="card-desc card-desc-white">IA analisa seus dados reais e aponta onde você está perdendo dinheiro antes que o dano aconteça.</div>
+      </div>
+      <div class="card card-dark">
+        <div class="card-number card-number-white">03</div>
+        <div class="card-label card-label-white">Feito para o BR</div>
+        <div class="card-desc card-desc-white">Primeiro sistema operacional vertical para produtoras e agências brasileiras. Sem tradução, sem adaptação.</div>
+      </div>
+    </div>
+    <div style="margin-top:40px">
+      <div class="section-label section-label-white">Módulos inclusos</div>
+      <div class="modules-grid">
+        <div class="module-chip">Dashboard & KPIs</div>
+        <div class="module-chip">Projetos CRUD</div>
+        <div class="module-chip">Pipeline Kanban</div>
+        <div class="module-chip">Orçamentos PDF</div>
+        <div class="module-chip">Contratos Digitais</div>
+        <div class="module-chip">Fechamento Financeiro</div>
+        <div class="module-chip">Equipe & Pagamentos</div>
+        <div class="module-chip">NPS & Clientes</div>
+        <div class="module-chip">Cronograma</div>
+        <div class="module-chip">Tarefas & Colaboradores</div>
+        <div class="module-chip">Histórico 2021–2026</div>
+        <div class="module-chip">Inteligência IA</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ COMPARATIVO ══════════ -->
+<section class="section section-light" id="comparativo">
+  <div class="inner">
+    <div class="section-label">Comparativo</div>
+    <div class="section-title">O QUE VOCÊ SUBSTITUI</div>
+    <div class="sep"></div>
+    <div class="section-body">
+      O Age Ops não é mais uma ferramenta na sua lista — ele <strong>substitui todas elas</strong>, com integração total entre os módulos.
+    </div>
+    <table class="comp-table">
+      <thead>
+        <tr><th>Ferramenta substituída</th><th>O que faz no Age Ops</th><th>Custo mensal</th><th>Age Ops</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Notion</td><td>Projetos, docs, cronograma, tarefas</td><td class="price-col">R$80 – R$160</td><td class="check">✓</td></tr>
+        <tr><td>Google Workspace</td><td>Planilhas, documentos, colaboração</td><td class="price-col">R$30 – R$90</td><td class="check">✓</td></tr>
+        <tr><td>D4Sign / DocuSign</td><td>Contratos digitais com assinatura</td><td class="price-col">R$79 – R$199</td><td class="check">✓</td></tr>
+        <tr><td>ChatGPT Plus / Claude</td><td>Análise inteligente dos dados do negócio</td><td class="price-col">R$100 – R$200</td><td class="check">✓</td></tr>
+        <tr><td>Monday / Asana / Trello</td><td>Pipeline, kanban, tarefas da equipe</td><td class="price-col">R$60 – R$200</td><td class="check">✓</td></tr>
+        <tr><td>Planilha de fechamento</td><td>Fechamento financeiro por projeto</td><td class="price-col">Tempo = dinheiro</td><td class="check">✓</td></tr>
+        <tr class="highlight-row"><td>Total separado</td><td>Fragmentado, sem integração</td><td class="price-col">R$349 – R$849/mês</td><td style="font-family:var(--font-h);font-size:12px;font-weight:900;color:var(--black)">R$147</td></tr>
+      </tbody>
+    </table>
+    <div class="quote-box">
+      <div class="quote-text">"Você economiza R$200 a R$700 por mês só em substituição de ferramentas — sem contar o tempo perdido trocando entre sistemas que nunca conversam entre si."</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PLANOS ══════════ -->
+<section class="section section-light" id="planos" style="background:var(--gray-light)">
+  <div class="inner">
+    <div class="section-label">Planos</div>
+    <div class="section-title">ESCOLHA SEU PLANO</div>
+    <div class="sep"></div>
+    <div style="font-family:var(--font-b);font-size:14px;color:var(--gray-text);margin-bottom:6px">
+      ⚡ <strong>Plano Fundador:</strong> primeiras 100 vagas com desconto vitalício. Todos os planos começam com <strong>7 dias grátis</strong>.
+    </div>
+    <div class="plans-grid">
+
+      <div class="plan-card">
+        <div class="plan-name">SOLO</div>
+        <div class="plan-desc">Freelancer e produtor solo. Tudo para profissionalizar a operação.</div>
+        <div class="plan-price-old">R$147/mês</div>
+        <div class="plan-price">R$97</div>
+        <div class="plan-period">/mês · vitalício para fundadores</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="ok">✓</span> Dashboard & KPIs</li>
+          <li><span class="ok">✓</span> Projetos completos</li>
+          <li><span class="ok">✓</span> Pipeline Kanban</li>
+          <li><span class="ok">✓</span> Orçamentos em PDF</li>
+          <li><span class="ok">✓</span> Clientes & Contratos</li>
+          <li><span class="ok">✓</span> Fechamento financeiro</li>
+          <li><span class="ok">✓</span> 1 colaborador incluso</li>
+          <li><span class="locked">🔒</span> NPS, Relatórios e Histórico</li>
+        </ul>
+        <a href="age-ops-v4.html?signup=1" class="plan-btn">Começar grátis</a>
+      </div>
+
+      <div class="plan-card plan-card-featured">
+        <div class="plan-badge">Mais popular</div>
+        <div class="plan-name">PRODUTORA</div>
+        <div class="plan-desc">Produtoras em crescimento com equipe. Operação completa com até 5 colaboradores.</div>
+        <div class="plan-price-old">R$297/mês</div>
+        <div class="plan-price">R$197</div>
+        <div class="plan-period">/mês · vitalício para fundadores</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="ok">✓</span> Tudo do Solo</li>
+          <li><span class="ok">✓</span> NPS avançado</li>
+          <li><span class="ok">✓</span> Equipe & Permissões</li>
+          <li><span class="ok">✓</span> Tarefas atribuídas</li>
+          <li><span class="ok">✓</span> Cronograma corporativo</li>
+          <li><span class="ok">✓</span> Até 5 colaboradores</li>
+          <li><span class="locked">🔒</span> Histórico e Relatórios</li>
+        </ul>
+        <a href="age-ops-v4.html?signup=1" class="plan-btn plan-btn-featured">Começar grátis</a>
+      </div>
+
+      <div class="plan-card">
+        <div class="plan-name">AGÊNCIA</div>
+        <div class="plan-desc">Agências completas. Sem limites, com histórico total e inteligência de dados.</div>
+        <div class="plan-price-old">R$597/mês</div>
+        <div class="plan-price">R$397</div>
+        <div class="plan-period">/mês · vitalício para fundadores</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="ok">✓</span> Tudo do Produtora</li>
+          <li><span class="ok">✓</span> Colaboradores ilimitados</li>
+          <li><span class="ok">✓</span> Histórico 2021–2026</li>
+          <li><span class="ok">✓</span> Relatórios exportáveis</li>
+          <li><span class="ok">✓</span> Permissões granulares</li>
+          <li><span class="ok">✓</span> Inteligência IA completa</li>
+          <li><span class="ok">✓</span> Migração de dados assistida</li>
+        </ul>
+        <a href="age-ops-v4.html?signup=1" class="plan-btn">Começar grátis</a>
+      </div>
+
+    </div>
+    <div style="margin-top:20px;text-align:center;font-family:var(--font-b);font-size:13px;color:var(--gray-text)">
+      Vindo de outra plataforma? No plano Agência nossa equipe transfere todos os seus dados — planilhas, histórico e projetos anteriores.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ INDICAÇÃO ══════════ -->
+<section class="section section-dark">
+  <div class="inner">
+    <div class="section-label section-label-white">Programa de Indicação</div>
+    <div class="section-title section-title-white">INDIQUE E GANHE</div>
+    <div class="sep sep-white"></div>
+    <div class="section-body section-body-white">
+      Todo usuário do Age Ops recebe um link único de indicação. Quanto mais você indica, mais você ganha — e o mercado audiovisual cresce junto.
+    </div>
+    <div class="referral-flow">
+      <div class="ref-step"><div class="ref-icon">01</div><div class="ref-label">Compartilhe</div><div class="ref-desc">Envie seu link único para amigos do nicho</div></div>
+      <div class="ref-step"><div class="ref-icon">02</div><div class="ref-label">Eles testam</div><div class="ref-desc">Cadastro com 7 dias grátis pelo seu link</div></div>
+      <div class="ref-step"><div class="ref-icon">03</div><div class="ref-label">Convertem</div><div class="ref-desc">Eles assinam e você acumula indicações</div></div>
+      <div class="ref-step"><div class="ref-icon">04</div><div class="ref-label">Você ganha</div><div class="ref-desc">Benefícios automáticos, sem burocracia</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FAQ ══════════ -->
+<section class="section section-gray">
+  <div class="inner">
+    <div class="section-label">Dúvidas frequentes</div>
+    <div class="section-title">PERGUNTAS COMUNS</div>
+    <div class="sep"></div>
+    <div class="faq-grid">
+      <div class="faq-card">
+        <div class="faq-q">"R$147 é caro pra mim agora."</div>
+        <div class="faq-a">Um orçamento mal feito custa R$500 a R$5.000. Um projeto sem contrato pode custar até R$50k. O Age Ops se paga no primeiro mês — e como fundador você paga R$97.</div>
+      </div>
+      <div class="faq-card">
+        <div class="faq-q">"Já uso planilha e funciona."</div>
+        <div class="faq-a">Planilha não te avisa quando a margem cai, não integra com contrato, não paga colaborador e não tem IA analisando seus dados. Você pilota com mapa de papel achando que está bem.</div>
+      </div>
+      <div class="faq-card">
+        <div class="faq-q">"Minha equipe não vai usar."</div>
+        <div class="faq-a">O sistema foi desenhado para ser simples: login, projeto, orçamento em 3 cliques. Se sua equipe usa WhatsApp, usa o Age Ops. E há área exclusiva de colaborador.</div>
+      </div>
+      <div class="faq-card">
+        <div class="faq-q">"Tenho medo de perder meus dados."</div>
+        <div class="faq-a">Banco de dados PostgreSQL (Supabase) com backup automático. Seus dados são seus. No plano Agência migramos todo o seu histórico de planilhas sem você perder nada.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CTA FINAL ══════════ -->
+<section class="section section-dark final-cta" style="text-align:center">
+  <div class="hero-grid"></div>
+  <div class="inner" style="position:relative;z-index:2">
+    <div class="section-label section-label-white" style="justify-content:center">Próximo passo</div>
+    <div class="cta-title">ENTRE NO COCKPIT</div>
+    <div class="cta-sub">7 dias grátis. Sem cartão para começar. O mercado audiovisual brasileiro está esperando por isso.</div>
+    <div class="hero-cta" style="justify-content:center">
+      <a href="age-ops-v4.html?signup=1" class="btn-cta btn-cta-primary">Criar minha conta →</a>
+      <a href="age-ops-v4.html" class="btn-cta btn-cta-ghost">Já tenho conta</a>
+    </div>
+  </div>
+  <div class="big-number">OPS</div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="footer">
+  <div class="footer-logo">AGE OPS</div>
+  <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+    <a href="age-ops-v4.html" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Entrar</a>
+    <a href="age-ops-v4.html?signup=1" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Criar conta</a>
+    <small>© 2026 AGE OPS · Sistema Operacional</small>
+  </div>
+</footer>
+
 </body>
 </html>

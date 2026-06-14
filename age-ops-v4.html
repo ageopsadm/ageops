@@ -28194,6 +28194,13 @@ async function _ageBootstrap() {
       preencherEmailSalvo();
     }
   }
+  /* Deep-link da landing: ?signup=1 (ou ?cadastro=1) abre direto a aba de cadastro */
+  try {
+    const sp = new URLSearchParams(location.search);
+    if((sp.get('signup') === '1' || sp.get('cadastro') === '1') && typeof currentUser !== 'undefined' && !currentUser) {
+      if(typeof setLoginTab === 'function') setLoginTab('register');
+    }
+  } catch(_) {}
   _ageInit();
 }
 
