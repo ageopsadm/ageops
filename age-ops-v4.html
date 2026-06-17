@@ -1023,6 +1023,18 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   border:1px solid color-mix(in srgb,var(--cat) 30%,transparent);
 }
 .task-cat-badge i{font-size:8px}
+.task-time-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.02em;
+  padding:2px 7px;border-radius:999px;white-space:nowrap;
+  background:rgba(15,23,42,.06);color:#475569;border:1px solid rgba(15,23,42,.12);
+}
+.task-time-badge i{font-size:8px}
+.task-late{
+  display:inline-flex;align-items:center;gap:4px;margin-top:3px;
+  font-family:var(--font-m);font-size:9px;font-weight:700;color:#dc2626;
+}
+.task-item.is-late{border-left:3px solid #ef4444;background:linear-gradient(90deg,rgba(239,68,68,.07),#fff 55%)}
 
 /* ── Celebração: todas as tarefas do dia concluídas ── */
 .celebrate-overlay{
@@ -5209,7 +5221,10 @@ body:has(#login-screen.visible){
     <input type="hidden" id="taskId">
     <input type="hidden" id="taskType" value="personal">
     <div class="form-group" style="margin-bottom:10px"><label class="form-label">TAREFA *</label><input id="taskText" type="text" placeholder="Descrição da tarefa..."></div>
-    <div class="form-group" style="margin-bottom:10px"><label class="form-label">DATA (opcional)</label><input id="taskDate" type="date"></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div class="form-group" style="flex:1;margin:0"><label class="form-label">DATA</label><input id="taskDate" type="date" style="width:100%"></div>
+      <div class="form-group" style="flex:1;margin:0"><label class="form-label">HORÁRIO (opcional)</label><input id="taskTime" type="time" style="width:100%"></div>
+    </div>
     <div class="form-group" style="margin-bottom:10px"><label class="form-label">CATEGORIA</label>
       <select id="taskCat">
         <option value="pessoal" selected>Pessoal</option>
@@ -25327,6 +25342,45 @@ function _taskCatBadge(c) {
   const m = TASK_CATEGORIES[v];
   return `<span class="task-cat-badge" style="--cat:${m.color}"><i class="fas ${m.icon}"></i>${m.label}</span>`;
 }
+
+/* ── Horário e atraso das tarefas ── */
+function _taskTimeNorm(t) {
+  const s = String(t || '').slice(0, 5);
+  return /^\d{2}:\d{2}$/.test(s) ? s : '';
+}
+function _taskTimeBadge(t) {
+  const v = _taskTimeNorm(t);
+  return v ? `<span class="task-time-badge"><i class="fas fa-clock"></i>${v}</span>` : '';
+}
+/* Vencimento em ms: dia + horário; sem horário vence no fim do dia. */
+function _taskDueMs(dayIso, timeStr) {
+  const iso = String(dayIso || '').slice(0, 10);
+  if(!iso) return null;
+  const d = _isoToLocalDate(iso);
+  const t = _taskTimeNorm(timeStr);
+  if(t) { const [hh, mm] = t.split(':').map(Number); d.setHours(hh, mm, 0, 0); }
+  else { d.setHours(23, 59, 59, 999); }
+  return d.getTime();
+}
+/* Rótulo de atraso: dias inteiros se de dia anterior; senão horas/min. '' se em dia. */
+function _taskLatenessLabel(dayIso, timeStr) {
+  const iso = String(dayIso || '').slice(0, 10);
+  if(!iso) return '';
+  const realToday = _mydayRealToday();
+  if(iso < realToday) {
+    const days = Math.round((_isoToLocalDate(realToday) - _isoToLocalDate(iso)) / 86400000);
+    return `Atrasada há ${days} dia${days > 1 ? 's' : ''}`;
+  }
+  const due = _taskDueMs(iso, timeStr);
+  if(due == null) return '';
+  const diff = Date.now() - due;
+  if(diff <= 0) return '';
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const m = mins % 60;
+  if(hours >= 1) return `Atrasada há ${hours}h${m > 0 ? ' ' + m + 'min' : ''}`;
+  return `Atrasada há ${Math.max(1, m)}min`;
+}
 /* Ordena: pendentes antes de concluídas, depois prioridade (alta→baixa). */
 function _sortByPriority(arr, getPrio, getDone) {
   return arr.slice().sort((a, b) => {
@@ -25418,6 +25472,10 @@ function _mydayTaskRow(item) {
   const byLine = item.source === 'designada' && item.assigned_by
     ? `<div class="task-meta">Atribuída por ${escHtml(displayNameForUsername(item.assigned_by))}</div>`
     : '';
+  const timeBadge = item.source !== 'empresa' ? _taskTimeBadge(item.time) : '';
+  const lateTxt = !done ? _taskLatenessLabel(item.day, item.time) : '';
+  const lateLine = lateTxt ? `<div class="task-late"><i class="fas fa-triangle-exclamation"></i>${lateTxt}</div>` : '';
+  if(lateTxt) cls += ' is-late';
   return `
       <div class="task-item${cls}${done ? ' done' : ''}">
         ${chk}
@@ -25426,7 +25484,9 @@ function _mydayTaskRow(item) {
           ${item.notes ? `<div class="task-meta">${escHtml(item.notes)}</div>` : ''}
           ${item.owner && item.source === 'empresa' ? `<div class="task-meta">Responsável: ${escHtml(item.owner)}</div>` : ''}
           ${byLine}
+          ${lateLine}
         </div>
+        ${timeBadge}
         ${prioPill}
         ${badgeHtml}
         ${extra}
@@ -25591,6 +25651,12 @@ async function loadMyDay() {
       const d = t.day_date ? String(t.day_date).slice(0, 10) : '';
       return d ? d === today : isToday;
     });
+    /* Tarefas atrasadas de dias anteriores (não concluídas) — sobem automaticamente para hoje. */
+    const overdueTasks = isToday ? tasks.filter(t => {
+      const d = t.day_date ? String(t.day_date).slice(0, 10) : '';
+      const isDone = t.done === true || t.done === 'true';
+      return d && d < today && !isDone;
+    }) : [];
 
     /* Eventos do dia (inclui compromissos multi-dia que atravessam a data). */
     const cid = currentUser?.company_id;
@@ -25631,15 +25697,28 @@ async function loadMyDay() {
       source: 'designada',
       done: _assignedTaskIsDone(a),
       notes: a.notes || '',
-      assigned_by: a.assigned_by || ''
+      assigned_by: a.assigned_by || '',
+      day: a.due_date ? String(a.due_date).slice(0, 10) : '',
+      time: _taskTimeNorm(a.due_time)
     }));
-    let pessoal = myTasks.map(t => ({
+    const mapPessoal = t => ({
       id: t.id, text: t.task_text || t.text || '', source: 'pessoal',
       done: t.done === true || t.done === 'true', prio: t.priority || 'media',
-      cat: t.category || 'pessoal'
-    }));
-    pessoal = _sortByPriority(pessoal, i => i.prio, i => i.done);
-    const allItems = [...empresa, ...designada, ...pessoal];
+      cat: t.category || 'pessoal',
+      day: t.day_date ? String(t.day_date).slice(0, 10) : '',
+      time: _taskTimeNorm(t.task_time)
+    });
+    const sortTasks = arr => arr.slice().sort((a, b) => {
+      const ad = a.done ? 1 : 0, bd = b.done ? 1 : 0;
+      if(ad !== bd) return ad - bd;
+      const pr = _taskPrioRank(a.prio) - _taskPrioRank(b.prio);
+      if(pr !== 0) return pr;
+      return (a.time || '99:99').localeCompare(b.time || '99:99');
+    });
+    const pessoal = sortTasks(myTasks.map(mapPessoal));
+    const atrasadas = overdueTasks.map(mapPessoal)
+      .sort((a, b) => (a.day || '').localeCompare(b.day || '') || _taskPrioRank(a.prio) - _taskPrioRank(b.prio));
+    const allItems = [...atrasadas, ...empresa, ...designada, ...pessoal];
     const doneCount = allItems.filter(i => i.done).length;
     _mydayRenderProgress(doneCount, allItems.length);
 
@@ -25668,7 +25747,20 @@ async function loadMyDay() {
         </div>`;
     };
 
+    const renderLateSection = (items) => {
+      if(!items.length) return '';
+      return `
+        <div class="myday-section">
+          <div class="myday-section-hdr">
+            <span class="myday-section-title" style="color:#dc2626"><i class="fas fa-triangle-exclamation"></i> Atrasadas (dias anteriores)</span>
+            <span class="myday-section-count">${items.length}</span>
+          </div>
+          ${items.map(_mydayTaskRow).join('')}
+        </div>`;
+    };
+
     el.innerHTML = pastBanner +
+      renderLateSection(atrasadas) +
       renderSection('Cronograma da empresa', empresa) +
       renderSection('Tarefas atribuídas a mim', designada) +
       renderSection('Minhas tarefas', pessoal);
@@ -25809,13 +25901,17 @@ async function loadTasks() {
       }
       const t=item;
       const td=t.done===true||t.done==='true';
+      const lateTxt = !td ? _taskLatenessLabel(t.day_date, t.task_time) : '';
+      const lateLine = lateTxt ? `<div class="task-late"><i class="fas fa-triangle-exclamation"></i>${lateTxt}</div>` : '';
       return `
-      <div class="task-item prio-${_taskPrioNorm(t.priority)}${td?' done':''}">
+      <div class="task-item prio-${_taskPrioNorm(t.priority)}${td?' done':''}${lateTxt?' is-late':''}">
         <div class="task-check${td?' checked':''}" onclick="toggleTask('${t.id}','${t.done}')">${td?'✓':''}</div>
         <div style="flex:1">
           <div class="task-text" style="${td?'text-decoration:line-through':''}">${escHtml(t.task_text||t.text||'')}</div>
           ${t.day_date?`<div class="task-meta">${fmtDate(t.day_date)}</div>`:''}
+          ${lateLine}
         </div>
+        ${_taskTimeBadge(t.task_time)}
         ${_taskCatBadge(t.category)}
         ${_taskPrioPill(t.priority)}
         <button class="btn btn-ghost btn-sm" onclick="openDayTaskModal('personal','${t.id}')" title="Editar"><i class="fas fa-pen"></i></button>
@@ -25854,6 +25950,7 @@ async function openDayTaskModal(type='personal', id=null) {
       }
       document.getElementById('taskText').value = row.task_text || row.text || '';
       document.getElementById('taskDate').value = (row.day_date || '').toString().slice(0,10) || new Date().toISOString().slice(0,10);
+      document.getElementById('taskTime').value = _taskTimeNorm(row.task_time);
       document.getElementById('taskPrio').value = _taskPrioNorm(row.priority);
       document.getElementById('taskCat').value = _taskCatNorm(row.category);
     } catch(e) {
@@ -25863,6 +25960,7 @@ async function openDayTaskModal(type='personal', id=null) {
   } else {
     document.getElementById('taskText').value = '';
     document.getElementById('taskDate').value = new Date().toISOString().slice(0,10);
+    document.getElementById('taskTime').value = '';
     document.getElementById('taskPrio').value = 'media';
     document.getElementById('taskCat').value = 'pessoal';
   }
@@ -25876,6 +25974,7 @@ async function saveTask() {
   const payload = {
     task_text: text,
     day_date:  document.getElementById('taskDate').value || null,
+    task_time: _taskTimeNorm(document.getElementById('taskTime')?.value) || null,
     priority:  document.getElementById('taskPrio').value,
     category:  _taskCatNorm(document.getElementById('taskCat')?.value),
   };
