@@ -920,6 +920,23 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   color:#888888;
 }
 
+/* ── MEU DIA: navegação por data ── */
+.myday-datenav{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;
+}
+.myday-date-input{
+  font-family:var(--font-m);font-size:12px;font-weight:600;color:var(--text);
+  padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg2);
+  cursor:pointer;
+}
+.myday-datenav .btn{white-space:nowrap}
+.myday-pastflag{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:4px 10px;border-radius:999px;margin-left:auto;
+  background:rgba(245,158,11,.14);color:#d97706;border:1px solid rgba(245,158,11,.3);
+}
+
 /* ── MEU DIA (refinado) ── */
 .myday-hero{
   background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
@@ -4215,6 +4232,12 @@ body:has(#login-screen.visible){
           <div class="page-actions">
             <button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Tarefa</button>
           </div>
+        </div>
+        <div class="myday-datenav">
+          <button class="btn btn-ghost btn-sm" onclick="myDayShiftDate(-1)" title="Dia anterior"><i class="fas fa-chevron-left"></i></button>
+          <input type="date" id="mydayDateInput" class="myday-date-input" onchange="myDaySetDate(this.value)">
+          <button class="btn btn-ghost btn-sm" onclick="myDayShiftDate(1)" title="Próximo dia"><i class="fas fa-chevron-right"></i></button>
+          <button class="btn btn-ghost btn-sm" id="mydayTodayBtn" onclick="myDayGoToday()" title="Voltar para hoje"><i class="fas fa-bullseye"></i> Hoje</button>
         </div>
         <div id="mydayHero" class="myday-hero" style="display:none">
           <div class="myday-hero-top">
@@ -10402,7 +10425,7 @@ function navigate(page) {
     _resetCalToCurrentMonth();
     loadCalendarEvents();
   }
-  if(page==='myday')        loadMyDay();
+  if(page==='myday')        { _mydayViewDate = null; loadMyDay(); }
   if(page==='mytasks')      loadTasks();
   if(page==='mycalendar')  {
     _resetMyCalToCurrentMonth();
@@ -25219,7 +25242,12 @@ function _mydayRenderProgress(done, total) {
   const pill = document.getElementById('mydayStatPill');
   const track = document.getElementById('mydayProgressTrack');
   const dateEl = document.getElementById('mydayHeroDate');
-  if(dateEl) dateEl.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  const titleEl = document.querySelector('#mydayHero .myday-hero-title');
+  const activeIso = (typeof _mydayActiveDate === 'function') ? _mydayActiveDate() : new Date().toISOString().slice(0,10);
+  const activeObj = (typeof _isoToLocalDate === 'function') ? _isoToLocalDate(activeIso) : new Date();
+  const isToday = activeIso === new Date().toISOString().slice(0,10);
+  if(dateEl) dateEl.textContent = activeObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  if(titleEl) titleEl.textContent = isToday ? 'Foco de hoje' : 'Resumo do dia';
   if(!hero) return;
   if(total <= 0) { hero.style.display = 'none'; return; }
   hero.style.display = 'block';
@@ -25405,18 +25433,50 @@ function _assignedTaskIsDone(row) {
     || row?.done === true || row?.done === 'true';
 }
 
+/* ── Navegação por data no Meu Dia (histórico por dia) ── */
+let _mydayViewDate = null; /* ISO yyyy-mm-dd; null = hoje */
+function _mydayRealToday() { return new Date().toISOString().slice(0, 10); }
+function _mydayActiveDate() { return _mydayViewDate || _mydayRealToday(); }
+function _isoToLocalDate(iso) { const p = String(iso).split('-').map(Number); return new Date(p[0], (p[1]||1)-1, p[2]||1); }
+function _localDateToIso(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function myDaySetDate(iso) {
+  const real = _mydayRealToday();
+  _mydayViewDate = (!iso || iso === real) ? null : String(iso).slice(0,10);
+  loadMyDay();
+}
+function myDayShiftDate(delta) {
+  const cur = _isoToLocalDate(_mydayActiveDate());
+  cur.setDate(cur.getDate() + delta);
+  myDaySetDate(_localDateToIso(cur));
+}
+function myDayGoToday() { myDaySetDate(null); }
+
 async function loadMyDay() {
   const el = document.getElementById('mydayList');
   if(!el) return;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = _mydayActiveDate();
+  const realToday = _mydayRealToday();
+  const isToday = today === realToday;
+  const isPast = today < realToday;
+  const dateObj = _isoToLocalDate(today);
+
+  const dateInput = document.getElementById('mydayDateInput');
+  if(dateInput) dateInput.value = today;
+  const todayBtn = document.getElementById('mydayTodayBtn');
+  if(todayBtn) todayBtn.style.display = isToday ? 'none' : '';
+
   const hdr = document.getElementById('mydayPageTitle');
-  if(hdr) hdr.innerHTML = `<i class="fas fa-crosshairs"></i> MEU DIA <span style="font-family:var(--font-m);font-size:10px;color:var(--textsub);font-weight:400;margin-left:6px">${new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>`;
+  if(hdr) hdr.innerHTML = `<i class="fas fa-crosshairs"></i> MEU DIA <span style="font-family:var(--font-m);font-size:10px;color:var(--textsub);font-weight:400;margin-left:6px">${dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>`;
 
   try {
     const tasks = await fetchOwn('age_tasks');
-    const myTasks = tasks.filter(t => (!t.day_date || String(t.day_date).slice(0, 10) === today));
+    /* Hoje: inclui tarefas sem data (flutuantes). Dias anteriores/futuros: só as daquele dia. */
+    const myTasks = tasks.filter(t => {
+      const d = t.day_date ? String(t.day_date).slice(0, 10) : '';
+      return d ? d === today : isToday;
+    });
 
-    /* Eventos de hoje (inclui compromissos multi-dia que atravessam o dia). */
+    /* Eventos do dia (inclui compromissos multi-dia que atravessam a data). */
     const cid = currentUser?.company_id;
     let todayEvts = [];
     if(cid) {
@@ -25433,7 +25493,7 @@ async function loadMyDay() {
       } catch(e) { todayEvts = []; }
     }
 
-    /* Tarefas atribuídas pelo admin com prazo hoje. */
+    /* Tarefas atribuídas pelo admin com prazo na data. */
     const assigned = await _fetchAssignedTasksForUser({ startDate: today, endDate: today });
     /* Evitar duplicação: se um evento já gerou uma assignment, mostrar SÓ a assignment
        (que tem status persistido no banco), removendo o espelho dele em "empresa". */
@@ -25467,8 +25527,15 @@ async function loadMyDay() {
     const doneCount = allItems.filter(i => i.done).length;
     _mydayRenderProgress(doneCount, allItems.length);
 
+    const pastBanner = isPast
+      ? `<div class="myday-pastflag" style="margin:0 0 12px"><i class="fas fa-clock-rotate-left"></i> Registro do dia ${dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} · ${doneCount}/${allItems.length} concluídas</div>`
+      : '';
+
     if(!allItems.length) {
-      el.innerHTML = `<div class="myday-empty">Nenhuma tarefa para hoje.<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Adicionar tarefa</button></div>`;
+      const emptyMsg = isPast
+        ? `Nenhuma tarefa registrada neste dia.`
+        : `Nenhuma tarefa para este dia.<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Adicionar tarefa</button>`;
+      el.innerHTML = pastBanner + `<div class="myday-empty">${emptyMsg}</div>`;
       return;
     }
 
@@ -25485,12 +25552,12 @@ async function loadMyDay() {
         </div>`;
     };
 
-    el.innerHTML =
+    el.innerHTML = pastBanner +
       renderSection('Cronograma da empresa', empresa) +
       renderSection('Tarefas atribuídas a mim', designada) +
       renderSection('Minhas tarefas', pessoal);
 
-    _maybeCelebrateMyDay(doneCount, allItems.length);
+    if(isToday) _maybeCelebrateMyDay(doneCount, allItems.length);
   } catch(e) {
     console.warn('[loadMyDay]', e);
     el.innerHTML = `<div class="myday-empty" style="color:#b91c1c">Erro ao carregar o dia.</div>`;
