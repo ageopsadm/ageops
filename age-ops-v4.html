@@ -937,6 +937,24 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   background:rgba(245,158,11,.14);color:#d97706;border:1px solid rgba(245,158,11,.3);
 }
 
+/* ── Meu Dia: resumo / relatório semanal ── */
+.mdr-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.mdr-stat{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px;text-align:center}
+.mdr-stat-val{font-family:var(--font-h);font-size:22px;font-weight:800;color:var(--text);line-height:1}
+.mdr-stat-lbl{font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--textsub);margin-top:6px}
+.mdr-bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding:8px 4px;border-bottom:1px solid var(--bd);margin-bottom:6px}
+.mdr-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.mdr-bar-track{width:100%;max-width:28px;flex:1;display:flex;align-items:flex-end;background:rgba(0,0,0,.05);border-radius:5px 5px 0 0;overflow:hidden}
+.mdr-bar-fill{width:100%;background:linear-gradient(180deg,#22d3ee,#16a34a);border-radius:5px 5px 0 0;transition:height .35s ease;min-height:2px}
+.mdr-bar-fill.is-full{background:linear-gradient(180deg,#4ade80,#16a34a)}
+.mdr-bar-fill.is-empty{background:rgba(0,0,0,.12)}
+.mdr-bar-pct{font-family:var(--font-m);font-size:8px;font-weight:700;color:var(--textsub)}
+.mdr-bar-day{font-family:var(--font-m);font-size:8px;color:var(--textsub);text-transform:uppercase}
+.mdr-bar-day.is-today{color:#16a34a;font-weight:700}
+.mdr-axis{display:flex;gap:8px;margin-bottom:16px}
+.mdr-axis .mdr-bar-col{gap:0}
+.mdr-empty{padding:24px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px}
+
 /* ── MEU DIA (refinado) ── */
 .myday-hero{
   background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
@@ -4229,7 +4247,8 @@ body:has(#login-screen.visible){
       <div id="page-myday" class="page">
         <div class="page-header">
           <div class="page-title" id="mydayPageTitle"><i class="fas fa-crosshairs"></i> MEU DIA</div>
-          <div class="page-actions">
+          <div class="page-actions" style="gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="openMyDayReport()"><i class="fas fa-chart-simple"></i> Resumo</button>
             <button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Tarefa</button>
           </div>
         </div>
@@ -5207,6 +5226,17 @@ body:has(#login-screen.visible){
       <button class="btn btn-ghost" onclick="closeModal('modalTask')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTask()"><i class="fas fa-save"></i> Salvar</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal Resumo / Relatório do Meu Dia -->
+<div class="modal" id="modalMyDayReport">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">
+      <span><i class="fas fa-chart-simple"></i> RESUMO DOS ÚLTIMOS DIAS</span>
+      <button onclick="closeModal('modalMyDayReport')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="myDayReportBody"><div style="padding:24px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</div></div>
   </div>
 </div>
 
@@ -25450,6 +25480,92 @@ function myDayShiftDate(delta) {
   myDaySetDate(_localDateToIso(cur));
 }
 function myDayGoToday() { myDaySetDate(null); }
+
+/* ── Resumo / relatório dos últimos 7 dias ── */
+async function openMyDayReport() {
+  openModal('modalMyDayReport');
+  const body = document.getElementById('myDayReportBody');
+  if(!body) return;
+  body.innerHTML = `<div class="mdr-empty">Carregando…</div>`;
+  try {
+    const DAYS = 7;
+    const realToday = _mydayRealToday();
+    const start = _isoToLocalDate(realToday); start.setDate(start.getDate() - (DAYS - 1));
+    const startIso = _localDateToIso(start);
+
+    const tasks = await fetchOwn('age_tasks');
+    const assigned = await _fetchAssignedTasksForUser({ startDate: startIso, endDate: realToday });
+
+    /* Mapa data → {done,total} */
+    const byDay = {};
+    for(let i = 0; i < DAYS; i++) {
+      const d = _isoToLocalDate(realToday); d.setDate(d.getDate() - (DAYS - 1) + i);
+      byDay[_localDateToIso(d)] = { done: 0, total: 0 };
+    }
+    const bump = (iso, done) => {
+      const k = String(iso || '').slice(0, 10);
+      if(byDay[k]) { byDay[k].total++; if(done) byDay[k].done++; }
+    };
+    tasks.forEach(t => bump(t.day_date, t.done === true || t.done === 'true'));
+    assigned.forEach(a => bump(a.due_date, _assignedTaskIsDone(a)));
+
+    const days = Object.keys(byDay).sort();
+    let sumDone = 0, sumTotal = 0, best = { pct: -1, iso: '' };
+    days.forEach(iso => {
+      const { done, total } = byDay[iso];
+      sumDone += done; sumTotal += total;
+      const pct = total ? Math.round(done / total * 100) : 0;
+      if(total > 0 && pct > best.pct) best = { pct, iso };
+    });
+    const overall = sumTotal ? Math.round(sumDone / sumTotal * 100) : 0;
+
+    /* Sequência: dias consecutivos (de hoje p/ trás) com tarefas e 100% concluído. */
+    let streak = 0;
+    for(let i = days.length - 1; i >= 0; i--) {
+      const { done, total } = byDay[days[i]];
+      if(total === 0) { if(days[i] === realToday) continue; else break; }
+      if(done === total) streak++; else break;
+    }
+
+    if(!sumTotal) {
+      body.innerHTML = `<div class="mdr-empty">Nenhuma tarefa registrada nos últimos ${DAYS} dias.<br>Crie tarefas no Meu Dia para acompanhar sua evolução.</div>`;
+      return;
+    }
+
+    const bars = days.map(iso => {
+      const { done, total } = byDay[iso];
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const dObj = _isoToLocalDate(iso);
+      const dow = dObj.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').slice(0, 3);
+      const cls = total === 0 ? 'is-empty' : (pct >= 100 ? 'is-full' : '');
+      const isToday = iso === realToday;
+      return `
+        <div class="mdr-bar-col">
+          <span class="mdr-bar-pct">${total ? pct + '%' : '–'}</span>
+          <div class="mdr-bar-track"><div class="mdr-bar-fill ${cls}" style="height:${total ? Math.max(pct, 3) : 0}%"></div></div>
+          <span class="mdr-bar-day${isToday ? ' is-today' : ''}">${dow}</span>
+        </div>`;
+    }).join('');
+
+    const bestLbl = best.iso
+      ? `${_isoToLocalDate(best.iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} (${best.pct}%)`
+      : '–';
+
+    body.innerHTML = `
+      <div class="mdr-stats">
+        <div class="mdr-stat"><div class="mdr-stat-val">${overall}%</div><div class="mdr-stat-lbl">Conclusão 7 dias</div></div>
+        <div class="mdr-stat"><div class="mdr-stat-val">${streak}🔥</div><div class="mdr-stat-lbl">Sequência</div></div>
+        <div class="mdr-stat"><div class="mdr-stat-val">${sumDone}/${sumTotal}</div><div class="mdr-stat-lbl">Tarefas feitas</div></div>
+      </div>
+      <div class="mdr-bars">${bars}</div>
+      <div style="font-family:var(--font-m);font-size:10px;color:var(--textsub);text-align:center;margin-top:4px">
+        Melhor dia: <strong style="color:var(--text)">${bestLbl}</strong>
+      </div>`;
+  } catch(e) {
+    console.warn('[openMyDayReport]', e);
+    body.innerHTML = `<div class="mdr-empty" style="color:#b91c1c">Erro ao gerar o resumo.</div>`;
+  }
+}
 
 async function loadMyDay() {
   const el = document.getElementById('mydayList');
