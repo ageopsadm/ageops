@@ -483,7 +483,10 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
   border-color: #000;
 }
 @media (max-width: 960px) {
-  #orcamento-builder.orc-builder-grid { grid-template-columns: 1fr !important; }
+  #orcamento-builder.orc-builder-grid { grid-template-columns: 1fr !important; overflow: visible !important; }
+  #orcamento-builder #orc-editor,
+  #orcamento-builder #orc-preview { max-height: none !important; overflow: visible !important; }
+  #modalOrc > div { max-height: none !important; overflow: visible !important; }
 }
 
 button.perm-disabled,.btn.perm-disabled{
@@ -1030,6 +1033,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   background:rgba(15,23,42,.06);color:#475569;border:1px solid rgba(15,23,42,.12);
 }
 .task-time-badge i{font-size:8px}
+.task-time-badge.task-time-none{background:transparent;color:#94a3b8;border-color:rgba(148,163,184,.35)}
 .task-late{
   display:inline-flex;align-items:center;gap:4px;margin-top:3px;
   font-family:var(--font-m);font-size:9px;font-weight:700;color:#dc2626;
@@ -18938,6 +18942,7 @@ async function salvarOrcamento(status) {
 }
 
 function gerarPDFCliente() {
+  if(typeof html2pdf === 'undefined') { toast('Gerador de PDF não carregou. Verifique a conexão e recarregue.', 'err'); return; }
   const el = document.getElementById('orc-preview-content');
   if(!el) return;
   const client = document.getElementById('orc-cliente')?.value?.trim();
@@ -18945,21 +18950,30 @@ function gerarPDFCliente() {
   const fin = orcBuilderGetFinancials();
   if(fin.subtotal <= 0) { toast('Monte o orçamento antes de exportar', 'err'); return; }
   const slug = (document.getElementById('orc-titulo')?.value || 'proposta').replace(/[^\w\d\-]+/g, '_').slice(0, 40);
+  /* Renderiza a partir de um clone offscreen com largura A4 fixa — no mobile o preview
+     ao vivo fica estreito/cortado e o html2canvas gera um PDF quebrado. */
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;background:#fff;color:#111;border-radius:12px;padding:32px';
+  wrap.innerHTML = el.innerHTML;
+  document.body.appendChild(wrap);
   const opt = {
     margin: [10, 10, 10, 10],
     filename: `Orcamento_${slug || 'AgeOps'}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, windowWidth: 820, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
-  html2pdf().set(opt).from(el).save();
-  toast('PDF cliente gerado');
+  toast('Gerando PDF…');
+  html2pdf().set(opt).from(wrap).save()
+    .then(() => { try { document.body.removeChild(wrap); } catch(_) {} toast('PDF cliente gerado'); })
+    .catch((e) => { try { document.body.removeChild(wrap); } catch(_) {} console.warn('[gerarPDFCliente]', e); toast('Erro ao gerar PDF. Tente novamente.', 'err'); });
 }
 
 /* Gera o PDF interno (custos + margem). Sem argumento: lê o builder do modal.
    Com (builder, ctx): gera a partir de uma linha salva (botão na lista). */
 function gerarPDFInterno(srcBuilder, srcCtx) {
+  if(typeof html2pdf === 'undefined') { toast('Gerador de PDF não carregou. Verifique a conexão e recarregue.', 'err'); return; }
   let fin, client, tituloProj, emStr, valStr, catalogo, despesas;
   if(srcBuilder) {
     fin = _orcFinancialsFromBuilder(srcBuilder);
@@ -25350,7 +25364,15 @@ function _taskTimeNorm(t) {
 }
 function _taskTimeBadge(t) {
   const v = _taskTimeNorm(t);
-  return v ? `<span class="task-time-badge"><i class="fas fa-clock"></i>${v}</span>` : '';
+  return v
+    ? `<span class="task-time-badge"><i class="fas fa-clock"></i>${v}</span>`
+    : `<span class="task-time-badge task-time-none"><i class="far fa-clock"></i>Sem horário</span>`;
+}
+function _fmtCreatedAt(ts) {
+  if(ts == null || ts === '') return '';
+  const d = (typeof ts === 'number') ? new Date(ts) : new Date(String(ts));
+  if(isNaN(d.getTime())) return '';
+  return `Criada ${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 }
 /* Vencimento em ms: dia + horário; sem horário vence no fim do dia. */
 function _taskDueMs(dayIso, timeStr) {
@@ -25472,10 +25494,13 @@ function _mydayTaskRow(item) {
   const byLine = item.source === 'designada' && item.assigned_by
     ? `<div class="task-meta">Atribuída por ${escHtml(displayNameForUsername(item.assigned_by))}</div>`
     : '';
-  const timeBadge = item.source !== 'empresa' ? _taskTimeBadge(item.time) : '';
+  const timeBadge = item.source === 'pessoal' ? _taskTimeBadge(item.time) : (item.time ? _taskTimeBadge(item.time) : '');
   const lateTxt = !done ? _taskLatenessLabel(item.day, item.time) : '';
   const lateLine = lateTxt ? `<div class="task-late"><i class="fas fa-triangle-exclamation"></i>${lateTxt}</div>` : '';
   if(lateTxt) cls += ' is-late';
+  const createdLine = (item.source === 'pessoal' && item.createdAt && _fmtCreatedAt(item.createdAt))
+    ? `<div class="task-meta">${_fmtCreatedAt(item.createdAt)}</div>`
+    : '';
   return `
       <div class="task-item${cls}${done ? ' done' : ''}">
         ${chk}
@@ -25484,6 +25509,7 @@ function _mydayTaskRow(item) {
           ${item.notes ? `<div class="task-meta">${escHtml(item.notes)}</div>` : ''}
           ${item.owner && item.source === 'empresa' ? `<div class="task-meta">Responsável: ${escHtml(item.owner)}</div>` : ''}
           ${byLine}
+          ${createdLine}
           ${lateLine}
         </div>
         ${timeBadge}
@@ -25706,7 +25732,8 @@ async function loadMyDay() {
       done: t.done === true || t.done === 'true', prio: t.priority || 'media',
       cat: t.category || 'pessoal',
       day: t.day_date ? String(t.day_date).slice(0, 10) : '',
-      time: _taskTimeNorm(t.task_time)
+      time: _taskTimeNorm(t.task_time),
+      createdAt: t.created_at || null
     });
     const sortTasks = arr => arr.slice().sort((a, b) => {
       const ad = a.done ? 1 : 0, bd = b.done ? 1 : 0;
@@ -25867,6 +25894,10 @@ async function loadTasks() {
       const pr = _taskPrioRank(a.priority) - _taskPrioRank(b.priority);
       if(pr !== 0) return pr;
       if(da && db && da !== db) return da.localeCompare(db);
+      if(da && db && da === db) {
+        const ta = _taskTimeNorm(a.task_time) || '99:99', tb = _taskTimeNorm(b.task_time) || '99:99';
+        if(ta !== tb) return ta.localeCompare(tb);
+      }
       if(da && !db) return -1;
       if(!da && db) return 1;
       return (b.created_at||0) - (a.created_at||0);
