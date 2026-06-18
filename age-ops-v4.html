@@ -900,13 +900,13 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 
 /* ── MEU DIA / TASKS ── */
 .task-item{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 14px;background:#ffffff;
-  border:1px solid rgba(0,0,0,.08);
-  border-radius:5px;margin-bottom:6px;transition:border-color .15s,box-shadow .15s;
+  display:flex;align-items:center;gap:11px;
+  padding:12px 14px;background:#ffffff;
+  border:1px solid rgba(15,23,42,.08);
+  border-radius:10px;margin-bottom:8px;transition:border-color .15s,box-shadow .15s,transform .12s;
 }
-.task-item:hover{border-color:rgba(0,0,0,.18);box-shadow:0 1px 6px rgba(0,0,0,.05)}
-.task-item.done{opacity:.4}
+.task-item:hover{border-color:rgba(15,23,42,.16);box-shadow:0 4px 16px rgba(15,23,42,.07);transform:translateY(-1px)}
+.task-item.done{opacity:.5}
 .task-check{
   width:17px;height:17px;border-radius:3px;
   border:1.5px solid rgba(0,0,0,.2);
@@ -958,52 +958,61 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .mdr-axis .mdr-bar-col{gap:0}
 .mdr-empty{padding:24px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px}
 
-/* ── MEU DIA (refinado) ── */
+/* ── MEU DIA (refinado v2) ── */
 .myday-hero{
-  background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
-  border-radius:12px;padding:18px 20px;margin-bottom:16px;color:#fff;
+  position:relative;overflow:hidden;
+  background:radial-gradient(130% 150% at 0% 0%,#1e3a5f 0%,#0f172a 58%);
+  border-radius:18px;padding:22px 26px;margin-bottom:18px;color:#fff;
   border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 8px 28px rgba(15,23,42,.18);
+  box-shadow:0 16px 40px rgba(15,23,42,.30);
+  display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;
 }
-.myday-hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.myday-hero-title{font-family:var(--font-h);font-size:15px;font-weight:800;letter-spacing:.04em}
-.myday-hero-date{font-family:var(--font-m);font-size:10px;color:rgba(255,255,255,.55);margin-top:4px;text-transform:capitalize}
-.myday-stat-pill{
-  font-family:var(--font-m);font-size:10px;font-weight:700;
-  padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.15);white-space:nowrap;
-}
-.myday-progress-label{
-  display:flex;justify-content:space-between;align-items:baseline;
-  font-family:var(--font-m);font-size:9px;letter-spacing:.08em;
-  color:rgba(255,255,255,.65);margin-bottom:8px;
-}
-.myday-progress-track{
-  height:8px;border-radius:999px;background:rgba(255,255,255,.12);
-  overflow:hidden;border:1px solid rgba(255,255,255,.08);
-}
-.myday-progress-fill{
-  height:100%;border-radius:999px;background:linear-gradient(90deg,#4ade80,#22d3ee);
-  transition:width .35s ease;
-  min-width:0;
-}
-.myday-section{margin-bottom:18px}
-.myday-section-hdr{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,.08);
-}
+.myday-hero::after{content:'';position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(74,222,128,.16),transparent 70%);pointer-events:none}
+.myday-hero-main{flex:1;min-width:210px;position:relative;z-index:1}
+.myday-hero-title{font-family:var(--font-h);font-size:20px;font-weight:800;letter-spacing:.01em;line-height:1.1}
+.myday-hero-date{font-family:var(--font-m);font-size:11px;color:rgba(255,255,255,.6);margin-top:6px;text-transform:capitalize}
+.myday-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.myday-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:10px;font-weight:700;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.9)}
+.myday-chip i{font-size:9px;opacity:.9}
+.myday-chip.is-done{color:#86efac;border-color:rgba(134,239,172,.3)}
+.myday-chip.is-pending{color:#93c5fd;border-color:rgba(147,197,253,.3)}
+.myday-chip.is-late{color:#fca5a5;border-color:rgba(252,165,165,.35)}
+.myday-ring{position:relative;width:106px;height:106px;flex-shrink:0;z-index:1}
+.myday-ring svg{transform:rotate(-90deg);display:block}
+.myday-ring-track{stroke:rgba(255,255,255,.12)}
+.myday-ring-fill{stroke:url(#mydayRingGrad);stroke-linecap:round;transition:stroke-dashoffset .55s cubic-bezier(.22,1,.36,1)}
+.myday-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.myday-ring-pct{font-family:var(--font-h);font-size:24px;font-weight:800;line-height:1}
+.myday-ring-sub{font-family:var(--font-m);font-size:8px;letter-spacing:.1em;color:rgba(255,255,255,.6);margin-top:4px;text-transform:uppercase}
+
+.myday-section{margin-bottom:22px}
+.myday-section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.myday-section-accent{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.14)}
 .myday-section-title{
-  font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.12em;
-  color:var(--textsub);text-transform:uppercase;
+  font-family:var(--font-m);font-size:10px;font-weight:800;letter-spacing:.1em;
+  color:var(--text);text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
 }
-.myday-section-count{font-family:var(--font-m);font-size:9px;color:#94a3b8}
+.myday-section-count{
+  font-family:var(--font-m);font-size:9px;font-weight:700;color:var(--textsub);
+  background:var(--bg2);border:1px solid var(--bd);border-radius:999px;padding:2px 9px;
+}
+.myday-section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(0,0,0,.09),transparent)}
 .myday-empty{
-  text-align:center;padding:36px 20px;color:var(--textsub);
-  font-family:var(--font-m);font-size:11px;line-height:1.6;
-  background:#fafafa;border:1.5px dashed rgba(0,0,0,.1);border-radius:10px;
+  text-align:center;padding:42px 20px;color:var(--textsub);
+  font-family:var(--font-m);font-size:12px;line-height:1.7;
+  background:linear-gradient(180deg,#fafbfc,#f3f5f8);border:1.5px dashed rgba(0,0,0,.1);border-radius:14px;
 }
+.myday-empty .myday-empty-ic{font-size:28px;color:#cbd5e1;margin-bottom:12px;display:block}
+
+/* Trilho de horário à esquerda de cada tarefa */
+.task-timerail{
+  flex-shrink:0;width:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  padding-right:11px;margin-right:1px;border-right:1px solid rgba(15,23,42,.08);align-self:stretch;
+}
+.task-timerail-h{font-family:var(--font-data);font-size:13px;font-weight:700;color:#0f172a;line-height:1}
+.task-timerail-m{font-family:var(--font-m);font-size:8px;color:#94a3b8;letter-spacing:.04em}
+.task-timerail-none{font-family:var(--font-m);font-size:13px;color:#cbd5e1;line-height:1}
 .task-item.myday-empresa{border-left:3px solid #0f172a}
-.task-item.myday-pessoal{border-left:3px solid #16a34a}
 .task-item.myday-designada{border-left:3px solid #f59e0b}
 
 /* ── Prioridade das tarefas ── */
@@ -4275,19 +4284,26 @@ body:has(#login-screen.visible){
           <button class="btn btn-ghost btn-sm" id="mydayTodayBtn" onclick="myDayGoToday()" title="Voltar para hoje"><i class="fas fa-bullseye"></i> Hoje</button>
         </div>
         <div id="mydayHero" class="myday-hero" style="display:none">
-          <div class="myday-hero-top">
-            <div>
-              <div class="myday-hero-title">Foco de hoje</div>
-              <div class="myday-hero-date" id="mydayHeroDate"></div>
+          <div class="myday-hero-main">
+            <div class="myday-hero-title" id="mydayHeroTitle">Foco de hoje</div>
+            <div class="myday-hero-date" id="mydayHeroDate"></div>
+            <div class="myday-chips" id="mydayChips"></div>
+          </div>
+          <div class="myday-ring" aria-hidden="true">
+            <svg width="106" height="106" viewBox="0 0 106 106">
+              <defs>
+                <linearGradient id="mydayRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#4ade80"/>
+                  <stop offset="100%" stop-color="#22d3ee"/>
+                </linearGradient>
+              </defs>
+              <circle class="myday-ring-track" cx="53" cy="53" r="46" fill="none" stroke-width="9"/>
+              <circle class="myday-ring-fill" id="mydayRingFill" cx="53" cy="53" r="46" fill="none" stroke-width="9" stroke-dasharray="289.027" stroke-dashoffset="289.027"/>
+            </svg>
+            <div class="myday-ring-label">
+              <span class="myday-ring-pct" id="mydayProgressPct">0%</span>
+              <span class="myday-ring-sub" id="mydayStatPill">0/0</span>
             </div>
-            <div class="myday-stat-pill" id="mydayStatPill">0 / 0</div>
-          </div>
-          <div class="myday-progress-label">
-            <span>Progresso do dia</span>
-            <span id="mydayProgressPct">0%</span>
-          </div>
-          <div class="myday-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="mydayProgressTrack">
-            <div class="myday-progress-fill" id="mydayProgressFill" style="width:0%"></div>
           </div>
         </div>
         <div id="mydayList"></div>
@@ -25294,27 +25310,41 @@ function _mydaySetDone(id, done) {
   if(done) s[k] = true; else delete s[k];
   localStorage.setItem('age_myday_done', JSON.stringify(s));
 }
-function _mydayRenderProgress(done, total) {
+function _mydayGreeting() {
+  const h = new Date().getHours();
+  const nm = String(currentUser?.full_name || currentUser?.name || currentUser?.username || '').trim().split(' ')[0];
+  const base = h < 12 ? 'Bom dia' : (h < 18 ? 'Boa tarde' : 'Boa noite');
+  return nm ? `${base}, ${nm}` : base;
+}
+function _mydayRenderProgress(done, total, overdue) {
   const hero = document.getElementById('mydayHero');
-  const fill = document.getElementById('mydayProgressFill');
+  const ring = document.getElementById('mydayRingFill');
   const pctEl = document.getElementById('mydayProgressPct');
   const pill = document.getElementById('mydayStatPill');
-  const track = document.getElementById('mydayProgressTrack');
   const dateEl = document.getElementById('mydayHeroDate');
-  const titleEl = document.querySelector('#mydayHero .myday-hero-title');
+  const titleEl = document.getElementById('mydayHeroTitle');
+  const chipsEl = document.getElementById('mydayChips');
   const activeIso = (typeof _mydayActiveDate === 'function') ? _mydayActiveDate() : new Date().toISOString().slice(0,10);
   const activeObj = (typeof _isoToLocalDate === 'function') ? _isoToLocalDate(activeIso) : new Date();
   const isToday = activeIso === new Date().toISOString().slice(0,10);
   if(dateEl) dateEl.textContent = activeObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-  if(titleEl) titleEl.textContent = isToday ? 'Foco de hoje' : 'Resumo do dia';
+  if(titleEl) titleEl.textContent = isToday ? _mydayGreeting() : 'Resumo do dia';
   if(!hero) return;
   if(total <= 0) { hero.style.display = 'none'; return; }
-  hero.style.display = 'block';
+  hero.style.display = 'flex';
   const pct = total ? Math.round((done / total) * 100) : 0;
-  if(fill) fill.style.width = pct + '%';
+  const CIRC = 2 * Math.PI * 46;
+  if(ring) ring.style.strokeDashoffset = String(CIRC * (1 - pct / 100));
   if(pctEl) pctEl.textContent = pct + '%';
-  if(pill) pill.textContent = `${done} / ${total} concluídas`;
-  if(track) track.setAttribute('aria-valuenow', String(pct));
+  if(pill) pill.textContent = `${done}/${total}`;
+  if(chipsEl) {
+    const pending = Math.max(0, total - done);
+    const ov = overdue || 0;
+    let chips = `<span class="myday-chip is-done"><i class="fas fa-circle-check"></i>${done} concluída${done !== 1 ? 's' : ''}</span>`
+      + `<span class="myday-chip is-pending"><i class="fas fa-circle-half-stroke"></i>${pending} pendente${pending !== 1 ? 's' : ''}</span>`;
+    if(ov > 0) chips += `<span class="myday-chip is-late"><i class="fas fa-triangle-exclamation"></i>${ov} atrasada${ov !== 1 ? 's' : ''}</span>`;
+    chipsEl.innerHTML = chips;
+  }
 }
 /* ── Prioridade: normaliza, ordena e renderiza ── */
 function _taskPrioNorm(p) {
@@ -25494,15 +25524,19 @@ function _mydayTaskRow(item) {
   const byLine = item.source === 'designada' && item.assigned_by
     ? `<div class="task-meta">Atribuída por ${escHtml(displayNameForUsername(item.assigned_by))}</div>`
     : '';
-  const timeBadge = item.source === 'pessoal' ? _taskTimeBadge(item.time) : (item.time ? _taskTimeBadge(item.time) : '');
+  const tnorm = _taskTimeNorm(item.time);
+  const timeRail = `<div class="task-timerail">${tnorm
+    ? `<span class="task-timerail-h">${tnorm}</span>${item.timeEnd ? `<span class="task-timerail-m">${item.timeEnd}</span>` : ''}`
+    : `<span class="task-timerail-none">—</span>`}</div>`;
   const lateTxt = !done ? _taskLatenessLabel(item.day, item.time) : '';
   const lateLine = lateTxt ? `<div class="task-late"><i class="fas fa-triangle-exclamation"></i>${lateTxt}</div>` : '';
   if(lateTxt) cls += ' is-late';
   const createdLine = (item.source === 'pessoal' && item.createdAt && _fmtCreatedAt(item.createdAt))
-    ? `<div class="task-meta">${_fmtCreatedAt(item.createdAt)}</div>`
+    ? `<div class="task-meta">${_fmtCreatedAt(item.createdAt)}${tnorm ? '' : ' · sem horário'}</div>`
     : '';
   return `
       <div class="task-item${cls}${done ? ' done' : ''}">
+        ${timeRail}
         ${chk}
         <div style="flex:1">
           <div class="task-text" style="${done ? 'text-decoration:line-through' : ''}">${escHtml(item.text)}</div>
@@ -25512,7 +25546,6 @@ function _mydayTaskRow(item) {
           ${createdLine}
           ${lateLine}
         </div>
-        ${timeBadge}
         ${prioPill}
         ${badgeHtml}
         ${extra}
@@ -25714,7 +25747,8 @@ async function loadMyDay() {
       const id = 'sched_' + e.id;
       return {
         id, text: (e.titulo || e.title || 'Evento'), source: 'empresa',
-        done: _mydayIsDone(id, false), notes: (e.descricao || e.notes || ''), owner: (e.responsavel_nome || e.owner || '')
+        done: _mydayIsDone(id, false), notes: (e.descricao || e.notes || ''), owner: (e.responsavel_nome || e.owner || ''),
+        time: _taskTimeNorm(e.hora_inicio), timeEnd: _taskTimeNorm(e.hora_fim)
       };
     });
     const designada = assigned.map(a => ({
@@ -25747,7 +25781,7 @@ async function loadMyDay() {
       .sort((a, b) => (a.day || '').localeCompare(b.day || '') || _taskPrioRank(a.prio) - _taskPrioRank(b.prio));
     const allItems = [...atrasadas, ...empresa, ...designada, ...pessoal];
     const doneCount = allItems.filter(i => i.done).length;
-    _mydayRenderProgress(doneCount, allItems.length);
+    _mydayRenderProgress(doneCount, allItems.length, atrasadas.length);
 
     const pastBanner = isPast
       ? `<div class="myday-pastflag" style="margin:0 0 12px"><i class="fas fa-clock-rotate-left"></i> Registro do dia ${dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} · ${doneCount}/${allItems.length} concluídas</div>`
@@ -25755,19 +25789,21 @@ async function loadMyDay() {
 
     if(!allItems.length) {
       const emptyMsg = isPast
-        ? `Nenhuma tarefa registrada neste dia.`
-        : `Nenhuma tarefa para este dia.<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Adicionar tarefa</button>`;
+        ? `<span class="myday-empty-ic"><i class="fas fa-moon"></i></span>Nenhuma tarefa registrada neste dia.`
+        : `<span class="myday-empty-ic"><i class="fas fa-mug-hot"></i></span>Tudo limpo por aqui.<br>Que tal planejar o seu dia?<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Adicionar tarefa</button>`;
       el.innerHTML = pastBanner + `<div class="myday-empty">${emptyMsg}</div>`;
       return;
     }
 
-    const renderSection = (title, items) => {
+    const renderSection = (title, items, accent, icon) => {
       if(!items.length) return '';
       const doneSec = items.filter(i => i.done).length;
       return `
         <div class="myday-section">
           <div class="myday-section-hdr">
-            <span class="myday-section-title">${title}</span>
+            <span class="myday-section-accent" style="background:${accent};box-shadow:0 0 0 3px ${accent}22"></span>
+            <span class="myday-section-title"><i class="fas ${icon}"></i> ${title}</span>
+            <span class="myday-section-line"></span>
             <span class="myday-section-count">${doneSec}/${items.length}</span>
           </div>
           ${items.map(_mydayTaskRow).join('')}
@@ -25779,7 +25815,9 @@ async function loadMyDay() {
       return `
         <div class="myday-section">
           <div class="myday-section-hdr">
+            <span class="myday-section-accent" style="background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.18)"></span>
             <span class="myday-section-title" style="color:#dc2626"><i class="fas fa-triangle-exclamation"></i> Atrasadas (dias anteriores)</span>
+            <span class="myday-section-line"></span>
             <span class="myday-section-count">${items.length}</span>
           </div>
           ${items.map(_mydayTaskRow).join('')}
@@ -25788,9 +25826,9 @@ async function loadMyDay() {
 
     el.innerHTML = pastBanner +
       renderLateSection(atrasadas) +
-      renderSection('Cronograma da empresa', empresa) +
-      renderSection('Tarefas atribuídas a mim', designada) +
-      renderSection('Minhas tarefas', pessoal);
+      renderSection('Cronograma da empresa', empresa, '#0f172a', 'fa-building') +
+      renderSection('Tarefas atribuídas a mim', designada, '#f59e0b', 'fa-user-check') +
+      renderSection('Minhas tarefas', pessoal, '#16a34a', 'fa-list-check');
 
     if(isToday) _maybeCelebrateMyDay(doneCount, allItems.length);
   } catch(e) {
