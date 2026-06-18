@@ -1049,6 +1049,27 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 }
 .task-item.is-late{border-left:3px solid #ef4444;background:linear-gradient(90deg,rgba(239,68,68,.07),#fff 55%)}
 
+/* ── Financeiro Pessoal: cards de resumo (tamanho uniforme) ── */
+.myfin-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.myfin-card{
+  display:flex;align-items:center;gap:12px;min-width:0;
+  background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px 16px;
+  transition:border-color .15s,box-shadow .15s,transform .12s;
+}
+.myfin-card:hover{border-color:rgba(15,23,42,.16);box-shadow:0 4px 16px rgba(15,23,42,.07);transform:translateY(-1px)}
+.myfin-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.myfin-card.in  .myfin-ic{background:rgba(22,163,74,.12);color:#16a34a}
+.myfin-card.out .myfin-ic{background:rgba(220,38,38,.12);color:#dc2626}
+.myfin-card.bal .myfin-ic{background:rgba(37,99,235,.12);color:#2563eb}
+.myfin-body{min-width:0;flex:1}
+.myfin-lbl{font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--textsub)}
+.myfin-val{font-family:var(--font-data);font-size:17px;font-weight:800;letter-spacing:-.02em;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.myfin-val.green{color:#16a34a}
+.myfin-val.red{color:#dc2626}
+@media(max-width:600px){
+  .myfin-kpis{grid-template-columns:1fr}
+}
+
 /* ── Celebração: todas as tarefas do dia concluídas ── */
 .celebrate-overlay{
   position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
@@ -4434,10 +4455,19 @@ body:has(#login-screen.visible){
             <button class="btn btn-primary btn-sm" onclick="openFinanceModal()"><i class="fas fa-plus"></i> Lançamento</button>
           </div>
         </div>
-        <div class="kpi-grid" style="margin-bottom:14px">
-          <div class="kpi-card"><div class="kpi-label">ENTRADAS</div><div class="kpi-val green" id="finIn">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">SAÍDAS</div><div class="kpi-val red" id="finOut">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">SALDO</div><div class="kpi-val" id="finBal">—</div></div>
+        <div class="myfin-kpis">
+          <div class="myfin-card in">
+            <div class="myfin-ic"><i class="fas fa-arrow-down"></i></div>
+            <div class="myfin-body"><div class="myfin-lbl">Entradas</div><div class="myfin-val green" id="finIn">—</div></div>
+          </div>
+          <div class="myfin-card out">
+            <div class="myfin-ic"><i class="fas fa-arrow-up"></i></div>
+            <div class="myfin-body"><div class="myfin-lbl">Saídas</div><div class="myfin-val red" id="finOut">—</div></div>
+          </div>
+          <div class="myfin-card bal">
+            <div class="myfin-ic"><i class="fas fa-scale-balanced"></i></div>
+            <div class="myfin-body"><div class="myfin-lbl">Saldo</div><div class="myfin-val" id="finBal">—</div></div>
+          </div>
         </div>
         <div id="finList"></div>
         <div class="panel" style="margin-top:18px;padding:14px 16px">
