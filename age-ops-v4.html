@@ -957,6 +957,63 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .mdr-axis{display:flex;gap:8px;margin-bottom:16px}
 .mdr-axis .mdr-bar-col{gap:0}
 .mdr-empty{padding:24px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px}
+.mdr-tabs{display:flex;gap:6px;margin-bottom:14px}
+.mdr-tab{
+  flex:1;font-family:var(--font-m);font-size:10px;font-weight:700;letter-spacing:.04em;
+  padding:8px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg2);color:var(--textsub);cursor:pointer;transition:all .15s;
+}
+.mdr-tab.is-active{background:#0f172a;color:#fff;border-color:#0f172a}
+.mdr-breakdown{margin:16px 0 12px}
+.mdr-breakdown-title{font-family:var(--font-m);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--textsub);margin-bottom:8px}
+.mdr-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-family:var(--font-m);font-size:10px}
+.mdr-row-lbl{min-width:72px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mdr-row-track{flex:1;height:6px;background:rgba(0,0,0,.06);border-radius:999px;overflow:hidden}
+.mdr-row-fill{height:100%;border-radius:999px;transition:width .35s ease}
+.mdr-row-pct{min-width:34px;text-align:right;font-weight:700;color:var(--textsub);font-size:9px}
+.mdr-insights{
+  background:linear-gradient(135deg,rgba(22,163,74,.06),rgba(34,211,238,.06));
+  border:1px solid rgba(22,163,74,.18);border-radius:12px;padding:14px 16px;margin:14px 0;
+}
+.mdr-insights-title{font-family:var(--font-m);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#16a34a;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.mdr-insight{font-family:var(--font-m);font-size:11px;color:var(--text);line-height:1.55;margin-bottom:6px;padding-left:14px;position:relative}
+.mdr-insight::before{content:'•';position:absolute;left:0;color:#16a34a;font-weight:700}
+.mdr-insight:last-child{margin-bottom:0}
+.mdr-ai-box{margin-top:12px}
+.mdr-ai-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--font-m);font-size:11px;font-weight:700;padding:11px 14px;border-radius:10px;
+  background:linear-gradient(135deg,#1e3a5f,#0f172a);color:#fff;border:none;cursor:pointer;transition:opacity .15s,transform .12s;
+}
+.mdr-ai-btn:hover{opacity:.92;transform:translateY(-1px)}
+.mdr-ai-btn:disabled{opacity:.55;cursor:wait;transform:none}
+.mdr-ai-loading,.mdr-ai-error{padding:14px;text-align:center;font-family:var(--font-m);font-size:11px;color:var(--textsub)}
+.mdr-ai-error{color:#dc2626}
+.mdr-ai-result{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+.mdr-ai-hdr{font-family:var(--font-m);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#7c3aed;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.mdr-ai-text{font-family:var(--font-m);font-size:12px;color:var(--text);line-height:1.65}
+.prod-strip{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin-bottom:14px;
+}
+.prod-strip-bars{display:flex;align-items:flex-end;gap:4px;height:36px;flex:1;min-width:120px}
+.prod-strip-bar{flex:1;max-width:14px;background:rgba(0,0,0,.06);border-radius:3px 3px 0 0;display:flex;align-items:flex-end;overflow:hidden;height:100%}
+.prod-strip-fill{width:100%;background:linear-gradient(180deg,#22d3ee,#16a34a);border-radius:3px 3px 0 0;min-height:2px}
+.prod-strip-fill.is-full{background:linear-gradient(180deg,#4ade80,#16a34a)}
+.prod-strip-meta{font-family:var(--font-m);font-size:10px;color:var(--textsub);white-space:nowrap}
+.prod-strip-meta strong{color:var(--text);font-size:13px;font-weight:800}
+.prod-strip-link{font-family:var(--font-m);font-size:10px;font-weight:700;color:#16a34a;cursor:pointer;white-space:nowrap;background:none;border:none;padding:0}
+.prod-strip-link:hover{text-decoration:underline}
+.tasks-prod-card{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:linear-gradient(135deg,rgba(15,23,42,.03),rgba(22,163,74,.05));
+  border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:14px;
+}
+.tasks-prod-stat{text-align:center;min-width:64px}
+.tasks-prod-val{font-family:var(--font-h);font-size:20px;font-weight:800;color:var(--text);line-height:1}
+.tasks-prod-lbl{font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--textsub);margin-top:4px}
+.tasks-prod-div{width:1px;height:36px;background:var(--bd);flex-shrink:0}
+.tasks-prod-insight{flex:1;min-width:180px;font-family:var(--font-m);font-size:11px;color:var(--textsub);line-height:1.5}
+.tasks-prod-actions{display:flex;gap:6px;flex-shrink:0}
 
 /* ── MEU DIA (refinado v2) ── */
 .myday-hero{
@@ -1048,6 +1105,19 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   font-family:var(--font-m);font-size:9px;font-weight:700;color:#dc2626;
 }
 .task-item.is-late{border-left:3px solid #ef4444;background:linear-gradient(90deg,rgba(239,68,68,.07),#fff 55%)}
+.task-item-body{flex:1;min-width:0}
+.task-item-badges{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px}
+.task-item-actions{display:flex;gap:4px;flex-shrink:0;align-items:flex-start;margin-top:2px}
+@media(max-width:640px){
+  .task-item{align-items:flex-start;gap:9px;padding:11px 12px}
+  .task-item-actions{margin-left:auto}
+  .task-timerail{width:34px;padding-right:8px}
+  .task-prio-pill,.task-cat-badge,.task-time-badge{font-size:7px;padding:2px 6px}
+  .tasks-prod-div{display:none}
+  .tasks-prod-card{gap:10px}
+  .mdr-stats{grid-template-columns:repeat(2,1fr)}
+  .mdr-stat:last-child{grid-column:1/-1}
+}
 
 /* ── Financeiro Pessoal: cards de resumo (tamanho uniforme) ── */
 .myfin-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
@@ -3884,7 +3954,7 @@ body:has(#login-screen.visible){
           </div>
         </div>
         <p style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin:-6px 0 14px;line-height:1.45">
-          Envie e organize contratos por projeto. Arquivos ficam no bucket <b>contracts</b> em Supabase Storage (<code style="font-size:9px">project_id/nome_arquivo</code>).
+          Projetos mais recentes da aba <b>Projetos</b> aparecem primeiro. Anexe contratos assinados, PDFs, Word ou imagens por projeto — arquivos ficam no Supabase Storage (<code style="font-size:9px">contracts/project_id/arquivo</code>).
         </p>
         <input type="file" id="contractFileInput" style="display:none" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="onContractFileSelected(event)">
         <div id="contratosProjectList" style="display:flex;flex-direction:column;gap:0">
@@ -4294,7 +4364,7 @@ body:has(#login-screen.visible){
         <div class="page-header">
           <div class="page-title" id="mydayPageTitle"><i class="fas fa-crosshairs"></i> MEU DIA</div>
           <div class="page-actions" style="gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="openMyDayReport()"><i class="fas fa-chart-simple"></i> Resumo</button>
+            <button class="btn btn-ghost btn-sm" onclick="openMyDayReport()"><i class="fas fa-chart-simple"></i> Produtividade</button>
             <button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Tarefa</button>
           </div>
         </div>
@@ -4304,6 +4374,7 @@ body:has(#login-screen.visible){
           <button class="btn btn-ghost btn-sm" onclick="myDayShiftDate(1)" title="Próximo dia"><i class="fas fa-chevron-right"></i></button>
           <button class="btn btn-ghost btn-sm" id="mydayTodayBtn" onclick="myDayGoToday()" title="Voltar para hoje"><i class="fas fa-bullseye"></i> Hoje</button>
         </div>
+        <div id="mydayProdStrip" style="display:none"></div>
         <div id="mydayHero" class="myday-hero" style="display:none">
           <div class="myday-hero-main">
             <div class="myday-hero-title" id="mydayHeroTitle">Foco de hoje</div>
@@ -4402,9 +4473,11 @@ body:has(#login-screen.visible){
               <option value="open">Pendentes</option>
               <option value="done">Concluídas</option>
             </select>
+            <button class="btn btn-ghost btn-sm" onclick="openMyDayReport()"><i class="fas fa-chart-simple"></i> Produtividade</button>
             <button class="btn btn-primary btn-sm" onclick="openDayTaskModal('task')"><i class="fas fa-plus"></i> Tarefa</button>
           </div>
         </div>
+        <div id="tasksProdCard" style="display:none"></div>
         <div id="tasksProgress" class="progress-card" style="display:none">
           <div class="progress-info">
             <div class="progress-title">Progresso</div>
@@ -5296,9 +5369,9 @@ body:has(#login-screen.visible){
 
 <!-- Modal Resumo / Relatório do Meu Dia -->
 <div class="modal" id="modalMyDayReport">
-  <div class="modal-box" style="max-width:480px">
+  <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto">
     <div class="modal-title">
-      <span><i class="fas fa-chart-simple"></i> RESUMO DOS ÚLTIMOS DIAS</span>
+      <span><i class="fas fa-chart-simple"></i> ANÁLISE DE PRODUTIVIDADE</span>
       <button onclick="closeModal('modalMyDayReport')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
     <div id="myDayReportBody"><div style="padding:24px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:11px">Carregando…</div></div>
@@ -11408,6 +11481,24 @@ let _contratosProjects = [];
 let _contratosRows = [];
 let _contractPickPid = null;
 
+/** Data de cadastro do projeto (mesma lógica de “mais recente” da aba Projetos). */
+function _contratosProjRegisteredAt(p) {
+  if(!p) return 0;
+  const raw = p.created_at || p.updated_at;
+  if(raw) {
+    const t = new Date(raw).getTime();
+    if(!isNaN(t)) return t;
+  }
+  return _projRefTime(p);
+}
+function _contratosProjRegisteredLabel(p) {
+  const t = _contratosProjRegisteredAt(p);
+  if(!t) return '';
+  try {
+    return new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch(e) { return ''; }
+}
+
 async function storageUploadContract(projectId, file) {
   const sbUrl = String(SUPABASE_URL || '').replace(/\/+$/, '');
   const sbKey = String(SUPABASE_ANON_KEY || '').trim();
@@ -11455,12 +11546,10 @@ async function loadContratosPage() {
       fetchAgeProjectsScoped(4000),
       fetchAll('age_contracts', 8000)
     ]);
-    _contratosProjects = (projs || []).slice().sort((a, b) => {
-      const ca = _ageProjDbClient(a).localeCompare(_ageProjDbClient(b), 'pt');
-      if(ca !== 0) return ca;
-      return _ageProjDbTitle(a).localeCompare(_ageProjDbTitle(b), 'pt');
-    });
-    _contratosRows = contracts || [];
+    _contratosProjects = (projs || []).slice().sort((a, b) =>
+      _contratosProjRegisteredAt(b) - _contratosProjRegisteredAt(a)
+    );
+    _contratosRows = (contracts || []).filter(c => c.deleted !== true && c.deleted !== 'true');
     renderContratosPage();
   } catch(e) {
     console.error('[loadContratosPage]', e);
@@ -11490,10 +11579,14 @@ function renderContratosPage() {
     const pidStr = String(pid == null ? '' : pid).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     const cli = escHtml(_ageProjDbClient(p));
     const tit = escHtml(_ageProjDbTitle(p));
+    const regLab = _contratosProjRegisteredLabel(p);
     const list = (byPid[String(pid)] || []).slice().sort((a, b) =>
       new Date(b.created_at || 0) - new Date(a.created_at || 0)
     );
     const n = list.length;
+    const countBadge = n
+      ? `<span style="font-family:var(--font-m);font-size:9px;font-weight:700;background:rgba(37,99,235,.15);color:#2563eb;border:1px solid rgba(37,99,235,.28);border-radius:999px;padding:3px 10px">${n} documento${n !== 1 ? 's' : ''}</span>`
+      : `<span style="font-family:var(--font-m);font-size:9px;font-weight:700;background:rgba(245,158,11,.12);color:#d97706;border:1px solid rgba(245,158,11,.28);border-radius:999px;padding:3px 10px">Sem contrato</span>`;
     const rows = n
       ? list.map(c => {
           const cid = String(c.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -11512,16 +11605,17 @@ function renderContratosPage() {
         <button type="button" class="btn btn-danger btn-sm" style="padding:5px 9px;flex-shrink:0" title="Remover" onclick="softDeleteContract('${cid}')"><i class="fas fa-trash"></i></button>
       </div>`;
         }).join('')
-      : `<div style="font-size:10px;color:#94a3b8;font-family:var(--font-m);padding:8px 4px">Nenhum contrato anexado.</div>`;
+      : `<div style="font-size:10px;color:#94a3b8;font-family:var(--font-m);padding:8px 4px">Nenhum documento anexado. Use <b>Upload Contrato</b> para guardar PDF, Word ou imagem.</div>`;
     return `
     <div class="panel" style="margin-bottom:14px;border-radius:10px;padding:14px 16px;border:1px solid var(--bd);background:var(--bg2)">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="min-width:0;flex:1">
           <div style="font-family:var(--font-b);font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px">${cli}</div>
           <div style="font-family:var(--font-m);font-size:11px;color:var(--textsub)">${tit}</div>
+          ${regLab ? `<div style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:4px"><i class="fas fa-calendar-plus" style="opacity:.7"></i> Cadastrado em ${regLab}</div>` : ''}
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <span style="font-family:var(--font-m);font-size:9px;font-weight:700;background:rgba(37,99,235,.15);color:#2563eb;border:1px solid rgba(37,99,235,.28);border-radius:999px;padding:3px 10px">${n} contrato${n !== 1 ? 's' : ''}</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
+          ${countBadge}
           <button type="button" class="btn btn-primary btn-sm" onclick="triggerContractUpload('${pidStr}')"><i class="fas fa-upload"></i> Upload Contrato</button>
         </div>
       </div>
@@ -25568,17 +25662,16 @@ function _mydayTaskRow(item) {
       <div class="task-item${cls}${done ? ' done' : ''}">
         ${timeRail}
         ${chk}
-        <div style="flex:1">
+        <div class="task-item-body">
           <div class="task-text" style="${done ? 'text-decoration:line-through' : ''}">${escHtml(item.text)}</div>
           ${item.notes ? `<div class="task-meta">${escHtml(item.notes)}</div>` : ''}
           ${item.owner && item.source === 'empresa' ? `<div class="task-meta">Responsável: ${escHtml(item.owner)}</div>` : ''}
           ${byLine}
           ${createdLine}
           ${lateLine}
+          <div class="task-item-badges">${prioPill}${badgeHtml}</div>
         </div>
-        ${prioPill}
-        ${badgeHtml}
-        ${extra}
+        <div class="task-item-actions">${extra}</div>
       </div>`;
 }
 function toggleMyDaySched(id, currentDone) {
@@ -25630,89 +25723,332 @@ function myDayShiftDate(delta) {
 }
 function myDayGoToday() { myDaySetDate(null); }
 
-/* ── Resumo / relatório dos últimos 7 dias ── */
-async function openMyDayReport() {
+/* ── Produtividade: métricas agregadas ── */
+let _lastProdStats = null;
+let _lastProdDays = 7;
+
+async function _computeProductivityStats(periodDays) {
+  const DAYS = periodDays || 7;
+  const realToday = _mydayRealToday();
+  const start = _isoToLocalDate(realToday);
+  start.setDate(start.getDate() - (DAYS - 1));
+  const startIso = _localDateToIso(start);
+
+  const tasks = await fetchOwn('age_tasks');
+  const assigned = await _fetchAssignedTasksForUser({ startDate: startIso, endDate: realToday });
+
+  const byDay = {};
+  for(let i = 0; i < DAYS; i++) {
+    const d = _isoToLocalDate(realToday);
+    d.setDate(d.getDate() - (DAYS - 1) + i);
+    byDay[_localDateToIso(d)] = { done: 0, total: 0 };
+  }
+  const byCategory = {};
+  Object.keys(TASK_CATEGORIES).forEach(k => { byCategory[k] = { done: 0, total: 0 }; });
+  const byPriority = { alta: { done: 0, total: 0 }, media: { done: 0, total: 0 }, baixa: { done: 0, total: 0 } };
+
+  const bumpDay = (iso, done) => {
+    const k = String(iso || '').slice(0, 10);
+    if(byDay[k]) { byDay[k].total++; if(done) byDay[k].done++; }
+  };
+
+  tasks.forEach(t => {
+    const iso = String(t.day_date || '').slice(0, 10);
+    const done = t.done === true || t.done === 'true';
+    bumpDay(iso, done);
+    if(iso >= startIso && iso <= realToday) {
+      const cat = _taskCatNorm(t.category);
+      byCategory[cat].total++;
+      if(done) byCategory[cat].done++;
+      const pr = _taskPrioNorm(t.priority);
+      byPriority[pr].total++;
+      if(done) byPriority[pr].done++;
+    }
+  });
+  assigned.forEach(a => bumpDay(a.due_date, _assignedTaskIsDone(a)));
+
+  let overduePending = 0;
+  tasks.forEach(t => {
+    const d = String(t.day_date || '').slice(0, 10);
+    if(d && d < realToday && !(t.done === true || t.done === 'true')) overduePending++;
+  });
+
+  const days = Object.keys(byDay).sort();
+  let sumDone = 0, sumTotal = 0, best = { pct: -1, iso: '' }, daysWithTasks = 0;
+  days.forEach(iso => {
+    const { done, total } = byDay[iso];
+    sumDone += done; sumTotal += total;
+    if(total > 0) {
+      daysWithTasks++;
+      const pct = Math.round(done / total * 100);
+      if(pct > best.pct) best = { pct, iso };
+    }
+  });
+
+  let streak = 0;
+  for(let i = days.length - 1; i >= 0; i--) {
+    const { done, total } = byDay[days[i]];
+    if(total === 0) { if(days[i] === realToday) continue; else break; }
+    if(done === total) streak++; else break;
+  }
+
+  const weekdayNames = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  const weekday = {};
+  days.forEach(iso => {
+    const { done, total } = byDay[iso];
+    if(!total) return;
+    const dow = _isoToLocalDate(iso).getDay();
+    if(!weekday[dow]) weekday[dow] = { done: 0, total: 0 };
+    weekday[dow].done += done;
+    weekday[dow].total += total;
+  });
+  let bestDow = null, bestDowPct = -1;
+  Object.entries(weekday).forEach(([dow, { done, total }]) => {
+    const pct = Math.round(done / total * 100);
+    if(pct > bestDowPct) { bestDowPct = pct; bestDow = parseInt(dow, 10); }
+  });
+
+  let withTime = 0, withTimeDone = 0;
+  tasks.forEach(t => {
+    const iso = String(t.day_date || '').slice(0, 10);
+    if(iso >= startIso && iso <= realToday && _taskTimeNorm(t.task_time)) {
+      withTime++;
+      if(t.done === true || t.done === 'true') withTimeDone++;
+    }
+  });
+
+  return {
+    DAYS, realToday, startIso, byDay, days, sumDone, sumTotal,
+    overall: sumTotal ? Math.round(sumDone / sumTotal * 100) : 0,
+    streak, best,
+    avgPerDay: daysWithTasks ? Math.round(sumTotal / daysWithTasks * 10) / 10 : 0,
+    overduePending, byCategory, byPriority,
+    bestDow, bestDowPct, weekdayNames,
+    withTime, withTimeDone,
+    timePct: withTime ? Math.round(withTimeDone / withTime * 100) : null
+  };
+}
+
+function _buildLocalInsights(s) {
+  if(!s.sumTotal) return ['Comece registrando tarefas no Meu Dia para ver padrões aqui.'];
+  const out = [];
+  if(s.overall >= 80) out.push(`Excelente ritmo: ${s.overall}% de conclusão no período.`);
+  else if(s.overall >= 50) out.push(`Taxa de ${s.overall}% — há margem para melhorar a execução diária.`);
+  else out.push(`Taxa de ${s.overall}% — considere planejar menos tarefas por dia.`);
+  if(s.streak >= 2) out.push(`Sequência de ${s.streak} dia(s) com 100% de conclusão.`);
+  if(s.overduePending > 0) out.push(`${s.overduePending} tarefa(s) atrasada(s) aguardando — remarque ou conclua para limpar a lista.`);
+  if(s.bestDow != null && s.bestDowPct > 0) out.push(`Melhor dia da semana: ${s.weekdayNames[s.bestDow]} (${s.bestDowPct}% de conclusão).`);
+  if(s.timePct != null && s.withTime >= 3) {
+    out.push(s.timePct >= 65
+      ? `Tarefas com horário: ${s.timePct}% concluídas — agendar parece ajudar.`
+      : `Tarefas agendadas: só ${s.timePct}% concluídas — tente blocos menores ou horários realistas.`);
+  }
+  const alta = s.byPriority.alta;
+  if(alta.total >= 2) {
+    const ap = Math.round(alta.done / alta.total * 100);
+    out.push(`Prioridade alta: ${ap}% concluída (${alta.done}/${alta.total}).`);
+  }
+  return out.slice(0, 5);
+}
+
+function _renderProdBars(days, byDay, realToday) {
+  return days.map(iso => {
+    const { done, total } = byDay[iso];
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const dObj = _isoToLocalDate(iso);
+    const dow = dObj.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').slice(0, 3);
+    const cls = total === 0 ? 'is-empty' : (pct >= 100 ? 'is-full' : '');
+    const isToday = iso === realToday;
+    return `
+      <div class="mdr-bar-col">
+        <span class="mdr-bar-pct">${total ? pct + '%' : '–'}</span>
+        <div class="mdr-bar-track"><div class="mdr-bar-fill ${cls}" style="height:${total ? Math.max(pct, 3) : 0}%"></div></div>
+        <span class="mdr-bar-day${isToday ? ' is-today' : ''}">${dow}</span>
+      </div>`;
+  }).join('');
+}
+
+function _renderProdBreakdown(title, items, getLabel, getColor) {
+  const rows = items.filter(([, v]) => v.total > 0);
+  if(!rows.length) return '';
+  return `
+    <div class="mdr-breakdown">
+      <div class="mdr-breakdown-title">${title}</div>
+      ${rows.map(([key, v]) => {
+        const pct = Math.round(v.done / v.total * 100);
+        const color = getColor(key);
+        return `
+          <div class="mdr-row">
+            <span class="mdr-row-lbl">${escHtml(getLabel(key))}</span>
+            <div class="mdr-row-track"><div class="mdr-row-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span class="mdr-row-pct">${pct}%</span>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function _renderProdReportBody(s) {
+  const bestLbl = s.best.iso
+    ? `${_isoToLocalDate(s.best.iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} (${s.best.pct}%)`
+    : '–';
+  const insights = _buildLocalInsights(s);
+  const catBreak = _renderProdBreakdown('Por categoria', Object.entries(s.byCategory), k => TASK_CATEGORIES[k].label, k => TASK_CATEGORIES[k].color);
+  const prioBreak = _renderProdBreakdown('Por prioridade', Object.entries(s.byPriority), k => _taskPrioLabel(k), k => ({ alta: '#ef4444', media: '#f59e0b', baixa: '#94a3b8' }[k] || '#94a3b8'));
+
+  return `
+    <div class="mdr-tabs">
+      <button type="button" class="mdr-tab${s.DAYS === 7 ? ' is-active' : ''}" onclick="openMyDayReport(7)">7 dias</button>
+      <button type="button" class="mdr-tab${s.DAYS === 30 ? ' is-active' : ''}" onclick="openMyDayReport(30)">30 dias</button>
+    </div>
+    <div class="mdr-stats">
+      <div class="mdr-stat"><div class="mdr-stat-val">${s.overall}%</div><div class="mdr-stat-lbl">Conclusão</div></div>
+      <div class="mdr-stat"><div class="mdr-stat-val">${s.streak}🔥</div><div class="mdr-stat-lbl">Sequência</div></div>
+      <div class="mdr-stat"><div class="mdr-stat-val">${s.sumDone}/${s.sumTotal}</div><div class="mdr-stat-lbl">Tarefas feitas</div></div>
+    </div>
+    <div class="mdr-bars">${_renderProdBars(s.days, s.byDay, s.realToday)}</div>
+    <div style="font-family:var(--font-m);font-size:10px;color:var(--textsub);text-align:center;margin-bottom:12px">
+      Melhor dia: <strong style="color:var(--text)">${bestLbl}</strong>
+      · Média: <strong style="color:var(--text)">${s.avgPerDay}</strong> tarefas/dia
+      ${s.overduePending ? ` · <span style="color:#dc2626">${s.overduePending} atrasada(s)</span>` : ''}
+    </div>
+    ${catBreak}${prioBreak}
+    <div class="mdr-insights">
+      <div class="mdr-insights-title"><i class="fas fa-lightbulb"></i> Insights rápidos</div>
+      ${insights.map(t => `<div class="mdr-insight">${escHtml(t)}</div>`).join('')}
+    </div>
+    <div class="mdr-ai-box">
+      <button type="button" class="mdr-ai-btn" id="mdrAiBtn" onclick="requestAiProductivityAnalysis()">
+        <i class="fas fa-wand-magic-sparkles"></i> Análise aprofundada com Claude
+      </button>
+      <div id="mdrAiBox" style="display:none;margin-top:10px"></div>
+    </div>`;
+}
+
+async function _refreshMyDayProdStrip() {
+  const el = document.getElementById('mydayProdStrip');
+  if(!el) return;
+  const isToday = _mydayActiveDate() === _mydayRealToday();
+  if(!isToday) { el.style.display = 'none'; return; }
+  try {
+    const s = await _computeProductivityStats(7);
+    if(!s.sumTotal) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    const bars = s.days.map(iso => {
+      const { done, total } = s.byDay[iso];
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const cls = pct >= 100 ? ' is-full' : '';
+      return `<div class="prod-strip-bar"><div class="prod-strip-fill${cls}" style="height:${total ? Math.max(pct, 8) : 0}%"></div></div>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="prod-strip-bars">${bars}</div>
+      <div class="prod-strip-meta"><strong>${s.overall}%</strong> nos últimos 7 dias · ${s.streak}🔥 sequência</div>
+      <button type="button" class="prod-strip-link" onclick="openMyDayReport(7)">Ver análise →</button>`;
+  } catch(e) {
+    el.style.display = 'none';
+  }
+}
+
+async function _refreshTasksProdCard() {
+  const el = document.getElementById('tasksProdCard');
+  if(!el) return;
+  try {
+    const s = await _computeProductivityStats(7);
+    if(!s.sumTotal) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    const tip = _buildLocalInsights(s)[0] || '';
+    el.innerHTML = `
+      <div class="tasks-prod-stat"><div class="tasks-prod-val">${s.overall}%</div><div class="tasks-prod-lbl">7 dias</div></div>
+      <div class="tasks-prod-div"></div>
+      <div class="tasks-prod-stat"><div class="tasks-prod-val">${s.streak}🔥</div><div class="tasks-prod-lbl">Sequência</div></div>
+      <div class="tasks-prod-div"></div>
+      <div class="tasks-prod-stat"><div class="tasks-prod-val">${s.sumDone}/${s.sumTotal}</div><div class="tasks-prod-lbl">Concluídas</div></div>
+      <div class="tasks-prod-insight">${escHtml(tip)}</div>
+      <div class="tasks-prod-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openMyDayReport(7)"><i class="fas fa-chart-simple"></i> Detalhes</button>
+        <button class="btn btn-ghost btn-sm" onclick="openMyDayReport(7);setTimeout(requestAiProductivityAnalysis,400)"><i class="fas fa-wand-magic-sparkles"></i> Claude</button>
+      </div>`;
+  } catch(e) {
+    el.style.display = 'none';
+  }
+}
+
+async function requestAiProductivityAnalysis() {
+  const box = document.getElementById('mdrAiBox');
+  const btn = document.getElementById('mdrAiBtn');
+  if(!box || !_lastProdStats) return;
+  box.style.display = 'block';
+  box.innerHTML = `<div class="mdr-ai-loading"><i class="fas fa-spinner fa-spin"></i> Claude está analisando seus padrões…</div>`;
+  if(btn) btn.disabled = true;
+
+  const s = _lastProdStats;
+  const catLines = Object.entries(s.byCategory)
+    .filter(([, v]) => v.total > 0)
+    .map(([k, v]) => `${TASK_CATEGORIES[k].label}: ${Math.round(v.done / v.total * 100)}% (${v.done}/${v.total})`);
+  const prioLines = ['alta', 'media', 'baixa'].map(k => {
+    const v = s.byPriority[k];
+    if(!v.total) return null;
+    return `${_taskPrioLabel(k)}: ${Math.round(v.done / v.total * 100)}% (${v.done}/${v.total})`;
+  }).filter(Boolean);
+
+  const comando = `Analise minha produtividade de tarefas dos últimos ${s.DAYS} dias e dê de 3 a 5 insights práticos em português, tom de coach amigável, no máximo 180 palavras. Use só estes dados agregados (não invente números):
+- Conclusão geral: ${s.overall}% (${s.sumDone}/${s.sumTotal} tarefas)
+- Sequência atual (dias 100%): ${s.streak}
+- Média de tarefas/dia (dias com tarefas): ${s.avgPerDay}
+- Atrasadas pendentes: ${s.overduePending}
+- Melhor dia: ${s.best.iso || 'N/A'}
+- Por categoria: ${catLines.join('; ') || 'sem dados'}
+- Por prioridade: ${prioLines.join('; ') || 'sem dados'}
+${s.timePct != null ? `- Tarefas com horário: ${s.timePct}% concluídas (${s.withTimeDone}/${s.withTime})` : ''}
+${s.bestDow != null ? `- Melhor dia da semana: ${s.weekdayNames[s.bestDow]} (${s.bestDowPct}%)` : ''}
+Termine com 1 sugestão concreta para amanhã.`;
+
+  try {
+    const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
+    const response = await fetch(AI_EDGE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anon}`,
+        'apikey': anon
+      },
+      body: JSON.stringify({
+        comando,
+        contexto: {
+          usuario: currentUser?.nome || currentUser?.name || currentUser?.username || '',
+          data_hoje: new Date().toLocaleDateString('pt-BR')
+        }
+      })
+    });
+    let resultado = {};
+    try { resultado = await response.json(); } catch(e) {}
+    const text = resultado.resposta || 'Não foi possível gerar a análise. Verifique se o assistente IA está configurado.';
+    box.innerHTML = `<div class="mdr-ai-result"><div class="mdr-ai-hdr"><i class="fas fa-wand-magic-sparkles"></i> Análise Claude</div><div class="mdr-ai-text">${escHtml(text).replace(/\n/g, '<br>')}</div></div>`;
+  } catch(e) {
+    box.innerHTML = `<div class="mdr-ai-error">Erro ao conectar com Claude. Tente novamente.</div>`;
+  } finally {
+    if(btn) btn.disabled = false;
+  }
+}
+
+/* ── Resumo / relatório de produtividade ── */
+async function openMyDayReport(days) {
+  const periodDays = days === 30 ? 30 : 7;
+  _lastProdDays = periodDays;
   openModal('modalMyDayReport');
   const body = document.getElementById('myDayReportBody');
   if(!body) return;
   body.innerHTML = `<div class="mdr-empty">Carregando…</div>`;
   try {
-    const DAYS = 7;
-    const realToday = _mydayRealToday();
-    const start = _isoToLocalDate(realToday); start.setDate(start.getDate() - (DAYS - 1));
-    const startIso = _localDateToIso(start);
-
-    const tasks = await fetchOwn('age_tasks');
-    const assigned = await _fetchAssignedTasksForUser({ startDate: startIso, endDate: realToday });
-
-    /* Mapa data → {done,total} */
-    const byDay = {};
-    for(let i = 0; i < DAYS; i++) {
-      const d = _isoToLocalDate(realToday); d.setDate(d.getDate() - (DAYS - 1) + i);
-      byDay[_localDateToIso(d)] = { done: 0, total: 0 };
-    }
-    const bump = (iso, done) => {
-      const k = String(iso || '').slice(0, 10);
-      if(byDay[k]) { byDay[k].total++; if(done) byDay[k].done++; }
-    };
-    tasks.forEach(t => bump(t.day_date, t.done === true || t.done === 'true'));
-    assigned.forEach(a => bump(a.due_date, _assignedTaskIsDone(a)));
-
-    const days = Object.keys(byDay).sort();
-    let sumDone = 0, sumTotal = 0, best = { pct: -1, iso: '' };
-    days.forEach(iso => {
-      const { done, total } = byDay[iso];
-      sumDone += done; sumTotal += total;
-      const pct = total ? Math.round(done / total * 100) : 0;
-      if(total > 0 && pct > best.pct) best = { pct, iso };
-    });
-    const overall = sumTotal ? Math.round(sumDone / sumTotal * 100) : 0;
-
-    /* Sequência: dias consecutivos (de hoje p/ trás) com tarefas e 100% concluído. */
-    let streak = 0;
-    for(let i = days.length - 1; i >= 0; i--) {
-      const { done, total } = byDay[days[i]];
-      if(total === 0) { if(days[i] === realToday) continue; else break; }
-      if(done === total) streak++; else break;
-    }
-
-    if(!sumTotal) {
-      body.innerHTML = `<div class="mdr-empty">Nenhuma tarefa registrada nos últimos ${DAYS} dias.<br>Crie tarefas no Meu Dia para acompanhar sua evolução.</div>`;
+    const s = await _computeProductivityStats(periodDays);
+    _lastProdStats = s;
+    if(!s.sumTotal) {
+      body.innerHTML = `<div class="mdr-empty">Nenhuma tarefa registrada nos últimos ${periodDays} dias.<br>Crie tarefas no Meu Dia para acompanhar sua evolução.</div>`;
       return;
     }
-
-    const bars = days.map(iso => {
-      const { done, total } = byDay[iso];
-      const pct = total ? Math.round(done / total * 100) : 0;
-      const dObj = _isoToLocalDate(iso);
-      const dow = dObj.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').slice(0, 3);
-      const cls = total === 0 ? 'is-empty' : (pct >= 100 ? 'is-full' : '');
-      const isToday = iso === realToday;
-      return `
-        <div class="mdr-bar-col">
-          <span class="mdr-bar-pct">${total ? pct + '%' : '–'}</span>
-          <div class="mdr-bar-track"><div class="mdr-bar-fill ${cls}" style="height:${total ? Math.max(pct, 3) : 0}%"></div></div>
-          <span class="mdr-bar-day${isToday ? ' is-today' : ''}">${dow}</span>
-        </div>`;
-    }).join('');
-
-    const bestLbl = best.iso
-      ? `${_isoToLocalDate(best.iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} (${best.pct}%)`
-      : '–';
-
-    body.innerHTML = `
-      <div class="mdr-stats">
-        <div class="mdr-stat"><div class="mdr-stat-val">${overall}%</div><div class="mdr-stat-lbl">Conclusão 7 dias</div></div>
-        <div class="mdr-stat"><div class="mdr-stat-val">${streak}🔥</div><div class="mdr-stat-lbl">Sequência</div></div>
-        <div class="mdr-stat"><div class="mdr-stat-val">${sumDone}/${sumTotal}</div><div class="mdr-stat-lbl">Tarefas feitas</div></div>
-      </div>
-      <div class="mdr-bars">${bars}</div>
-      <div style="font-family:var(--font-m);font-size:10px;color:var(--textsub);text-align:center;margin-top:4px">
-        Melhor dia: <strong style="color:var(--text)">${bestLbl}</strong>
-      </div>`;
+    body.innerHTML = _renderProdReportBody(s);
   } catch(e) {
     console.warn('[openMyDayReport]', e);
-    body.innerHTML = `<div class="mdr-empty" style="color:#b91c1c">Erro ao gerar o resumo.</div>`;
+    body.innerHTML = `<div class="mdr-empty" style="color:#b91c1c">Erro ao gerar a análise.</div>`;
   }
 }
 
@@ -25729,6 +26065,8 @@ async function loadMyDay() {
   if(dateInput) dateInput.value = today;
   const todayBtn = document.getElementById('mydayTodayBtn');
   if(todayBtn) todayBtn.style.display = isToday ? 'none' : '';
+  const prodStrip = document.getElementById('mydayProdStrip');
+  if(prodStrip && !isToday) prodStrip.style.display = 'none';
 
   const hdr = document.getElementById('mydayPageTitle');
   if(hdr) hdr.innerHTML = `<i class="fas fa-crosshairs"></i> MEU DIA <span style="font-family:var(--font-m);font-size:10px;color:var(--textsub);font-weight:400;margin-left:6px">${dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>`;
@@ -25822,6 +26160,7 @@ async function loadMyDay() {
         ? `<span class="myday-empty-ic"><i class="fas fa-moon"></i></span>Nenhuma tarefa registrada neste dia.`
         : `<span class="myday-empty-ic"><i class="fas fa-mug-hot"></i></span>Tudo limpo por aqui.<br>Que tal planejar o seu dia?<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Adicionar tarefa</button>`;
       el.innerHTML = pastBanner + `<div class="myday-empty">${emptyMsg}</div>`;
+      if(isToday) _refreshMyDayProdStrip();
       return;
     }
 
@@ -25861,10 +26200,13 @@ async function loadMyDay() {
       renderSection('Minhas tarefas', pessoal, '#16a34a', 'fa-list-check');
 
     if(isToday) _maybeCelebrateMyDay(doneCount, allItems.length);
+    if(isToday) _refreshMyDayProdStrip();
   } catch(e) {
     console.warn('[loadMyDay]', e);
     el.innerHTML = `<div class="myday-empty" style="color:#b91c1c">Erro ao carregar o dia.</div>`;
     _mydayRenderProgress(0, 0);
+    const strip = document.getElementById('mydayProdStrip');
+    if(strip) strip.style.display = 'none';
   }
 }
 
@@ -25978,6 +26320,7 @@ async function loadTasks() {
       fillId: 'tasksProgressFill',
       pctId: 'tasksProgressPct'
     }, merged);
+    _refreshTasksProdCard();
 
     if(!merged.length){
       el.innerHTML=`<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:20px;text-align:center">Nenhuma tarefa nesse filtro. Clique em "+ Tarefa" para adicionar.</div>`;
@@ -25990,11 +26333,11 @@ async function loadTasks() {
         return `
       <div class="task-item${chk?' done':''}">
         <div class="task-check${chk?' checked':''}" onclick="toggleAssignedTask('${item.id}',${chk})">${chk?'✓':''}</div>
-        <div style="flex:1">
+        <div class="task-item-body">
           <div class="task-text" style="${chk?'text-decoration:line-through':''}">${escHtml(item.task_text||'')}</div>
           ${item.day_date?`<div class="task-meta">${fmtDate(item.day_date)}</div>`:''}
           ${item.notes?`<div class="task-meta">${escHtml(item.notes)}</div>`:''}
-          <div style="margin-top:4px"><span style="font-family:var(--font-m);font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35)">Atribuída por ${escHtml(byName)}</span></div>
+          <div class="task-item-badges"><span style="font-family:var(--font-m);font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35)">Atribuída por ${escHtml(byName)}</span></div>
         </div>
       </div>`;
       }
@@ -26005,16 +26348,16 @@ async function loadTasks() {
       return `
       <div class="task-item prio-${_taskPrioNorm(t.priority)}${td?' done':''}${lateTxt?' is-late':''}">
         <div class="task-check${td?' checked':''}" onclick="toggleTask('${t.id}','${t.done}')">${td?'✓':''}</div>
-        <div style="flex:1">
+        <div class="task-item-body">
           <div class="task-text" style="${td?'text-decoration:line-through':''}">${escHtml(t.task_text||t.text||'')}</div>
           ${t.day_date?`<div class="task-meta">${fmtDate(t.day_date)}</div>`:''}
           ${lateLine}
+          <div class="task-item-badges">${_taskTimeBadge(t.task_time)}${_taskCatBadge(t.category)}${_taskPrioPill(t.priority)}</div>
         </div>
-        ${_taskTimeBadge(t.task_time)}
-        ${_taskCatBadge(t.category)}
-        ${_taskPrioPill(t.priority)}
-        <button class="btn btn-ghost btn-sm" onclick="openDayTaskModal('personal','${t.id}')" title="Editar"><i class="fas fa-pen"></i></button>
-        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+        <div class="task-item-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openDayTaskModal('personal','${t.id}')" title="Editar"><i class="fas fa-pen"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+        </div>
       </div>`;
     }).join('');
   } catch(e){ el.innerHTML=`<div style="color:var(--textsub);padding:20px">Erro.</div>`; }
