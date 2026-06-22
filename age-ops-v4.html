@@ -483,11 +483,66 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
   border-color: #000;
 }
 @media (max-width: 960px) {
-  #orcamento-builder.orc-builder-grid { grid-template-columns: 1fr !important; overflow: visible !important; }
+  #modalOrc { padding: 0 !important; }
+  #modalOrc > div {
+    border-radius: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden !important;
+  }
+  #orcamento-builder.orc-builder-grid { grid-template-columns: 1fr !important; overflow: visible !important; gap: 0 !important; }
+  #orcamento-builder { overflow-y: auto !important; flex: 1 !important; min-height: 0 !important; -webkit-overflow-scrolling: touch; }
   #orcamento-builder #orc-editor,
   #orcamento-builder #orc-preview { max-height: none !important; overflow: visible !important; }
-  #modalOrc > div { max-height: none !important; overflow: visible !important; }
+  #orc-editor { padding: 14px 14px 24px !important; max-height: none !important; }
+  #orc-preview { padding: 12px !important; border-radius: 0 !important; background: #e8eaef !important; }
+  #orc-preview-content { padding: 16px !important; min-height: auto !important; zoom: 0.46; -webkit-text-size-adjust: 100%; }
+  .orc-mobile-tabs { display: flex !important; }
+  #orcamento-builder.orc-mtab-editor #orc-preview { display: none !important; }
+  #orcamento-builder.orc-mtab-preview #orc-editor { display: none !important; }
+  .orc-fields > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+  .orc-section { padding: 14px; border-radius: 12px; }
+  .orc-section-header { font-size: 10px; gap: 6px; }
+  .orc-section-header button { margin-left: 0; width: 100%; justify-content: center; margin-top: 6px; }
+  .orc-actions-bar {
+    position: sticky; bottom: 0; z-index: 6;
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 18%);
+    padding: 14px 0 8px !important; margin-top: 8px !important;
+    box-shadow: 0 -10px 28px rgba(15,23,42,.07);
+  }
+  .orc-actions-bar button { min-height: 48px; font-size: 10px !important; }
+  .orc-diarias-row { flex-direction: column !important; align-items: stretch !important; }
+  .orc-diarias-row span { white-space: normal !important; }
 }
+
+.orc-mobile-tabs {
+  display: none;
+  padding: 8px 12px;
+  gap: 8px;
+  background: #eef1f6;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  flex-shrink: 0;
+}
+.orc-mtab {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: #fff;
+  font-family: var(--font-m);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #475569;
+  transition: all .15s;
+}
+.orc-mtab.is-active { background: #0f172a; color: #fff; border-color: #0f172a; }
 
 button.perm-disabled,.btn.perm-disabled{
   opacity:.45!important;cursor:not-allowed!important;pointer-events:none!important;
@@ -1207,37 +1262,51 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .mycal-title{font-family:var(--font-h);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
 .mycal-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--font-m);font-size:9px;color:var(--textsub)}
 .mycal-dot{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:4px;vertical-align:middle}
-.mycal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.mycal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mycal-dow{
   font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.12em;
   color:var(--textsub);text-transform:uppercase;text-align:center;padding:6px 0;
 }
-.mycal-day{
-  min-height:108px;background:#fff;border:1px solid var(--bd);border-radius:8px;
-  padding:6px 8px;display:flex;flex-direction:column;gap:4px;cursor:pointer;
+.mycal-day,
+.mycal-day.is-blank{
+  aspect-ratio:1/1;
+  height:auto;min-height:0;max-height:none;
+  background:#fff;border:1px solid var(--bd);border-radius:8px;
+  padding:6px 8px;display:flex;flex-direction:column;gap:3px;
+  overflow:hidden;min-width:0;
   transition:transform .08s ease,box-shadow .12s ease;
 }
+.mycal-day{cursor:pointer}
 .mycal-day:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.06)}
 .mycal-day.is-blank{background:transparent;border:1px dashed rgba(0,0,0,.06);cursor:default}
 .mycal-day.is-blank:hover{transform:none;box-shadow:none}
 .mycal-day.is-today{border-color:#16a34a;box-shadow:inset 0 0 0 1px #16a34a}
 .mycal-day.is-weekend{background:#fafafa}
-.mycal-daynum{font-family:var(--font-m);font-size:11px;font-weight:700;color:#222}
+.mycal-daynum{font-family:var(--font-m);font-size:11px;font-weight:700;color:#222;flex-shrink:0;line-height:1}
 .mycal-day.is-today .mycal-daynum{color:#16a34a}
-.mycal-items{display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.mycal-items{display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;overflow:hidden}
 .mycal-item{
-  font-family:var(--font-m);font-size:9px;line-height:1.25;padding:2px 6px;border-radius:4px;
+  font-family:var(--font-m);font-size:9px;line-height:1.2;padding:2px 5px;border-radius:4px;
   border:1px solid rgba(0,0,0,.06);background:#f6f6f6;color:#222;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;min-width:0;
 }
 .mycal-item.is-done{text-decoration:line-through;opacity:.55}
 .mycal-item.k-own{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.35);color:#166534}
 .mycal-item.k-assigned{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.35);color:#92400e}
 .mycal-item.k-event{background:rgba(15,23,42,.08);border-color:rgba(15,23,42,.2);color:#0f172a}
-.mycal-more{font-family:var(--font-m);font-size:8px;color:var(--textsub)}
+.mycal-more{font-family:var(--font-m);font-size:8px;color:var(--textsub);flex-shrink:0;line-height:1.2}
 .mycal-empty{color:var(--textsub);font-family:var(--font-m);font-size:10px}
 .mycal-day-modal{max-width:560px}
 .mycal-day-list{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;padding-right:4px}
+.mycal-day-list .task-text{word-break:break-word;white-space:normal}
+.mycal-day-list .task-meta{word-break:break-word;white-space:normal}
+@media(max-width:640px){
+  .mycal-day,.mycal-day.is-blank{padding:4px 5px;gap:2px;border-radius:6px}
+  .mycal-daynum{font-size:10px}
+  .mycal-item{font-size:8px;padding:1px 4px}
+  .mycal-more{font-size:7px}
+  .mycal-grid{gap:3px}
+}
 
 /* ── CRONOGRAMA ── */
 .sched-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
@@ -3972,7 +4041,11 @@ body:has(#login-screen.visible){
             <div id="orcModalTitle" style="font-family:var(--font-h);font-size:12px;font-weight:800;color:#fff;letter-spacing:.06em">NOVO ORÇAMENTO</div>
             <button type="button" onclick="closeOrcModal()" title="Fechar" style="width:36px;height:36px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);border-radius:8px;font-size:18px;line-height:1;cursor:pointer;color:rgba(255,255,255,.7)">×</button>
           </div>
-          <div id="orcamento-builder" class="orc-builder-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;min-height:0;padding:0 0 4px;align-items:stretch;overflow:hidden">
+          <div id="orcMobileTabs" class="orc-mobile-tabs">
+            <button type="button" class="orc-mtab is-active" data-orc-tab="editor" onclick="orcSetMobileTab('editor')"><i class="fas fa-pen"></i> Editar</button>
+            <button type="button" class="orc-mtab" data-orc-tab="preview" onclick="orcSetMobileTab('preview')"><i class="fas fa-eye"></i> Prévia PDF</button>
+          </div>
+          <div id="orcamento-builder" class="orc-builder-grid orc-mtab-editor" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;min-height:0;padding:0 0 4px;align-items:stretch;overflow:hidden">
             <div id="orc-editor" style="overflow-y:auto;padding:20px 20px 24px;display:flex;flex-direction:column;gap:20px;min-height:0;max-height:calc(100vh - 100px)">
               <div class="orc-section">
                 <div class="orc-section-header">
@@ -4042,7 +4115,7 @@ body:has(#login-screen.visible){
                     <i class="fas fa-plus"></i> Adicionar função
                   </button>
                 </div>
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;background:rgba(0,0,0,.04);border-radius:10px">
+                <div class="orc-diarias-row" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;background:rgba(0,0,0,.04);border-radius:10px">
                   <label style="font-size:13px;font-weight:600;white-space:nowrap">Diárias de gravação:</label>
                   <input type="number" id="orc-diarias" value="1" min="1" max="30" style="width:70px;text-align:center;font-size:18px;font-weight:700;border:2px solid #000;border-radius:8px;padding:4px" onchange="recalcularEquipe()" />
                   <span style="font-size:13px;opacity:.6">dia(s) padrão para toda a equipe — dá pra sobrepor por função abaixo</span>
@@ -4114,7 +4187,7 @@ body:has(#login-screen.visible){
                   </div>
                 </div>
               </div>
-              <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div class="orc-actions-bar" style="display:flex;gap:12px;flex-wrap:wrap">
                 <button type="button" onclick="gerarPDFCliente()" style="flex:1;min-width:140px;padding:14px;background:#000;color:#fff;border:none;border-radius:12px;font-family:var(--font-h),sans-serif;font-size:11px;letter-spacing:1px;cursor:pointer">
                   <i class="fas fa-file-pdf"></i> PDF CLIENTE
                 </button>
@@ -6033,30 +6106,23 @@ body:has(#login-screen.visible){
       <button onclick="closeModal('modalRel')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
     <input type="hidden" id="relEditId">
-    <div class="form-grid" style="grid-template-columns:1fr 1fr">
-      <div class="form-group"><label class="form-label">CLIENTE *</label><input id="relCliente" type="text" placeholder="Nome do cliente"></div>
-      <div class="form-group"><label class="form-label">PROJETO *</label><input id="relProjeto" type="text" placeholder="Nome do projeto"></div>
-      <div class="form-group"><label class="form-label">MÊS</label>
-        <select id="relMes">
-          <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-          <option value="3">Março</option><option value="4">Abril</option>
-          <option value="5">Maio</option><option value="6">Junho</option>
-          <option value="7">Julho</option><option value="8">Agosto</option>
-          <option value="9">Setembro</option><option value="10">Outubro</option>
-          <option value="11">Novembro</option><option value="12">Dezembro</option>
-        </select>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">PROJETO *</label>
+      <select id="relProjectId" onchange="relOnProjectChange()" style="width:100%">
+        <option value="">— Selecione um projeto cadastrado —</option>
+      </select>
+      <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:6px;line-height:1.4">
+        Cliente, faturamento, custo e NPS vêm automaticamente da aba <b>Projetos</b>.
       </div>
-      <div class="form-group"><label class="form-label">STATUS</label>
-        <select id="relStatus">
-          <option value="concluido">✅ Concluído</option>
-          <option value="em_andamento">🔄 Em andamento</option>
-          <option value="problema">⚠️ Com problemas</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">FATURAMENTO (R$)</label><input id="relFat" type="number" step="100" min="0" placeholder="0"></div>
-      <div class="form-group"><label class="form-label">CUSTO (R$)</label><input id="relCost" type="number" step="100" min="0" placeholder="0"></div>
-      <div class="form-group"><label class="form-label">NPS (0-10)</label><input id="relNps" type="number" min="0" max="10" placeholder="—"></div>
-      <div class="form-group"><label class="form-label">RESPONSÁVEL</label><input id="relResp" type="text" placeholder="Ex: Gustavo, Vic…"></div>
+    </div>
+    <div id="relProjectSummary" style="display:none;margin-bottom:14px;padding:12px 14px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px"></div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">STATUS DO RELATÓRIO</label>
+      <select id="relStatus" style="width:100%">
+        <option value="concluido">✅ Concluído</option>
+        <option value="em_andamento">🔄 Em andamento</option>
+        <option value="problema">⚠️ Com problemas</option>
+      </select>
     </div>
     <div class="form-group" style="margin-top:4px"><label class="form-label">✅ O QUE DEU CERTO</label>
       <textarea id="relPositivo" rows="3" placeholder="Descreva os pontos positivos do projeto…" style="width:100%;resize:vertical"></textarea>
@@ -18728,13 +18794,33 @@ function _orcRenderClienteInner(vm) {
 function atualizarPreview() {
   const preview = document.getElementById('orc-preview-content');
   if(!preview) return;
+  _orcUpdateCabecalhoPreview();
+  preview.innerHTML = _orcRenderClienteInner(_orcGetClientePdfVm());
+}
+
+function _orcIsMobileDevice() {
+  return window.matchMedia('(max-width: 960px)').matches
+    || /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent || '');
+}
+
+function orcSetMobileTab(tab) {
+  const builder = document.getElementById('orcamento-builder');
+  if(!builder) return;
+  builder.classList.remove('orc-mtab-editor', 'orc-mtab-preview');
+  builder.classList.add(tab === 'preview' ? 'orc-mtab-preview' : 'orc-mtab-editor');
+  document.querySelectorAll('.orc-mtab').forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.orcTab === tab);
+  });
+  if(tab === 'preview') atualizarPreview();
+}
+
+function _orcGetClientePdfVm() {
   const fin = orcBuilderGetFinancials();
   const diarias = fin.diarias;
   const pdfm = _orcPdfMetaFromForm();
   const data = document.getElementById('orc-data')?.value;
   const validade = document.getElementById('orc-validade')?.value;
-  _orcUpdateCabecalhoPreview();
-  const vm = {
+  return {
     titulo: document.getElementById('orc-titulo')?.value?.trim() || 'Orçamento',
     cliente: document.getElementById('orc-cliente')?.value?.trim() || '',
     descricao: document.getElementById('orc-descricao')?.value?.trim() || '',
@@ -18752,7 +18838,38 @@ function atualizarPreview() {
     aprovadoPor: pdfm.aprovadoPor,
     escopoHtml: _orcClienteEscopoHtml(diarias)
   };
-  preview.innerHTML = _orcRenderClienteInner(vm);
+}
+
+function _orcBuildPdfWrapFromVm(vm) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;max-width:794px;background:#fff;color:#111;font-family:system-ui,-apple-system,sans-serif;line-height:1.45;padding:32px;box-sizing:border-box';
+  wrap.innerHTML = _orcRenderClienteInner(vm);
+  return wrap;
+}
+
+function _orcPdfHtml2Opts(filename, mobile) {
+  return {
+    margin: [10, 10, 10, 10],
+    filename: filename || 'Orcamento_AgeOps.pdf',
+    image: { type: 'jpeg', quality: mobile ? 0.92 : 0.98 },
+    html2canvas: {
+      scale: mobile ? 1.35 : 2,
+      useCORS: true,
+      windowWidth: 794,
+      width: 794,
+      scrollX: 0,
+      scrollY: 0,
+      logging: false,
+      letterRendering: true
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
+}
+
+function _orcRunHtml2Pdf(wrap, opt) {
+  return html2pdf().set(opt).from(wrap).save()
+    .finally(() => { try { document.body.removeChild(wrap); } catch(_) {} });
 }
 
 /** Monta o view-model do documento do cliente a partir de uma linha salva (builder v2). */
@@ -18783,19 +18900,29 @@ function _orcClienteVmFromRow(o, b) {
 
 /** Abre janela de impressão com o documento do cliente (design único). */
 function _orcOpenClientePrintWindow(inner, vm) {
+  const mobile = _orcIsMobileDevice();
   const titulo = `${vm.marca || 'Orçamento'} — ${vm.numRef || 'Proposta'}`;
+  const autoPrint = mobile ? '' : `
+  ${'<script>'}
+  window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });
+  ${'<\/script>'}`;
   const doc = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escHtml(titulo)}</title>
 <style>
   @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #e5e5e5; }
   .sheet { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 16mm 15mm; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.12); }
-  .no-print { text-align: center; padding: 20px; font-family: system-ui, sans-serif; }
-  .no-print button { padding: 10px 28px; background: #000; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: .5px; }
+  .no-print { text-align: center; padding: 20px 16px; font-family: system-ui, sans-serif; }
+  .no-print button { padding: 14px 28px; background: #000; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: .5px; width: min(100%, 320px); }
+  @media (max-width: 640px) {
+    .sheet { width: 100%; min-height: auto; margin: 0; padding: 14mm 12mm; box-shadow: none; }
+    body { background: #fff; }
+  }
   @media print {
     html, body { background: #fff !important; }
     .sheet { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; box-shadow: none !important; padding: 14mm 14mm !important; page-break-after: avoid; }
@@ -18807,15 +18934,13 @@ function _orcOpenClientePrintWindow(inner, vm) {
 <body>
   <div class="sheet">${inner}</div>
   <div class="no-print">
-    <p style="font-size:13px;color:#525252;margin-bottom:12px">Clique em <strong>Imprimir / Salvar como PDF</strong> para baixar o orçamento.</p>
-    <button onclick="window.print()">&#128438; Imprimir / Salvar como PDF</button>
+    <p style="font-size:13px;color:#525252;margin-bottom:12px;line-height:1.5">Toque em <strong>Salvar como PDF</strong> (iOS/Android) ou <strong>Imprimir</strong> para baixar o orçamento.</p>
+    <button onclick="window.print()">&#128438; Salvar como PDF</button>
   </div>
-  ${'<script>'}
-  window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });
-  ${'<\/script>'}
+  ${autoPrint}
 </body>
 </html>`;
-  const pw = window.open('', '_blank', 'width=900,height=760,scrollbars=yes');
+  const pw = window.open('', '_blank');
   if(!pw) {
     toast('Pop-up bloqueado! Permita pop-ups para este site e tente novamente.', 'err');
     return false;
@@ -19082,32 +19207,44 @@ async function salvarOrcamento(status) {
 }
 
 function gerarPDFCliente() {
-  if(typeof html2pdf === 'undefined') { toast('Gerador de PDF não carregou. Verifique a conexão e recarregue.', 'err'); return; }
-  const el = document.getElementById('orc-preview-content');
-  if(!el) return;
   const client = document.getElementById('orc-cliente')?.value?.trim();
   if(!client) { toast('Informe o nome do cliente', 'err'); return; }
   const fin = orcBuilderGetFinancials();
   if(fin.subtotal <= 0) { toast('Monte o orçamento antes de exportar', 'err'); return; }
+
+  const vm = _orcGetClientePdfVm();
   const slug = (document.getElementById('orc-titulo')?.value || 'proposta').replace(/[^\w\d\-]+/g, '_').slice(0, 40);
-  /* Renderiza a partir de um clone offscreen com largura A4 fixa — no mobile o preview
-     ao vivo fica estreito/cortado e o html2canvas gera um PDF quebrado. */
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;background:#fff;color:#111;border-radius:12px;padding:32px';
-  wrap.innerHTML = el.innerHTML;
+  const filename = `Orcamento_${slug || 'AgeOps'}.pdf`;
+  const mobile = _orcIsMobileDevice();
+
+  /* Mobile/iOS: impressão nativa é mais confiável que html2pdf (memória + download). */
+  if(mobile) {
+    const inner = _orcRenderClienteInner(vm);
+    if(_orcOpenClientePrintWindow(inner, vm)) {
+      toast('Toque em "Salvar como PDF" na tela que abriu', 'ok');
+    }
+    return;
+  }
+
+  if(typeof html2pdf === 'undefined') { toast('Gerador de PDF não carregou. Verifique a conexão e recarregue.', 'err'); return; }
+
+  const wrap = _orcBuildPdfWrapFromVm(vm);
   document.body.appendChild(wrap);
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `Orcamento_${slug || 'AgeOps'}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, windowWidth: 820, scrollX: 0, scrollY: 0 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-  };
   toast('Gerando PDF…');
-  html2pdf().set(opt).from(wrap).save()
-    .then(() => { try { document.body.removeChild(wrap); } catch(_) {} toast('PDF cliente gerado'); })
-    .catch((e) => { try { document.body.removeChild(wrap); } catch(_) {} console.warn('[gerarPDFCliente]', e); toast('Erro ao gerar PDF. Tente novamente.', 'err'); });
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      _orcRunHtml2Pdf(wrap, _orcPdfHtml2Opts(filename, false))
+        .then(() => toast('PDF cliente gerado'))
+        .catch((e) => {
+          console.warn('[gerarPDFCliente]', e);
+          if(_orcOpenClientePrintWindow(_orcRenderClienteInner(vm), vm)) {
+            toast('PDF automático falhou — use "Salvar como PDF" na janela aberta', 'warn');
+          } else {
+            toast('Erro ao gerar PDF. Tente novamente.', 'err');
+          }
+        });
+    }, 80);
+  });
 }
 
 /* Gera o PDF interno (custos + margem). Sem argumento: lê o builder do modal.
@@ -19233,24 +19370,24 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
     </div>
     <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Lucro = total cobrado − custo total. Produtos/serviços e despesas entram como repasse (custo igual ao cobrado); a margem vem do markup da equipe + margem da agência. Diária custo: cadastro em colaboradores ou campo CUSTO no builder.</p>
   `;
-  const opt = {
-    margin: [10, 8, 12, 8],
-    filename: `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
-    image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 820 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.pdf-keep'] }
-  };
+  const opt = _orcPdfHtml2Opts(
+    `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
+    _orcIsMobileDevice()
+  );
+  opt.pagebreak = { mode: ['css', 'legacy'], avoid: ['tr', '.pdf-keep'] };
   /* Renderiza com o elemento anexado ao DOM (fora da tela) para o html2canvas medir
      a altura completa — evita corte do conteúdo. */
   wrap.style.position = 'fixed';
   wrap.style.left = '-10000px';
   wrap.style.top = '0';
   document.body.appendChild(wrap);
-  html2pdf().set(opt).from(wrap).save()
-    .then(() => { try { document.body.removeChild(wrap); } catch(_) {} })
-    .catch(() => { try { document.body.removeChild(wrap); } catch(_) {} });
-  toast('PDF interno gerado');
+  toast('Gerando PDF interno…');
+  _orcRunHtml2Pdf(wrap, opt)
+    .then(() => toast('PDF interno gerado'))
+    .catch((e) => {
+      console.warn('[gerarPDFInterno]', e);
+      toast('Erro ao gerar PDF interno. Tente no desktop ou reduza o conteúdo.', 'err');
+    });
 }
 
 /** Gera o PDF interno (custos + margem) a partir de um orçamento salvo (botão da lista). */
@@ -19440,6 +19577,7 @@ function openOrcModal(orcData=null) {
   if(calcArrow) calcArrow.textContent = '▼';
 
   document.getElementById('modalOrc').style.display = 'block';
+  orcSetMobileTab('editor');
 
   if(!orcData) {
     initOrcamentoBuilder(true);
@@ -26661,7 +26799,7 @@ async function loadMyCalendar() {
     const isWeekend = dow === 0 || dow === 6;
     const isToday = dayIso === todayIso;
     const list = byDay.get(dayIso) || [];
-    const visible = list.slice(0, 3);
+    const visible = list.slice(0, 2);
     const overflow = list.length - visible.length;
     const itemsHtml = visible.map(it => {
       const cls = it.kind === 'own' ? 'k-own' : (it.kind === 'assigned' ? 'k-assigned' : 'k-event');
@@ -27972,6 +28110,149 @@ const REL_FIXOS = [
 ];
 
 let _relCache = [];
+let _relProjOptions = [];
+
+function _relDefaultStatusFromProj(st) {
+  const s = String(st || '').toLowerCase().replace(/\s+/g, '_');
+  if(s.includes('conclu') || s === 'entregue') return 'concluido';
+  if(s.includes('cancel') || s.includes('problema') || s.includes('atras')) return 'problema';
+  return 'em_andamento';
+}
+
+function _relProjMesFromRow(p) {
+  if(p._sheetMes) return parseInt(p._sheetMes, 10) || 1;
+  const payD = p.payment_date ? String(p.payment_date).slice(0, 10) : '';
+  const projD = p.project_date ? String(p.project_date).slice(0, 10) : '';
+  const iso = payD || projD;
+  return iso ? parseInt(iso.slice(5, 7), 10) : (new Date().getMonth() + 1);
+}
+
+function _relNormProjRow(p) {
+  const fat = parseFloat(p.total_value) || 0;
+  const cost = parseFloat(p.cost) || 0;
+  return {
+    id: String(p.id || ''),
+    client_name: _ageProjDbClient(p) || p.client_name || '',
+    project_name: _ageProjDbTitle(p) || p.project_name || '',
+    total_value: fat,
+    cost,
+    nps: parseFloat(p.nps) || 0,
+    status: p.status || 'pendente',
+    mes: _relProjMesFromRow(p),
+    deleted: p.deleted
+  };
+}
+
+async function _relEnsureProjectsCache() {
+  if(_projAllCache && _projAllCache.length) {
+    _relProjOptions = _projAllCache
+      .filter(p => _projRowNotDeleted(p) && String(p.id || '').indexOf('sheet_') !== 0)
+      .map(_relNormProjRow)
+      .filter(p => p.client_name && p.project_name && p.id);
+    if(_relProjOptions.length) return _relProjOptions;
+  }
+  try {
+    const [dbProjects, dbFechs] = await Promise.all([
+      fetchAgeProjectsScoped(1000),
+      fetchAll('age_fechamento', 500).catch(() => [])
+    ]);
+    _relProjOptions = (dbProjects || [])
+      .filter(_projRowNotDeleted)
+      .map(p => {
+        const fech = dbFechs.find(f => String(f.project_id) === String(p.id));
+        const costFromFech = fech ? (parseFloat(fech.custo_total) || 0) : null;
+        const costFinal = costFromFech !== null ? costFromFech : (parseFloat(p.cost) || 0);
+        return _relNormProjRow({ ...p, cost: costFinal });
+      })
+      .filter(p => p.client_name && p.project_name && p.id);
+  } catch(e) {
+    console.warn('[rel projects]', e);
+    _relProjOptions = [];
+  }
+  return _relProjOptions;
+}
+
+function _relFindProjectOption(id) {
+  return _relProjOptions.find(p => String(p.id) === String(id)) || null;
+}
+
+function _relMatchProjectFromReport(r) {
+  if(!r) return null;
+  if(r.project_id) {
+    const byId = _relFindProjectOption(r.project_id);
+    if(byId) return byId;
+  }
+  const cli = String(r.cliente || r.client_name || '').trim().toLowerCase();
+  const proj = String(r.projeto || r.project_name || '').trim().toLowerCase();
+  if(!cli || !proj) return null;
+  return _relProjOptions.find(p =>
+    p.client_name.toLowerCase() === cli && p.project_name.toLowerCase() === proj
+  ) || null;
+}
+
+function _relRenderProjectSummary(proj, legacyNote) {
+  const box = document.getElementById('relProjectSummary');
+  if(!box) return;
+  if(!proj) {
+    box.style.display = legacyNote ? 'block' : 'none';
+    box.innerHTML = legacyNote || '';
+    return;
+  }
+  const margem = proj.total_value > 0 ? Math.round((proj.total_value - proj.cost) / proj.total_value * 100) : 0;
+  const mesLabel = _MESES_FULL[(proj.mes || 1) - 1] || '—';
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;font-family:var(--font-m);font-size:10px">
+      <div><span style="color:var(--textsub);display:block;font-size:8px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Cliente</span><strong style="color:var(--text)">${escHtml(proj.client_name)}</strong></div>
+      <div><span style="color:var(--textsub);display:block;font-size:8px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Faturamento</span><strong style="color:var(--text)">${proj.total_value ? fmtBRL(proj.total_value) : '—'}</strong></div>
+      <div><span style="color:var(--textsub);display:block;font-size:8px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Custo</span><strong style="color:var(--text)">${proj.cost ? fmtBRL(proj.cost) : '—'}</strong></div>
+      <div><span style="color:var(--textsub);display:block;font-size:8px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Margem</span><strong style="color:${margem >= 50 ? '#16a34a' : margem >= 30 ? '#d97706' : '#dc2626'}">${proj.total_value ? margem + '%' : '—'}</strong></div>
+      <div><span style="color:var(--textsub);display:block;font-size:8px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">NPS</span><strong style="color:var(--text)">${proj.nps > 0 ? proj.nps + ' ★' : '—'}</strong></div>
+      <div><span style="color:var(--textsub);display:block;font-size:8px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Mês ref.</span><strong style="color:var(--text)">${escHtml(mesLabel)}</strong></div>
+    </div>
+    ${legacyNote ? `<div style="margin-top:10px;font-size:9px;color:#d97706;line-height:1.45">${legacyNote}</div>` : ''}`;
+}
+
+function relOnProjectChange() {
+  const sel = document.getElementById('relProjectId');
+  const st = document.getElementById('relStatus');
+  const proj = _relFindProjectOption(sel?.value);
+  _relRenderProjectSummary(proj);
+  if(proj && st && !document.getElementById('relEditId')?.value) {
+    st.value = _relDefaultStatusFromProj(proj.status);
+  }
+}
+
+async function _relPopulateProjectSelect(existingReport) {
+  const sel = document.getElementById('relProjectId');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">Carregando projetos…</option>';
+  await _relEnsureProjectsCache();
+  const matched = _relMatchProjectFromReport(existingReport);
+  const usedIds = new Set(
+    _relCache
+      .filter(r => r.id && existingReport && String(r.id) !== String(existingReport.id))
+      .map(r => String(r.project_id || ''))
+      .filter(Boolean)
+  );
+  const opts = ['<option value="">— Selecione um projeto cadastrado —</option>'];
+  const sorted = [..._relProjOptions].sort((a, b) =>
+    (a.client_name + a.project_name).localeCompare(b.client_name + b.project_name, 'pt-BR')
+  );
+  sorted.forEach(p => {
+    const dup = usedIds.has(String(p.id));
+    opts.push(`<option value="${escAttr(p.id)}"${matched && String(matched.id) === String(p.id) ? ' selected' : ''}>${escHtml(p.client_name)} — ${escHtml(p.project_name)}${dup ? ' (já tem relatório)' : ''}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+  if(matched) {
+    sel.value = matched.id;
+    _relRenderProjectSummary(matched);
+  } else if(existingReport) {
+    _relRenderProjectSummary(null, `Relatório legado: <b>${escHtml(existingReport.cliente || '—')}</b> · <b>${escHtml(existingReport.projeto || '—')}</b>. Selecione o projeto correspondente para vincular.`);
+  } else {
+    _relRenderProjectSummary(null);
+  }
+}
 
 /* ─── LOAD ─── */
 async function loadRelatorios() {
@@ -28117,55 +28398,76 @@ function renderRelList() {
 }
 
 /* ─── MODAL EDITAR / CRIAR ─── */
-function openRelModal(id='') {
+async function openRelModal(id='') {
   const r = id ? _relCache.find(x => String(x.id) === String(id)) : null;
   document.getElementById('relModalTitle').textContent = r ? 'EDITAR RELATÓRIO' : 'NOVO RELATÓRIO';
-  document.getElementById('relEditId').value    = r?.id||'';
-  document.getElementById('relCliente').value   = r?.cliente||'';
-  document.getElementById('relProjeto').value   = r?.projeto||'';
-  document.getElementById('relMes').value       = r?.mes || (new Date().getMonth()+1);
-  document.getElementById('relStatus').value    = r?.status||'concluido';
-  document.getElementById('relFat').value       = r?.fat||'';
-  document.getElementById('relCost').value      = r?.cost||'';
-  document.getElementById('relNps').value       = r?.nps||'';
-  document.getElementById('relResp').value      = r?.resp||'';
-  document.getElementById('relPositivo').value  = r?.positivo||'';
-  document.getElementById('relProblemas').value = r?.problemas||'';
-  document.getElementById('relLicoes').value    = r?.licoes||'';
-  document.getElementById('relObs').value       = r?.obs||'';
+  document.getElementById('relEditId').value = r?.id || '';
+  document.getElementById('relStatus').value = r?.status || 'concluido';
+  document.getElementById('relPositivo').value = r?.positivo || '';
+  document.getElementById('relProblemas').value = r?.problemas || '';
+  document.getElementById('relLicoes').value = r?.licoes || '';
+  document.getElementById('relObs').value = r?.obs || '';
   openModal('modalRel');
+  await _relPopulateProjectSelect(r);
+  if(r?.status) document.getElementById('relStatus').value = r.status;
 }
 
 /* ─── SALVAR ─── */
 async function saveRel() {
-  const cliente = document.getElementById('relCliente').value.trim();
-  const projeto = document.getElementById('relProjeto').value.trim();
-  if(!cliente || !projeto) { toast('Preencha cliente e projeto','err'); return; }
+  const projId = document.getElementById('relProjectId')?.value || '';
+  const proj = _relFindProjectOption(projId);
+  if(!proj) { toast('Selecione um projeto cadastrado na aba Projetos', 'err'); return; }
+
+  const editId = document.getElementById('relEditId').value;
+  const dup = _relCache.find(r =>
+    String(r.project_id || '') === String(proj.id) &&
+    (!editId || String(r.id) !== String(editId))
+  );
+  if(dup && editId && !String(editId).startsWith('rel-fix-')) {
+    if(!confirm(`Já existe um relatório para "${proj.project_name}". Deseja salvar mesmo assim?`)) return;
+  }
+
+  const respName = String(currentUser?.nome || currentUser?.name || currentUser?.username || '').trim() || '—';
   const payload = {
-    cliente, projeto,
-    mes:       parseInt(document.getElementById('relMes').value)||1,
-    status:    document.getElementById('relStatus').value,
-    fat:       parseFloat(document.getElementById('relFat').value)||0,
-    cost:      parseFloat(document.getElementById('relCost').value)||0,
-    nps:       parseFloat(document.getElementById('relNps').value)||0,
-    resp:      document.getElementById('relResp').value.trim(),
-    positivo:  document.getElementById('relPositivo').value.trim(),
+    project_id: proj.id,
+    cliente: proj.client_name,
+    projeto: proj.project_name,
+    mes: proj.mes || (new Date().getMonth() + 1),
+    status: document.getElementById('relStatus').value,
+    fat: proj.total_value,
+    cost: proj.cost,
+    nps: proj.nps,
+    resp: respName,
+    positivo: document.getElementById('relPositivo').value.trim(),
     problemas: document.getElementById('relProblemas').value.trim(),
-    licoes:    document.getElementById('relLicoes').value.trim(),
-    obs:       document.getElementById('relObs').value.trim(),
-    autor:     currentUser?.username||'—'
+    licoes: document.getElementById('relLicoes').value.trim(),
+    obs: document.getElementById('relObs').value.trim(),
+    autor: currentUser?.username || '—'
   };
-  const id = document.getElementById('relEditId').value;
   try {
-    /* Se for um fixo (id começa com rel-fix-), criar novo no banco sem o id fixo */
-    if(id && !id.startsWith('rel-fix-')) {
-      await apiPatch('age_relatorios', id, payload); toast('Relatório atualizado ✅');
+    if(editId && !editId.startsWith('rel-fix-')) {
+      await apiPatch('age_relatorios', editId, payload);
+      toast('Relatório atualizado ✅');
     } else {
-      await apiPost('age_relatorios', payload); toast('Relatório salvo ✅');
+      await apiPost('age_relatorios', payload);
+      toast('Relatório salvo ✅');
     }
     closeModal('modalRel');
     await loadRelatorios();
-  } catch(e) { toast('Erro ao salvar: '+e.message,'err'); }
+  } catch(e) {
+    if(String(e.message || '').includes('project_id')) {
+      const { project_id, ...fallback } = payload;
+      try {
+        if(editId && !editId.startsWith('rel-fix-')) await apiPatch('age_relatorios', editId, fallback);
+        else await apiPost('age_relatorios', fallback);
+        closeModal('modalRel');
+        await loadRelatorios();
+        toast('Relatório salvo (vincule project_id no Supabase para persistir o vínculo)', 'warn');
+        return;
+      } catch(e2) { toast('Erro ao salvar: ' + (e2.message || e.message), 'err'); return; }
+    }
+    toast('Erro ao salvar: ' + e.message, 'err');
+  }
 }
 
 /* ─── EXCLUIR ─── */
