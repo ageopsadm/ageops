@@ -1294,6 +1294,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .mycal-item.k-own{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.35);color:#166534}
 .mycal-item.k-assigned{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.35);color:#92400e}
 .mycal-item.k-event{background:rgba(15,23,42,.08);border-color:rgba(15,23,42,.2);color:#0f172a}
+.mycal-item.k-project{background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.35);color:#1d4ed8}
 .mycal-more{font-family:var(--font-m);font-size:8px;color:var(--textsub);flex-shrink:0;line-height:1.2}
 .mycal-empty{color:var(--textsub);font-family:var(--font-m);font-size:10px}
 .mycal-day-modal{max-width:560px}
@@ -4498,6 +4499,7 @@ body:has(#login-screen.visible){
             <span><span class="mycal-dot" style="background:#16a34a"></span>Minhas tarefas</span>
             <span><span class="mycal-dot" style="background:#f59e0b"></span>Atribuídas a mim</span>
             <span><span class="mycal-dot" style="background:#0f172a"></span>Eventos da empresa</span>
+            <span><span class="mycal-dot" style="background:#2563eb"></span>Projetos</span>
           </div>
         </div>
         <div id="mycalProgress" class="progress-card" style="display:none">
@@ -26677,6 +26679,35 @@ function myCalNext() {
   loadMyCalendar();
 }
 
+/** Datas do projeto que aparecem no calendário pessoal (gravação, cadastro, entrega). */
+function _myCalEntriesFromProject(p, startIso, endIso) {
+  if(!p || !_projRowNotDeleted(p)) return [];
+  const client = _ageProjDbClient(p);
+  const title = _ageProjDbTitle(p);
+  if(!title || !p.id) return [];
+  const slots = [
+    { key: 'recording_date', label: 'Gravação' },
+    { key: 'project_date', label: 'Projeto' },
+    { key: 'delivery_date', label: 'Entrega' }
+  ];
+  const byDay = new Map();
+  for(const s of slots) {
+    const dd = String(p[s.key] || '').slice(0, 10);
+    if(!dd || dd < startIso || dd > endIso) continue;
+    if(!byDay.has(dd)) byDay.set(dd, s.label);
+  }
+  return [...byDay.entries()].map(([day, dateLabel]) => ({
+    kind: 'project',
+    id: p.id,
+    day,
+    text: title,
+    client,
+    dateLabel,
+    status: p.status || '',
+    done: false
+  }));
+}
+
 async function loadMyCalendar() {
   const grid = document.getElementById('mycalGrid');
   const title = document.getElementById('mycalTitle');
@@ -26766,6 +26797,12 @@ async function loadMyCalendar() {
         }
       } catch(eE) { console.warn('[mycal events]', eE); }
     }
+
+    /* 4) Projetos cadastrados (datas de gravação, projeto ou entrega). */
+    const projects = await fetchAgeProjectsScoped(1000);
+    for(const p of (projects || [])) {
+      items.push(..._myCalEntriesFromProject(p, startIso, endIso));
+    }
   } catch(eAll) {
     console.warn('[loadMyCalendar]', eAll);
   }
@@ -26783,7 +26820,7 @@ async function loadMyCalendar() {
     countId: 'mycalProgressCount',
     fillId: 'mycalProgressFill',
     pctId: 'mycalProgressPct'
-  }, items);
+  }, items.filter(it => it.kind !== 'project'));
 
   /* Render grid */
   const startDow = firstDay.getDay();
@@ -26802,10 +26839,15 @@ async function loadMyCalendar() {
     const visible = list.slice(0, 2);
     const overflow = list.length - visible.length;
     const itemsHtml = visible.map(it => {
-      const cls = it.kind === 'own' ? 'k-own' : (it.kind === 'assigned' ? 'k-assigned' : 'k-event');
+      let cls = 'k-event';
+      if(it.kind === 'own') cls = 'k-own';
+      else if(it.kind === 'assigned') cls = 'k-assigned';
+      else if(it.kind === 'project') cls = 'k-project';
       const doneCls = it.done ? ' is-done' : '';
-      const prefix = it.kind === 'event' && it.time ? `${it.time} · ` : '';
-      return `<div class="mycal-item ${cls}${doneCls}" title="${escAttr(it.text)}">${escHtml(prefix + it.text)}</div>`;
+      let prefix = '';
+      if(it.kind === 'event' && it.time) prefix = `${it.time} · `;
+      else if(it.kind === 'project') prefix = `${it.dateLabel}${it.client ? ' · ' + it.client : ''} · `;
+      return `<div class="mycal-item ${cls}${doneCls}" title="${escAttr(prefix + it.text)}">${escHtml(prefix + it.text)}</div>`;
     }).join('');
     const more = overflow > 0 ? `<div class="mycal-more">+${overflow} mais</div>` : '';
     cells.push(
@@ -26870,6 +26912,18 @@ function _myCalDayRowHtml(it) {
         <span class="task-source-badge">ATRIBUÍDA</span>
       </div>`;
   }
+  if(it.kind === 'project') {
+    return `
+      <div class="task-item" style="border-left:3px solid #2563eb">
+        <div style="width:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#2563eb;font-size:12px"><i class="fas fa-briefcase"></i></div>
+        <div style="flex:1">
+          <div class="task-text">${escHtml(it.text)}</div>
+          <div class="task-meta">${escHtml(it.client || '—')} · ${escHtml(it.dateLabel || 'Projeto')}${it.status ? ' · ' + escHtml(it.status) : ''}</div>
+        </div>
+        <span class="task-source-badge" style="background:rgba(37,99,235,.12);color:#1d4ed8;border-color:rgba(37,99,235,.35)">PROJETO</span>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modalMyCalDay');navigate('projects');setTimeout(function(){editProject('${it.id}')},350)" title="Abrir projeto"><i class="fas fa-external-link-alt"></i></button>
+      </div>`;
+  }
   return `
       <div class="task-item myday-empresa${doneCls}">
         <div class="task-check${it.done?' checked':''}" onclick="_myCalToggleEvent('${it.id}',${it.done},'${it.day}')">${it.done?'✓':''}</div>
@@ -26897,7 +26951,7 @@ function myCalOpenDay(dayIso) {
     countId: 'myCalDayProgressCount',
     fillId: 'myCalDayProgressFill',
     pctId: 'myCalDayProgressPct'
-  }, list);
+  }, list.filter(it => it.kind !== 'project'));
   const cont = document.getElementById('myCalDayList');
   if(cont) {
     if(!list.length) {
