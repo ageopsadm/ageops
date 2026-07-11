@@ -78,7 +78,7 @@ function FormOverlay({ onClose, onFinish, withLGPD }) {
 
   const progressPct = ((step + 1) / totalSteps) * 100;
 
-  const stepContent = renderStep(step, answers, { update, updateStyle, toggleArray });
+  const stepContent = renderStep(step, answers, { update, updateStyle, toggleArray }, withLGPD);
 
   return (
     <div className="form-overlay" data-screen-label="Form Overlay">
@@ -114,7 +114,7 @@ function FormOverlay({ onClose, onFinish, withLGPD }) {
   );
 }
 
-function renderStep(step, a, h) {
+function renderStep(step, a, h, withLGPD) {
   switch (step) {
     case 0: return <StepIdentity a={a} h={h} />;
     case 1: return <StepLinks a={a} h={h} />;

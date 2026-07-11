@@ -220,3 +220,46 @@ FROM age_candidates c
 LEFT JOIN age_match_results m ON m.candidate_id = c.id
 LEFT JOIN age_ai_analysis  a ON a.candidate_id = c.id
 ORDER BY c.created_at DESC;
+
+
+-- ============================================================
+-- RLS — políticas de acesso
+-- O painel admin (age-ops) acessa com a chave anon, como o resto do app.
+-- Submissão de candidato acontece SÓ pela edge function recruit-submit
+-- (service role, que bypassa RLS) — por isso não há INSERT anon em candidates.
+-- ============================================================
+ALTER TABLE age_candidates    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE age_match_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE age_ai_analysis   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE age_recruit_links ENABLE ROW LEVEL SECURITY;
+
+-- Candidatos: admin lê e atualiza (status, notas). Sem insert/delete anon.
+DROP POLICY IF EXISTS age_candidates_select ON age_candidates;
+CREATE POLICY age_candidates_select ON age_candidates
+  FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS age_candidates_update ON age_candidates;
+CREATE POLICY age_candidates_update ON age_candidates
+  FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
+
+-- Matching e análise IA: admin só lê (escrita é da edge function).
+DROP POLICY IF EXISTS age_match_results_select ON age_match_results;
+CREATE POLICY age_match_results_select ON age_match_results
+  FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS age_ai_analysis_select ON age_ai_analysis;
+CREATE POLICY age_ai_analysis_select ON age_ai_analysis
+  FOR SELECT TO anon, authenticated USING (true);
+
+-- Links rastreáveis: admin lê, cria e edita (ativar/desativar).
+DROP POLICY IF EXISTS age_recruit_links_select ON age_recruit_links;
+CREATE POLICY age_recruit_links_select ON age_recruit_links
+  FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS age_recruit_links_insert ON age_recruit_links;
+CREATE POLICY age_recruit_links_insert ON age_recruit_links
+  FOR INSERT TO anon, authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS age_recruit_links_update ON age_recruit_links;
+CREATE POLICY age_recruit_links_update ON age_recruit_links
+  FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
