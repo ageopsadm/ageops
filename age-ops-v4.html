@@ -16,6 +16,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<!-- Fontes dos PDFs de orçamento (pesos extras + Space Grotesk) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.21.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -4130,6 +4132,15 @@ body:has(#login-screen.visible){
                         <select id="orc-pdf-parcelas" class="orc-input" onchange="atualizarPreview()">
                           <option value="1">Uma parcela (100%)</option>
                           <option value="2">Duas parcelas (50% + 50%)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label for="orc-pdf-fonte" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">FONTE DO PDF</label>
+                        <select id="orc-pdf-fonte" class="orc-input" onchange="atualizarPreview()">
+                          <option value="inter">Inter — moderna e neutra</option>
+                          <option value="jakarta">Plus Jakarta Sans — geométrica</option>
+                          <option value="grotesk">Space Grotesk — editorial</option>
+                          <option value="sistema">Fonte do sistema (padrão antigo)</option>
                         </select>
                       </div>
                       <div>
@@ -18722,6 +18733,36 @@ function recalcularTotais() {
   atualizarPreview();
 }
 
+/* ── Fonte dos PDFs de orçamento ──
+   As famílias já são carregadas no <head> (Google Fonts); o html2canvas
+   renderiza com a fonte da página, então basta o stack correto. */
+const ORC_PDF_FONT_STACKS = {
+  inter:   "'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",
+  jakarta: "'Plus Jakarta Sans','Inter',system-ui,sans-serif",
+  grotesk: "'Space Grotesk','Inter',system-ui,sans-serif",
+  sistema: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+};
+const ORC_PDF_FONT_DEFAULT = 'inter';
+
+function _orcPdfFontId() {
+  const v = document.getElementById('orc-pdf-fonte')?.value;
+  return ORC_PDF_FONT_STACKS[v] ? v : ORC_PDF_FONT_DEFAULT;
+}
+
+function _orcPdfFontStack(id) {
+  return ORC_PDF_FONT_STACKS[id] || ORC_PDF_FONT_STACKS[ORC_PDF_FONT_DEFAULT];
+}
+
+/** Garante que a webfont escolhida esteja baixada antes do html2canvas rasterizar. */
+async function _orcEnsurePdfFont(id) {
+  try {
+    const fam = _orcPdfFontStack(id).split(',')[0].replace(/'/g, '').trim();
+    if(!fam || /^system-ui$/i.test(fam)) return;
+    await Promise.all([400, 600, 700, 800].map(w => document.fonts.load(`${w} 16px "${fam}"`)));
+    await document.fonts.ready;
+  } catch(e) { /* segue com fallback do stack */ }
+}
+
 function _orcPdfMetaFromForm() {
   return {
     propostaEmissor: document.getElementById('orc-emissor')?.value?.trim() || '',
@@ -18730,7 +18771,8 @@ function _orcPdfMetaFromForm() {
     parcelas: document.getElementById('orc-pdf-parcelas')?.value || '1',
     pix: document.getElementById('orc-pdf-pix')?.value?.trim() || '',
     favorecido: document.getElementById('orc-pdf-favorecido')?.value?.trim() || '',
-    aprovadoPor: document.getElementById('orc-pdf-aprovado')?.value?.trim() || ''
+    aprovadoPor: document.getElementById('orc-pdf-aprovado')?.value?.trim() || '',
+    pdfFont: _orcPdfFontId()
   };
 }
 
@@ -18748,6 +18790,8 @@ function _applyOrcPdfMetaToForm(meta) {
   set('orc-pdf-pix', meta.pix);
   set('orc-pdf-favorecido', meta.favorecido);
   set('orc-pdf-aprovado', meta.aprovadoPor);
+  const ft = document.getElementById('orc-pdf-fonte');
+  if(ft && ORC_PDF_FONT_STACKS[meta.pdfFont]) ft.value = meta.pdfFont;
 }
 
 function _orcUpdateCabecalhoPreview() {
@@ -18810,8 +18854,8 @@ function _orcClienteEscopoHtml(diarias) {
  *       aprovadoPor, escopoHtml }
  */
 function _orcRenderClienteInner(vm) {
-  const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
-  const sans = 'font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+  const mono = "font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
+  const sans = 'font-family:' + _orcPdfFontStack(vm.pdfFont);
   const subLinha = (left, right) => `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;gap:12px">
     <span style="${mono};font-size:9px;letter-spacing:.22em;color:#737373">${escHtml(left)}</span>
     <span style="${mono};font-size:9px;letter-spacing:.12em;color:#737373">${escHtml(right)}</span>
@@ -18995,13 +19039,14 @@ function _orcGetClientePdfVm() {
     pix: pdfm.pix,
     favorecido: pdfm.favorecido,
     aprovadoPor: pdfm.aprovadoPor,
+    pdfFont: pdfm.pdfFont || ORC_PDF_FONT_DEFAULT,
     escopoHtml: _orcClienteEscopoHtml(diarias)
   };
 }
 
 function _orcBuildPdfWrapFromVm(vm) {
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;max-width:794px;background:#fff;color:#111;font-family:system-ui,-apple-system,sans-serif;line-height:1.45;padding:32px;box-sizing:border-box';
+  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;max-width:794px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(vm.pdfFont) + ';line-height:1.45;padding:32px;box-sizing:border-box';
   wrap.innerHTML = _orcRenderClienteInner(vm);
   return wrap;
 }
@@ -19053,6 +19098,7 @@ function _orcClienteVmFromRow(o, b) {
     pix: pdfm.pix || '',
     favorecido: pdfm.favorecido || '',
     aprovadoPor: pdfm.aprovadoPor || '',
+    pdfFont: pdfm.pdfFont || ORC_PDF_FONT_DEFAULT,
     escopoHtml: _orcEscopoHtmlFromLinhas(_orcEscopoLinhas(b.equipe, b.catalogo, b.despesas, diarias))
   };
 }
@@ -19063,7 +19109,10 @@ function _orcOpenClientePrintWindow(inner, vm) {
   const titulo = `${vm.marca || 'Orçamento'} — ${vm.numRef || 'Proposta'}`;
   const autoPrint = mobile ? '' : `
   ${'<script>'}
-  window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });
+  window.addEventListener('load', function() {
+    var fp = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    fp.then(function() { setTimeout(function() { window.print(); }, 250); });
+  });
   ${'<\/script>'}`;
   const doc = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -19071,6 +19120,7 @@ function _orcOpenClientePrintWindow(inner, vm) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escHtml(titulo)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; }
@@ -19138,6 +19188,8 @@ function initOrcamentoBuilder(resetState) {
     if(rp) rp.value = 'Pagamento à vista';
     const pp = document.getElementById('orc-pdf-parcelas');
     if(pp) pp.value = '1';
+    const pf = document.getElementById('orc-pdf-fonte');
+    if(pf) pf.value = ORC_PDF_FONT_DEFAULT;
     const rDi = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
     if(rDi) rDi.checked = true;
     const rImpDi = document.querySelector('input[name="orc-imposto-modo"][value="diluida"]');
@@ -19404,19 +19456,21 @@ function gerarPDFCliente() {
   const wrap = _orcBuildPdfWrapFromVm(vm);
   document.body.appendChild(wrap);
   toast('Gerando PDF…');
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      _orcRunHtml2Pdf(wrap, _orcPdfHtml2Opts(filename, false))
-        .then(() => toast('PDF cliente gerado'))
-        .catch((e) => {
-          console.warn('[gerarPDFCliente]', e);
-          if(_orcOpenClientePrintWindow(_orcRenderClienteInner(vm), vm)) {
-            toast('PDF automático falhou — use "Salvar como PDF" na janela aberta', 'warn');
-          } else {
-            toast('Erro ao gerar PDF. Tente novamente.', 'err');
-          }
-        });
-    }, 80);
+  _orcEnsurePdfFont(vm.pdfFont).then(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        _orcRunHtml2Pdf(wrap, _orcPdfHtml2Opts(filename, false))
+          .then(() => toast('PDF cliente gerado'))
+          .catch((e) => {
+            console.warn('[gerarPDFCliente]', e);
+            if(_orcOpenClientePrintWindow(_orcRenderClienteInner(vm), vm)) {
+              toast('PDF automático falhou — use "Salvar como PDF" na janela aberta', 'warn');
+            } else {
+              toast('Erro ao gerar PDF. Tente novamente.', 'err');
+            }
+          });
+      }, 80);
+    });
   });
 }
 
@@ -19457,8 +19511,9 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
       + ' · '
       + (fin.impostoModo === 'transparente' ? 'imposto discriminado' : 'imposto diluído')
       + '.</p>';
+  const pdfFontId = (srcBuilder && srcBuilder.pdfMeta && srcBuilder.pdfMeta.pdfFont) || _orcPdfFontId();
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:Rajdhani,sans-serif;font-size:13px;line-height:1.45;width:794px';
+  wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(pdfFontId) + ';font-size:13px;line-height:1.45;width:794px';
   const eqRows = (fin.linhasEquipe || []).map(l => {
     const m = l.membro;
     const margemCor = l.margem >= 0 ? '#15803d' : '#b91c1c';
@@ -19564,12 +19619,14 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
   wrap.style.top = '0';
   document.body.appendChild(wrap);
   toast('Gerando PDF interno…');
-  _orcRunHtml2Pdf(wrap, opt)
-    .then(() => toast('PDF interno gerado'))
-    .catch((e) => {
-      console.warn('[gerarPDFInterno]', e);
-      toast('Erro ao gerar PDF interno. Tente no desktop ou reduza o conteúdo.', 'err');
-    });
+  _orcEnsurePdfFont(pdfFontId).then(() =>
+    _orcRunHtml2Pdf(wrap, opt)
+      .then(() => toast('PDF interno gerado'))
+      .catch((e) => {
+        console.warn('[gerarPDFInterno]', e);
+        toast('Erro ao gerar PDF interno. Tente no desktop ou reduza o conteúdo.', 'err');
+      })
+  );
 }
 
 /** Gera o PDF interno (custos + margem) a partir de um orçamento salvo (botão da lista). */
