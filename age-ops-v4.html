@@ -1176,6 +1176,40 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   .mdr-stat:last-child{grid-column:1/-1}
 }
 
+/* ── Recrutamento ── */
+.recrut-card{
+  display:flex;align-items:center;gap:14px;background:var(--bg2);border:1px solid rgba(0,0,0,.09);
+  border-radius:12px;padding:12px 16px;cursor:pointer;transition:box-shadow .15s,border-color .15s;
+}
+.recrut-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);border-color:rgba(0,0,0,.16)}
+.recrut-score{
+  flex-shrink:0;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-h);font-size:15px;font-weight:800;border:2.5px solid;
+}
+.recrut-name{font-family:var(--font-b);font-size:14px;font-weight:700;color:var(--text)}
+.recrut-meta{font-family:var(--font-m);font-size:10px;color:var(--textsub);margin-top:2px}
+.recrut-badge{
+  display:inline-block;font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.08em;
+  padding:2px 8px;border-radius:999px;text-transform:uppercase;white-space:nowrap;border:1px solid;
+}
+.recrut-badge.st-novo{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+.recrut-badge.st-em_analise{background:#fefce8;color:#ca8a04;border-color:#fde68a}
+.recrut-badge.st-entrevista{background:#f5f3ff;color:#7c3aed;border-color:#ddd6fe}
+.recrut-badge.st-aprovado{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.recrut-badge.st-arquivado{background:#fafafa;color:#94a3b8;border-color:#e2e8f0}
+.recrut-badge.p-recomendado{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.recrut-badge.p-recomendado_com_ressalvas{background:#fefce8;color:#ca8a04;border-color:#fde68a}
+.recrut-badge.p-nao_recomendado{background:#fff1f2;color:#e11d48;border-color:#fecdd3}
+.recrut-badge.p-revisar_manualmente{background:#fafafa;color:#64748b;border-color:#e2e8f0}
+.recrut-sec{border:1px solid rgba(0,0,0,.09);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:var(--bg2)}
+.recrut-sec-title{font-family:var(--font-m);font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--textsub);text-transform:uppercase;margin-bottom:10px}
+.recrut-answer{font-size:12px;line-height:1.6;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.recrut-q{font-family:var(--font-m);font-size:10px;font-weight:700;color:var(--textsub);margin:10px 0 3px}
+@media(max-width:640px){
+  .recrut-card{flex-wrap:wrap;gap:10px}
+  #page-recrutamento .kpi-card .kpi-val{font-size:18px}
+}
+
 /* ── Financeiro Pessoal: cards de resumo (tamanho uniforme) ── */
 .myfin-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .myfin-card{
@@ -3207,6 +3241,9 @@ body:has(#login-screen.visible){
       <button type="button" class="nav-item" data-page="cronograma" data-perm-module="cronograma" onclick="navigate('cronograma')">
         <i class="fas fa-calendar-alt"></i><span>CRONOGRAMA</span>
       </button>
+      <button type="button" class="nav-item" data-page="recrutamento" data-perm-module="equipe" onclick="navigate('recrutamento')">
+        <i class="fas fa-user-plus"></i><span>RECRUTAMENTO</span>
+      </button>
       </div>
 
       <div id="sidebarPersonalStaff">
@@ -4275,6 +4312,85 @@ body:has(#login-screen.visible){
         <div id="colabKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"></div>
         <!-- Grid de cards -->
         <div id="teamGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           RECRUTAMENTO PAGE
+      ══════════════════════════════════ -->
+      <div id="page-recrutamento" class="page">
+        <div class="page-header">
+          <div class="page-title"><i class="fas fa-user-plus"></i> RECRUTAMENTO</div>
+          <div class="page-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openRecrutLinksModal()"><i class="fas fa-link"></i> Links</button>
+            <button class="btn btn-primary btn-sm" onclick="recrutCopyPublicLink()"><i class="fas fa-external-link-alt"></i> Página pública</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+          <div class="kpi-card"><div class="kpi-label">CANDIDATOS</div><div class="kpi-val blue" id="recrutKpiTotal">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">NOVOS</div><div class="kpi-val" style="color:#d97706" id="recrutKpiNovos">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">EM ENTREVISTA</div><div class="kpi-val" style="color:#7c3aed" id="recrutKpiEntrevista">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">APROVADOS</div><div class="kpi-val green" id="recrutKpiAprovados">—</div></div>
+        </div>
+
+        <!-- Filtros -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+          <input id="recrutSearch" placeholder="Buscar nome, email, cidade..." oninput="renderRecrutList()" style="flex:1;min-width:170px;font-size:11px;padding:7px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.12);background:var(--bg2);color:var(--text)">
+          <select id="recrutFilterRole" class="cf-select" onchange="renderRecrutList()" title="Função">
+            <option value="">Todas as funções</option>
+          </select>
+          <select id="recrutFilterSenior" class="cf-select" onchange="renderRecrutList()" title="Senioridade">
+            <option value="">Senioridade</option>
+            <option>Sênior</option><option>Pleno</option><option>Júnior</option>
+            <option>Promissor em desenvolvimento</option>
+          </select>
+          <select id="recrutFilterStatus" class="cf-select" onchange="renderRecrutList()" title="Status">
+            <option value="">Todos os status</option>
+            <option value="novo">Novo</option>
+            <option value="em_analise">Em análise</option>
+            <option value="entrevista">Entrevista</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="arquivado">Arquivado</option>
+          </select>
+          <select id="recrutFilterScore" class="cf-select" onchange="renderRecrutList()" title="Score mínimo">
+            <option value="">Score mín.</option>
+            <option value="80">80+</option><option value="70">70+</option>
+            <option value="60">60+</option><option value="50">50+</option>
+          </select>
+        </div>
+
+        <div id="recrutList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- Modal: detalhe do candidato -->
+      <div class="modal" id="modalRecrutDetail">
+        <div class="modal-box" style="max-width:760px">
+          <div class="modal-title">
+            <span id="recrutDetailTitle">CANDIDATO</span>
+            <button onclick="closeModal('modalRecrutDetail')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+          </div>
+          <div id="recrutDetailBody"></div>
+        </div>
+      </div>
+
+      <!-- Modal: links rastreáveis -->
+      <div class="modal" id="modalRecrutLinks">
+        <div class="modal-box" style="max-width:640px">
+          <div class="modal-title">
+            <span>LINKS DE RECRUTAMENTO</span>
+            <button onclick="closeModal('modalRecrutLinks')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <input id="recrutLinkSlug" placeholder="slug (ex: instagram_bio_jul26)" style="flex:2;min-width:160px">
+            <input id="recrutLinkChannel" placeholder="Canal (Instagram, LinkedIn...)" style="flex:1;min-width:120px">
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <input id="recrutLinkCampaign" placeholder="Campanha (opcional)" style="flex:1;min-width:160px">
+            <button class="btn btn-primary btn-sm perm-guard-edit" onclick="recrutCreateLink()"><i class="fas fa-plus"></i> Criar link</button>
+          </div>
+          <div id="recrutLinksList" style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto"></div>
+        </div>
       </div>
 
       <!-- ══════════════════════════════════
@@ -6707,6 +6823,7 @@ const PAGE_PERM_KEYS = {
   contratos: ['contratos'],
   pagamentos: ['pagamentos', 'financeiro'],
   colaboradores: ['equipe'],
+  recrutamento: ['equipe'],
   cronograma: ['cronograma'],
   fechamento: ['fechamento'],
   historico: ['historico'],
@@ -10615,7 +10732,7 @@ const PAGE_TITLES = {
   historico:'HISTÓRICO', clientes:'CLIENTES', gestao:'GESTÃO DE PROJETOS', orcamentos:'ORÇAMENTOS',
   contratos:'CONTRATOS',
   pagamentos:'PAGAMENTOS',
-  colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA',
+  colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA', recrutamento:'RECRUTAMENTO',
   myday:'MEU DIA', mytasks:'TAREFAS', mycalendar:'MEU CALENDÁRIO', myfinance:'FINANCEIRO',
   profile:'MEU PERFIL',
   'equipe-permissoes':'EQUIPE & PERMISSÕES',
@@ -10678,6 +10795,7 @@ function navigate(page) {
   if(page==='contratos')    loadContratosPage();
   if(page==='pagamentos')   loadPagamentosPage();
   if(page==='colaboradores') loadColaboradores();
+  if(page==='recrutamento') loadRecrutamento();
   if(page==='cronograma')  {
     _resetCalToCurrentMonth();
     loadCalendarEvents();
@@ -20881,6 +20999,405 @@ const FUNC_ICONE = {
   'Operador de Transmissão':'fa-broadcast-tower',
   'Multiplas Funções':'fa-layer-group',
 };
+
+/* ══════════════════════════════════════════════════════════
+   RECRUTAMENTO — lista, detalhe, análise Claude e links rastreáveis
+   Tabelas: age_candidates, age_match_results, age_ai_analysis,
+   age_recruit_links + view v_age_candidates_admin
+══════════════════════════════════════════════════════════ */
+
+const RECRUT_ROLE_NAMES = {
+  social_media:'Social Media', designer:'Designer', editor_video:'Editor de Vídeo',
+  filmmaker:'Filmmaker', copywriter:'Copywriter', trafego:'Gestor de Tráfego',
+  atendimento:'Atendimento / CS', estrategia:'Estratégia / Planejamento', motion:'Motion Designer',
+  community:'Community Manager', projetos:'Projetos / Operação', comercial:'Comercial'
+};
+const RECRUT_STATUS_LABELS = {
+  novo:'Novo', em_analise:'Em análise', entrevista:'Entrevista', aprovado:'Aprovado', arquivado:'Arquivado'
+};
+const RECRUT_PARECER_LABELS = {
+  recomendado:'Recomendado', recomendado_com_ressalvas:'Com ressalvas',
+  nao_recomendado:'Não recomendado', revisar_manualmente:'Revisar manualmente'
+};
+const RECRUT_ROUTINE_LABELS = {
+  creative_morning:'Manhã criativa, tarde de execução', reactive:'Reagir ao que aparece no dia — dinâmico',
+  deep_focus:'Blocos longos de foco profundo', meetings:'Reuniões, calls, alinhamentos o dia todo',
+  field:'No campo, gravando, fora do escritório', dashboard:'Olhando painéis, ajustando, otimizando'
+};
+const RECRUT_DELIVERY_LABELS = {
+  campaign:'Campanha inteira, do brief à entrega', piece:'Peça pontual, focada, com craft',
+  volume:'Volume alto de conteúdo diário', performance:'Otimização contínua com dado',
+  people:'Cuidando de gente — cliente ou time', production:'Produção em set, câmera, luz',
+  newbiz:'Prospecção, pitch, novos negócios'
+};
+const RECRUT_STYLE_LABELS = {
+  pace:'Ritmo (reflexivo → reativo)', autonomy:'Autonomia (direção → total)',
+  structure:'Estrutura (fluido → planejado)', creative:'Criativo (analítico → conceitual)',
+  social:'Social (foco individual → pessoas)', detail:'Detalhe (big picture → obcecado)'
+};
+
+let _recrutRows = [];
+
+function recrutPublicUrl() {
+  const origin = String(location.origin || '');
+  if(/^https?:/.test(origin)) return origin + '/recrutamento/';
+  return 'https://age-socials.com/recrutamento/';
+}
+
+function _recrutScoreColor(score) {
+  const s = parseInt(score, 10);
+  if(!Number.isFinite(s)) return '#94a3b8';
+  if(s >= 80) return '#16a34a';
+  if(s >= 65) return '#2563eb';
+  if(s >= 50) return '#d97706';
+  return '#e11d48';
+}
+
+function _recrutFmtDate(iso) {
+  if(!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }); }
+  catch(e) { return '—'; }
+}
+
+async function loadRecrutamento() {
+  const list = document.getElementById('recrutList');
+  if(list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--textsub);font-size:12px"><i class="fas fa-circle-notch fa-spin"></i> Carregando candidatos...</div>';
+  try {
+    const d = await apiGet('v_age_candidates_admin', '?limit=1000&order=created_at.desc');
+    _recrutRows = Array.isArray(d?.data) ? d.data : [];
+  } catch(e) {
+    console.error('[recrutamento]', e);
+    _recrutRows = [];
+    if(list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--textsub);font-size:12px">Erro ao carregar. As tabelas de recrutamento já foram criadas no Supabase? (supabase/sql/age_recrutamento.sql)</div>';
+    return;
+  }
+
+  const by = st => _recrutRows.filter(r => r.status === st).length;
+  const setK = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  setK('recrutKpiTotal', _recrutRows.length);
+  setK('recrutKpiNovos', by('novo'));
+  setK('recrutKpiEntrevista', by('entrevista'));
+  setK('recrutKpiAprovados', by('aprovado'));
+
+  // Popular filtro de função com o que existe na base
+  const sel = document.getElementById('recrutFilterRole');
+  if(sel) {
+    const cur = sel.value;
+    const seen = [...new Set(_recrutRows.map(r => r.top_role_id).filter(Boolean))];
+    sel.innerHTML = '<option value="">Todas as funções</option>' +
+      seen.map(id => `<option value="${escHtml(id)}">${escHtml(RECRUT_ROLE_NAMES[id] || id)}</option>`).join('');
+    sel.value = cur;
+  }
+
+  renderRecrutList();
+}
+
+function renderRecrutList() {
+  const list = document.getElementById('recrutList');
+  if(!list) return;
+  const q = String(document.getElementById('recrutSearch')?.value || '').trim().toLowerCase();
+  const fRole = document.getElementById('recrutFilterRole')?.value || '';
+  const fSen = document.getElementById('recrutFilterSenior')?.value || '';
+  const fSt = document.getElementById('recrutFilterStatus')?.value || '';
+  const fScore = parseInt(document.getElementById('recrutFilterScore')?.value, 10) || 0;
+
+  const rows = _recrutRows.filter(r => {
+    if(fRole && r.top_role_id !== fRole) return false;
+    if(fSen && r.seniority !== fSen) return false;
+    if(fSt && r.status !== fSt) return false;
+    if(fScore && (parseInt(r.score_overall, 10) || 0) < fScore) return false;
+    if(q) {
+      const hay = `${r.name || ''} ${r.email || ''} ${r.city || ''}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if(!rows.length) {
+    list.innerHTML = `<div style="padding:40px;text-align:center;color:var(--textsub);font-size:12px">
+      ${_recrutRows.length ? 'Nenhum candidato com esses filtros.' : 'Nenhuma candidatura ainda. Divulgue a página pública: <b>' + escHtml(recrutPublicUrl()) + '</b>'}
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = rows.map(r => {
+    const score = r.score_overall ?? '—';
+    const color = _recrutScoreColor(r.score_overall);
+    const parecer = r.parecer_geral
+      ? `<span class="recrut-badge p-${escHtml(r.parecer_geral)}">${escHtml(RECRUT_PARECER_LABELS[r.parecer_geral] || r.parecer_geral)}</span>`
+      : (r.analysis_status === 'failed'
+          ? '<span class="recrut-badge p-revisar_manualmente">IA falhou</span>'
+          : (r.analysis_status ? '<span class="recrut-badge p-revisar_manualmente"><i class="fas fa-circle-notch fa-spin"></i> Analisando</span>' : ''));
+    return `<div class="recrut-card" onclick="openRecrutDetail('${escHtml(r.id)}')">
+      <div class="recrut-score" style="color:${color};border-color:${color}">${escHtml(String(score))}</div>
+      <div style="flex:1;min-width:0">
+        <div class="recrut-name">${escHtml(r.name || '—')}</div>
+        <div class="recrut-meta">
+          ${escHtml(r.top_role_name || 'Sem matching')} · ${escHtml(r.seniority || '—')} · ${escHtml(r.city || '—')}
+          ${r.ref_source ? ' · ref: ' + escHtml(r.ref_source) : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+        <div style="display:flex;gap:6px;align-items:center">
+          ${parecer}
+          <span class="recrut-badge st-${escHtml(r.status || 'novo')}">${escHtml(RECRUT_STATUS_LABELS[r.status] || r.status || '—')}</span>
+        </div>
+        <div class="recrut-meta">${_recrutFmtDate(r.created_at)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openRecrutDetail(id) {
+  openModal('modalRecrutDetail');
+  const body = document.getElementById('recrutDetailBody');
+  const title = document.getElementById('recrutDetailTitle');
+  if(body) body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--textsub);font-size:12px"><i class="fas fa-circle-notch fa-spin"></i> Carregando...</div>';
+
+  let c = null, m = null, a = null;
+  try {
+    const [dc, dm, da] = await Promise.all([
+      apiGet('age_candidates', `?id=eq.${encodeURIComponent(id)}&limit=1`),
+      apiGet('age_match_results', `?candidate_id=eq.${encodeURIComponent(id)}&order=created_at.desc&limit=1`),
+      apiGet('age_ai_analysis', `?candidate_id=eq.${encodeURIComponent(id)}&order=created_at.desc&limit=1`)
+    ]);
+    c = (Array.isArray(dc?.data) ? dc.data : [])[0] || null;
+    m = (Array.isArray(dm?.data) ? dm.data : [])[0] || null;
+    a = (Array.isArray(da?.data) ? da.data : [])[0] || null;
+  } catch(e) { console.error('[recrut detail]', e); }
+
+  if(!c) {
+    if(body) body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--textsub);font-size:12px">Candidato não encontrado.</div>';
+    return;
+  }
+  if(title) title.textContent = (c.name || 'CANDIDATO').toUpperCase();
+  if(body) body.innerHTML = _recrutDetailHtml(c, m, a);
+  if(typeof applyActivePageEditGuards === 'function') setTimeout(() => applyActivePageEditGuards('recrutamento'), 0);
+}
+
+function _recrutDetailHtml(c, m, a) {
+  const link = (url, label) => {
+    if(!url) return '—';
+    const href = /^https?:/i.test(url) ? url : 'https://' + url;
+    return `<a href="${escHtml(href)}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline">${escHtml(label || url)}</a>`;
+  };
+  const interests = (c.interests || []).map(i => RECRUT_ROLE_NAMES[i] || i).join(', ') || '—';
+  const styleRows = Object.entries(c.style_profile || {}).map(([k, v]) => {
+    const pct = Math.max(0, Math.min(100, parseInt(v, 10) || 0));
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="flex:1;font-size:10px;color:var(--textsub);font-family:var(--font-m)">${escHtml(RECRUT_STYLE_LABELS[k] || k)}</div>
+      <div style="flex:1;height:5px;background:rgba(0,0,0,.08);border-radius:99px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:var(--text);border-radius:99px"></div>
+      </div>
+      <div style="width:28px;text-align:right;font-size:10px;font-weight:700">${pct}</div>
+    </div>`;
+  }).join('');
+
+  /* Card matching */
+  let matchHtml = '<div class="recrut-sec"><div class="recrut-sec-title">Matching automático</div><div style="font-size:12px;color:var(--textsub)">Sem resultado de matching.</div></div>';
+  if(m) {
+    const top3 = (Array.isArray(m.top3) ? m.top3 : []).map((t, i) =>
+      `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed rgba(0,0,0,.07)">
+        <span>${i + 1}. ${escHtml(t.role_name || t.role_id || '—')}</span><b>${escHtml(String(t.match_pct ?? '—'))}%</b>
+      </div>`).join('');
+    matchHtml = `<div class="recrut-sec">
+      <div class="recrut-sec-title">Matching automático · ${escHtml(m.algo_version || '')}</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-family:var(--font-h);font-size:19px;font-weight:800">${escHtml(m.top_role_name || '—')}</div>
+          <div style="font-size:11px;color:var(--textsub)">${escHtml(m.seniority || '—')} · match ${escHtml(String(m.top_match_pct ?? '—'))}%</div>
+        </div>
+        <div style="display:flex;gap:12px;margin-left:auto">
+          ${['score_overall|Geral', 'score_cultural|Cultural', 'score_technical|Técnico'].map(x => {
+            const [k, lbl] = x.split('|');
+            return `<div style="text-align:center">
+              <div style="font-family:var(--font-h);font-size:17px;font-weight:800;color:${_recrutScoreColor(m[k])}">${escHtml(String(m[k] ?? '—'))}</div>
+              <div style="font-size:8px;letter-spacing:.1em;color:var(--textsub);text-transform:uppercase;font-family:var(--font-m)">${lbl}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      ${top3}
+    </div>`;
+  }
+
+  /* Card análise Claude */
+  let aiHtml;
+  if(a && a.status === 'completed') {
+    const li = arr => (arr || []).map(x => `<li style="margin-bottom:5px">${escHtml(x)}</li>`).join('') || '<li style="color:var(--textsub)">—</li>';
+    aiHtml = `<div class="recrut-sec">
+      <div class="recrut-sec-title">Análise IA (Claude) ·
+        <span class="recrut-badge p-${escHtml(a.parecer_geral || 'revisar_manualmente')}">${escHtml(RECRUT_PARECER_LABELS[a.parecer_geral] || a.parecer_geral || '—')}</span>
+        · adequação cultural ${escHtml(String(a.adequacao_cultural ?? '—'))} · confiança ${escHtml(String(a.confidence ?? '—'))}
+      </div>
+      <div style="font-size:12px;line-height:1.6;margin-bottom:10px"><i>${escHtml(a.resumo_perfil || '')}</i></div>
+      <div class="recrut-q">Destaques</div>
+      <ul style="font-size:11px;line-height:1.5;padding-left:18px">${li(a.highlights)}</ul>
+      ${(a.red_flags && a.red_flags.length) ? `<div class="recrut-q" style="color:#e11d48">Red flags</div>
+      <ul style="font-size:11px;line-height:1.5;padding-left:18px;color:#e11d48">${li(a.red_flags)}</ul>` : ''}
+      <div class="recrut-q">Perguntas para entrevista</div>
+      <ul style="font-size:11px;line-height:1.5;padding-left:18px">${li(a.perguntas_entrevista)}</ul>
+      <div style="font-size:9px;color:var(--textsub);font-family:var(--font-m);margin-top:8px">${escHtml(a.model_used || '')} · uso interno — nunca compartilhar com o candidato</div>
+    </div>`;
+  } else if(a && (a.status === 'pending' || a.status === 'processing')) {
+    aiHtml = `<div class="recrut-sec"><div class="recrut-sec-title">Análise IA (Claude)</div>
+      <div style="font-size:12px;color:var(--textsub)"><i class="fas fa-circle-notch fa-spin"></i> Análise em processamento — recarregue em alguns segundos.</div></div>`;
+  } else {
+    aiHtml = `<div class="recrut-sec"><div class="recrut-sec-title">Análise IA (Claude)</div>
+      <div style="font-size:12px;color:var(--textsub);margin-bottom:8px">${a?.status === 'failed' ? 'A análise falhou: ' + escHtml(a.error_message || 'erro desconhecido') : 'Análise indisponível.'}</div>
+      <button class="btn btn-secondary btn-sm perm-guard-edit" onclick="recrutAnalyze('${escHtml(c.id)}')"><i class="fas fa-redo"></i> Rodar análise</button></div>`;
+  }
+
+  /* Respostas completas */
+  const answers = `<div class="recrut-sec">
+    <div class="recrut-sec-title">Respostas completas</div>
+    <div class="recrut-q">Trajetória profissional (${escHtml(String(c.experience_years ?? '—'))} anos)</div>
+    <div class="recrut-answer">${escHtml(c.experience_text || '—')}</div>
+    <div class="recrut-q">O que não pode faltar num lugar pra trabalhar bem</div>
+    <div class="recrut-answer">${escHtml(c.culture_answer || '—')}</div>
+    <div class="recrut-q">Projeto de orgulho</div>
+    <div class="recrut-answer">${escHtml(c.proud_project || '—')}</div>
+    <div class="recrut-q">Erro que ensinou algo</div>
+    <div class="recrut-answer">${escHtml(c.mistake || '—')}</div>
+    <div class="recrut-q">Rotina ideal</div>
+    <div class="recrut-answer">${escHtml(RECRUT_ROUTINE_LABELS[c.routine] || c.routine || '—')}</div>
+    <div class="recrut-q">Entrega em que rende melhor</div>
+    <div class="recrut-answer">${escHtml(RECRUT_DELIVERY_LABELS[c.delivery] || c.delivery || '—')}</div>
+    <div class="recrut-q">Interesses marcados</div>
+    <div class="recrut-answer">${escHtml(interests)}</div>
+    <div class="recrut-q">Ferramentas</div>
+    <div class="recrut-answer">${escHtml((c.tools || []).join(', ') || '—')}</div>
+    ${styleRows ? `<div class="recrut-q">Estilo de trabalho</div><div style="margin-top:6px">${styleRows}</div>` : ''}
+  </div>`;
+
+  /* Ações admin */
+  const statusOpts = Object.entries(RECRUT_STATUS_LABELS)
+    .map(([v, l]) => `<option value="${v}" ${c.status === v ? 'selected' : ''}>${l}</option>`).join('');
+  const actions = `<div class="recrut-sec">
+    <div class="recrut-sec-title">Ações</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <select id="recrutDetailStatus" class="cf-select">${statusOpts}</select>
+      <button class="btn btn-primary btn-sm perm-guard-edit" onclick="recrutSaveStatus('${escHtml(c.id)}')"><i class="fas fa-save"></i> Salvar status</button>
+      <button class="btn btn-secondary btn-sm perm-guard-edit" onclick="recrutAnalyze('${escHtml(c.id)}')" title="Re-rodar análise Claude"><i class="fas fa-robot"></i> Re-analisar</button>
+    </div>
+    <textarea id="recrutDetailNotes" rows="3" placeholder="Notas internas do admin..." style="width:100%;font-size:12px;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.12);background:var(--bg2);color:var(--text);resize:vertical">${escHtml(c.admin_notes || '')}</textarea>
+    <button class="btn btn-secondary btn-sm perm-guard-edit" style="margin-top:6px" onclick="recrutSaveNotes('${escHtml(c.id)}')"><i class="fas fa-sticky-note"></i> Salvar notas</button>
+  </div>`;
+
+  const header = `<div class="recrut-sec" style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px">
+    <div><div class="recrut-q" style="margin-top:0">Email</div>${link('mailto:' + (c.email || ''), c.email)}</div>
+    <div><div class="recrut-q" style="margin-top:0">Cidade</div>${escHtml(c.city || '—')}</div>
+    <div><div class="recrut-q" style="margin-top:0">LinkedIn</div>${link(c.linkedin_url, 'abrir')}</div>
+    <div><div class="recrut-q" style="margin-top:0">Portfólio</div>${link(c.portfolio_url, 'abrir')}</div>
+    <div><div class="recrut-q" style="margin-top:0">Origem</div>${escHtml(c.ref_source || 'direto')}</div>
+    <div><div class="recrut-q" style="margin-top:0">Data</div>${_recrutFmtDate(c.created_at)}</div>
+  </div>`;
+
+  return header + matchHtml + aiHtml + actions + answers;
+}
+
+async function recrutSaveStatus(id) {
+  const st = document.getElementById('recrutDetailStatus')?.value;
+  if(!st) return;
+  try {
+    await apiPatch('age_candidates', id, { status: st });
+    toast('Status atualizado.');
+    const row = _recrutRows.find(r => r.id === id);
+    if(row) row.status = st;
+    renderRecrutList();
+    loadRecrutamento();
+  } catch(e) { console.error(e); toast('Erro ao atualizar status.', 'err'); }
+}
+
+async function recrutSaveNotes(id) {
+  const notes = document.getElementById('recrutDetailNotes')?.value ?? '';
+  try {
+    await apiPatch('age_candidates', id, { admin_notes: notes });
+    toast('Notas salvas.');
+  } catch(e) { console.error(e); toast('Erro ao salvar notas.', 'err'); }
+}
+
+async function recrutAnalyze(id) {
+  try {
+    toast('Disparando análise Claude...');
+    const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
+    const res = await fetch(`${String(SUPABASE_URL).replace(/\/+$/, '')}/functions/v1/recruit-submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + anon, 'apikey': anon },
+      body: JSON.stringify({ action: 'analyze', candidate_id: id })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    toast('Análise em processamento — reabra o candidato em ~15s.');
+  } catch(e) { console.error(e); toast('Erro ao disparar análise.', 'err'); }
+}
+
+function recrutCopyPublicLink() {
+  const url = recrutPublicUrl();
+  try { navigator.clipboard.writeText(url); toast('Link copiado: ' + url); }
+  catch(e) { window.open(url, '_blank'); }
+}
+
+async function openRecrutLinksModal() {
+  openModal('modalRecrutLinks');
+  await recrutRenderLinks();
+}
+
+async function recrutRenderLinks() {
+  const list = document.getElementById('recrutLinksList');
+  if(list) list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--textsub);font-size:12px"><i class="fas fa-circle-notch fa-spin"></i></div>';
+  let rows = [];
+  try {
+    const d = await apiGet('age_recruit_links', '?order=created_at.desc&limit=200');
+    rows = Array.isArray(d?.data) ? d.data : [];
+  } catch(e) { console.error(e); }
+  if(!list) return;
+  if(!rows.length) {
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--textsub);font-size:12px">Nenhum link criado ainda.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(l => {
+    const url = recrutPublicUrl() + '?ref=' + encodeURIComponent(l.slug);
+    return `<div style="display:flex;align-items:center;gap:10px;border:1px solid rgba(0,0,0,.09);border-radius:10px;padding:10px 12px;background:var(--bg2);${l.active ? '' : 'opacity:.5'}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700">${escHtml(l.slug)}</div>
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub)">
+          ${escHtml(l.channel || '—')}${l.campaign ? ' · ' + escHtml(l.campaign) : ''} · ${l.submits_count || 0} candidato(s) · ${_recrutFmtDate(l.created_at)}
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" title="Copiar link" onclick="navigator.clipboard.writeText('${escHtml(url)}').then(()=>toast('Link copiado.'))"><i class="fas fa-copy"></i></button>
+      <button class="btn btn-secondary btn-sm perm-guard-edit" title="${l.active ? 'Desativar' : 'Reativar'}" onclick="recrutToggleLink('${escHtml(l.id)}', ${l.active ? 'false' : 'true'})">
+        <i class="fas fa-${l.active ? 'pause' : 'play'}"></i>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function recrutCreateLink() {
+  const slug = String(document.getElementById('recrutLinkSlug')?.value || '')
+    .trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '');
+  if(!slug) { toast('Informe o slug do link.', 'err'); return; }
+  const channel = String(document.getElementById('recrutLinkChannel')?.value || '').trim() || null;
+  const campaign = String(document.getElementById('recrutLinkCampaign')?.value || '').trim() || null;
+  try {
+    await apiPost('age_recruit_links', {
+      slug, channel, campaign,
+      created_by: String(currentUser?.username || '') || null
+    });
+    ['recrutLinkSlug', 'recrutLinkChannel', 'recrutLinkCampaign'].forEach(i => { const el = document.getElementById(i); if(el) el.value = ''; });
+    toast('Link criado: ' + recrutPublicUrl() + '?ref=' + slug);
+    recrutRenderLinks();
+  } catch(e) {
+    console.error(e);
+    toast(String(e?.message || '').includes('duplicate') ? 'Já existe um link com esse slug.' : 'Erro ao criar link.', 'err');
+  }
+}
+
+async function recrutToggleLink(id, active) {
+  try {
+    await apiPatch('age_recruit_links', id, { active: active === true || active === 'true' });
+    recrutRenderLinks();
+  } catch(e) { console.error(e); toast('Erro ao atualizar link.', 'err'); }
+}
 
 async function loadColaboradores() {
   try {

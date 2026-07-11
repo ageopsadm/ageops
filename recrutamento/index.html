@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGE SOCIALS · Junte-se a nós</title>
+<meta name="description" content="Candidatura única para todas as vagas da AGE SOCIALS. Descubra a função ideal para você.">
+<link rel="icon" type="image/png" href="../favicon.png" />
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Toast de erro */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 16px 24px;
+    border-radius: 999px;
+    font-size: 14px;
+    z-index: 2000;
+    animation: fadeIn .3s;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+  .toast.error { background: #d64545; }
+  /* LGPD checkbox */
+  .lgpd-box {
+    margin-top: 24px;
+    padding: 16px 20px;
+    border: 1px solid var(--ink-15);
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--paper-warm);
+  }
+  .lgpd-box input[type=checkbox] {
+    width: 20px; height: 20px;
+    accent-color: var(--ink);
+    margin-top: 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .lgpd-box label {
+    font-size: 13px;
+    color: var(--ink-70);
+    line-height: 1.5;
+    cursor: pointer;
+    font-family: var(--sans) !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<!-- CONFIGURAÇÃO — Supabase Edge Function (recruit-submit) -->
+<script>
+  window.AGE_SUPABASE_URL = 'https://wiiewucszdbbcxzivnyo.supabase.co';
+  window.AGE_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
+  window.AGE_API_URL = window.AGE_SUPABASE_URL + '/functions/v1/recruit-submit';
+
+  // Extrai ?ref= da URL para rastreio de canal
+  window.AGE_REF_SOURCE = new URLSearchParams(location.search).get('ref') || null;
+</script>
+
+<script src="roles.js"></script>
+<script src="matching.js"></script>
+
+<!-- Módulo de submissão pra API -->
+<script>
+  window.submitToAPI = async function(answers, localResult) {
+    const payload = {
+      name: answers.name,
+      email: answers.email,
+      city: answers.city,
+      linkedin_url: answers.linkedin || null,
+      portfolio_url: answers.portfolio || null,
+      experience_years: parseFloat(answers.experienceYears) || null,
+      experience_text: answers.experience,
+      interests: answers.interests || [],
+      tools: answers.tools || [],
+      style_profile: answers.style || {},
+      culture_answer: answers.culture,
+      proud_project: answers.proudProject,
+      mistake: answers.mistake,
+      routine: answers.routine,
+      delivery: answers.delivery,
+      ref_source: window.AGE_REF_SOURCE,
+      consent_lgpd: !!answers.consentLGPD
+    };
+    try {
+      const res = await fetch(window.AGE_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + window.AGE_SUPABASE_ANON,
+          'apikey': window.AGE_SUPABASE_ANON
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return { ok: true, data };
+    } catch (err) {
+      console.error('Submit failed:', err);
+      return { ok: false, error: err.message };
+    }
+  };
+</script>
+
+<script type="text/babel" src="landing.jsx"></script>
+<script type="text/babel" src="form.jsx"></script>
+<script type="text/babel" src="result.jsx"></script>
+
+<!-- App root com submit real -->
+<script type="text/babel">
+const { useState: uSt, useEffect: uEf } = React;
+
+function App() {
+  const [view, setView] = uSt(() => localStorage.getItem('age_view') || 'landing');
+  const [result, setResult] = uSt(() => {
+    try { return JSON.parse(localStorage.getItem('age_result') || 'null'); } catch { return null; }
+  });
+  const [submitting, setSubmitting] = uSt(false);
+  const [toast, setToast] = uSt(null);
+
+  uEf(() => { localStorage.setItem('age_view', view); }, [view]);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const openForm = () => { setView('form'); window.scrollTo(0, 0); };
+  const closeForm = () => { setView('landing'); window.scrollTo(0, 0); };
+
+  const finishForm = async (localResult, answers) => {
+    setResult(localResult);
+    setView('result');
+    window.scrollTo(0, 0);
+    setSubmitting(true);
+
+    // Envia pra API em background — não bloqueia a exibição do resultado
+    const submitted = await window.submitToAPI(answers, localResult);
+    setSubmitting(false);
+
+    if (submitted.ok) {
+      showToast('Candidatura enviada com sucesso ao time da AGE.');
+      if (submitted.data?.candidate_id) {
+        localStorage.setItem('age_candidate_id', submitted.data.candidate_id);
+      }
+    } else {
+      showToast('Não conseguimos salvar sua candidatura. Tente novamente em instantes.', 'error');
+    }
+  };
+
+  const restart = () => {
+    ['age_step','age_answers','age_result','age_candidate_name','age_candidate_id'].forEach(k => localStorage.removeItem(k));
+    setResult(null);
+    setView('form');
+    window.scrollTo(0, 0);
+  };
+  const backHome = () => { setView('landing'); window.scrollTo(0, 0); };
+
+  return (
+    <>
+      <div className="grain"></div>
+
+      {view === 'landing' && (
+        <>
+          <Nav onApply={openForm} />
+          <Hero onApply={openForm} />
+          <About />
+          <RolesGrid onApply={openForm} />
+          <Process />
+          <CTAFinal onApply={openForm} />
+          <Footer />
+        </>
+      )}
+
+      {view === 'form' && (
+        <FormOverlay onClose={closeForm} onFinish={finishForm} withLGPD />
+      )}
+
+      {view === 'result' && result && (
+        <ResultScreen
+          result={result}
+          candidateName={localStorage.getItem('age_candidate_name')}
+          submitting={submitting}
+          onRestart={restart}
+          onBackHome={backHome}
+        />
+      )}
+
+      {toast && <div className={'toast ' + (toast.type === 'error' ? 'error' : '')}>{toast.msg}</div>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>
