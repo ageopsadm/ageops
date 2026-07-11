@@ -4184,6 +4184,25 @@ body:has(#login-screen.visible){
                       <span>Transparente — mesma proposta ao cliente; no PDF interno a margem aparece discriminada.</span>
                     </label>
                   </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+                    <span style="opacity:.7">Imposto / taxas (%)</span>
+                    <input type="number" id="orc-imposto" value="0" min="0" max="100" step="0.1" style="width:60px;text-align:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;color:#fff;padding:4px;font-size:14px" oninput="recalcularTotais()" onchange="recalcularTotais()" />
+                  </div>
+                  <div style="display:flex;justify-content:space-between">
+                    <span style="opacity:.7">Valor do imposto</span>
+                    <span id="orc-valor-imposto" style="color:#fb923c">R$ 0</span>
+                  </div>
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;gap:10px;font-size:11px;line-height:1.45">
+                    <span style="opacity:.85;font-weight:700">Imposto no cálculo (não vai no PDF do cliente)</span>
+                    <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;opacity:.95">
+                      <input type="radio" name="orc-imposto-modo" value="diluida" checked onchange="recalcularTotais()" style="margin-top:2px;accent-color:#fb923c" />
+                      <span>Diluir — o imposto entra só no valor total; o cliente vê apenas o total da proposta.</span>
+                    </label>
+                    <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;opacity:.95">
+                      <input type="radio" name="orc-imposto-modo" value="transparente" onchange="recalcularTotais()" style="margin-top:2px;accent-color:#fb923c" />
+                      <span>Transparente — mesma proposta ao cliente; no PDF interno o imposto aparece discriminado.</span>
+                    </label>
+                  </div>
                   <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);font-size:20px;font-weight:700">
                     <span>TOTAL FINAL</span>
                     <span id="orc-total-final">R$ 0</span>
@@ -18106,6 +18125,11 @@ function _orcMargemModo() {
   return el?.value === 'diluida' ? 'diluida' : 'transparente';
 }
 
+function _orcImpostoModo() {
+  const el = document.querySelector('input[name="orc-imposto-modo"]:checked');
+  return el?.value === 'diluida' ? 'diluida' : 'transparente';
+}
+
 function _orcPropostaEmissor() {
   const custom = document.getElementById('orc-emissor')?.value?.trim();
   if(custom) return custom;
@@ -18168,6 +18192,7 @@ function _orcBackfillEquipeCusto() {
 function orcBuilderGetFinancials() {
   const diarias = parseInt(document.getElementById('orc-diarias')?.value || 1, 10) || 1;
   const margem = parseFloat(document.getElementById('orc-margem')?.value || 0) / 100;
+  const imposto = parseFloat(document.getElementById('orc-imposto')?.value || 0) / 100;
   let totalEquipe = 0;
   let totalCustoEquipe = 0;
   const linhasEquipe = (window._orcEquipe || []).map(m => {
@@ -18180,14 +18205,18 @@ function orcBuilderGetFinancials() {
   const totalDespesas = (window._orcDespesas || []).reduce((sum, d) => sum + (d.valor || 0), 0);
   const subtotal = totalEquipe + totalCatalogo + totalDespesas;
   const valorMargem = subtotal * margem;
-  const totalFinal = subtotal + valorMargem;
+  const valorImposto = subtotal * imposto;
+  const totalFinal = subtotal + valorMargem + valorImposto;
   const margemPct = parseFloat(document.getElementById('orc-margem')?.value || 0) || 0;
+  const impostoPct = parseFloat(document.getElementById('orc-imposto')?.value || 0) || 0;
   const margemModo = _orcMargemModo();
+  const impostoModo = _orcImpostoModo();
   const fatorDiluicao = subtotal > 0 ? totalFinal / subtotal : 1;
   const margemBrutaEquipe = totalEquipe - totalCustoEquipe;
   return {
     diarias, totalEquipe, totalCustoEquipe, margemBrutaEquipe, linhasEquipe,
-    totalCatalogo, totalDespesas, subtotal, valorMargem, totalFinal, margemPct, margemModo, fatorDiluicao
+    totalCatalogo, totalDespesas, subtotal, valorMargem, valorImposto, totalFinal,
+    margemPct, impostoPct, margemModo, impostoModo, fatorDiluicao
   };
 }
 
@@ -18195,7 +18224,9 @@ function orcBuilderGetFinancials() {
 function _orcFinancialsFromBuilder(b) {
   const diarias = parseInt(b?.diarias, 10) || 1;
   const margemPct = parseFloat(b?.margemPct || 0) || 0;
+  const impostoPct = parseFloat(b?.impostoPct || 0) || 0;
   const margem = margemPct / 100;
+  const imposto = impostoPct / 100;
   let totalEquipe = 0;
   let totalCustoEquipe = 0;
   const linhasEquipe = (b?.equipe || []).map(m => {
@@ -18208,17 +18239,20 @@ function _orcFinancialsFromBuilder(b) {
   const totalDespesas = (b?.despesas || []).reduce((sum, d) => sum + (d.valor || 0), 0);
   const subtotal = totalEquipe + totalCatalogo + totalDespesas;
   const valorMargem = subtotal * margem;
-  const totalFinal = subtotal + valorMargem;
+  const valorImposto = subtotal * imposto;
+  const totalFinal = subtotal + valorMargem + valorImposto;
   const margemBrutaEquipe = totalEquipe - totalCustoEquipe;
   return {
     diarias, totalEquipe, totalCustoEquipe, margemBrutaEquipe, linhasEquipe,
-    totalCatalogo, totalDespesas, subtotal, valorMargem, totalFinal, margemPct,
-    margemModo: b?.margemModo || 'diluida', fatorDiluicao: subtotal > 0 ? totalFinal / subtotal : 1
+    totalCatalogo, totalDespesas, subtotal, valorMargem, valorImposto, totalFinal, margemPct, impostoPct,
+    margemModo: b?.margemModo || 'diluida', impostoModo: b?.impostoModo || 'diluida',
+    fatorDiluicao: subtotal > 0 ? totalFinal / subtotal : 1
   };
 }
 
 function orcSerializeBuilder() {
   const m = document.getElementById('orc-margem');
+  const imp = document.getElementById('orc-imposto');
   return {
     version: 2,
     titulo: document.getElementById('orc-titulo')?.value?.trim() || '',
@@ -18226,6 +18260,8 @@ function orcSerializeBuilder() {
     diarias: parseInt(document.getElementById('orc-diarias')?.value || 1, 10) || 1,
     margemPct: parseFloat(m?.value || 0) || 0,
     margemModo: _orcMargemModo(),
+    impostoPct: parseFloat(imp?.value || 0) || 0,
+    impostoModo: _orcImpostoModo(),
     propostaEmissor: document.getElementById('orc-emissor')?.value?.trim() || '',
     equipe: JSON.parse(JSON.stringify(window._orcEquipe || [])),
     catalogo: JSON.parse(JSON.stringify(window._orcCatalogo || [])),
@@ -18563,6 +18599,7 @@ function recalcularTotais() {
   setT('orc-total-despesas', fmtBRL(fin.totalDespesas));
   setT('orc-subtotal', fmtBRL(fin.subtotal));
   setT('orc-valor-margem', fmtBRL(fin.valorMargem));
+  setT('orc-valor-imposto', fmtBRL(fin.valorImposto));
   setT('orc-total-final', fmtBRL(fin.totalFinal));
   atualizarPreview();
 }
@@ -18969,10 +19006,12 @@ function initOrcamentoBuilder(resetState) {
   const iDat = document.getElementById('orc-data');
   const iVal = document.getElementById('orc-validade');
   const iMarg = document.getElementById('orc-margem');
+  const iImp = document.getElementById('orc-imposto');
   const iDia = document.getElementById('orc-diarias');
   if(rs && iDat) iDat.value = hoje;
   if(rs && iVal) iVal.value = valStr;
   if(rs && iMarg) iMarg.value = 20;
+  if(rs && iImp) iImp.value = 0;
   if(rs && iDia) iDia.value = 1;
   if(rs) {
     const ids = ['orc-titulo','orc-cliente','orc-descricao','orc-emissor','orc-data-evento','orc-pdf-pix','orc-pdf-favorecido','orc-pdf-aprovado'];
@@ -18983,6 +19022,8 @@ function initOrcamentoBuilder(resetState) {
     if(pp) pp.value = '1';
     const rDi = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
     if(rDi) rDi.checked = true;
+    const rImpDi = document.querySelector('input[name="orc-imposto-modo"][value="diluida"]');
+    if(rImpDi) rImpDi.checked = true;
     _orcInitEmissorDefault();
   }
   _orcBackfillEquipeCusto();
@@ -19011,6 +19052,7 @@ function loadOrcBuilderFromRow(o) {
   const vl = document.getElementById('orc-validade');
   const dg = document.getElementById('orc-diarias');
   const mg = document.getElementById('orc-margem');
+  const imp = document.getElementById('orc-imposto');
   if(c) c.value = o.client_name || '';
   if(t) t.value = o.project_name || '';
   if(d) d.value = o.notes || '';
@@ -19030,12 +19072,20 @@ function loadOrcBuilderFromRow(o) {
     if(t && parsed.titulo != null) t.value = parsed.titulo;
     if(d && parsed.descricao != null) d.value = parsed.descricao;
     if(mg) mg.value = String(parsed.margemPct != null ? parsed.margemPct : 20);
+    if(imp) imp.value = String(parsed.impostoPct != null ? parsed.impostoPct : 0);
     if(parsed.margemModo === 'transparente') {
       const rt = document.querySelector('input[name="orc-margem-modo"][value="transparente"]');
       if(rt) rt.checked = true;
     } else {
       const rd = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
       if(rd) rd.checked = true;
+    }
+    if(parsed.impostoModo === 'transparente') {
+      const rtImp = document.querySelector('input[name="orc-imposto-modo"][value="transparente"]');
+      if(rtImp) rtImp.checked = true;
+    } else {
+      const rdImp = document.querySelector('input[name="orc-imposto-modo"][value="diluida"]');
+      if(rdImp) rdImp.checked = true;
     }
     if(parsed.propostaEmissor != null) {
       const em = document.getElementById('orc-emissor');
@@ -19048,6 +19098,7 @@ function loadOrcBuilderFromRow(o) {
     }
   } else {
     if(mg) mg.value = '20';
+    if(imp) imp.value = '0';
     if(Array.isArray(parsed) && parsed.length) {
       toast('Orçamento legado: recrie os valores no novo gerador se necessário.', 'warn');
     }
@@ -19125,8 +19176,8 @@ async function salvarOrcamento(status) {
     subtotal: fin.subtotal,
     totalDisc: 0,
     total: fin.totalFinal,
-    impostoPct: 0,
-    impostoVal: 0
+    impostoPct: fin.impostoPct,
+    impostoVal: fin.valorImposto
   };
 
   let numero = null;
@@ -19150,8 +19201,8 @@ async function salvarOrcamento(status) {
     discounts_json: JSON.stringify([]),
     subtotal: vals.subtotal,
     total_discounts: 0,
-    imposto_pct: fin.margemPct,
-    imposto_valor: fin.valorMargem,
+    imposto_pct: vals.impostoPct,
+    imposto_valor: vals.impostoVal,
     total_value: vals.total,
     payment_terms: document.getElementById('orc-pdf-resumo-pagamento')?.value?.trim() || 'À vista',
     notes: document.getElementById('orc-descricao')?.value?.trim() || '',
@@ -19281,9 +19332,13 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
   const custoOperacionalTotal = fin.totalCustoEquipe + fin.totalCatalogo + fin.totalDespesas;
   const lucroTotal = fin.totalFinal - custoOperacionalTotal;
   const margemRealPct = fin.totalFinal > 0 ? (lucroTotal / fin.totalFinal * 100) : 0;
-  const modoPdf = fin.margemModo === 'diluida'
-    ? '<p style="font-size:11px;color:#166534;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total.</p>'
-    : '<p style="font-size:11px;color:#9a3412;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total.</p>';
+  const modoPdf = (fin.margemModo === 'diluida' && fin.impostoModo === 'diluida')
+    ? '<p style="font-size:11px;color:#166534;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total (margem e imposto diluídos).</p>'
+    : '<p style="font-size:11px;color:#9a3412;margin-bottom:14px;line-height:1.5"><strong>PDF ao cliente:</strong> sem valores por função — apenas escopo e total. No PDF interno: '
+      + (fin.margemModo === 'transparente' ? 'margem discriminada' : 'margem diluída')
+      + ' · '
+      + (fin.impostoModo === 'transparente' ? 'imposto discriminado' : 'imposto diluído')
+      + '.</p>';
   const wrap = document.createElement('div');
   wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:Rajdhani,sans-serif;font-size:13px;line-height:1.45;width:794px';
   const eqRows = (fin.linhasEquipe || []).map(l => {
@@ -19350,6 +19405,10 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
         <div style="font-size:10px;color:#1e40af;text-transform:uppercase;letter-spacing:.08em">Margem agência (${fin.margemPct}%)</div>
         <div style="font-size:18px;font-weight:800;margin-top:4px;color:#1d4ed8">${fmtBRL(fin.valorMargem)}</div>
       </div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#c2410c;text-transform:uppercase;letter-spacing:.08em">Imposto / taxas (${fin.impostoPct}%)</div>
+        <div style="font-size:18px;font-weight:800;margin-top:4px;color:#ea580c">${fmtBRL(fin.valorImposto)}</div>
+      </div>
     </div>
     ${(catRows || despRows) ? `<h2 style="font-size:12px;letter-spacing:2px;margin:16px 0 8px">Produtos, serviços e despesas (repasse — custo = cobrado)</h2>
     <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px">
@@ -19367,12 +19426,13 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
     <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-top:1px solid #e2e8f0">
       <span>Custo total estimado (equipe + produtos + despesas)</span><strong style="color:#92400e">${fmtBRL(custoOperacionalTotal)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:6px 0"><span>Margem agência (${fin.margemPct}%)</span><strong style="color:#15803d">${fmtBRL(fin.valorMargem)}</strong></div>
+    ${fin.valorImposto > 0 ? `<div style="display:flex;justify-content:space-between;padding:6px 0"><span>Imposto / taxas (${fin.impostoPct}%)</span><strong style="color:#ea580c">${fmtBRL(fin.valorImposto)}</strong></div>` : ''}
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-top:6px">
       <span style="font-weight:700">Lucro estimado total <span style="font-size:11px;color:#15803d">(${margemRealPct.toFixed(1)}% do total)</span></span><strong style="color:#15803d">${fmtBRL(lucroTotal)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:800;border-top:2px solid #000;margin-top:6px">
       <span>Total cobrado do cliente</span><span>${fmtBRL(fin.totalFinal)}</span></div>
     </div>
-    <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Lucro = total cobrado − custo total. Produtos/serviços e despesas entram como repasse (custo igual ao cobrado); a margem vem do markup da equipe + margem da agência. Diária custo: cadastro em colaboradores ou campo CUSTO no builder.</p>
+    <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Lucro = total cobrado − custo total. Produtos/serviços e despesas entram como repasse (custo igual ao cobrado); a margem vem do markup da equipe + margem da agência. Imposto/taxas (${fin.impostoModo}) entram no total cobrado${fin.impostoModo === 'diluida' ? ' sem discriminação ao cliente' : ''}. Diária custo: cadastro em colaboradores ou campo CUSTO no builder.</p>
   `;
   const opt = _orcPdfHtml2Opts(
     `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
@@ -19995,8 +20055,8 @@ function calcOrcamento() {
       subtotal: fin.subtotal,
       totalDisc: 0,
       afterDisc: fin.subtotal,
-      impostoPct: fin.margemPct,
-      impostoVal: fin.valorMargem,
+      impostoPct: fin.impostoPct,
+      impostoVal: fin.valorImposto,
       total: fin.totalFinal,
       margEst: fin.margemPct
     };
