@@ -1879,7 +1879,25 @@ select.login-input{cursor:pointer}
 }
 .cf-hero-mes-formula {
   font-family: var(--font-m); font-size: 10px; color: #94a3b8; margin-top: 8px;
-  max-width: 420px; line-height: 1.45;
+  max-width: 560px; line-height: 1.45;
+}
+.cf-hero-mes-breakdown {
+  display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px;
+  font-family: var(--font-m); font-size: 10px; color: #64748b;
+}
+.cf-hero-mes-breakdown span b { color: #334155; font-weight: 700; }
+.cf-section-row td {
+  font-family: var(--font-h); font-size: 9px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: #64748b;
+  background: #f8fafc !important; padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(0,0,0,.06) !important;
+}
+.cf-total-row td {
+  font-weight: 700; background: #f1f5f9 !important;
+  border-top: 2px solid rgba(0,0,0,.08) !important;
+}
+.cf-chart-hint {
+  font-family: var(--font-m); font-size: 9px; color: #94a3b8; margin-top: 6px;
 }
 .cf-year-lucro-strip {
   margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,.06);
@@ -1888,16 +1906,38 @@ select.login-input{cursor:pointer}
   flex-wrap: wrap; gap: 8px;
 }
 .cf-year-lucro-strip strong { font-family: var(--font-data); font-size: 15px; font-weight: 700; }
-.cf-balanco-period-bar {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
-  margin-bottom: 16px; padding: 12px 14px;
-  border: 1px solid rgba(0,0,0,.1); border-radius: 10px;
-  background: linear-gradient(135deg, #f8fafc, #fff);
+.cf-period-ctrl {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 6px 8px; border: 1px solid rgba(0,0,0,.1); border-radius: 10px;
+  background: #fff;
 }
-.cf-balanco-period-lbl {
-  font-family: var(--font-h); font-size: 10px; font-weight: 700;
-  letter-spacing: .08em; text-transform: uppercase; color: #475569;
+.cf-period-arrow {
+  border: 1px solid rgba(0,0,0,.1); background: #f8fafc; color: #475569;
+  width: 30px; height: 30px; border-radius: 7px; cursor: pointer; font-size: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
 }
+.cf-period-arrow:hover { background: #eef2f7; color: #0f172a; }
+.cf-tipo-seg {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  padding: 4px; border-radius: 9px; background: #f1f5f9; border: 1px solid rgba(0,0,0,.06);
+}
+.cf-tipo-seg button {
+  font-family: var(--font-h); font-size: 9px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 9px 6px; border: none; border-radius: 7px;
+  background: transparent; color: #64748b; cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.cf-tipo-seg button.active { background: #fff; color: #0f172a; box-shadow: 0 1px 4px rgba(15,23,42,.1); }
+.cf-kpi-sub { font-family: var(--font-m); font-size: 9px; color: #94a3b8; margin-top: 5px; line-height: 1.35; }
+.cf-origem-badge {
+  display: inline-block; font-family: var(--font-m); font-size: 8px; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase; padding: 3px 7px; border-radius: 5px;
+  white-space: nowrap;
+}
+.cf-origem-proj { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.cf-origem-manual { background: #fafafa; color: #64748b; border: 1px solid #e5e7eb; }
 .cf-type-badge {
   display: inline-block; font-family: var(--font-h); font-size: 8px; font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;
@@ -3051,18 +3091,44 @@ body:has(#login-screen.visible){
 <div id="modalCashflow" class="modal">
   <div class="modal-dialog cf-modal-dialog" style="max-width:480px;border-radius:8px">
     <div class="modal-body" style="padding:20px">
-      <h3 class="cf-modal-title">LANÇAMENTO</h3>
+      <h3 class="cf-modal-title" id="cfModalTitle">LANÇAMENTO</h3>
       <input type="hidden" id="cfFormId">
       <input type="hidden" id="cfFormContext">
       <div style="display:grid;gap:10px">
         <div id="cfFormTipoWrap">
           <label class="cf-label">Tipo</label>
-          <select id="cfFormTipo" class="cf-input" onchange="cfOnTipoChange()">
+          <div class="cf-tipo-seg" id="cfFormTipoSeg">
+            <button type="button" data-tipo="receita" onclick="cfSetTipo('receita')">Entrada</button>
+            <button type="button" data-tipo="custo_variavel" onclick="cfSetTipo('custo_variavel')">Custo variável</button>
+            <button type="button" data-tipo="custo_fixo" onclick="cfSetTipo('custo_fixo')">Custo fixo</button>
+          </div>
+          <select id="cfFormTipo" style="display:none">
             <option value="receita">Receita</option>
             <option value="custo_fixo">Custo fixo</option>
             <option value="custo_variavel">Custo variável</option>
             <option value="projecao">Projeção</option>
           </select>
+          <div id="cfFormTipoHint" style="font-family:var(--font-m);font-size:9px;color:#64748b;margin-top:6px;line-height:1.4"></div>
+        </div>
+        <div>
+          <label class="cf-label">Descrição <span style="color:#dc2626">*</span></label>
+          <input type="text" id="cfFormDesc" class="cf-input" placeholder="Ex.: Aluguel, honorários, recebimento cliente X">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="cf-label">Valor total (R$) <span style="color:#dc2626">*</span></label>
+            <input type="number" id="cfFormVTotal" class="cf-input" min="0" step="0.01" placeholder="0,00" oninput="cfOnTotalManual()">
+          </div>
+          <div>
+            <label class="cf-label">Categoria</label>
+            <select id="cfFormCategoria" class="cf-input">
+              <option value="pessoal">Pessoal</option>
+              <option value="administrativo">Administrativo</option>
+              <option value="marketing">Marketing</option>
+              <option value="financeiro">Financeiro</option>
+              <option value="projeto">Projeto</option>
+            </select>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
@@ -3074,61 +3140,46 @@ body:has(#login-screen.visible){
             <select id="cfFormAno" class="cf-input"></select>
           </div>
         </div>
-        <div>
-          <label class="cf-label">Categoria</label>
-          <select id="cfFormCategoria" class="cf-input">
-            <option value="pessoal">Pessoal</option>
-            <option value="administrativo">Administrativo</option>
-            <option value="marketing">Marketing</option>
-            <option value="financeiro">Financeiro</option>
-            <option value="projeto">Projeto</option>
-          </select>
-        </div>
-        <div>
-          <label class="cf-label">Descrição</label>
-          <input type="text" id="cfFormDesc" class="cf-input" placeholder="Ex.: Aluguel, honorários, recebimento cliente X">
-        </div>
         <div id="cfFormRecorrenteWrap" style="display:none;padding:10px;border-radius:8px;border:1px solid rgba(37,99,235,.2);background:#eff6ff">
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-family:var(--font-m);font-size:12px;color:#1e40af;line-height:1.45">
+          <div id="cfFormFixosHint" style="display:none;font-family:var(--font-m);font-size:11px;color:#1e40af;line-height:1.45;padding:2px 0"><i class="fas fa-sync-alt" style="margin-right:6px"></i>Conta mensal — entra em <strong>todos os meses</strong> do ano selecionado.</div>
+          <label id="cfFormRecorrenteLabel" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-family:var(--font-m);font-size:12px;color:#1e40af;line-height:1.45">
             <input type="checkbox" id="cfFormRecorrente" onchange="cfOnRecorrenteToggle()" style="margin-top:3px;accent-color:#2563eb">
-            <span><strong>Custo fixo em todo o ano</strong> — o mesmo valor entra em <strong>cada mês</strong> do ano selecionado (não só em um mês).</span>
+            <span><strong>Repetir em todos os meses do ano</strong> — o mesmo valor entra em cada mês do ano selecionado.</span>
           </label>
-          <div style="font-family:var(--font-m);font-size:9px;color:#64748b;margin-top:8px">Desmarque para destinar o custo apenas ao mês escolhido abaixo.</div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-          <div>
-            <label class="cf-label">Qtd</label>
-            <input type="number" id="cfFormQtd" class="cf-input" min="0" step="0.01" value="1" oninput="cfRecalcTotal()">
-          </div>
-          <div>
-            <label class="cf-label">Valor unit.</label>
-            <input type="number" id="cfFormVUnit" class="cf-input" min="0" step="0.01" oninput="cfRecalcTotal()">
-          </div>
-          <div>
-            <label class="cf-label">Valor total</label>
-            <input type="number" id="cfFormVTotal" class="cf-input" min="0" step="0.01" oninput="cfOnTotalManual()">
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div id="cfFormClienteWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
             <label class="cf-label">Cliente</label>
-            <input type="text" id="cfFormCliente" class="cf-input">
+            <input type="text" id="cfFormCliente" class="cf-input" placeholder="Opcional">
           </div>
           <div>
             <label class="cf-label">Projeto</label>
-            <input type="text" id="cfFormProjeto" class="cf-input">
+            <input type="text" id="cfFormProjeto" class="cf-input" placeholder="Opcional">
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div id="cfFormDatasWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
             <label class="cf-label">Data venda</label>
             <input type="date" id="cfFormDVenda" class="cf-input">
           </div>
           <div>
-            <label class="cf-label">Data recebimento</label>
+            <label class="cf-label" id="cfFormDRecLbl">Data recebimento</label>
             <input type="date" id="cfFormDRec" class="cf-input">
           </div>
         </div>
+        <details id="cfFormQtdWrap">
+          <summary style="font-family:var(--font-m);font-size:10px;color:#2563eb;cursor:pointer;user-select:none">Calcular por quantidade × valor unitário</summary>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+            <div>
+              <label class="cf-label">Qtd</label>
+              <input type="number" id="cfFormQtd" class="cf-input" min="0" step="0.01" value="1" oninput="cfRecalcTotal()">
+            </div>
+            <div>
+              <label class="cf-label">Valor unit. (R$)</label>
+              <input type="number" id="cfFormVUnit" class="cf-input" min="0" step="0.01" oninput="cfRecalcTotal()">
+            </div>
+          </div>
+        </details>
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;justify-content:flex-end">
         <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('modalCashflow')">Cancelar</button>
@@ -3775,9 +3826,10 @@ body:has(#login-screen.visible){
         <div class="page-header" style="align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px">
           <div>
             <div class="page-title"><i class="fas fa-chart-line"></i> FLUXO DE CAIXA</div>
-            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.45">Lucro líquido do mês = receitas − custos fixos − custos variáveis · Balanço · Fixos · Projeção</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.45"><b>Projetos</b> geram o lucro bruto · <b>Custos fixos</b> são contas mensais · <b>Variáveis</b> fecham o lucro líquido</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="cf-period-ctrl">
+            <button type="button" class="cf-period-arrow" onclick="cfShiftMonth(-1)" title="Mês anterior"><i class="fas fa-chevron-left"></i></button>
             <select id="cfMes" class="cf-select" onchange="loadCashflow()">
               <option value="1">Janeiro</option><option value="2">Fevereiro</option>
               <option value="3">Março</option><option value="4">Abril</option>
@@ -3787,94 +3839,62 @@ body:has(#login-screen.visible){
               <option value="11">Novembro</option><option value="12">Dezembro</option>
             </select>
             <select id="cfAno" class="cf-select" onchange="loadCashflow()"></select>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="loadCashflow()" title="Atualizar"><i class="fas fa-sync-alt"></i></button>
+            <button type="button" class="cf-period-arrow" onclick="cfShiftMonth(1)" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="cfGoToday()" title="Ir para o mês atual">Hoje</button>
           </div>
         </div>
 
         <div class="cf-chart-wrap">
-          <div class="cf-chart-title">VISÃO ANUAL · RECEITAS E CUSTOS INCLUEM PROJETOS (ABA PROJETOS) + LANÇAMENTOS CF</div>
+          <div class="cf-chart-title">VISÃO ANUAL · LUCRO BRUTO × CUSTOS DA EMPRESA</div>
           <div class="cf-chart-canvas">
             <canvas id="chartCashflowYear"></canvas>
           </div>
           <div class="cf-chart-legend">
-            <span><span style="display:inline-block;width:10px;height:10px;background:#374151;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Receita</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Custos totais</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#374151;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Lucro bruto (projetos)</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Custos fixos + variáveis</span>
             <span><span style="display:inline-block;width:14px;height:2px;background:#0a0a0a;vertical-align:middle;margin-right:6px"></span>Lucro líquido</span>
           </div>
+          <div class="cf-chart-hint">Clique em um mês no gráfico para ver os projetos daquele período.</div>
           <div id="cfYearLucroStrip" class="cf-year-lucro-strip" style="display:none" aria-live="polite"></div>
         </div>
 
+        <div id="cfHeroMes"></div>
+        <div class="cf-kpi-row" id="cfKpiResumo"></div>
+
         <div class="cf-tabs">
-          <button type="button" class="cf-tab active" id="cfTabBalanco" onclick="cfTab('balanco')">BALANÇO MENSAL</button>
+          <button type="button" class="cf-tab active" id="cfTabProjetos" onclick="cfTab('projetos')">PROJETOS</button>
           <button type="button" class="cf-tab" id="cfTabFixos" onclick="cfTab('fixos')">CUSTOS FIXOS</button>
-          <button type="button" class="cf-tab" id="cfTabProj" onclick="cfTab('projecao')">PROJEÇÃO ANUAL</button>
+          <button type="button" class="cf-tab" id="cfTabVariaveis" onclick="cfTab('variaveis')">CUSTOS VARIÁVEIS</button>
         </div>
 
-        <div id="cf-balanco">
-          <div class="cf-balanco-period-bar">
-            <span class="cf-balanco-period-lbl"><i class="fas fa-calendar-alt" style="opacity:.7;margin-right:6px"></i>Balanço mensal — escolha o período</span>
-            <select id="cfMesBalanco" class="cf-select" title="Mês do balanço" onchange="cfApplyPeriodFromPanel()">
-              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-              <option value="3">Março</option><option value="4">Abril</option>
-              <option value="5">Maio</option><option value="6">Junho</option>
-              <option value="7">Julho</option><option value="8">Agosto</option>
-              <option value="9">Setembro</option><option value="10">Outubro</option>
-              <option value="11">Novembro</option><option value="12">Dezembro</option>
-            </select>
-            <select id="cfAnoBalanco" class="cf-select" title="Ano do balanço" onchange="cfApplyPeriodFromPanel()"></select>
-            <span style="font-family:var(--font-m);font-size:9px;color:#94a3b8;max-width:260px;line-height:1.35">O mesmo período vale para custos fixos e para o gráfico anual do ano selecionado no topo.</span>
-          </div>
-          <div id="cfBalancoProjPanel" style="margin:12px 0 6px">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-              <div style="font-family:var(--font-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8">
-                Projetos neste período <span id="cfBalancoProjPeriodLbl" style="color:rgba(255,255,255,.55)">—</span>
-              </div>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="navigate('projects')"><i class="fas fa-folder-open"></i> Abrir aba Projetos</button>
-            </div>
-            <div class="cf-table-wrap">
-              <table class="cf-table" id="cfTableBalancoProjetos">
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th>Projeto</th>
-                    <th style="white-space:nowrap">Data pgto</th>
-                    <th style="text-align:right">Faturamento</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="cfTbodyBalancoProjetos"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="cfHeroMes"></div>
-          <div class="cf-kpi-row" id="cfKpiBalanco"></div>
+        <div id="cf-projetos">
+          <p style="font-family:var(--font-m);font-size:10px;color:#64748b;margin:0 0 12px;line-height:1.45;max-width:720px">Projetos com pagamento ou referência neste mês. O <b>lucro bruto</b> é faturamento menos o custo marcado no projeto.</p>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'balanco')"><i class="fas fa-plus"></i> Novo lançamento</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="navigate('projects')"><i class="fas fa-folder-open"></i> Editar na aba Projetos</button>
           </div>
           <div class="cf-table-wrap">
-            <table class="cf-table" id="cfTableBalanco">
+            <table class="cf-table" id="cfTableProjetos">
               <thead>
                 <tr>
-                  <th style="width:110px">Tipo</th>
                   <th>Cliente</th>
                   <th>Projeto</th>
-                  <th>Data venda</th>
-                  <th>Data recebimento</th>
-                  <th>Valor (R$)</th>
-                  <th style="text-align:right">Ações</th>
+                  <th style="white-space:nowrap">Data pgto</th>
+                  <th style="text-align:right">Faturamento</th>
+                  <th style="text-align:right">Custo</th>
+                  <th style="text-align:right">Lucro bruto</th>
+                  <th>Status</th>
                 </tr>
               </thead>
-              <tbody id="cfTbodyBalanco"></tbody>
+              <tbody id="cfTbodyProjetos"></tbody>
             </table>
           </div>
-          <p style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin-top:10px;line-height:1.45;max-width:720px">Linhas com origem <b>Projetos</b> vêm de <code style="font-size:9px">age_projects</code> (aba Projetos). Não duplique o mesmo custo como custo variável manual.</p>
         </div>
 
         <div id="cf-fixos" style="display:none">
-          <p style="font-family:var(--font-m);font-size:10px;color:#64748b;margin:0 0 12px;line-height:1.45;max-width:720px">Use o <b>mês e ano no topo da página</b> para o período. Marque <b>todo o ano</b> no lançamento para custos que repetem em todos os meses.</p>
+          <p style="font-family:var(--font-m);font-size:10px;color:#64748b;margin:0 0 12px;line-height:1.45;max-width:720px">Contas que pagamos <b>todo mês</b> (aluguel, folha, assinaturas). Cada conta entra em todos os meses do ano com o mesmo valor.</p>
           <div class="cf-kpi-row" id="cfKpiFixos"></div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'fixos')"><i class="fas fa-plus"></i> Custo fixo</button>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'fixos')"><i class="fas fa-plus"></i> Conta mensal</button>
           </div>
           <div class="cf-table-wrap">
             <table class="cf-table" id="cfTableFixos">
@@ -3882,8 +3902,7 @@ body:has(#login-screen.visible){
                 <tr>
                   <th>Descrição</th>
                   <th>Categoria</th>
-                  <th>Vigência</th>
-                  <th>Valor (R$)</th>
+                  <th>Valor mensal (R$)</th>
                   <th style="text-align:right">Ações</th>
                 </tr>
               </thead>
@@ -3892,34 +3911,25 @@ body:has(#login-screen.visible){
           </div>
         </div>
 
-        <div id="cf-projecao" style="display:none">
-          <div class="cf-kpi-row" id="cfKpiProj"></div>
+        <div id="cf-variaveis" style="display:none">
+          <div id="cfVariaveisHero"></div>
+          <p style="font-family:var(--font-m);font-size:10px;color:#64748b;margin:0 0 12px;line-height:1.45;max-width:720px">Despesas que mudam mês a mês (freela, impostos, compras). O <b>lucro líquido</b> da empresa é lucro bruto dos projetos menos fixos e variáveis.</p>
+          <div class="cf-kpi-row" id="cfKpiVariaveis"></div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'projecao')"><i class="fas fa-plus"></i> Linha de projeção</button>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openCfModal(null,'variaveis')"><i class="fas fa-plus"></i> Custo variável</button>
           </div>
           <div class="cf-table-wrap">
-            <table class="cf-proj-table" id="cfTableProjMes">
+            <table class="cf-table" id="cfTableVariaveis">
               <thead>
                 <tr>
-                  <th>Mês</th>
-                  <th>Receitas</th>
-                  <th>Custos totais</th>
-                  <th>Lucro líquido</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th style="white-space:nowrap">Pagamento</th>
+                  <th style="text-align:right">Valor (R$)</th>
+                  <th style="text-align:right">Ações</th>
                 </tr>
               </thead>
-              <tbody id="cfTbodyProjMes"></tbody>
-            </table>
-          </div>
-          <p style="font-family:var(--font-m);font-size:9px;color:#94a3b8;margin:-4px 0 14px;line-height:1.45;max-width:720px">Os valores são os mesmos do gráfico anual e do balanço: receitas e custos (projetos + fluxo), incluindo custos fixos <b>por mês</b> ou <b>recorrentes em todo o ano</b>.</p>
-          <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.12em;margin:18px 0 8px">LINHAS MANUAIS DE CENÁRIO (OPCIONAL)</div>
-          <div class="cf-table-wrap">
-            <table class="cf-table cf-proj-table" id="cfTableProj">
-              <thead>
-                <tr>
-                  <th>Mês</th><th>Categoria</th><th>Descrição</th><th>Total</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="cfTbodyProj"></tbody>
+              <tbody id="cfTbodyVariaveis"></tbody>
             </table>
           </div>
         </div>
@@ -21824,7 +21834,21 @@ function _cfProjFinanceMonth(mes, ano) {
     if(!_projExcludedFromReceitaSum(p)) rec += parseFloat(p.total_value || 0) || 0;
     cst += _projResolveCostRaw(p, fechMap);
   }
-  return { rec, cst };
+  return { rec, cst, lucroBruto: rec - cst };
+}
+
+/** Resumo do mês: lucro bruto (projetos) − fixos mensais − variáveis = lucro líquido. */
+function _cfMesSummary(mes, ano, variaveis, fixosRecorrentes) {
+  const pf = _cfProjFinanceMonth(mes, ano);
+  const totFixos = (fixosRecorrentes || []).reduce((s, r) => s + _cfVal(r), 0);
+  const totVar = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
+  const lucroLiquido = pf.lucroBruto - totFixos - totVar;
+  return { ...pf, totFixos, totVar, lucroLiquido };
+}
+
+function _cfFixosRecorrentesAno(fixos, ano) {
+  const y = parseInt(ano, 10);
+  return (fixos || []).filter(r => parseInt(r.ano, 10) === y && _cfIsRecorrente(r));
 }
 
 /** Atualiza payment_date no Supabase quando o usuário muda só o mês na planilha (não existe coluna mes). */
@@ -21849,18 +21873,19 @@ function _projComposePaymentDateForMonth(cached, mesNew) {
   return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function renderCfBalancoProjetosList(mes, ano) {
-  const tb = document.getElementById('cfTbodyBalancoProjetos');
-  const lbl = document.getElementById('cfBalancoProjPeriodLbl');
-  if(lbl) lbl.textContent = `· ${MONTHS[(mes || 1) - 1] || ''} ${ano}`;
+function renderCfProjetos(mes, ano) {
+  const tb = document.getElementById('cfTbodyProjetos');
   if(!tb) return;
   const list = (_cfProjectsForMonth(mes, ano) || []).slice();
+  const fechMap = _cfCashflowFechMap;
   list.sort((a, b) => _projRefTime(a) - _projRefTime(b));
   if(!list.length) {
-    tb.innerHTML = '<tr><td colspan="5" style="color:#64748b;padding:16px">Nenhum projeto neste mês/ano (critério igual ao balanço: data de pagamento ou referência do projeto).</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:20px">Nenhum projeto neste mês. Projetos entram pela data de pagamento ou referência — edite na aba Projetos.</td></tr>';
     return;
   }
-  tb.innerHTML = list.map(p => {
+  let totFat = 0;
+  let totCst = 0;
+  const rows = list.map(p => {
     const cli = escHtml(String(p.client_name || '').trim() || '—');
     const tit = escHtml(String(p.project_name || '').trim() || '—');
     const rawPay = p.payment_date ? String(p.payment_date).slice(0, 10) : '';
@@ -21869,16 +21894,32 @@ function renderCfBalancoProjetosList(mes, ano) {
       const d = new Date(rawPay + 'T12:00:00');
       payCell = escHtml(!isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR') : rawPay);
     }
-    const fat = parseFloat(p.total_value || 0) || 0;
+    const fat = _projExcludedFromReceitaSum(p) ? 0 : (parseFloat(p.total_value || 0) || 0);
+    const cst = _projResolveCostRaw(p, fechMap);
+    const lucro = fat - cst;
+    totFat += fat;
+    totCst += cst;
     const st = _dashStatusLabel(p.status || '');
+    const lucroCls = lucro >= 0 ? 'color:#16a34a' : 'color:#dc2626';
     return `<tr>
       <td>${cli}</td>
       <td>${tit}</td>
       <td style="white-space:nowrap">${payCell}</td>
       <td style="text-align:right;font-weight:600">${fmtBRL(fat)}</td>
+      <td style="text-align:right;color:#64748b">${fmtBRL(cst)}</td>
+      <td style="text-align:right;font-weight:700;${lucroCls}">${fmtBRL(lucro)}</td>
       <td style="font-size:10px">${escHtml(st)}</td>
     </tr>`;
   }).join('');
+  const totLucro = totFat - totCst;
+  const totCls = totLucro >= 0 ? 'color:#16a34a' : 'color:#dc2626';
+  tb.innerHTML = rows + `<tr class="cf-total-row">
+    <td colspan="3" style="text-align:right;font-family:var(--font-m);font-size:10px;letter-spacing:.06em">LUCRO BRUTO DO MÊS</td>
+    <td style="text-align:right;font-weight:700">${fmtBRL(totFat)}</td>
+    <td style="text-align:right;font-weight:600;color:#64748b">${fmtBRL(totCst)}</td>
+    <td style="text-align:right;font-weight:700;${totCls}">${fmtBRL(totLucro)}</td>
+    <td></td>
+  </tr>`;
 }
 
 function _cfSyntheticProjectRows(mes, ano) {
@@ -22004,9 +22045,9 @@ async function criarCustosFixosPadrao(cid) {
   const ano = parseInt(document.getElementById('cfAno')?.value, 10) || new Date().getFullYear();
   const now = Date.now();
   const defaults = [
-    { tipo: 'custo_fixo', categoria: 'administrativo', descricao: 'Aluguel / estrutura', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano },
-    { tipo: 'custo_fixo', categoria: 'pessoal', descricao: 'Folha / honorários fixos', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano },
-    { tipo: 'custo_fixo', categoria: 'financeiro', descricao: 'Software e assinaturas', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano }
+    { tipo: 'custo_fixo', categoria: 'administrativo', descricao: 'Aluguel / estrutura', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano, recorrente_mensal: true },
+    { tipo: 'custo_fixo', categoria: 'pessoal', descricao: 'Folha / honorários fixos', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano, recorrente_mensal: true },
+    { tipo: 'custo_fixo', categoria: 'financeiro', descricao: 'Software e assinaturas', quantidade: 1, valor_unitario: 0, valor_total: 0, mes, ano, recorrente_mensal: true }
   ];
   for(const body of defaults) {
     try {
@@ -22123,6 +22164,80 @@ function cfOnRecorrenteToggle() {
   mes.disabled = chk.checked;
 }
 
+function cfSetTipo(tipo) {
+  const sel = document.getElementById('cfFormTipo');
+  if(sel) sel.value = tipo;
+  document.querySelectorAll('#cfFormTipoSeg button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tipo === tipo);
+  });
+  cfUpdateFormForTipo(tipo);
+}
+
+function cfUpdateFormForTipo(tipo) {
+  const ctx = document.getElementById('cfFormContext')?.value || 'projetos';
+  const hint = document.getElementById('cfFormTipoHint');
+  const recWrap = document.getElementById('cfFormRecorrenteWrap');
+  const fixosHint = document.getElementById('cfFormFixosHint');
+  const recLabel = document.getElementById('cfFormRecorrenteLabel');
+  const mesEl = document.getElementById('cfFormMes');
+  const mesWrap = mesEl?.closest('div');
+  const cliWrap = document.getElementById('cfFormClienteWrap');
+  const datasWrap = document.getElementById('cfFormDatasWrap');
+  const tipoWrap = document.getElementById('cfFormTipoWrap');
+
+  if(tipoWrap) tipoWrap.style.display = (ctx === 'fixos' || ctx === 'variaveis') ? 'none' : '';
+  if(recWrap) recWrap.style.display = ctx === 'fixos' ? '' : 'none';
+  if(fixosHint) fixosHint.style.display = ctx === 'fixos' ? '' : 'none';
+  if(recLabel) recLabel.style.display = ctx === 'fixos' ? 'none' : '';
+  if(mesWrap) mesWrap.style.display = ctx === 'fixos' ? 'none' : '';
+  if(mesEl && ctx !== 'fixos') mesEl.disabled = false;
+  if(cliWrap) cliWrap.style.display = (ctx === 'variaveis' || ctx === 'fixos') ? 'none' : '';
+  if(datasWrap) datasWrap.style.display = ctx === 'variaveis' ? '' : (ctx === 'fixos' ? 'none' : '');
+
+  const hints = {
+    receita: 'Entrada de caixa avulsa (não use para projetos — eles já entram automaticamente).',
+    custo_variavel: 'Despesa que muda mês a mês: freela, compra pontual, imposto.',
+    custo_fixo: 'Conta que pagamos todo mês: aluguel, folha, assinaturas.'
+  };
+  if(hint) hint.textContent = hints[tipo] || '';
+
+  const dRecLbl = document.getElementById('cfFormDRecLbl');
+  if(dRecLbl) dRecLbl.textContent = 'Data pagamento';
+}
+
+function cfShiftMonth(delta) {
+  const mesEl = document.getElementById('cfMes');
+  const anoEl = document.getElementById('cfAno');
+  if(!mesEl || !anoEl) return;
+  let m = parseInt(mesEl.value, 10) || 1;
+  let y = parseInt(anoEl.value, 10) || new Date().getFullYear();
+  m += delta;
+  if(m < 1) { m = 12; y--; }
+  else if(m > 12) { m = 1; y++; }
+  y = Math.max(2021, Math.min(2030, y));
+  mesEl.value = String(m);
+  anoEl.value = String(y);
+  loadCashflow();
+}
+
+function cfGoToday() {
+  const now = new Date();
+  const mesEl = document.getElementById('cfMes');
+  const anoEl = document.getElementById('cfAno');
+  if(mesEl) mesEl.value = String(now.getMonth() + 1);
+  if(anoEl) anoEl.value = String(Math.max(2021, Math.min(2030, now.getFullYear())));
+  loadCashflow();
+}
+
+function cfToggleProjPanel(forceOpen) {
+  const body = document.getElementById('cfProjPanelBody');
+  const chev = document.getElementById('cfProjPanelChevron');
+  if(!body) return;
+  const open = forceOpen === true ? true : (forceOpen === false ? false : body.style.display === 'none');
+  body.style.display = open ? '' : 'none';
+  if(chev) chev.style.transform = open ? 'rotate(90deg)' : '';
+}
+
 function cfFillFormSelects() {
   const fm = document.getElementById('cfFormMes');
   const fa = document.getElementById('cfFormAno');
@@ -22141,11 +22256,11 @@ function cfFillFormSelects() {
 }
 
 function cfTab(name) {
-  document.getElementById('cf-balanco').style.display = name === 'balanco' ? '' : 'none';
+  document.getElementById('cf-projetos').style.display = name === 'projetos' ? '' : 'none';
   document.getElementById('cf-fixos').style.display = name === 'fixos' ? '' : 'none';
-  document.getElementById('cf-projecao').style.display = name === 'projecao' ? '' : 'none';
+  document.getElementById('cf-variaveis').style.display = name === 'variaveis' ? '' : 'none';
   document.querySelectorAll('.cf-tab').forEach(t => t.classList.remove('active'));
-  const map = { balanco: 'cfTabBalanco', fixos: 'cfTabFixos', projecao: 'cfTabProj' };
+  const map = { projetos: 'cfTabProjetos', fixos: 'cfTabFixos', variaveis: 'cfTabVariaveis' };
   const b = document.getElementById(map[name]);
   if(b) b.classList.add('active');
 }
@@ -22168,8 +22283,16 @@ function cfRowHtml(r, ctx) {
     return `<tr>
       <td>${escHtml(r.descricao || '—')}</td>
       <td>${escHtml(_cfCatLabel(r.categoria))}</td>
-      <td>${_cfFixoVigenciaHtml(r)}</td>
       <td style="font-weight:600">${fmtBRL(_cfVal(r))}</td>
+      <td style="white-space:nowrap;text-align:right">${ed} ${del}</td>
+    </tr>`;
+  }
+  if(ctx === 'variaveis') {
+    return `<tr>
+      <td>${escHtml(r.descricao || '—')}</td>
+      <td>${escHtml(_cfCatLabel(r.categoria))}</td>
+      <td style="white-space:nowrap">${_cfFmtDateCell(r.data_recebimento)}</td>
+      <td style="font-weight:600;text-align:right">${fmtBRL(_cfVal(r))}</td>
       <td style="white-space:nowrap;text-align:right">${ed} ${del}</td>
     </tr>`;
   }
@@ -22187,156 +22310,147 @@ function cfRowHtml(r, ctx) {
     ? `<td style="white-space:nowrap;text-align:right"><button type="button" class="cf-btn-mini" title="Editar na aba Projetos" onclick="navigate('projects')" style="cursor:pointer"><i class="fas fa-folder-open"></i></button></td>`
     : `<td style="white-space:nowrap;text-align:right">${ed} ${del}</td>`;
   const trCls = fromProj ? ' class="cf-row-from-proj"' : '';
+
+  let desc = String(r.descricao || '').trim();
+  if(!desc && fromProj) {
+    if(r.tipo === 'receita') desc = `Faturamento · ${r.projeto || r.cliente || 'projeto'}`;
+    else if(r.tipo === 'custo_variavel') desc = `Custo operacional · ${r.projeto || 'projeto'}`;
+  }
+  if(!desc) desc = '—';
+
+  let cliProj = '—';
+  const cli = String(r.cliente || '').trim();
+  const proj = String(r.projeto || '').trim();
+  if(cli && proj) cliProj = `${cli} · ${proj}`;
+  else if(cli || proj) cliProj = cli || proj;
+
+  const origem = fromProj
+    ? '<span class="cf-origem-badge cf-origem-proj">Projetos</span>'
+    : '<span class="cf-origem-badge cf-origem-manual">Manual</span>';
+
   return `<tr${trCls}>
     <td>${_cfTipoBadgeHtml(r.tipo)}</td>
-    <td>${escHtml(r.cliente || '—')}</td>
-    <td>${escHtml(r.projeto || '—')}</td>
-    <td>${_cfFmtDateCell(r.data_venda)}</td>
-    <td>${_cfFmtDateCell(r.data_recebimento)}</td>
-    <td style="font-weight:600">${fmtBRL(_cfVal(r))}</td>
+    <td>${escHtml(desc)}</td>
+    <td>${escHtml(cliProj)}</td>
+    <td>${origem}</td>
+    <td style="white-space:nowrap">${_cfFmtDateCell(r.data_recebimento)}</td>
+    <td style="font-weight:600;text-align:right">${fmtBRL(_cfVal(r))}</td>
     ${actCell}
   </tr>`;
 }
 
-function renderBalanco(receitas, variaveis, fixosMes, mes, ano) {
-  const order = { receita: 0, custo_variavel: 1, custo_fixo: 2 };
-  const syn = _cfSyntheticProjectRows(mes, ano);
-  const rec = receitas || [];
-  const vari = variaveis || [];
-  const fix = fixosMes || [];
-  const bal = [...syn, ...rec, ...vari, ...fix].sort((a, b) =>
-    (order[String(a.tipo)] ?? 9) - (order[String(b.tipo)] ?? 9)
-  );
-  const tbB = document.getElementById('cfTbodyBalanco');
-  if(tbB) {
-    tbB.innerHTML = bal.length
-      ? bal.map(r => cfRowHtml(r, 'balanco')).join('')
-      : '<tr><td colspan="7" style="color:#64748b;padding:20px">Nenhum lançamento neste mês.</td></tr>';
-  }
-}
-
-function renderCustosFixos(fixosMes, mes, ano) {
-  const fix = fixosMes || [];
-  const totFix = fix.reduce((s, r) => s + _cfVal(r), 0);
-  const pf = _cfProjFinanceMonth(mes, ano);
+function renderCustosFixos(fixosRecorrentes, summary, mes, ano) {
+  const fix = fixosRecorrentes || [];
+  const totFix = summary?.totFixos ?? fix.reduce((s, r) => s + _cfVal(r), 0);
   const fk = document.getElementById('cfKpiFixos');
   if(fk) {
     fk.innerHTML = [
-      { l: `Custos fixos (${MONTHS[mes - 1]} ${ano})`, v: totFix, c: 'cf-neu' },
-      { l: 'Custos dos projetos (mês)', v: pf.cst, c: 'cf-neu' },
-      { l: 'Fixos do mês + custos de projeto', v: totFix + pf.cst, c: 'cf-pos' }
-    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
+      { l: `Total mensal (${MONTHS[mes - 1]} ${ano})`, v: totFix, c: 'cf-neg' },
+      { l: 'Contas cadastradas', v: String(fix.length), c: 'cf-neu', isCount: true },
+      { l: 'Lucro bruto (ref.)', v: summary?.lucroBruto ?? 0, c: 'cf-pos' }
+    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${x.isCount ? x.v : fmtBRL(x.v)}</div></div>`).join('');
   }
   const tbF = document.getElementById('cfTbodyFixos');
   if(tbF) {
     tbF.innerHTML = fix.length
       ? fix.map(r => cfRowHtml(r, 'fixos')).join('')
-      : '<tr><td colspan="5" style="color:#64748b;padding:20px">Nenhum custo fixo neste mês.</td></tr>';
+      : '<tr><td colspan="4" style="color:#64748b;padding:20px">Nenhuma conta mensal cadastrada. Use <b>Conta mensal</b> para adicionar aluguel, folha, assinaturas etc.</td></tr>';
   }
 }
 
-function renderCfHeroMes(receitas, variaveis, fixosMes, mes, ano) {
-  const pf = _cfProjFinanceMonth(mes, ano);
-  const rec =
-    (receitas || []).reduce((s, r) => s + _cfVal(r), 0) + pf.rec;
-  const cvar =
-    (variaveis || []).reduce((s, r) => s + _cfVal(r), 0) + pf.cst;
-  const cfix = (fixosMes || []).reduce((s, r) => s + _cfVal(r), 0);
-  const lucro = rec - cfix - cvar;
+function renderCustosVariaveis(variaveis, summary, mes, ano) {
+  const vars = variaveis || [];
+  const { lucroBruto = 0, totFixos = 0, totVar = 0, lucroLiquido = 0 } = summary || {};
+  const pos = lucroLiquido >= 0;
+
+  const hero = document.getElementById('cfVariaveisHero');
+  if(hero) {
+    hero.innerHTML = `
+      <div class="cf-hero-mes" style="margin-bottom:14px">
+        <div class="cf-hero-mes-label">Lucro líquido · ${MONTHS[(mes || 1) - 1]} ${ano}</div>
+        <div class="cf-hero-mes-val ${pos ? 'cf-positive' : 'cf-negative'}">${fmtBRL(lucroLiquido)}</div>
+        <div class="cf-hero-mes-formula">Lucro bruto dos projetos − custos fixos mensais − custos variáveis</div>
+        <div class="cf-hero-mes-breakdown">
+          <span>Lucro bruto <b>${fmtBRL(lucroBruto)}</b></span>
+          <span>− Fixos <b>${fmtBRL(totFixos)}</b></span>
+          <span>− Variáveis <b>${fmtBRL(totVar)}</b></span>
+        </div>
+      </div>`;
+  }
+
+  const kv = document.getElementById('cfKpiVariaveis');
+  if(kv) {
+    kv.innerHTML = [
+      { l: 'Custos variáveis do mês', v: totVar, c: 'cf-neg' },
+      { l: 'Lançamentos', v: String(vars.length), c: 'cf-neu', isCount: true },
+      { l: 'Após descontar fixos', v: lucroBruto - totFixos, c: (lucroBruto - totFixos) >= 0 ? 'cf-pos' : 'cf-neg' }
+    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${x.isCount ? x.v : fmtBRL(x.v)}</div></div>`).join('');
+  }
+
+  const tbV = document.getElementById('cfTbodyVariaveis');
+  if(tbV) {
+    tbV.innerHTML = vars.length
+      ? vars.map(r => cfRowHtml(r, 'variaveis')).join('')
+      : '<tr><td colspan="5" style="color:#64748b;padding:20px">Nenhum custo variável neste mês.</td></tr>';
+  }
+}
+
+function renderCfHeroMes(summary, mes, ano) {
+  const { lucroLiquido = 0, lucroBruto = 0, totFixos = 0, totVar = 0 } = summary || {};
   const hm = document.getElementById('cfHeroMes');
   if(hm) {
-    const pos = lucro >= 0;
+    const pos = lucroLiquido >= 0;
     hm.innerHTML = `
       <div class="cf-hero-mes">
-        <div class="cf-hero-mes-label">Lucro líquido (${MONTHS[(mes || 1) - 1]} ${ano})</div>
-        <div class="cf-hero-mes-val ${pos ? 'cf-positive' : 'cf-negative'}">${fmtBRL(lucro)}</div>
-        <div class="cf-hero-mes-formula">Receitas e custos da aba Projetos (por mês de referência) somados aos lançamentos manuais em fluxo de caixa. Igual à linha preta no gráfico anual.</div>
+        <div class="cf-hero-mes-label">Lucro líquido · ${MONTHS[(mes || 1) - 1]} ${ano}</div>
+        <div class="cf-hero-mes-val ${pos ? 'cf-positive' : 'cf-negative'}">${fmtBRL(lucroLiquido)}</div>
+        <div class="cf-hero-mes-formula">Lucro bruto dos projetos − custos fixos − custos variáveis</div>
+        <div class="cf-hero-mes-breakdown">
+          <span>Lucro bruto <b>${fmtBRL(lucroBruto)}</b></span>
+          <span>Fixos <b>${fmtBRL(totFixos)}</b></span>
+          <span>Variáveis <b>${fmtBRL(totVar)}</b></span>
+        </div>
       </div>`;
   }
 }
 
-function renderSummaryCards(receitas, variaveis, fixosMes, mes, ano) {
-  const pf = _cfProjFinanceMonth(mes, ano);
-  const recCf = (receitas || []).reduce((s, r) => s + _cfVal(r), 0);
-  const cvarCf = (variaveis || []).reduce((s, r) => s + _cfVal(r), 0);
-  const rec = recCf + pf.rec;
-  const cvar = cvarCf + pf.cst;
-  const cfix = (fixosMes || []).reduce((s, r) => s + _cfVal(r), 0);
-  const lucro = rec - cfix - cvar;
-  const margem = rec > 0 ? (lucro / rec) * 100 : null;
-  renderCfHeroMes(receitas, variaveis, fixosMes, mes, ano);
-  const kpiB = document.getElementById('cfKpiBalanco');
+function renderSummaryCards(summary, mes, ano) {
+  const { lucroBruto = 0, totFixos = 0, totVar = 0, lucroLiquido = 0, rec = 0, cst = 0 } = summary || {};
+  const margem = lucroBruto > 0 ? (lucroLiquido / lucroBruto) * 100 : null;
+  renderCfHeroMes(summary, mes, ano);
+  const kpiB = document.getElementById('cfKpiResumo');
   if(kpiB) {
     const cards = [
-      { l: 'Receitas (CF + projetos)', v: fmtBRL(rec), c: 'cf-neu' },
-      { l: 'Custos fixos (CF)', v: fmtBRL(cfix), c: 'cf-neg' },
-      { l: 'Custos variáveis (CF + proj.)', v: fmtBRL(cvar), c: 'cf-neg' },
-      { l: 'Lucro líquido', v: fmtBRL(lucro), c: lucro >= 0 ? 'cf-pos' : 'cf-neg' },
-      { l: 'Margem s/ receitas', v: margem == null ? '—' : `${margem.toFixed(1).replace('.', ',')}%`, c: margem == null ? 'cf-neu' : (margem >= 0 ? 'cf-pos' : 'cf-neg') }
+      { l: 'Lucro bruto', v: fmtBRL(lucroBruto), c: lucroBruto >= 0 ? 'cf-pos' : 'cf-neg', sub: `${fmtBRL(rec)} fat. − ${fmtBRL(cst)} custo proj.` },
+      { l: 'Custos fixos', v: fmtBRL(totFixos), c: 'cf-neg', sub: 'Contas mensais' },
+      { l: 'Custos variáveis', v: fmtBRL(totVar), c: 'cf-neg', sub: 'Despesas do mês' },
+      { l: 'Lucro líquido', v: fmtBRL(lucroLiquido), c: lucroLiquido >= 0 ? 'cf-pos' : 'cf-neg', sub: 'Resultado da empresa' },
+      { l: 'Margem líquida', v: margem == null ? '—' : `${margem.toFixed(1).replace('.', ',')}%`, c: margem == null ? 'cf-neu' : (margem >= 0 ? 'cf-pos' : 'cf-neg'), sub: 'Lucro líq. ÷ lucro bruto' }
     ];
-    kpiB.innerHTML = cards.map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${x.v}</div></div>`).join('');
+    kpiB.innerHTML = cards.map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${x.v}</div>${x.sub ? `<div class="cf-kpi-sub">${escHtml(x.sub)}</div>` : ''}</div>`).join('');
   }
 }
 
-function renderCfProjecaoFromYear(ano) {
-  const y = parseInt(ano, 10) || new Date().getFullYear();
-  const rows = _cfYearRows || [];
-  const proj = rows.filter(r => parseInt(r.ano, 10) === y && String(r.tipo) === 'projecao');
-  const series = _cfBuildYearSeries(y);
-  const { rec, cust, lucro, lucroAcumulado } = series;
-  let sumRec = 0;
-  let sumCust = 0;
-  for(let i = 0; i < 12; i++) {
-    sumRec += rec[i];
-    sumCust += cust[i];
-  }
-
-  const kpiP = document.getElementById('cfKpiProj');
-  if(kpiP) {
-    kpiP.innerHTML = [
-      { l: `Receitas no ano (${y})`, v: sumRec, c: 'cf-neu' },
-      { l: `Custos no ano (${y})`, v: sumCust, c: 'cf-neg' },
-      { l: `Lucro líquido (${y})`, v: lucroAcumulado, c: lucroAcumulado >= 0 ? 'cf-pos' : 'cf-neg' }
-    ].map(x => `<div class="cf-kpi ${x.c}"><div class="cf-kpi-lbl">${x.l}</div><div class="cf-kpi-val">${fmtBRL(x.v)}</div></div>`).join('');
-  }
-  const tbPM = document.getElementById('cfTbodyProjMes');
-  if(tbPM) {
-    tbPM.innerHTML = MONTHS.map((name, i) => {
-      const pos = lucro[i] >= 0;
-      return `<tr>
-        <td>${name}</td>
-        <td>${fmtBRL(rec[i])}</td>
-        <td>${fmtBRL(cust[i])}</td>
-        <td style="font-weight:700;color:${pos ? '#16a34a' : '#dc2626'}">${fmtBRL(lucro[i])}</td>
-      </tr>`;
-    }).join('');
-  }
-  const tbP = document.getElementById('cfTbodyProj');
-  if(tbP) {
-    tbP.innerHTML = proj.length
-      ? proj.sort((a, b) => (parseInt(a.mes, 10) || 0) - (parseInt(b.mes, 10) || 0)).map(r => cfRowHtml(r, 'projecao')).join('')
-      : '<tr><td colspan="5" style="color:#64748b;padding:20px">Nenhuma linha extra de cenário (tipo projeção). Opcional para simulações.</td></tr>';
-  }
-}
-
-/** Séries mensais do ano — mesmo critério do balanço e do gráfico (CF + projetos; fixos recorrentes em todos os meses). */
+/** Séries mensais do ano — lucro bruto (projetos) − fixos mensais − variáveis = lucro líquido. */
 function _cfBuildYearSeries(ano) {
   const year = parseInt(ano, 10) || new Date().getFullYear();
   const rows = _cfYearRows || [];
+  const fixosAno = rows.filter(r => String(r.tipo) === 'custo_fixo' && parseInt(r.ano, 10) === year && _cfIsRecorrente(r));
+  const totFixosMes = fixosAno.reduce((s, r) => s + _cfVal(r), 0);
   const rec = [];
   const cust = [];
   const lucro = [];
   let lucroAcumulado = 0;
   for(let m = 1; m <= 12; m++) {
-    const cm = _cfCashflowMonthTotals(rows, m, year);
-    let rSum = cm.rSum;
-    let cSum = cm.cSum;
     const pf = _cfProjFinanceMonth(m, year);
-    rSum += pf.rec;
-    cSum += pf.cst;
-    rec.push(rSum);
-    cust.push(cSum);
-    const L = rSum - cSum;
+    const bruto = pf.lucroBruto;
+    const vars = rows
+      .filter(r => String(r.tipo) === 'custo_variavel' && parseInt(r.mes, 10) === m && parseInt(r.ano, 10) === year)
+      .reduce((s, r) => s + _cfVal(r), 0);
+    const custEmpresa = totFixosMes + vars;
+    rec.push(bruto);
+    cust.push(custEmpresa);
+    const L = bruto - custEmpresa;
     lucro.push(L);
     lucroAcumulado += L;
   }
@@ -22367,7 +22481,7 @@ function renderCfYearChart(ano) {
       labels: [...MONTHS],
       datasets: [
         {
-          label: 'Receita',
+          label: 'Lucro bruto',
           data: rec,
           backgroundColor: '#374151',
           borderColor: '#1f2937',
@@ -22377,7 +22491,7 @@ function renderCfYearChart(ano) {
           order: 2
         },
         {
-          label: 'Custos totais',
+          label: 'Custos fixos + variáveis',
           data: cust,
           backgroundColor: '#d1d5db',
           borderColor: '#e5e7eb',
@@ -22406,6 +22520,15 @@ function renderCfYearChart(ano) {
     },
     options: {
       ...base,
+      onClick: (_evt, elements) => {
+        if(!elements || !elements.length) return;
+        const idx = elements[0].index;
+        if(idx < 0 || idx > 11) return;
+        const mesEl = document.getElementById('cfMes');
+        if(mesEl) mesEl.value = String(idx + 1);
+        cfTab('projetos');
+        loadCashflow();
+      },
       interaction: { mode: 'index', intersect: false },
       scales: {
         x: {
@@ -22458,14 +22581,12 @@ async function loadCashflow() {
   }
 
   const enc = encodeURIComponent(cid);
-  let receitas = [];
   let variaveis = [];
   let fixos = [];
 
   try {
     let projs, fechs;
-    [receitas, variaveis, fixos, projs, fechs] = await Promise.all([
-      _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&mes=eq.${mes}&ano=eq.${ano}&tipo=eq.receita`)),
+    [variaveis, fixos, projs, fechs] = await Promise.all([
       _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&mes=eq.${mes}&ano=eq.${ano}&tipo=eq.custo_variavel`)),
       _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&tipo=eq.custo_fixo`)),
       fetchAgeProjectsScoped(1000),
@@ -22488,10 +22609,8 @@ async function loadCashflow() {
     fixos = _cfRowsFromSb(await sbFetch(`age_cashflow?company_id=eq.${enc}&tipo=eq.custo_fixo`));
   }
 
-  const fixosMes = (fixos || []).filter(r =>
-    parseInt(r.ano, 10) === ano &&
-    (_cfIsRecorrente(r) || parseInt(r.mes, 10) === mes)
-  );
+  const fixosRecorrentes = _cfFixosRecorrentesAno(fixos, ano);
+  const summary = _cfMesSummary(mes, ano, variaveis, fixosRecorrentes);
 
   try {
     const d = await apiGet('age_cashflow', `?company_id=eq.${enc}&ano=eq.${ano}&order=mes.asc&limit=500`);
@@ -22501,43 +22620,47 @@ async function loadCashflow() {
     _cfYearRows = [];
   }
 
-  renderBalanco(receitas, variaveis, fixosMes, mes, ano);
-  renderCfBalancoProjetosList(mes, ano);
-  renderCustosFixos(fixosMes, mes, ano);
-  renderSummaryCards(receitas, variaveis, fixosMes, mes, ano);
-  renderCfProjecaoFromYear(ano);
+  renderCfProjetos(mes, ano);
+  renderCustosFixos(fixosRecorrentes, summary, mes, ano);
+  renderCustosVariaveis(variaveis, summary, mes, ano);
+  renderSummaryCards(summary, mes, ano);
   renderCfYearChart(ano);
   renderCfYearLucroStrip(ano);
-  cfSyncBalancoPanelFromHeader();
 }
 
 function openCfModal(id, context) {
   cfFillFormSelects();
-  const ctx = context || 'balanco';
+  const ctx = context || 'variaveis';
   document.getElementById('cfFormContext').value = ctx;
   const mes = parseInt(document.getElementById('cfMes')?.value, 10) || 1;
   const ano = parseInt(document.getElementById('cfAno')?.value, 10) || 2026;
   const tipoEl = document.getElementById('cfFormTipo');
   const tipoWrap = document.getElementById('cfFormTipoWrap');
+  const titleEl = document.getElementById('cfModalTitle');
   document.getElementById('cfFormMes').value = String(mes);
   document.getElementById('cfFormAno').value = String(ano);
+
+  if(titleEl) {
+    const titles = { fixos: 'Nova conta mensal', variaveis: 'Novo custo variável' };
+    titleEl.textContent = id ? 'Editar lançamento' : (titles[ctx] || 'Lançamento');
+  }
 
   if(ctx === 'fixos') {
     tipoEl.value = 'custo_fixo';
     if(tipoWrap) tipoWrap.style.display = 'none';
-  } else if(ctx === 'projecao') {
-    tipoEl.value = 'projecao';
+  } else if(ctx === 'variaveis') {
+    tipoEl.value = 'custo_variavel';
     if(tipoWrap) tipoWrap.style.display = 'none';
   } else {
-    if(tipoWrap) tipoWrap.style.display = '';
-    if(!id) tipoEl.value = 'receita';
+    if(tipoWrap) tipoWrap.style.display = 'none';
+    tipoEl.value = 'custo_variavel';
   }
 
   if(id) {
     const r = _cfYearRows.find(x => String(x.id) === String(id));
     if(r) {
       document.getElementById('cfFormId').value = r.id;
-      tipoEl.value = r.tipo || 'receita';
+      tipoEl.value = r.tipo || 'custo_variavel';
       document.getElementById('cfFormMes').value = String(parseInt(r.mes, 10) || 1);
       document.getElementById('cfFormAno').value = String(parseInt(r.ano, 10) || ano);
       document.getElementById('cfFormCategoria').value = r.categoria || 'administrativo';
@@ -22549,12 +22672,11 @@ function openCfModal(id, context) {
       document.getElementById('cfFormProjeto').value = r.projeto || '';
       document.getElementById('cfFormDVenda').value = r.data_venda || '';
       document.getElementById('cfFormDRec').value = r.data_recebimento || '';
-      if(ctx === 'fixos' && tipoWrap) tipoWrap.style.display = 'none';
-      if(ctx === 'projecao' && tipoWrap) tipoWrap.style.display = 'none';
+      if(tipoWrap) tipoWrap.style.display = 'none';
     }
   } else {
     document.getElementById('cfFormId').value = '';
-    document.getElementById('cfFormCategoria').value = 'administrativo';
+    document.getElementById('cfFormCategoria').value = ctx === 'fixos' ? 'administrativo' : 'administrativo';
     document.getElementById('cfFormDesc').value = '';
     document.getElementById('cfFormQtd').value = '1';
     document.getElementById('cfFormVUnit').value = '';
@@ -22566,38 +22688,33 @@ function openCfModal(id, context) {
     cfRecalcTotal();
   }
 
-  const fid = document.getElementById('cfFormId')?.value?.trim();
-  const editRow = fid ? _cfYearRows.find(x => String(x.id) === String(fid)) : null;
-  const recWrap = document.getElementById('cfFormRecorrenteWrap');
-  const recChk = document.getElementById('cfFormRecorrente');
-  if(recWrap) recWrap.style.display = ctx === 'fixos' ? '' : 'none';
-  if(recChk) {
-    if(ctx === 'fixos') {
-      recChk.checked = !!(editRow && _cfIsRecorrente(editRow));
-      cfOnRecorrenteToggle();
-    } else {
-      recChk.checked = false;
-    }
-  }
+  cfSetTipo(tipoEl.value);
   openModal('modalCashflow');
 }
 
-function cfOnTipoChange() { cfRecalcTotal(); }
+function cfOnTipoChange() {
+  cfSetTipo(document.getElementById('cfFormTipo')?.value || 'receita');
+  cfRecalcTotal();
+}
 
 async function saveCfRow() {
-  const ctx = document.getElementById('cfFormContext')?.value || 'balanco';
+  const ctx = document.getElementById('cfFormContext')?.value || 'variaveis';
   const id = document.getElementById('cfFormId')?.value?.trim();
   let tipo = document.getElementById('cfFormTipo')?.value;
   if(ctx === 'fixos') tipo = 'custo_fixo';
-  if(ctx === 'projecao') tipo = 'projecao';
+  if(ctx === 'variaveis') tipo = 'custo_variavel';
   let mes = parseInt(document.getElementById('cfFormMes')?.value, 10) || 1;
   const ano = parseInt(document.getElementById('cfFormAno')?.value, 10) || 2026;
+  const desc = document.getElementById('cfFormDesc')?.value?.trim() || '';
   const q = parseFloat(document.getElementById('cfFormQtd')?.value) || 0;
   const u = parseFloat(document.getElementById('cfFormVUnit')?.value) || 0;
   let vt = parseFloat(document.getElementById('cfFormVTotal')?.value);
   if(isNaN(vt)) vt = q * u;
 
-  const recorrenteFixo = tipo === 'custo_fixo' && !!document.getElementById('cfFormRecorrente')?.checked;
+  if(!desc) { toast('Informe a descrição do lançamento.', 'err'); return; }
+  if(!vt || vt <= 0) { toast('Informe um valor maior que zero.', 'err'); return; }
+
+  const recorrenteFixo = tipo === 'custo_fixo';
   if(recorrenteFixo) mes = 1;
 
   const payload = {
@@ -22605,7 +22722,7 @@ async function saveCfRow() {
     ano,
     tipo,
     categoria: document.getElementById('cfFormCategoria')?.value || 'administrativo',
-    descricao: document.getElementById('cfFormDesc')?.value?.trim() || '',
+    descricao: desc,
     quantidade: q || 1,
     valor_unitario: u,
     valor_total: vt,
