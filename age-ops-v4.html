@@ -5420,13 +5420,11 @@ body:has(#login-screen.visible){
         </select>
       </div>
       <div class="form-group" id="projAssignRow" style="grid-column:1/-1;display:none">
-        <label class="form-label">COLABORADORES (missão — cronograma + tarefas)</label>
-        <select id="pAssignColabAdd" style="width:100%;margin-bottom:8px" onchange="onProjAssignColabAddChange()">
-          <option value="">— Adicionar colaborador à equipe —</option>
-        </select>
-        <div id="pAssignColabChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;margin-bottom:6px"></div>
-        <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:4px;line-height:1.35">
-          Escolha um ou mais nomes na lista. Ao salvar, cria um evento em <b>Cronograma</b> e tarefa para <b>cada</b> colaborador (admin/gestor).
+        <label class="form-label">COLABORADORES DO PROJETO</label>
+        <div id="pAssignColabList" style="max-height:168px;overflow-y:auto;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:8px 10px;background:#fafafa;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px"></div>
+        <div id="pAssignColabChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-top:8px"></div>
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:6px;line-height:1.35">
+          Marque <b>um ou mais</b> colaboradores. Ao salvar, cria evento no <b>Cronograma</b> e tarefa para <b>cada um</b> selecionado.
         </div>
       </div>
     </div>
@@ -7842,14 +7840,81 @@ function usernameForDisplayName(nameOrUser) {
 /** Usuários escolhidos no modal de projeto (missão → cronograma). */
 let _projModalAssignees = [];
 
-function _clearProjAssignChips() {
-  _projModalAssignees = [];
+function _projAssigneesFromProject(proj) {
+  if(!proj) return [];
+  const raw = proj.assignees_json ?? proj.assignees ?? proj.assigned_usernames;
+  if(Array.isArray(raw)) return raw.map(x => String(x).trim()).filter(Boolean);
+  if(typeof raw === 'string' && raw.trim()) {
+    try {
+      const p = JSON.parse(raw);
+      if(Array.isArray(p)) return p.map(x => String(x).trim()).filter(Boolean);
+    } catch(_) {}
+    return raw.split(/[,;|]/).map(x => x.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function _projAssignOptionUsers() {
+  const cid = currentUser?.company_id;
+  return _ageUsersCache.filter(u => {
+    const role = _normalizeRole(u.role);
+    if(role !== 'colaborador' && role !== 'gestor') return false;
+    if(u.active === false || u.active === 'false') return false;
+    if(cid && u.company_id && String(u.company_id) !== String(cid)) return false;
+    return !!(u.username || u.user);
+  }).map(u => ({
+    username: String(u.username || u.user).trim(),
+    label: String(u.name || u.nome || u.username || u.user).trim()
+  })).filter(u => u.username);
+}
+
+function _projAssignSetSelected(usernames) {
+  _projModalAssignees = [...new Set((usernames || []).map(x => String(x).trim()).filter(Boolean))];
   _renderProjAssignChips();
+  _renderProjectAssignCheckboxes();
+}
+
+function _renderProjectAssignCheckboxes() {
+  const box = document.getElementById('pAssignColabList');
+  if(!box) return;
+  const opts = _projAssignOptionUsers();
+  if(!opts.length) {
+    box.innerHTML = '<div style="grid-column:1/-1;font-family:var(--font-m);font-size:10px;color:#64748b;padding:6px 2px">Nenhum colaborador ativo na empresa. Convide ou cadastre na aba Colaboradores.</div>';
+    return;
+  }
+  box.innerHTML = opts.map(o => {
+    const checked = _projModalAssignees.includes(o.username) ? ' checked' : '';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-family:var(--font-m);font-size:11px;color:#1e293b;background:#fff;border:1px solid rgba(0,0,0,.06)">
+      <input type="checkbox" value="${escAttr(o.username)}"${checked} onchange="_projAssignToggle(this.value, this.checked)" style="accent-color:#2563eb">
+      <span>${escHtml(o.label)}</span>
+    </label>`;
+  }).join('');
+}
+
+function _projAssignToggle(username, checked) {
+  const u = String(username || '').trim();
+  if(!u) return;
+  if(checked) {
+    if(!_projModalAssignees.includes(u)) _projModalAssignees.push(u);
+  } else {
+    _projModalAssignees = _projModalAssignees.filter(x => x !== u);
+  }
+  _renderProjAssignChips();
+}
+
+function _clearProjAssignChips() {
+  _projAssignSetSelected([]);
 }
 
 function _renderProjAssignChips() {
   const box = document.getElementById('pAssignColabChips');
   if(!box) return;
+  if(!_projModalAssignees.length) {
+    box.innerHTML = '';
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = '';
   box.innerHTML = _projModalAssignees.map((un, i) => {
     const nm = displayNameForUsername(un);
     return `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.35);font-family:var(--font-m);font-size:11px;color:#1e293b">${escHtml(nm)}<button type="button" onclick="_projAssignRemoveAt(${i})" style="border:none;background:transparent;cursor:pointer;padding:0;line-height:1;color:#64748b;font-size:14px" aria-label="Remover">×</button></span>`;
@@ -7860,30 +7925,13 @@ function _projAssignRemoveAt(i) {
   if(i < 0 || i >= _projModalAssignees.length) return;
   _projModalAssignees.splice(i, 1);
   _renderProjAssignChips();
+  _renderProjectAssignCheckboxes();
 }
 
-function onProjAssignColabAddChange() {
-  const sel = document.getElementById('pAssignColabAdd');
-  if(!sel) return;
-  const v = sel.value.trim();
-  if(!v) return;
-  if(!_projModalAssignees.includes(v)) _projModalAssignees.push(v);
-  sel.value = '';
-  _renderProjAssignChips();
-}
-
-/** Preenche o select “adicionar colaborador” no modal de projeto (missão). */
+/** Preenche lista de colaboradores no modal de projeto (multi-seleção). */
 async function _populateProjectAssignSelect() {
-  const sel = document.getElementById('pAssignColabAdd');
-  if(!sel) return;
   await refreshAgeUsersCache();
-  const cid = currentUser?.company_id;
-  const cols = _ageUsersCache.filter(u =>
-    _normalizeRole(u.role) === 'colaborador' && u.active !== false && u.active !== 'false' &&
-    (!cid || !u.company_id || String(u.company_id) === String(cid))
-  );
-  sel.innerHTML = '<option value="">— Adicionar colaborador à equipe —</option>' +
-    cols.map(u => `<option value="${escAttr(u.username)}">${escHtml(u.name || u.username)}</option>`).join('');
+  _renderProjectAssignCheckboxes();
 }
 
 function _projPickDateIso(p, keys, allowEmpty) {
@@ -11968,36 +12016,42 @@ const SYNC = {
       }
     }
 
-    /* 2. Propagar custo ao banco (age_projects) se tiver ID real */
-    if(fech.project_id && !String(fech.project_id).startsWith('sheet_')) {
-      await apiPatch('age_projects', fech.project_id, {
-        cost:       Math.round(cost*100)/100,
-        profit_pct: parseFloat(margin.toFixed(2))
-      }).catch(()=>{});
-    } else {
-      /* Tentar achar o projeto no banco pelo nome para salvar custo */
+    /* 2. Propagar custo (e valor, se informado) ao banco (age_projects) */
+    let projId = fech.project_id && !String(fech.project_id).startsWith('sheet_') ? fech.project_id : null;
+    if(!projId) {
       if(!_fechAllProjects.length) {
-        _fechAllProjects = await fetchAgeProjectsScoped(300).catch(()=>[]);
+        _fechAllProjects = await fetchAgeProjectsScoped(300).catch(() => []);
       }
       const dbProj = _fechAllProjects.find(p =>
-        (p.client_name||'').toLowerCase() === (fech.client_name||'').toLowerCase() &&
-        (p.project_name||'').toLowerCase() === (fech.project_name||'').toLowerCase()
+        (p.client_name || '').toLowerCase() === (fech.client_name || '').toLowerCase() &&
+        (p.project_name || '').toLowerCase() === (fech.project_name || '').toLowerCase()
       );
-      if(dbProj) {
-        await apiPatch('age_projects', dbProj.id, {
-          cost:       Math.round(cost*100)/100,
-          profit_pct: parseFloat(margin.toFixed(2))
-        }).catch(()=>{});
+      projId = dbProj?.id || null;
+      if(projId && fech.id) {
+        await apiPatch('age_fechamento', fech.id, { project_id: projId }).catch(() => {});
+        fech.project_id = projId;
       }
+    }
+
+    if(projId) {
+      const patch = {
+        cost: Math.round(cost * 100) / 100,
+        profit_pct: parseFloat(margin.toFixed(2))
+      };
+      if(val > 0) patch.total_value = Math.round(val * 100) / 100;
+      await apiPatch('age_projects', projId, patch).catch(() => {});
     }
 
     this.emit('fech:saved', fech);
 
-    /* 3. Recarregar aba projetos se estiver ativa */
-    const pp = document.getElementById('page-projects');
-    if(pp?.classList.contains('active')) loadProjects();
+    /* 3. Atualizar cache da aba Projetos (mesmo se outra aba estiver aberta) */
+    try { await loadProjects(true); } catch(_) {}
 
-    /* 4. Atualizar KPIs e gráficos */
+    /* 4. Fluxo de caixa se ativo */
+    const cf = document.getElementById('page-cashflow');
+    if(cf?.classList.contains('active') && typeof loadCashflow === 'function') loadCashflow();
+
+    /* 5. Atualizar KPIs e gráficos */
     _recheckPlan2026();
     if(SUPABASE_IS_SOURCE_OF_TRUTH) {
       refreshLiveProjectsKpiCache().then(() => {
@@ -12128,9 +12182,30 @@ function _projExcludedFromReceitaSum(p) {
 }
 
 /** Mesma prioridade que loadProjects: fechamento.custo_total → age_projects.cost */
-function _projResolveCostRaw(p, fechByProjectId) {
+function _fechForProject(p, fechs) {
+  if(!p || !fechs?.length) return null;
+  const pid = p.id;
+  if(pid != null && !String(pid).startsWith('sheet_')) {
+    const byId = fechs.find(f => String(f.project_id || '') === String(pid));
+    if(byId) return byId;
+  }
+  const ck = _fechSheetKey(_ageProjDbClient(p) || p.client_name, _ageProjDbTitle(p) || p.project_name);
+  if(!ck || ck === '|') return null;
+  return fechs.find(f => _fechSheetKey(f.client_name, f.project_name) === ck) || null;
+}
+
+function _projFindFech(p, fechByProjectId, fechsList) {
+  if(!p) return null;
+  if(fechByProjectId && p.id != null) {
+    const f = fechByProjectId.get(p.id) ?? fechByProjectId.get(String(p.id));
+    if(f) return f;
+  }
+  return fechsList ? _fechForProject(p, fechsList) : null;
+}
+
+function _projResolveCostRaw(p, fechByProjectId, fechsList) {
   if(!p) return 0;
-  const fech = fechByProjectId && p.id != null ? fechByProjectId.get(p.id) : null;
+  const fech = _projFindFech(p, fechByProjectId, fechsList);
   if(fech && fech.custo_total != null && fech.custo_total !== '') return parseFloat(fech.custo_total) || 0;
   return parseFloat(p.cost) || 0;
 }
@@ -14787,7 +14862,7 @@ async function loadProjects(opts) {
       _projAllCache = [];
       for(const p of dbProjects) {
         if(!p?.id) continue;
-        const fech = dbFechs.find(f => f.project_id === p.id);
+        const fech = _fechForProject(p, dbFechs);
         const costFromFech = fech ? (parseFloat(fech.custo_total) || 0) : null;
         const costFinal = costFromFech !== null ? costFromFech : (parseFloat(p.cost) || 0);
         const fat = parseFloat(p.total_value) || 0;
@@ -14828,7 +14903,7 @@ async function loadProjects(opts) {
       );
       if(db?.id) matchedDbIds.add(db.id);
       /* Custo: prioridade = fechamento vinculado > banco > planilha */
-      const fech = db ? dbFechs.find(f=>f.project_id===db.id) : null;
+      const fech = db ? _fechForProject(db, dbFechs) : null;
       const costFromFech = fech ? (parseFloat(fech.custo_total)||0) : null;
       const costFinal = costFromFech !== null ? costFromFech : (db?.cost ?? s.cost ?? 0);
       const fat = s.fat || 0;
@@ -14859,7 +14934,7 @@ async function loadProjects(opts) {
     let extraSheetIdx = 100000;
     for(const p of dbProjects) {
       if(!p?.id || matchedDbIds.has(p.id)) continue;
-      const fech = dbFechs.find(f=>f.project_id===p.id);
+      const fech = _fechForProject(p, dbFechs);
       const costFromFech = fech ? (parseFloat(fech.custo_total)||0) : null;
       const costFinal = costFromFech !== null ? costFromFech : (parseFloat(p.cost)||0);
       const fat = parseFloat(p.total_value)||0;
@@ -15840,8 +15915,9 @@ function openProjectModal(proj=null) {
   document.getElementById('pNovo').value     = (proj?.is_new_client===true||proj?.is_new_client==='true')?'true':'false';
   document.getElementById('pStatus').value   = proj?.status||'pendente';
   const par = document.getElementById('projAssignRow');
-  _clearProjAssignChips();
-  if(par) par.style.display = _userIsAdminLike() ? '' : 'none';
+  const canAssign = typeof hasModuleEditForPage === 'function' && hasModuleEditForPage('projetos');
+  _projAssignSetSelected(_projAssigneesFromProject(proj));
+  if(par) par.style.display = canAssign ? '' : 'none';
   loadProjectCosts(proj?.id).catch(()=>{});
   openModal('modalProject');
   _populateProjectAssignSelect().catch(()=>{});
@@ -16004,6 +16080,9 @@ async function saveProject() {
 
   if(!clientName || !projName) { toast('Preencha cliente e projeto', 'warn'); return; }
 
+  const canAssign = typeof hasModuleEditForPage === 'function' && hasModuleEditForPage('projetos');
+  const assignees = Array.isArray(_projModalAssignees) ? [...new Set(_projModalAssignees.filter(Boolean))] : [];
+
   const vCosts = _projCostsValidateRows();
   if(!vCosts.ok) { toast(vCosts.msg, 'warn'); return; }
 
@@ -16075,6 +16154,19 @@ async function saveProject() {
     const srow = Array.isArray(saved) ? saved[0] : saved;
     if(!savedId && srow?.id) savedId = srow.id;
     if(srow?.company_id) savedCompanyId = srow.company_id;
+
+    if(savedId && assignees.length) {
+      try {
+        await _ageWriteResilient('age_projects', 'PATCH', savedId, {
+          assignees_json: JSON.stringify(assignees)
+        });
+      } catch(eA) { console.warn('[saveProject assignees_json]', eA); }
+    } else if(savedId && realId && !assignees.length) {
+      try {
+        await _ageWriteResilient('age_projects', 'PATCH', savedId, { assignees_json: '[]' });
+      } catch(_) {}
+    }
+
     let costsOk = true;
     if(savedId) {
       try {
@@ -16104,12 +16196,11 @@ async function saveProject() {
       }
     }
 
-    /* Integração Projetos → Cronograma + Tarefas (missão: um ou mais colaboradores) */
-    const assignees = Array.isArray(_projModalAssignees) ? [..._projModalAssignees].filter(Boolean) : [];
+    /* Integração Projetos → Cronograma + Tarefas (um ou mais colaboradores) */
     let integrationOk = false;
     let integrationTried = false;
     let integrationOkCount = 0;
-    if(assignees.length && _userIsAdminLike() && savedId) {
+    if(assignees.length && canAssign && savedId) {
       integrationTried = true;
       const srowOne = Array.isArray(saved) ? saved[0] : saved;
       const projetoMerged = {
@@ -16673,9 +16764,15 @@ async function saveFechPanel(idx) {
     const saved = fechId
       ? await apiPut('age_fechamento', fechId, payload)
       : await apiPost('age_fechamento', payload);
-    toast(fechId ? 'Fechamento atualizado!' : 'Fechamento criado!');
-    await SYNC.onFechSaved(saved);
-    await loadFechamento();   /* recarrega tudo e re-renderiza o painel */
+    const fechMerged = {
+      ...payload,
+      ...(saved || {}),
+      id: saved?.id || fechId || null,
+      project_id: dbProjId || saved?.project_id || null
+    };
+    toast(fechId ? 'Fechamento atualizado — custo propagado à aba Projetos.' : 'Fechamento criado — custo propagado à aba Projetos.');
+    await SYNC.onFechSaved(fechMerged);
+    await loadFechamento();
   } catch(e) { toast('Erro ao salvar fechamento','err'); }
 }
 
@@ -16906,8 +17003,9 @@ async function saveFech() {
       ? await apiPut('age_fechamento', id, payload)
       : await apiPost('age_fechamento', payload);
     closeModal('modalFech');
+    const fechMerged = { ...payload, ...(saved || {}), id: saved?.id || id || null, project_id: projId || saved?.project_id || null };
     toast(id ? 'Fechamento atualizado! Custo propagado.' : 'Fechamento criado! Custo propagado.');
-    await SYNC.onFechSaved(saved);
+    await SYNC.onFechSaved(fechMerged);
     await loadFechamento();
   } catch(e) { toast('Erro ao salvar fechamento','err'); }
 }
@@ -21813,6 +21911,7 @@ let _cfYearRows = [];
 /** Snapshot da aba Projetos + fechamentos (mesmo critério do dashboard). */
 let _cfCashflowProjects = [];
 let _cfCashflowFechMap = new Map();
+let _cfCashflowFechList = [];
 
 function _cfProjectsForMonth(mes, ano) {
   const fechMap = _cfCashflowFechMap;
@@ -21832,7 +21931,7 @@ function _cfProjFinanceMonth(mes, ano) {
   let cst = 0;
   for(const p of list) {
     if(!_projExcludedFromReceitaSum(p)) rec += parseFloat(p.total_value || 0) || 0;
-    cst += _projResolveCostRaw(p, fechMap);
+    cst += _projResolveCostRaw(p, fechMap, _cfCashflowFechList);
   }
   return { rec, cst, lucroBruto: rec - cst };
 }
@@ -21895,7 +21994,7 @@ function renderCfProjetos(mes, ano) {
       payCell = escHtml(!isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR') : rawPay);
     }
     const fat = _projExcludedFromReceitaSum(p) ? 0 : (parseFloat(p.total_value || 0) || 0);
-    const cst = _projResolveCostRaw(p, fechMap);
+    const cst = _projResolveCostRaw(p, fechMap, _cfCashflowFechList);
     const lucro = fat - cst;
     totFat += fat;
     totCst += cst;
@@ -21930,7 +22029,7 @@ function _cfSyntheticProjectRows(mes, ano) {
     const cliente = String(p.client_name || p.client || '').trim();
     const projeto = String(p.project_name || p.title || '').trim();
     const fat = parseFloat(p.total_value || 0) || 0;
-    const cost = _projResolveCostRaw(p, fechMap);
+    const cost = _projResolveCostRaw(p, fechMap, _cfCashflowFechList);
     const sale = p.sale_date || null;
     const pay = p.pay_date || p.payment_date || null;
     if(!_projExcludedFromReceitaSum(p)) {
@@ -22593,13 +22692,18 @@ async function loadCashflow() {
       fetchAll('age_fechamento', 500)
     ]);
     _cfCashflowProjects = projs || [];
+    _cfCashflowFechList = fechs || [];
     _cfCashflowFechMap = new Map();
-    (fechs || []).forEach(f => {
-      if(f && f.project_id != null) _cfCashflowFechMap.set(f.project_id, f);
+    _cfCashflowFechList.forEach(f => {
+      if(f && f.project_id != null) {
+        _cfCashflowFechMap.set(f.project_id, f);
+        _cfCashflowFechMap.set(String(f.project_id), f);
+      }
     });
   } catch(e) {
     console.warn('[loadCashflow]', e);
     _cfCashflowProjects = [];
+    _cfCashflowFechList = [];
     _cfCashflowFechMap = new Map();
     try { toast('Verifique a tabela age_cashflow e o Supabase.', 'err'); } catch(_) {}
   }
