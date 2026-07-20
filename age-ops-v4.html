@@ -859,16 +859,56 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .proj-panel{
   background:#ffffff;
   border:1px solid rgba(0,0,0,.08);
-  border-radius:6px;
-  padding:14px 16px;margin-bottom:12px;
+  border-radius:10px;
+  padding:16px 18px;margin-bottom:14px;
 }
 .proj-panel-title{
-  font-family:var(--font-m);font-size:8px;color:#aaaaaa;
-  letter-spacing:.16em;margin-bottom:10px;
+  font-family:var(--font-m);font-size:8px;color:#64748b;
+  letter-spacing:.14em;margin-bottom:12px;
   display:flex;align-items:center;justify-content:space-between;
   text-transform:uppercase;
 }
 .sync-indicator{font-size:8px;display:flex;align-items:center;gap:4px}
+
+.proj-list{display:flex;flex-direction:column;gap:10px}
+.proj-card{
+  background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;
+  padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:12px 16px;
+  align-items:center;cursor:pointer;transition:box-shadow .15s,border-color .15s,transform .12s;
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.proj-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.08);border-color:rgba(0,0,0,.14);transform:translateY(-1px)}
+.proj-card.is-cancel{opacity:.55}
+.proj-card-main{min-width:0}
+.proj-card-client{font-family:var(--font-b);font-size:15px;font-weight:700;color:#111;margin-bottom:2px;line-height:1.25}
+.proj-card-name{font-family:var(--font-m);font-size:12px;color:#64748b;margin-bottom:8px;line-height:1.35}
+.proj-card-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.proj-chip{
+  font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.06em;
+  padding:3px 8px;border-radius:4px;background:#f8fafc;color:#475569;border:1px solid #e2e8f0;
+  text-transform:uppercase;
+}
+.proj-chip.status-pendente{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.proj-chip.status-em_andamento{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.proj-chip.status-concluido{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}
+.proj-chip.status-cancelado{background:#fafafa;color:#94a3b8;border-color:#e2e8f0}
+.proj-card-side{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.proj-card-val{font-family:var(--font-h);font-size:18px;font-weight:700;color:#111}
+.proj-card-sub{font-family:var(--font-m);font-size:10px;color:#64748b}
+.proj-card-actions{display:flex;gap:6px;justify-content:flex-end}
+.proj-month-group{
+  font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:#94a3b8;padding:8px 2px 2px;margin-top:4px;
+}
+.proj-empty{
+  text-align:center;padding:48px 20px;background:#fff;border:1px dashed rgba(0,0,0,.12);
+  border-radius:10px;color:#64748b;font-family:var(--font-m);font-size:12px;
+}
+@media (max-width:720px){
+  .proj-card{grid-template-columns:1fr}
+  .proj-card-side{align-items:flex-start;text-align:left}
+  .proj-card-actions{justify-content:flex-start}
+}
 
 /* ── FECHAMENTO ── */
 .fech-proj-card{
@@ -3670,61 +3710,55 @@ body:has(#login-screen.visible){
       ══════════════════════════════════ -->
       <div id="page-projects" class="page">
         <div class="page-header">
-          <div class="page-title">
-            <i class="fas fa-folder-open"></i> PROJETOS
-            <span style="font-family:var(--font-m);font-size:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:3px 9px;border-radius:3px;letter-spacing:.1em">2026</span>
+          <div>
+            <div class="page-title"><i class="fas fa-folder-open"></i> PROJETOS</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Clique em um projeto ou em <b>Editar</b> para abrir a mesma ficha de criação</div>
           </div>
           <div class="page-actions">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="purgeProjectsNotInSheet({ showToast: true }).then(()=>loadProjects())" title="Legado: sync com planilha embutida (desativado se Supabase for fonte)"><i class="fas fa-sync-alt"></i> Sync planilha</button>
             <button class="btn btn-secondary btn-sm" onclick="exportProjectsCSV()"><i class="fas fa-download"></i> Exportar</button>
             <button class="btn btn-primary" onclick="openProjectModal()"><i class="fas fa-plus"></i> Novo Projeto</button>
           </div>
         </div>
 
-        <!-- KPI Panel -->
         <div class="proj-panel">
           <div class="proj-panel-title">
-            <span><span class="live-dot"></span>DASHBOARD 2026 — AO VIVO</span>
-            <span class="sync-indicator" id="projSyncStatus" style="color:rgba(255,255,255,.35)"><i class="fas fa-circle" style="font-size:5px"></i> LIVE</span>
+            <span>Resumo do período</span>
+            <span class="sync-indicator" id="projSyncStatus" style="color:#94a3b8"><i class="fas fa-circle" style="font-size:5px"></i> LIVE</span>
           </div>
           <div class="kpi-grid" style="margin-bottom:10px">
             <div class="kpi-card"><div class="kpi-label">FATURAMENTO</div><div class="kpi-val" id="pkFat">—</div></div>
-
             <div class="kpi-card"><div class="kpi-label">LUCRO</div><div class="kpi-val green" id="pkLucro">—</div></div>
             <div class="kpi-card"><div class="kpi-label">MARGEM</div><div class="kpi-val" id="pkMargem">—</div></div>
             <div class="kpi-card"><div class="kpi-label">PROJETOS</div><div class="kpi-val yellow" id="pkN">—</div></div>
             <div class="kpi-card"><div class="kpi-label">NPS MÉDIO</div><div class="kpi-val" id="pkNps">—</div></div>
-            <div class="kpi-card"><div class="kpi-label">NOVOS CLIENTES</div><div class="kpi-val" style="color:rgba(255,255,255,.65)" id="pkNovos">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">NOVOS CLIENTES</div><div class="kpi-val" id="pkNovos">—</div></div>
             <div class="kpi-card"><div class="kpi-label">TICKET MÉDIO</div><div class="kpi-val" id="pkTicket">—</div></div>
           </div>
-          <!-- Mini bar chart mensal -->
           <div id="projMonthBars" class="month-bars"></div>
           <div id="projMonthLabels" class="month-labels"></div>
         </div>
 
-        <!-- Filtros + organização -->
         <div class="filter-bar">
-          <span style="font-family:var(--font-m);font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-left:2px">Organizar</span>
-          <select id="fProjView" title="Como organizar a lista" onchange="onProjViewSelectChange()" style="min-width:220px">
-            <option value="flat">Lista (normal)</option>
-            <option value="by_month">Cronológico por mês (agrupado)</option>
+          <select id="fProjView" title="Organizar lista" onchange="onProjViewSelectChange()">
+            <option value="flat">Lista</option>
+            <option value="by_month">Por mês</option>
           </select>
           <select id="fCat" onchange="loadProjects()">
-            <option value="">Todas categorias</option>
+            <option value="">Categoria</option>
             <option value="Vídeo">Vídeo</option>
             <option value="Publicidade">Publicidade</option>
             <option value="Evento">Evento</option>
             <option value="Campanha">Campanha</option>
           </select>
           <select id="fStatus" onchange="loadProjects()">
-            <option value="">Todos status</option>
+            <option value="">Status</option>
             <option value="pendente">Pendente</option>
             <option value="em_andamento">Em Andamento</option>
             <option value="concluido">Concluído</option>
             <option value="cancelado">Cancelado</option>
           </select>
           <select id="fMonth" onchange="loadProjects()">
-            <option value="">Todos meses</option>
+            <option value="">Mês</option>
             <option value="1">Janeiro</option><option value="2">Fevereiro</option>
             <option value="3">Março</option><option value="4">Abril</option>
             <option value="5">Maio</option><option value="6">Junho</option>
@@ -3732,48 +3766,23 @@ body:has(#login-screen.visible){
             <option value="9">Setembro</option><option value="10">Outubro</option>
             <option value="11">Novembro</option><option value="12">Dezembro</option>
           </select>
-          <span style="font-family:var(--font-m);font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-left:4px">Ordenar</span>
-          <select id="fProjSort" title="Ordem da tabela" onchange="onProjSortSelectChange()" style="min-width:220px">
-            <option value="date_asc">Data · cronológico (antigo → novo)</option>
-            <option value="date_desc">Data · mais recente primeiro</option>
-            <option value="fat_desc">Faturamento · maior → menor</option>
-            <option value="fat_asc">Faturamento · menor → maior</option>
-            <option value="cost_asc">Custo · menor → maior</option>
-            <option value="cost_desc">Custo · maior → menor</option>
-            <option value="sheet_asc">Ordem manual / planilha (arrastar)</option>
+          <select id="fProjSort" title="Ordenar" onchange="onProjSortSelectChange()">
+            <option value="date_desc">Mais recente</option>
+            <option value="date_asc">Mais antigo</option>
+            <option value="fat_desc">Maior faturamento</option>
+            <option value="fat_asc">Menor faturamento</option>
+            <option value="cost_desc">Maior custo</option>
+            <option value="cost_asc">Menor custo</option>
+            <option value="sheet_asc">Ordem manual</option>
           </select>
-          <input type="text" id="fSearch" placeholder="🔍 Cliente, projeto ou segmento..." oninput="loadProjects()">
+          <input type="text" id="fSearch" placeholder="Buscar cliente, projeto…" oninput="loadProjects()">
           <button class="btn btn-ghost btn-sm" onclick="clearProjFilters()"><i class="fas fa-times"></i> Limpar</button>
         </div>
 
-        <!-- Dica de edição -->
-        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;margin-bottom:7px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:4px;font-size:10px;color:var(--textsub);font-family:var(--font-m);letter-spacing:.03em">
-          <i class="fas fa-table" style="color:rgba(255,255,255,.3);font-size:9px"></i>
-          <span><b style="color:rgba(255,255,255,.55)">Modo planilha</b> — clique em qualquer célula para editar · Enter ou Tab para avançar · arraste <i class="fas fa-grip-vertical"></i> para reordenar</span>
+        <div id="projList" class="proj-list">
+          <div class="proj-empty"><i class="fas fa-spinner fa-spin"></i> Carregando projetos…</div>
         </div>
-        <div class="table-wrap">
-          <table class="hud-table projects-table" id="projTable">
-            <thead><tr>
-              <th style="width:28px;padding:0"></th>
-              <th style="width:22px;text-align:center">#</th>
-              <th>CLIENTE</th>
-              <th>PROJETO</th>
-              <th class="sortable" onclick="sortProjCol('date')" style="width:110px">DATA PGTO <i class="fas fa-sort" id="siDate" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
-              <th class="sortable" onclick="sortProjCol('fat')" style="width:110px">FATURAMENTO <i class="fas fa-sort" id="siVal" style="font-size:7px;color:rgba(255,255,255,.25)"></i></th>
-              <th style="width:110px">CUSTO</th>
-              <th style="width:70px">MÊS</th>
-              <th style="width:90px">SEGMENTO</th>
-              <th style="width:52px">MARGEM</th>
-              <th style="width:52px">NPS</th>
-              <th style="width:105px">STATUS</th>
-              <th style="width:60px">NOVO?</th>
-              <th style="width:38px"></th>
-            </tr></thead>
-            <tbody id="projBody">
-              <tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <table id="projTable" style="display:none" aria-hidden="true"><tbody id="projBody"></tbody></table>
       </div>
 
       <!-- ══════════════════════════════════
@@ -5381,7 +5390,7 @@ body:has(#login-screen.visible){
 
 <!-- Modal Projeto -->
 <div class="modal" id="modalProject">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:720px;width:96vw;max-height:92vh;overflow-y:auto">
     <div class="modal-title">
       <span id="modalProjTitle">NOVO PROJETO</span>
       <button onclick="closeModal('modalProject')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
@@ -14828,8 +14837,7 @@ async function _loadProjectsWithAutoSync() {
     _projAutoSyncDone = true;
     /* Com Supabase como fonte: nunca rodar purge/sync da planilha embutida ao abrir a página */
     if(!SUPABASE_IS_SOURCE_OF_TRUTH) {
-      const tbody = document.getElementById('projBody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos...</td></tr>`;
+      _projSetListHtml(`<div class="proj-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos…</div>`);
       try {
         await purgeProjectsNotInSheet();
       } catch(e) {
@@ -14842,12 +14850,12 @@ async function _loadProjectsWithAutoSync() {
 
 async function loadProjects(opts) {
   const quiet = opts && opts.quiet === true;
-  const tbody = document.getElementById('projBody');
-  if(!tbody) return;
   initProjSortFromStorage();
   initProjViewFromStorage();
+  const tbody = document.getElementById('projBody');
   if(!quiet) {
-    tbody.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>`;
+    _projSetListHtml(`<div class="proj-empty"><i class="fas fa-spinner fa-spin"></i> Carregando projetos…</div>`);
+    if(tbody) tbody.innerHTML = '';
   }
 
   try {
@@ -14997,19 +15005,37 @@ async function loadProjects(opts) {
     renderProjTable();
     renderProjKpis(_projAllCache);
     renderProjMonthBars(_projAllCache);
-    initProjDragDrop();
 
   } catch(e) {
     console.error('loadProjects error:',e);
-    tbody.innerHTML = `<tr><td colspan="14" class="table-empty">Erro ao carregar projetos.</td></tr>`;
+    _projSetListHtml(`<div class="proj-empty">Erro ao carregar projetos.</div>`);
   }
 }
 
+function _projStatusLabel(st) {
+  const m = { concluido: 'Concluído', em_andamento: 'Em andamento', pendente: 'Pendente', cancelado: 'Cancelado' };
+  return m[String(st || '')] || (st || '—');
+}
+
+function _projFmtPayDate(p) {
+  const raw = p.payment_date || p._sheetPayDate || '';
+  const s = String(raw).slice(0, 10);
+  if(!s || s.length < 10) return '—';
+  const d = new Date(s + 'T12:00:00');
+  return isNaN(d.getTime()) ? s : d.toLocaleDateString('pt-BR');
+}
+
+function _projSetListHtml(html) {
+  const list = document.getElementById('projList');
+  if(list) list.innerHTML = html;
+}
+
 function renderProjTable() {
+  const list = document.getElementById('projList');
   const tbody = document.getElementById('projBody');
-  if(!tbody) return;
+  if(!list && !tbody) return;
   let rows = [..._projCache];
-  const mode = document.getElementById('fProjSort')?.value || 'date_asc';
+  const mode = document.getElementById('fProjSort')?.value || 'date_desc';
   const view = document.getElementById('fProjView')?.value || 'flat';
 
   rows.sort((a, b) => {
@@ -15029,146 +15055,83 @@ function renderProjTable() {
     return c;
   });
 
-  if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="14" class="table-empty">Nenhum projeto. Clique em "+ Novo Projeto" para adicionar.</td></tr>`;
-    updateProjSortIcons();
+  if(!rows.length) {
+    const empty = `<div class="proj-empty">Nenhum projeto encontrado.<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openProjectModal()"><i class="fas fa-plus"></i> Novo Projeto</button></div>`;
+    _projSetListHtml(empty);
+    if(tbody) tbody.innerHTML = '';
     return;
   }
 
+  let html = '';
   if(view === 'by_month') {
-    // Agrupar por mês (sem filtrar): insere separadores mantendo a ordenação atual.
-    const monthName = (m) => (MONTHS && MONTHS[m-1]) ? MONTHS[m-1] : `Mês ${m}`;
+    const monthName = (m) => (MONTHS && MONTHS[m - 1]) ? MONTHS[m - 1] : `Mês ${m}`;
     const getMonth = (p) => {
       const raw = p.payment_date || p.project_date || '';
       const d = String(raw).slice(0, 10);
       const m = d.length >= 7 ? parseInt(d.substring(5, 7), 10) : (parseInt(p._sheetMes, 10) || 1);
       return Math.max(1, Math.min(12, m || 1));
     };
-    let html = '';
     let curM = null;
-    let rn = 1;
-    rows.forEach((p) => {
+    rows.forEach(p => {
       const m = getMonth(p);
       if(curM !== m) {
         curM = m;
-        html += `<tr class="proj-month-sep"><td colspan="14" style="padding:10px 10px;background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--font-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55)">${monthName(m)}</td></tr>`;
+        html += `<div class="proj-month-group">${monthName(m)}</div>`;
       }
-      html += renderProjRow(p, rn++);
+      html += renderProjCard(p);
     });
-    tbody.innerHTML = html;
   } else {
-    tbody.innerHTML = rows.map((p,i)=>renderProjRow(p,i+1)).join('');
+    html = rows.map(p => renderProjCard(p)).join('');
   }
-  updateProjSortIcons();
-  initProjDragDrop();
+  _projSetListHtml(html);
+  if(tbody) tbody.innerHTML = '';
 }
 
+function renderProjCard(p) {
+  const val = parseFloat(p.total_value) || 0;
+  const cost = parseFloat(p.cost) || 0;
+  const pct = parseFloat(p.profit_pct) || (val > 0 ? Math.round((val - cost) / val * 100) : 0);
+  const st = String(p.status || 'pendente');
+  const cancelado = st === 'cancelado';
+  const isNew = p.is_new_client === true || p.is_new_client === 'true';
+  const pid = String(p.id || '');
+  const pidJs = pid.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const cli = escHtml(p.client_name || '—');
+  const name = escHtml(p.project_name || '—');
+  const seg = String(p.segment || '').trim();
+  const cat = String(p.category || '').trim();
+  const mCol = getMarginColor(pct);
+  const chips = [
+    `<span class="proj-chip status-${escAttr(st)}">${escHtml(_projStatusLabel(st))}</span>`,
+    seg ? `<span class="proj-chip">${escHtml(seg)}</span>` : '',
+    cat ? `<span class="proj-chip">${escHtml(cat)}</span>` : '',
+    `<span class="proj-chip">Pgto ${_projFmtPayDate(p)}</span>`,
+    isNew ? `<span class="proj-chip" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe">Novo cliente</span>` : '',
+    p._hasFech ? `<span class="proj-chip" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe"><i class="fas fa-link"></i> Fechamento</span>` : ''
+  ].filter(Boolean).join('');
+
+  return `<div class="proj-card${cancelado ? ' is-cancel' : ''}" data-pid="${escAttr(pid)}" onclick="editProject('${pidJs}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();editProject('${pidJs}')}">
+    <div class="proj-card-main">
+      <div class="proj-card-client">${cli}</div>
+      <div class="proj-card-name">${name}</div>
+      <div class="proj-card-meta">${chips}</div>
+    </div>
+    <div class="proj-card-side" onclick="event.stopPropagation()">
+      <div>
+        <div class="proj-card-val">${fmtBRL(val)}</div>
+        <div class="proj-card-sub">Custo ${fmtBRL(cost)} · <span style="color:${mCol};font-weight:700">${val > 0 ? pct.toFixed(0) + '%' : '—'}</span></div>
+      </div>
+      <div class="proj-card-actions">
+        <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="editProject('${pidJs}')" title="Abrir ficha completa"><i class="fas fa-pen"></i> Editar</button>
+        <button type="button" class="btn btn-danger btn-sm perm-guard-edit" onclick="deleteProject('${pidJs}','${escHtml(p.client_name||'').replace(/'/g,'')}')" title="Excluir"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/** Legado — mantido para chamadas antigas; a UI atual usa cards. */
 function renderProjRow(p, rowNum) {
-  const val   = parseFloat(p.total_value)||0;
-  const pct   = parseFloat(p.profit_pct)||0;
-  const nps   = parseFloat(p.nps)||0;
-  const isNew = p.is_new_client===true||p.is_new_client==='true';
-  const isFut = p.futuro === true; /* projeto futuro (contrato assinado, ainda não realizado) */
-  const mCol  = getMarginColor(pct);
-  const sid   = p._sheetIdx ?? rowNum-1;
-  const cancelado = p.status==='cancelado';
-
-  /* opções de status para select inline */
-  const statOpts = [
-    ['concluido','CONCLUÍDO'],['em_andamento','EM ANDAMENTO'],
-    ['pendente','PENDENTE'],['cancelado','CANCELADO']
-  ].map(([v,l])=>`<option value="${v}"${v===p.status?' selected':''}>${l}</option>`).join('');
-
-  /* opções de mês — usa _sheetMes ou extrai do payment_date */
-  const mesCurrent = p._sheetMes || (p.payment_date?parseInt(p.payment_date.substring(5,7)):1);
-  const mesOpts = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-    .map((m,i)=>`<option value="${i+1}"${(i+1)===mesCurrent?' selected':''}>${m}</option>`).join('');
-
-  const novOpts = `<option value="true"${isNew?' selected':''}>Sim</option><option value="false"${!isNew?' selected':''}>Não</option>`;
-
-  /* data de pagamento atual (pay_date da planilha ou payment_date do banco) */
-  const payDateVal = p.payment_date || p._sheetPayDate || '';
-  const dbOnly = p._dbOnly === true;
-  const dragTitle = dbOnly ? 'Só no banco — arraste desativado' : 'Arrastar para reordenar';
-
-  const costNum = parseFloat(p.cost) || 0;
-  return `<tr class="proj-row${dbOnly?' proj-row-dbonly':''}" data-pid="${p.id}" data-sidx="${sid}" data-db-only="${dbOnly?'1':''}" draggable="${dbOnly?'false':'true'}" style="${cancelado?'opacity:.4':isFut?'background:rgba(37,99,235,.04);':''}" title="${isFut?'Projeto futuro — contrato assinado, ainda não realizado':''}">
-    <td style="width:28px;text-align:center;padding:0 2px">
-      <span class="drag-handle" title="${dragTitle}" style="${dbOnly?'opacity:.25':''}"><i class="fas fa-grip-vertical"></i></span>
-    </td>
-    <td style="font-family:var(--font-h);font-size:10px;font-weight:700;color:var(--textsub);text-align:center;width:22px">
-      ${dbOnly ? '<span style="font-size:7px;font-weight:800;background:#e0e7ff;color:#4338ca;border-radius:3px;padding:1px 4px;letter-spacing:.5px">BD</span>' : (isFut ? '<span style="font-size:7px;font-weight:800;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 4px;letter-spacing:.5px">FUT</span>' : (rowNum||''))}
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="client_name" data-sidx="${sid}" title="Clique para editar cliente" style="min-width:100px">
-      <input class="ie-input" data-pid="${p.id}" data-f="client_name" data-sidx="${sid}"
-        value="${escAttr(p.client_name)}" style="font-weight:700;color:var(--text)"
-        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="project_name" data-sidx="${sid}" title="Clique para editar projeto" style="min-width:100px">
-      <input class="ie-input" data-pid="${p.id}" data-f="project_name" data-sidx="${sid}"
-        value="${escAttr(p.project_name)}" style="color:var(--textsub)"
-        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
-    </td>
-    <td class="ie-cell proj-payment-date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}" title="Data de pagamento — altera mês automaticamente" style="width:110px">
-      <input class="ie-input" type="date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}"
-        value="${escAttr(payDateVal)}" style="font-size:10px;color:#111111 !important;width:100%"
-        onblur="saveSheetCell(this)" onchange="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
-    </td>
-    <td class="ie-cell proj-money-cell proj-money-fat" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}" title="Faturamento (${formatBRL(val)}) — clique para editar" style="width:110px">
-      <div style="display:flex;align-items:center;gap:4px;min-width:0">
-        <span style="font-size:11px;font-weight:700;color:#111111;flex-shrink:0;font-family:var(--font-h)">R$</span>
-        <input class="ie-input" type="number" min="0" step="100" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}"
-          value="${val}" style="flex:1;min-width:0;font-family:var(--font-h);font-size:12px;font-weight:700;color:var(--green)"
-          onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
-      </div>
-    </td>
-    <td class="ie-cell proj-money-cell proj-money-cost" data-pid="${p.id}" data-f="cost" data-sidx="${sid}"
-        title="${p._hasFech ? 'Custo '+formatBRL(costNum)+' — vem do Fechamento — edite na aba Fechamento para propagar aqui' : 'Custo '+formatBRL(costNum)+' — manual — crie um Fechamento para vincular'}"
-        style="width:110px;${p._hasFech?'background:rgba(220,38,38,.04);':''}">
-      <div style="display:flex;align-items:center;gap:3px">
-        <span style="font-size:11px;font-weight:600;color:#111111;flex-shrink:0;font-family:var(--font-h)">R$</span>
-        <input class="ie-input" type="number" min="0" step="100" data-pid="${p.id}" data-f="cost" data-sidx="${sid}"
-          value="${costNum}"
-          style="flex:1;min-width:0;font-family:var(--font-h);font-size:11px;font-weight:600;color:var(--red);${p._hasFech?'background:transparent;':''}"
-          onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
-        ${p._hasFech
-          ? '<i class="fas fa-link" style="font-size:8px;color:#2563eb;flex-shrink:0;opacity:.7" title="Vinculado ao Fechamento — alterações aqui propagam para o fechamento"></i>'
-          : '<i class="fas fa-pen" style="font-size:7px;color:#aaa;flex-shrink:0;opacity:.5" title="Custo manual — sem fechamento vinculado"></i>'
-        }
-      </div>
-    </td>
-    <td class="ie-cell proj-col-mes" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" title="Clique para editar mês" style="width:70px">
-      <select class="ie-input mes-projeto" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px;color:#111111 !important;background:transparent;">
-        ${mesOpts}
-      </select>
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="segment" data-sidx="${sid}" title="Clique para editar segmento" style="width:90px">
-      <input class="ie-input" data-pid="${p.id}" data-f="segment" data-sidx="${sid}"
-        value="${escAttr(p.segment)}" style="font-size:10px;color:var(--textsub)"
-        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
-    </td>
-    <td style="width:52px;text-align:center">
-      <span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:${mCol}">${val>0&&pct>0?pct.toFixed(0)+'%':'—'}</span>
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="nps" data-sidx="${sid}" title="Clique para editar NPS" style="width:52px">
-      <input class="ie-input" type="number" min="0" max="10" step="1" data-pid="${p.id}" data-f="nps" data-sidx="${sid}"
-        value="${nps||''}" placeholder="—" style="color:#d97706;text-align:center"
-        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="status" data-sidx="${sid}" title="Clique para editar status" style="width:105px">
-      <select class="ie-input" data-pid="${p.id}" data-f="status" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px">
-        ${statOpts}
-      </select>
-    </td>
-    <td class="ie-cell" data-pid="${p.id}" data-f="is_new_client" data-sidx="${sid}" title="Cliente novo?" style="width:60px;text-align:center">
-      <select class="ie-input" data-pid="${p.id}" data-f="is_new_client" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px;text-align:center">
-        ${novOpts}
-      </select>
-    </td>
-    <td style="width:38px">
-      <button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}','${escHtml(p.client_name||'').replace(/'/g,'')}')" title="Excluir"><i class="fas fa-trash"></i></button>
-    </td>
-  </tr>`;
+  return renderProjCard(p);
 }
 
 function renderProjKpis(rows) {
@@ -15920,6 +15883,10 @@ function openProjectModal(proj=null) {
   if(par) par.style.display = canAssign ? '' : 'none';
   loadProjectCosts(proj?.id).catch(()=>{});
   openModal('modalProject');
+  try {
+    const box = document.querySelector('#modalProject .modal-box');
+    if(box) box.scrollTop = 0;
+  } catch(_) {}
   _populateProjectAssignSelect().catch(()=>{});
   const relWrap = document.getElementById('projRelacionadosWrap');
   const realPid = proj?.id && !String(proj.id).startsWith('sheet_') ? proj.id : null;
@@ -16053,20 +16020,33 @@ function calcProjMargin() {
 }
 
 async function editProject(id) {
-  if(!id || id.startsWith('sheet_')) {
-    /* Projeto sem registro no banco: abrir modal com dados do cache */
-    const cached = _projAllCache.find(p => p.id === id);
-    if(cached) { openProjectModal(cached); return; }
+  if(!id) { toast('Projeto inválido.', 'warn'); return; }
+  const sid = String(id);
+  const fromCache = (_projAllCache || []).find(p => String(p.id) === sid)
+    || (_projCache || []).find(p => String(p.id) === sid);
+
+  if(sid.startsWith('sheet_')) {
+    if(fromCache) { openProjectModal(fromCache); return; }
     toast('Faça Sync primeiro para editar via modal.', 'warn');
     return;
   }
+
   try {
-    const p = await apiGet('age_projects', `/${id}`);
-    openProjectModal(p);
+    const p = await apiGet('age_projects', `/${sid}`);
+    if(p && p.id) {
+      /* Mescla cache (ex.: _hasFech) com dados frescos do banco */
+      openProjectModal({ ...(fromCache || {}), ...p });
+      return;
+    }
   } catch(e) {
-    console.error('[editProject]', e);
-    toast('Erro ao carregar projeto','err');
+    console.warn('[editProject] api', e);
   }
+
+  if(fromCache) {
+    openProjectModal(fromCache);
+    return;
+  }
+  toast('Erro ao carregar projeto', 'err');
 }
 
 async function saveProject() {
@@ -19048,7 +19028,7 @@ function _orcRenderClienteInner(vm) {
   const subtCab = 'Confirmação de orçamento' + (eventStr ? ` · Gravação ${eventStr}` : (titulo && titulo !== 'Orçamento' ? ` · ${titulo}` : ''));
 
   return `
-    <div style="${sans};color:#111;line-height:1.45;background:#fff">
+    <div class="orc-pdf-root" style="${sans};color:#111;line-height:1.45;background:#fff;page-break-after:avoid;break-after:avoid-page">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:20px;border-bottom:1px solid #000">
         <div style="min-width:0;flex:1">
           <div style="font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#0a0a0a;line-height:1.15">Proposta ${escHtml(marca)}</div>
@@ -19154,12 +19134,33 @@ function _orcGetClientePdfVm() {
 
 function _orcBuildPdfWrapFromVm(vm) {
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;max-width:794px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(vm.pdfFont) + ';line-height:1.45;padding:32px;box-sizing:border-box';
+  wrap.className = 'orc-pdf-export-wrap';
+  wrap.style.cssText = 'width:794px;max-width:794px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(vm.pdfFont) + ';line-height:1.45;padding:32px;box-sizing:border-box';
   wrap.innerHTML = _orcRenderClienteInner(vm);
   return wrap;
 }
 
-function _orcPdfHtml2Opts(filename, mobile) {
+/** Posiciona o wrap fora da viewport de forma que o html2canvas meça só o conteúdo (evita página em branco). */
+function _orcMountPdfWrap(wrap) {
+  wrap.style.position = 'fixed';
+  wrap.style.left = '0';
+  wrap.style.top = '0';
+  wrap.style.opacity = '0';
+  wrap.style.pointerEvents = 'none';
+  wrap.style.zIndex = '-1';
+  wrap.style.height = 'auto';
+  wrap.style.maxHeight = 'none';
+  wrap.style.overflow = 'visible';
+  document.body.appendChild(wrap);
+  void wrap.offsetHeight;
+  const h = Math.max(wrap.scrollHeight, wrap.offsetHeight);
+  wrap.style.height = h + 'px';
+  wrap.style.overflow = 'hidden';
+  return h;
+}
+
+function _orcPdfHtml2Opts(filename, mobile, contentHeightPx) {
+  const h = contentHeightPx || undefined;
   return {
     margin: [10, 10, 10, 10],
     filename: filename || 'Orcamento_AgeOps.pdf',
@@ -19172,16 +19173,37 @@ function _orcPdfHtml2Opts(filename, mobile) {
       scrollX: 0,
       scrollY: 0,
       logging: false,
-      letterRendering: true
+      letterRendering: true,
+      ...(h ? { height: h, windowHeight: h } : {})
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] }
+    pagebreak: { mode: ['avoid-all', 'css'], avoid: ['.orc-pdf-root', '.pdf-keep', 'tr', 'img'] }
   };
 }
 
+/** Remove última página se o html2pdf criou folha extra quase vazia (bug comum com legacy/altura). */
+function _orcTrimTrailingBlankPages(pdf, contentHeightPx, opt) {
+  if(!pdf || !contentHeightPx) return pdf;
+  const marginMm = Array.isArray(opt?.margin) ? (opt.margin[0] || 10) : 10;
+  const scale = opt?.html2canvas?.scale || 2;
+  const pageInnerMm = 297 - marginMm * 2;
+  const pxPerMm = (96 / 25.4) * scale;
+  const pageInnerPx = Math.max(1, pageInnerMm * pxPerMm);
+  const expected = Math.max(1, Math.ceil(contentHeightPx / pageInnerPx));
+  let total = pdf.internal.getNumberOfPages();
+  while(total > expected && total > 1) {
+    pdf.deletePage(total);
+    total--;
+  }
+  return pdf;
+}
+
 function _orcRunHtml2Pdf(wrap, opt) {
-  return html2pdf().set(opt).from(wrap).save()
-    .finally(() => { try { document.body.removeChild(wrap); } catch(_) {} });
+  const contentH = wrap._orcContentHeight || wrap.scrollHeight || wrap.offsetHeight;
+  return html2pdf().set(opt).from(wrap).toPdf().get('pdf').then(pdf => {
+    _orcTrimTrailingBlankPages(pdf, contentH, opt);
+    pdf.save(opt.filename);
+  }).finally(() => { try { document.body.removeChild(wrap); } catch(_) {} });
 }
 
 /** Monta o view-model do documento do cliente a partir de uma linha salva (builder v2). */
@@ -19233,7 +19255,7 @@ function _orcOpenClientePrintWindow(inner, vm) {
   @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #e5e5e5; }
-  .sheet { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 16mm 15mm; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.12); }
+  .sheet { width: 210mm; margin: 16px auto; padding: 16mm 15mm; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.12); }
   .no-print { text-align: center; padding: 20px 16px; font-family: system-ui, sans-serif; }
   .no-print button { padding: 14px 28px; background: #000; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: .5px; width: min(100%, 320px); }
   @media (max-width: 640px) {
@@ -19242,7 +19264,7 @@ function _orcOpenClientePrintWindow(inner, vm) {
   }
   @media print {
     html, body { background: #fff !important; }
-    .sheet { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; box-shadow: none !important; padding: 14mm 14mm !important; page-break-after: avoid; }
+    .sheet { width: 210mm !important; min-height: auto !important; margin: 0 !important; box-shadow: none !important; padding: 14mm 14mm !important; page-break-after: avoid; break-after: avoid-page; }
     .no-print { display: none !important; }
     [style*="background:#000"], [style*="background: #000"] { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   }
@@ -19562,12 +19584,13 @@ function gerarPDFCliente() {
   if(typeof html2pdf === 'undefined') { toast('Gerador de PDF não carregou. Verifique a conexão e recarregue.', 'err'); return; }
 
   const wrap = _orcBuildPdfWrapFromVm(vm);
-  document.body.appendChild(wrap);
+  const contentH = _orcMountPdfWrap(wrap);
+  wrap._orcContentHeight = contentH;
   toast('Gerando PDF…');
   _orcEnsurePdfFont(vm.pdfFont).then(() => {
     requestAnimationFrame(() => {
       setTimeout(() => {
-        _orcRunHtml2Pdf(wrap, _orcPdfHtml2Opts(filename, false))
+        _orcRunHtml2Pdf(wrap, _orcPdfHtml2Opts(filename, false, contentH))
           .then(() => toast('PDF cliente gerado'))
           .catch((e) => {
             console.warn('[gerarPDFCliente]', e);
@@ -19621,7 +19644,8 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
       + '.</p>';
   const pdfFontId = (srcBuilder && srcBuilder.pdfMeta && srcBuilder.pdfMeta.pdfFont) || _orcPdfFontId();
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(pdfFontId) + ';font-size:13px;line-height:1.45;width:794px';
+  wrap.className = 'orc-pdf-export-wrap orc-pdf-root';
+  wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(pdfFontId) + ';font-size:13px;line-height:1.45;width:794px;box-sizing:border-box;page-break-after:avoid';
   const eqRows = (fin.linhasEquipe || []).map(l => {
     const m = l.membro;
     const margemCor = l.margem >= 0 ? '#15803d' : '#b91c1c';
@@ -19719,13 +19743,9 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
     `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
     _orcIsMobileDevice()
   );
-  opt.pagebreak = { mode: ['css', 'legacy'], avoid: ['tr', '.pdf-keep'] };
-  /* Renderiza com o elemento anexado ao DOM (fora da tela) para o html2canvas medir
-     a altura completa — evita corte do conteúdo. */
-  wrap.style.position = 'fixed';
-  wrap.style.left = '-10000px';
-  wrap.style.top = '0';
-  document.body.appendChild(wrap);
+  const contentH = _orcMountPdfWrap(wrap);
+  wrap._orcContentHeight = contentH;
+  opt.html2canvas = { ...opt.html2canvas, height: contentH, windowHeight: contentH };
   toast('Gerando PDF interno…');
   _orcEnsurePdfFont(pdfFontId).then(() =>
     _orcRunHtml2Pdf(wrap, opt)
@@ -20704,7 +20724,7 @@ async function _orcGenPDFFromObject(o) {
 html,body{background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45}
 
 /* ── Layout ── */
-.page{width:210mm;min-height:297mm;margin:0 auto;background:#fff}
+.page{width:210mm;margin:0 auto;background:#fff}
 
 /* ── Cabeçalho ── */
 .header{padding:30px 36px 22px;border-bottom:2.5px solid #0f172a;display:flex;justify-content:space-between;align-items:flex-start}
@@ -20805,7 +20825,7 @@ html,body{background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font
 @media print{
   @page{size:A4 portrait;margin:0}
   html,body{margin:0!important;padding:0!important;background:#fff!important}
-  .page{width:210mm!important;min-height:297mm!important;page-break-after:avoid}
+  .page{width:210mm!important;min-height:auto!important;page-break-after:avoid;break-after:avoid-page}
   .dark-block,.footer{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   .no-print{display:none!important}
 }
