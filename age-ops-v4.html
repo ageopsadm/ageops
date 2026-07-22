@@ -4279,6 +4279,13 @@ body:has(#login-screen.visible){
                         <label for="orc-pdf-aprovado" style="display:block;font-family:var(--font-m);font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">APROVADO POR (RODAPÉ)</label>
                         <input id="orc-pdf-aprovado" class="orc-input" placeholder="Nome · empresa do cliente" oninput="atualizarPreview()" />
                       </div>
+                      <label for="orc-pdf-mostrar-valores" style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer">
+                        <input type="checkbox" id="orc-pdf-mostrar-valores" onchange="atualizarPreview()" style="margin-top:2px;width:16px;height:16px;cursor:pointer;flex-shrink:0" />
+                        <span style="flex:1">
+                          <span style="display:block;font-family:var(--font-m);font-size:11px;font-weight:700;color:#334155">Mostrar o valor de cada linha no PDF do cliente</span>
+                          <span style="display:block;font-size:10px;color:#64748b;margin-top:3px;line-height:1.45">Desligado (padrão): o cliente vê só o escopo e o valor total. Ligado: cada item do escopo mostra seu valor (margem e imposto são diluídos para a soma bater com o total).</span>
+                        </span>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -4302,7 +4309,7 @@ body:has(#login-screen.visible){
                   <span style="font-weight:700;font-size:14px">TOTAL EQUIPE (cobrado)</span>
                   <span id="orc-total-equipe" style="font-weight:700;font-size:16px">R$ 0</span>
                 </div>
-                <div style="font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">No PDF ao cliente não aparecem valores por função — só o total da proposta.</div>
+                <div style="font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">Por padrão o PDF ao cliente mostra só o total. Para exibir o valor de cada linha, ative a opção em <b>PDF — estilo aprovação</b>.</div>
               </div>
               <div class="orc-section">
                 <div class="orc-section-header">
@@ -19032,7 +19039,8 @@ function _orcPdfMetaFromForm() {
     pix: document.getElementById('orc-pdf-pix')?.value?.trim() || '',
     favorecido: document.getElementById('orc-pdf-favorecido')?.value?.trim() || '',
     aprovadoPor: document.getElementById('orc-pdf-aprovado')?.value?.trim() || '',
-    pdfFont: _orcPdfFontId()
+    pdfFont: _orcPdfFontId(),
+    mostrarValores: document.getElementById('orc-pdf-mostrar-valores')?.checked || false
   };
 }
 
@@ -19052,6 +19060,8 @@ function _applyOrcPdfMetaToForm(meta) {
   set('orc-pdf-aprovado', meta.aprovadoPor);
   const ft = document.getElementById('orc-pdf-fonte');
   if(ft && ORC_PDF_FONT_STACKS[meta.pdfFont]) ft.value = meta.pdfFont;
+  const mv = document.getElementById('orc-pdf-mostrar-valores');
+  if(mv) mv.checked = !!meta.mostrarValores;
 }
 
 function _orcUpdateCabecalhoPreview() {
@@ -19064,7 +19074,7 @@ function _orcUpdateCabecalhoPreview() {
     : `No PDF: <strong>Proposta ${escHtml(marca)}</strong> <span style="color:#94a3b8">(informe o cliente)</span>`;
 }
 
-/** Linhas de escopo (sem preço) a partir dos arrays do builder. */
+/** Linhas de escopo a partir dos arrays do builder. Cada linha inclui `valor` base (antes de margem/imposto). */
 function _orcEscopoLinhas(equipe, catalogo, despesas, diarias) {
   const d = parseInt(diarias, 10) || 1;
   const linhas = [];
@@ -19073,36 +19083,48 @@ function _orcEscopoLinhas(equipe, catalogo, despesas, diarias) {
     const dm = _orcMembroDiarias(m, d);
     linhas.push({
       title: m.nome,
-      sub: `${cat ? cat + ' · ' : ''}${m.quantidade || 1} profissional(is) · ${dm} diária${dm > 1 ? 's' : ''} de gravação`
+      sub: `${cat ? cat + ' · ' : ''}${m.quantidade || 1} profissional(is) · ${dm} diária${dm > 1 ? 's' : ''} de gravação`,
+      valor: _orcMembroFinance(m, d).cobrada
     });
   });
   (catalogo || []).filter(i => i.descricao).forEach(i => {
-    linhas.push({ title: i.descricao, sub: `Produto / serviço · quantidade ${i.quantidade || 1}` });
+    linhas.push({ title: i.descricao, sub: `Produto / serviço · quantidade ${i.quantidade || 1}`, valor: (i.valorUnit || 0) * (i.quantidade || 1) });
   });
   (despesas || []).filter(d2 => d2.descricao).forEach(d2 => {
-    linhas.push({ title: d2.descricao, sub: 'Despesa prevista na produção' });
+    linhas.push({ title: d2.descricao, sub: 'Despesa prevista na produção', valor: d2.valor || 0 });
   });
   return linhas;
 }
 
-/** HTML do escopo (lista com ✓), sem preços — design único do cliente. */
-function _orcEscopoHtmlFromLinhas(linhas) {
+/**
+ * HTML do escopo (lista com ✓) — design único do cliente.
+ * opts.showValues: mostra o valor de cada linha; opts.fator dilui margem/imposto por linha.
+ */
+function _orcEscopoHtmlFromLinhas(linhas, opts) {
   if(!linhas || !linhas.length) {
     return '<div style="padding:16px;color:#999;font-size:13px">Itens de escopo aparecem aqui a partir da equipe, produtos/serviços e despesas.</div>';
   }
-  return linhas.map(it => `
+  const showValues = !!(opts && opts.showValues);
+  const fator = (opts && opts.fator > 0) ? opts.fator : 1;
+  return linhas.map(it => {
+    const valHtml = showValues
+      ? `<div style="flex-shrink:0;text-align:right;font-weight:800;font-size:14px;color:#0a0a0a;white-space:nowrap;font-variant-numeric:tabular-nums">${fmtBRL(Math.round((it.valor || 0) * fator))}</div>`
+      : '';
+    return `
     <div style="display:flex;padding:12px 0;border-bottom:1px solid #eee;align-items:flex-start;gap:10px">
       <div style="flex-shrink:0;width:22px;height:22px;border:2px solid #000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✓</div>
       <div style="min-width:0;flex:1">
         <div style="font-weight:700;font-size:14px;color:#0a0a0a">${escHtml(it.title)}</div>
         <div style="font-size:12px;color:#737373;margin-top:4px;line-height:1.45">${escHtml(it.sub)}</div>
       </div>
-    </div>`).join('');
+      ${valHtml}
+    </div>`;
+  }).join('');
 }
 
 /** Compat: escopo ao cliente a partir do DOM (builder em window._orc*). */
-function _orcClienteEscopoHtml(diarias) {
-  return _orcEscopoHtmlFromLinhas(_orcEscopoLinhas(window._orcEquipe, window._orcCatalogo, window._orcDespesas, diarias));
+function _orcClienteEscopoHtml(diarias, opts) {
+  return _orcEscopoHtmlFromLinhas(_orcEscopoLinhas(window._orcEquipe, window._orcCatalogo, window._orcDespesas, diarias), opts);
 }
 
 /**
@@ -19300,7 +19322,7 @@ function _orcGetClientePdfVm() {
     favorecido: pdfm.favorecido,
     aprovadoPor: pdfm.aprovadoPor,
     pdfFont: pdfm.pdfFont || ORC_PDF_FONT_DEFAULT,
-    escopoHtml: _orcClienteEscopoHtml(diarias)
+    escopoHtml: _orcClienteEscopoHtml(diarias, { showValues: !!pdfm.mostrarValores, fator: fin.fatorDiluicao })
   };
 }
 
@@ -19382,6 +19404,7 @@ function _orcRunHtml2Pdf(wrap, opt) {
 function _orcClienteVmFromRow(o, b) {
   const diarias = parseInt(b.diarias, 10) || 1;
   const pdfm = b.pdfMeta || {};
+  const finRow = _orcFinancialsFromBuilder(b);
   const marca = (b.propostaEmissor || pdfm.propostaEmissor || '').trim()
     || (currentUser?.company_name || '').trim() || 'Age Ops';
   return {
@@ -19401,7 +19424,7 @@ function _orcClienteVmFromRow(o, b) {
     favorecido: pdfm.favorecido || '',
     aprovadoPor: pdfm.aprovadoPor || '',
     pdfFont: pdfm.pdfFont || ORC_PDF_FONT_DEFAULT,
-    escopoHtml: _orcEscopoHtmlFromLinhas(_orcEscopoLinhas(b.equipe, b.catalogo, b.despesas, diarias))
+    escopoHtml: _orcEscopoHtmlFromLinhas(_orcEscopoLinhas(b.equipe, b.catalogo, b.despesas, diarias), { showValues: !!pdfm.mostrarValores, fator: finRow.fatorDiluicao })
   };
 }
 
@@ -19492,6 +19515,8 @@ function initOrcamentoBuilder(resetState) {
     if(pp) pp.value = '1';
     const pf = document.getElementById('orc-pdf-fonte');
     if(pf) pf.value = ORC_PDF_FONT_DEFAULT;
+    const mv = document.getElementById('orc-pdf-mostrar-valores');
+    if(mv) mv.checked = false;
     const rDi = document.querySelector('input[name="orc-margem-modo"][value="diluida"]');
     if(rDi) rDi.checked = true;
     const rImpDi = document.querySelector('input[name="orc-imposto-modo"][value="diluida"]');
