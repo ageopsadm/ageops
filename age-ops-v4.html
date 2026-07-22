@@ -621,6 +621,87 @@ button.perm-disabled,.btn.perm-disabled{
 .hud-table tbody tr:last-child td{border-bottom:none}
 .table-empty{text-align:center;color:#aaaaaa;padding:36px;font-family:var(--font-m);font-size:11px;letter-spacing:.08em}
 
+/* ── PROJETOS · planilha refinada ── */
+.proj-sheet-hint{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 13px;margin-bottom:9px;
+  background:linear-gradient(180deg,#fafbfc,#f4f6f8);
+  border:1px solid #e8ebef;border-radius:9px;
+  font-family:var(--font-m);font-size:10.5px;color:#5b6674;letter-spacing:.01em;line-height:1.5;
+}
+.proj-sheet-hint>i{color:#94a3b8;font-size:11px;flex-shrink:0}
+.proj-sheet-hint b{color:#1f2937;font-weight:700}
+.proj-sheet-hint kbd{
+  font-family:var(--font-m);font-size:9px;font-weight:600;color:#475569;
+  background:#fff;border:1px solid #d7dde3;border-bottom-width:2px;border-radius:4px;
+  padding:1px 5px;margin:0 1px;
+}
+.proj-table-wrap{
+  border:1px solid #e8ebef;border-radius:12px;
+  box-shadow:0 1px 3px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.04);
+  background:#fff;
+}
+.projects-table{min-width:1080px}
+.projects-table thead tr{
+  background:linear-gradient(180deg,#fbfcfd,#f4f6f9);
+  border-bottom:1px solid #e6eaef;
+}
+.projects-table thead th{
+  position:sticky;top:0;z-index:5;
+  background:linear-gradient(180deg,#fbfcfd,#f4f6f9);
+  padding:11px 12px;font-size:10px;color:#7a8797;letter-spacing:.9px;font-weight:700;
+}
+.projects-table thead th .fa-sort,.projects-table thead th .fa-sort-up,.projects-table thead th .fa-sort-down{
+  font-size:8px;color:#b6c0cc;margin-left:3px;
+}
+.projects-table thead th:first-child{border-top-left-radius:12px}
+.projects-table thead th:last-child{border-top-right-radius:12px}
+.projects-table tbody td{
+  padding:6px 12px;border-bottom:1px solid #f0f2f5;
+}
+.projects-table tbody tr:last-child td:first-child{border-bottom-left-radius:12px}
+.projects-table tbody tr:last-child td:last-child{border-bottom-right-radius:12px}
+.projects-table tbody tr.proj-row{transition:background .12s,box-shadow .12s,opacity .12s}
+.projects-table tbody tr.proj-row:hover td{background:#f7f9fc}
+.projects-table tbody tr.proj-row.is-cancel{opacity:.42}
+.projects-table tbody tr.proj-row.is-fut td{background:rgba(37,99,235,.045)}
+.proj-td-drag{width:26px;text-align:center;padding:0 2px!important}
+.proj-td-num{width:24px;text-align:center;font-family:var(--font-h);font-size:10px;font-weight:700;color:#94a3b8}
+.proj-tag{display:inline-block;font-size:7px;font-weight:800;border-radius:4px;padding:1px 4px;letter-spacing:.5px}
+.proj-tag-bd{background:#e0e7ff;color:#4338ca}
+.proj-tag-fut{background:#dbeafe;color:#1d4ed8}
+.proj-money-wrap{display:flex;align-items:center;gap:4px;min-width:0}
+.proj-money-sym{font-size:10px;font-weight:700;color:#94a3b8;flex-shrink:0;font-family:var(--font-h)}
+.proj-cost-ic{font-size:8px;flex-shrink:0;opacity:.75}
+.proj-money-cost.has-fech{background:rgba(37,99,235,.05)!important}
+.proj-margin-pill{
+  display:inline-block;min-width:38px;padding:2px 7px;border-radius:20px;
+  font-family:var(--font-h);font-size:10.5px;font-weight:700;
+  border:1px solid transparent;text-align:center;
+}
+.proj-status-sel{border-radius:6px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 4px!important}
+.proj-status-sel.status-concluido{color:#15803d!important}
+.proj-status-sel.status-em_andamento{color:#1d4ed8!important}
+.proj-status-sel.status-pendente{color:#b45309!important}
+.proj-status-sel.status-cancelado{color:#b91c1c!important}
+.proj-td-actions{width:78px;text-align:right}
+.proj-row-actions{display:flex;gap:5px;justify-content:flex-end}
+.btn-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;padding:0;border-radius:7px;
+  background:#f1f4f8;border:1px solid #e2e7ee;color:#64748b;
+  cursor:pointer;transition:all .12s;font-size:11px;
+}
+.btn-icon:hover{background:#2563eb;border-color:#2563eb;color:#fff;transform:translateY(-1px);box-shadow:0 3px 8px rgba(37,99,235,.25)}
+.btn-icon-danger:hover{background:#dc2626;border-color:#dc2626;box-shadow:0 3px 8px rgba(220,38,38,.25)}
+.proj-month-sep td{
+  padding:9px 12px!important;background:#f4f6f9!important;
+  border-top:1px solid #e6eaef!important;border-bottom:1px solid #eef1f4!important;
+  font-family:var(--font-m);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:#8794a4;font-weight:700;
+}
+.proj-month-sep:hover td{background:#f4f6f9!important}
+
 /* Projetos — data de pagamento (evita texto branco em inputs date) */
 #projTable td.proj-payment-date input.ie-input[type="date"],
 #projTable input.ie-input[type="date"][data-f="payment_date"]{
@@ -3712,7 +3793,7 @@ body:has(#login-screen.visible){
         <div class="page-header">
           <div>
             <div class="page-title"><i class="fas fa-folder-open"></i> PROJETOS</div>
-            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Clique em um projeto ou em <b>Editar</b> para abrir a mesma ficha de criação</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Edite direto na planilha ou clique em <b>Editar</b> para abrir a ficha completa</div>
           </div>
           <div class="page-actions">
             <button class="btn btn-secondary btn-sm" onclick="exportProjectsCSV()"><i class="fas fa-download"></i> Exportar</button>
@@ -3779,10 +3860,34 @@ body:has(#login-screen.visible){
           <button class="btn btn-ghost btn-sm" onclick="clearProjFilters()"><i class="fas fa-times"></i> Limpar</button>
         </div>
 
-        <div id="projList" class="proj-list">
-          <div class="proj-empty"><i class="fas fa-spinner fa-spin"></i> Carregando projetos…</div>
+        <div class="proj-sheet-hint">
+          <i class="fas fa-table"></i>
+          <span><b>Modo planilha</b> — clique em qualquer célula para editar · <kbd>Enter</kbd>/<kbd>Tab</kbd> avança · arraste <i class="fas fa-grip-vertical"></i> para reordenar · <i class="fas fa-pen"></i> abre a ficha completa</span>
         </div>
-        <table id="projTable" style="display:none" aria-hidden="true"><tbody id="projBody"></tbody></table>
+        <div class="table-wrap proj-table-wrap">
+          <table class="hud-table projects-table" id="projTable">
+            <thead><tr>
+              <th style="width:26px;padding:0"></th>
+              <th style="width:24px;text-align:center">#</th>
+              <th>Cliente</th>
+              <th>Projeto</th>
+              <th class="sortable" onclick="sortProjCol('date')" style="width:118px">Data pgto <i class="fas fa-sort" id="siDate"></i></th>
+              <th class="sortable" onclick="sortProjCol('fat')" style="width:118px">Faturamento <i class="fas fa-sort" id="siVal"></i></th>
+              <th style="width:118px">Custo</th>
+              <th style="width:64px">Mês</th>
+              <th style="width:96px">Segmento</th>
+              <th style="width:56px;text-align:center">Margem</th>
+              <th style="width:52px;text-align:center">NPS</th>
+              <th style="width:118px">Status</th>
+              <th style="width:60px;text-align:center">Novo?</th>
+              <th style="width:78px;text-align:right">Ações</th>
+            </tr></thead>
+            <tbody id="projBody">
+              <tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando projetos…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="projList" class="proj-list" style="display:none" aria-hidden="true"></div>
       </div>
 
       <!-- ══════════════════════════════════
@@ -14837,7 +14942,8 @@ async function _loadProjectsWithAutoSync() {
     _projAutoSyncDone = true;
     /* Com Supabase como fonte: nunca rodar purge/sync da planilha embutida ao abrir a página */
     if(!SUPABASE_IS_SOURCE_OF_TRUTH) {
-      _projSetListHtml(`<div class="proj-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos…</div>`);
+      const _tb = document.getElementById('projBody');
+      if(_tb) _tb.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Sincronizando projetos…</td></tr>`;
       try {
         await purgeProjectsNotInSheet();
       } catch(e) {
@@ -14854,8 +14960,7 @@ async function loadProjects(opts) {
   initProjViewFromStorage();
   const tbody = document.getElementById('projBody');
   if(!quiet) {
-    _projSetListHtml(`<div class="proj-empty"><i class="fas fa-spinner fa-spin"></i> Carregando projetos…</div>`);
-    if(tbody) tbody.innerHTML = '';
+    if(tbody) tbody.innerHTML = `<tr><td colspan="14" class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando projetos…</td></tr>`;
   }
 
   try {
@@ -15008,7 +15113,8 @@ async function loadProjects(opts) {
 
   } catch(e) {
     console.error('loadProjects error:',e);
-    _projSetListHtml(`<div class="proj-empty">Erro ao carregar projetos.</div>`);
+    const tbody = document.getElementById('projBody');
+    if(tbody) tbody.innerHTML = `<tr><td colspan="14" class="table-empty">Erro ao carregar projetos.</td></tr>`;
   }
 }
 
@@ -15031,9 +15137,8 @@ function _projSetListHtml(html) {
 }
 
 function renderProjTable() {
-  const list = document.getElementById('projList');
   const tbody = document.getElementById('projBody');
-  if(!list && !tbody) return;
+  if(!tbody) return;
   let rows = [..._projCache];
   const mode = document.getElementById('fProjSort')?.value || 'date_desc';
   const view = document.getElementById('fProjView')?.value || 'flat';
@@ -15056,13 +15161,11 @@ function renderProjTable() {
   });
 
   if(!rows.length) {
-    const empty = `<div class="proj-empty">Nenhum projeto encontrado.<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openProjectModal()"><i class="fas fa-plus"></i> Novo Projeto</button></div>`;
-    _projSetListHtml(empty);
-    if(tbody) tbody.innerHTML = '';
+    tbody.innerHTML = `<tr><td colspan="14" class="table-empty">Nenhum projeto encontrado.<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openProjectModal()"><i class="fas fa-plus"></i> Novo Projeto</button></td></tr>`;
+    updateProjSortIcons();
     return;
   }
 
-  let html = '';
   if(view === 'by_month') {
     const monthName = (m) => (MONTHS && MONTHS[m - 1]) ? MONTHS[m - 1] : `Mês ${m}`;
     const getMonth = (p) => {
@@ -15071,68 +15174,137 @@ function renderProjTable() {
       const m = d.length >= 7 ? parseInt(d.substring(5, 7), 10) : (parseInt(p._sheetMes, 10) || 1);
       return Math.max(1, Math.min(12, m || 1));
     };
+    let html = '';
     let curM = null;
+    let rn = 1;
     rows.forEach(p => {
       const m = getMonth(p);
       if(curM !== m) {
         curM = m;
-        html += `<div class="proj-month-group">${monthName(m)}</div>`;
+        html += `<tr class="proj-month-sep"><td colspan="14">${monthName(m)}</td></tr>`;
       }
-      html += renderProjCard(p);
+      html += renderProjRow(p, rn++);
     });
+    tbody.innerHTML = html;
   } else {
-    html = rows.map(p => renderProjCard(p)).join('');
+    tbody.innerHTML = rows.map((p, i) => renderProjRow(p, i + 1)).join('');
   }
-  _projSetListHtml(html);
-  if(tbody) tbody.innerHTML = '';
+  updateProjSortIcons();
+  initProjDragDrop();
 }
 
-function renderProjCard(p) {
-  const val = parseFloat(p.total_value) || 0;
-  const cost = parseFloat(p.cost) || 0;
-  const pct = parseFloat(p.profit_pct) || (val > 0 ? Math.round((val - cost) / val * 100) : 0);
-  const st = String(p.status || 'pendente');
-  const cancelado = st === 'cancelado';
-  const isNew = p.is_new_client === true || p.is_new_client === 'true';
-  const pid = String(p.id || '');
-  const pidJs = pid.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const cli = escHtml(p.client_name || '—');
-  const name = escHtml(p.project_name || '—');
-  const seg = String(p.segment || '').trim();
-  const cat = String(p.category || '').trim();
-  const mCol = getMarginColor(pct);
-  const chips = [
-    `<span class="proj-chip status-${escAttr(st)}">${escHtml(_projStatusLabel(st))}</span>`,
-    seg ? `<span class="proj-chip">${escHtml(seg)}</span>` : '',
-    cat ? `<span class="proj-chip">${escHtml(cat)}</span>` : '',
-    `<span class="proj-chip">Pgto ${_projFmtPayDate(p)}</span>`,
-    isNew ? `<span class="proj-chip" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe">Novo cliente</span>` : '',
-    p._hasFech ? `<span class="proj-chip" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe"><i class="fas fa-link"></i> Fechamento</span>` : ''
-  ].filter(Boolean).join('');
-
-  return `<div class="proj-card${cancelado ? ' is-cancel' : ''}" data-pid="${escAttr(pid)}" onclick="editProject('${pidJs}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();editProject('${pidJs}')}">
-    <div class="proj-card-main">
-      <div class="proj-card-client">${cli}</div>
-      <div class="proj-card-name">${name}</div>
-      <div class="proj-card-meta">${chips}</div>
-    </div>
-    <div class="proj-card-side" onclick="event.stopPropagation()">
-      <div>
-        <div class="proj-card-val">${fmtBRL(val)}</div>
-        <div class="proj-card-sub">Custo ${fmtBRL(cost)} · <span style="color:${mCol};font-weight:700">${val > 0 ? pct.toFixed(0) + '%' : '—'}</span></div>
-      </div>
-      <div class="proj-card-actions">
-        <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="editProject('${pidJs}')" title="Abrir ficha completa"><i class="fas fa-pen"></i> Editar</button>
-        <button type="button" class="btn btn-danger btn-sm perm-guard-edit" onclick="deleteProject('${pidJs}','${escHtml(p.client_name||'').replace(/'/g,'')}')" title="Excluir"><i class="fas fa-trash"></i></button>
-      </div>
-    </div>
-  </div>`;
-}
-
-/** Legado — mantido para chamadas antigas; a UI atual usa cards. */
 function renderProjRow(p, rowNum) {
-  return renderProjCard(p);
+  const val   = parseFloat(p.total_value)||0;
+  const pct   = parseFloat(p.profit_pct)||0;
+  const nps   = parseFloat(p.nps)||0;
+  const isNew = p.is_new_client===true||p.is_new_client==='true';
+  const isFut = p.futuro === true;
+  const mCol  = getMarginColor(pct);
+  const sid   = p._sheetIdx ?? rowNum-1;
+  const cancelado = p.status==='cancelado';
+  const pid   = String(p.id || '');
+  const pidJs = pid.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+  const statOpts = [
+    ['concluido','CONCLUÍDO'],['em_andamento','EM ANDAMENTO'],
+    ['pendente','PENDENTE'],['cancelado','CANCELADO']
+  ].map(([v,l])=>`<option value="${v}"${v===p.status?' selected':''}>${l}</option>`).join('');
+
+  const mesCurrent = p._sheetMes || (p.payment_date?parseInt(p.payment_date.substring(5,7)):1);
+  const mesOpts = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    .map((m,i)=>`<option value="${i+1}"${(i+1)===mesCurrent?' selected':''}>${m}</option>`).join('');
+
+  const novOpts = `<option value="true"${isNew?' selected':''}>Sim</option><option value="false"${!isNew?' selected':''}>Não</option>`;
+
+  const payDateVal = p.payment_date || p._sheetPayDate || '';
+  const dbOnly = p._dbOnly === true;
+  const dragTitle = dbOnly ? 'Só no banco — arraste desativado' : 'Arrastar para reordenar';
+  const costNum = parseFloat(p.cost) || 0;
+
+  return `<tr class="proj-row${dbOnly?' proj-row-dbonly':''}${cancelado?' is-cancel':''}${isFut?' is-fut':''}" data-pid="${p.id}" data-sidx="${sid}" data-db-only="${dbOnly?'1':''}" draggable="${dbOnly?'false':'true'}" title="${isFut?'Projeto futuro — contrato assinado, ainda não realizado':''}">
+    <td class="proj-td-drag">
+      <span class="drag-handle" title="${dragTitle}" style="${dbOnly?'opacity:.25':''}"><i class="fas fa-grip-vertical"></i></span>
+    </td>
+    <td class="proj-td-num">
+      ${dbOnly ? '<span class="proj-tag proj-tag-bd">BD</span>' : (isFut ? '<span class="proj-tag proj-tag-fut">FUT</span>' : (rowNum||''))}
+    </td>
+    <td class="ie-cell" data-pid="${p.id}" data-f="client_name" data-sidx="${sid}" title="Clique para editar cliente" style="min-width:120px">
+      <input class="ie-input" data-pid="${p.id}" data-f="client_name" data-sidx="${sid}"
+        value="${escAttr(p.client_name)}" style="font-weight:700;color:var(--text)"
+        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+    </td>
+    <td class="ie-cell" data-pid="${p.id}" data-f="project_name" data-sidx="${sid}" title="Clique para editar projeto" style="min-width:120px">
+      <input class="ie-input" data-pid="${p.id}" data-f="project_name" data-sidx="${sid}"
+        value="${escAttr(p.project_name)}" style="color:var(--textsub)"
+        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+    </td>
+    <td class="ie-cell proj-payment-date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}" title="Data de pagamento — altera mês automaticamente" style="width:118px">
+      <input class="ie-input" type="date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}"
+        value="${escAttr(payDateVal)}" style="font-size:10px;color:#111111 !important;width:100%"
+        onblur="saveSheetCell(this)" onchange="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+    </td>
+    <td class="ie-cell proj-money-cell proj-money-fat" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}" title="Faturamento (${formatBRL(val)}) — clique para editar" style="width:118px">
+      <div class="proj-money-wrap">
+        <span class="proj-money-sym">R$</span>
+        <input class="ie-input" type="number" min="0" step="100" data-pid="${p.id}" data-f="total_value" data-sidx="${sid}"
+          value="${val}" style="flex:1;min-width:0;font-family:var(--font-h);font-size:12px;font-weight:700;color:var(--green)"
+          onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+      </div>
+    </td>
+    <td class="ie-cell proj-money-cell proj-money-cost${p._hasFech?' has-fech':''}" data-pid="${p.id}" data-f="cost" data-sidx="${sid}"
+        title="${p._hasFech ? 'Custo '+formatBRL(costNum)+' — vem do Fechamento — edite na aba Fechamento para propagar aqui' : 'Custo '+formatBRL(costNum)+' — manual — crie um Fechamento para vincular'}"
+        style="width:118px">
+      <div class="proj-money-wrap">
+        <span class="proj-money-sym">R$</span>
+        <input class="ie-input" type="number" min="0" step="100" data-pid="${p.id}" data-f="cost" data-sidx="${sid}"
+          value="${costNum}"
+          style="flex:1;min-width:0;font-family:var(--font-h);font-size:11px;font-weight:600;color:var(--red)"
+          onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+        ${p._hasFech
+          ? '<i class="fas fa-link proj-cost-ic" style="color:#2563eb" title="Vinculado ao Fechamento — alterações aqui propagam para o fechamento"></i>'
+          : '<i class="fas fa-pen proj-cost-ic" style="color:#aaa" title="Custo manual — sem fechamento vinculado"></i>'
+        }
+      </div>
+    </td>
+    <td class="ie-cell proj-col-mes" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" title="Clique para editar mês" style="width:64px">
+      <select class="ie-input mes-projeto" data-pid="${p.id}" data-f="mes" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px;color:#111111 !important;background:transparent;">
+        ${mesOpts}
+      </select>
+    </td>
+    <td class="ie-cell" data-pid="${p.id}" data-f="segment" data-sidx="${sid}" title="Clique para editar segmento" style="width:96px">
+      <input class="ie-input" data-pid="${p.id}" data-f="segment" data-sidx="${sid}"
+        value="${escAttr(p.segment)}" style="font-size:10px;color:var(--textsub)"
+        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+    </td>
+    <td class="proj-td-margin" style="width:56px;text-align:center">
+      <span class="proj-margin-pill" style="color:${mCol};background:${mCol}14;border-color:${mCol}33">${val>0&&pct>0?pct.toFixed(0)+'%':'—'}</span>
+    </td>
+    <td class="ie-cell" data-pid="${p.id}" data-f="nps" data-sidx="${sid}" title="Clique para editar NPS" style="width:52px">
+      <input class="ie-input" type="number" min="0" max="10" step="1" data-pid="${p.id}" data-f="nps" data-sidx="${sid}"
+        value="${nps||''}" placeholder="—" style="color:#d97706;text-align:center;font-weight:700"
+        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+    </td>
+    <td class="ie-cell proj-col-status" data-pid="${p.id}" data-f="status" data-sidx="${sid}" title="Clique para editar status" style="width:118px">
+      <select class="ie-input proj-status-sel status-${escAttr(p.status||'pendente')}" data-pid="${p.id}" data-f="status" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px">
+        ${statOpts}
+      </select>
+    </td>
+    <td class="ie-cell" data-pid="${p.id}" data-f="is_new_client" data-sidx="${sid}" title="Cliente novo?" style="width:60px;text-align:center">
+      <select class="ie-input" data-pid="${p.id}" data-f="is_new_client" data-sidx="${sid}" onchange="saveSheetCell(this)" style="font-size:10px;text-align:center">
+        ${novOpts}
+      </select>
+    </td>
+    <td class="proj-td-actions">
+      <div class="proj-row-actions">
+        <button type="button" class="btn btn-icon perm-guard-edit" onclick="editProject('${pidJs}')" title="Abrir ficha completa"><i class="fas fa-pen"></i></button>
+        <button type="button" class="btn btn-icon btn-icon-danger perm-guard-edit" onclick="deleteProject('${pidJs}','${escHtml(p.client_name||'').replace(/'/g,'')}')" title="Excluir"><i class="fas fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`;
 }
+
+/** Compat — a UI atual usa a tabela (renderProjRow). */
+function renderProjCard(p) { return renderProjRow(p, 1); }
 
 function renderProjKpis(rows) {
   let fat, lucro, margin, nTotal, ticket, avgNps, novos;
