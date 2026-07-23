@@ -285,6 +285,33 @@ function buildAnalysisPrompt(c: any, m: any) {
   // deno-lint-ignore no-explicit-any
   const top3Names = (m.top3 || []).map((t: any) => `${t.role_name} (${t.match_pct}%)`).join(', ');
 
+  const TECH_LEVEL_LABELS: Record<string, string> = {
+    iniciante: 'Iniciante (entrega com ajuda)', intermediario: 'Intermediário (dá conta do dia a dia)',
+    avancado: 'Avançado (resolve casos complexos e ajuda o time)', especialista: 'Especialista (referência técnica)'
+  };
+  const LEARNING_LABELS: Record<string, string> = {
+    pratica_rapido: 'Aprende fazendo, rápido', estrutura: 'Prefere material/curso/explicação antes',
+    observando: 'Aprende observando quem faz bem', tentativa_erro: 'Tentativa e erro até destravar'
+  };
+  const MISTAKE_STYLE_LABELS: Record<string, string> = {
+    assumo_na_hora: 'Assume na hora e corrige rápido', corrijo_depois_aviso: 'Corrige e depois comunica',
+    analiso_antes: 'Analisa a fundo antes de falar', evito_expor: 'Tem dificuldade de expor erros'
+  };
+  const PAY_DAYRATE_LABELS: Record<string, string> = {
+    nao_freela: 'Não trabalha por diária', ate_300: 'Até R$300', '300_500': 'R$300–500',
+    '500_800': 'R$500–800', '800_1200': 'R$800–1.200', '1200_2000': 'R$1.200–2.000', acima_2000: 'Acima de R$2.000'
+  };
+  const PAY_FIXED_LABELS: Record<string, string> = {
+    ate_1500: 'Até R$1.500', '1500_2500': 'R$1.500–2.500', '2500_4000': 'R$2.500–4.000',
+    '4000_6000': 'R$4.000–6.000', '6000_9000': 'R$6.000–9.000', acima_9000: 'Acima de R$9.000', negociar: 'Aberto a negociar'
+  };
+  const techLevelLabel = TECH_LEVEL_LABELS[c.tech_level] || '—';
+  const learningLabel = LEARNING_LABELS[c.learning_speed] || '—';
+  const mistakeStyleLabel = MISTAKE_STYLE_LABELS[c.mistake_style] || '—';
+  const dayRateLabel = PAY_DAYRATE_LABELS[c.day_rate_range] || '—';
+  const fixedLabel = PAY_FIXED_LABELS[c.fixed_salary_range] || '—';
+  const valuesLabel = (c.culture_values || []).join(', ') || '—';
+
   return `Analise este candidato da AGE SOCIALS.
 
 ## MATCHING AUTOMÁTICO (já calculado)
@@ -300,8 +327,14 @@ function buildAnalysisPrompt(c: any, m: any) {
 - Anos de experiência: ${c.experience_years ?? '—'}
 - Áreas de interesse marcadas: ${interestNames || '—'}
 - Ferramentas: ${(c.tools || []).join(', ') || '—'}
+- Nível técnico (autoavaliação): ${techLevelLabel}
+- Valores culturais que preza: ${valuesLabel}
+- Como aprende algo novo: ${learningLabel}
+- Como lida com os próprios erros: ${mistakeStyleLabel}
 - Rotina ideal: ${routineLabel}
 - Entrega em que rende melhor: ${deliveryLabel}
+- Pretensão por diária (freela): ${dayRateLabel}
+- Pretensão salário fixo (mensal): ${fixedLabel}
 
 ## RESPOSTAS ABERTAS
 
@@ -513,12 +546,18 @@ serve(async (req) => {
     experience_text: clampTxt(payload.experience_text, 4000),
     interests: strArrIn(payload.interests, 12),
     tools: strArrIn(payload.tools, 40),
+    tech_level: clampTxt(payload.tech_level, 40),
     style_profile: (payload.style_profile && typeof payload.style_profile === 'object') ? payload.style_profile : {},
+    culture_values: strArrIn(payload.culture_values, 20),
     culture_answer: clampTxt(payload.culture_answer, 4000),
+    learning_speed: clampTxt(payload.learning_speed, 40),
+    mistake_style: clampTxt(payload.mistake_style, 40),
     proud_project: clampTxt(payload.proud_project, 4000),
     mistake: clampTxt(payload.mistake, 4000),
     routine: clampTxt(payload.routine, 60),
     delivery: clampTxt(payload.delivery, 60),
+    day_rate_range: clampTxt(payload.day_rate_range, 40),
+    fixed_salary_range: clampTxt(payload.fixed_salary_range, 40),
     ref_source: clampTxt(payload.ref_source, 120),
     ip_address: ip,
     user_agent: ua,

@@ -21417,6 +21417,32 @@ const RECRUT_STYLE_LABELS = {
   structure:'Estrutura (fluido → planejado)', creative:'Criativo (analítico → conceitual)',
   social:'Social (foco individual → pessoas)', detail:'Detalhe (big picture → obcecado)'
 };
+const RECRUT_TECH_LEVEL_LABELS = {
+  iniciante:'Iniciante — entrega com ajuda', intermediario:'Intermediário — dá conta do dia a dia',
+  avancado:'Avançado — resolve casos complexos', especialista:'Especialista — referência técnica'
+};
+const RECRUT_LEARNING_LABELS = {
+  pratica_rapido:'Aprende fazendo, rápido', estrutura:'Prefere material/curso/explicação antes',
+  observando:'Aprende observando quem faz bem', tentativa_erro:'Tentativa e erro até destravar'
+};
+const RECRUT_MISTAKE_STYLE_LABELS = {
+  assumo_na_hora:'Assume na hora e corrige rápido', corrijo_depois_aviso:'Corrige e depois comunica',
+  analiso_antes:'Analisa a fundo antes de falar', evito_expor:'Tem dificuldade de expor erros'
+};
+const RECRUT_DAYRATE_LABELS = {
+  nao_freela:'Não trabalha por diária', ate_300:'Até R$ 300', '300_500':'R$ 300 – 500',
+  '500_800':'R$ 500 – 800', '800_1200':'R$ 800 – 1.200', '1200_2000':'R$ 1.200 – 2.000', acima_2000:'Acima de R$ 2.000'
+};
+const RECRUT_FIXED_LABELS = {
+  ate_1500:'Até R$ 1.500', '1500_2500':'R$ 1.500 – 2.500', '2500_4000':'R$ 2.500 – 4.000',
+  '4000_6000':'R$ 4.000 – 6.000', '6000_9000':'R$ 6.000 – 9.000', acima_9000:'Acima de R$ 9.000', negociar:'Aberto a negociar'
+};
+const RECRUT_VALUE_LABELS = {
+  autonomia:'Autonomia', transparencia:'Transparência', colaboracao:'Colaboração', excelencia:'Excelência / craft',
+  ritmo:'Ritmo e velocidade', aprendizado:'Aprendizado contínuo', proposito:'Propósito / impacto',
+  estabilidade:'Estabilidade', reconhecimento:'Reconhecimento', liberdade:'Liberdade criativa',
+  feedback:'Feedback direto', equilibrio:'Equilíbrio vida-trabalho'
+};
 
 let _recrutRows = [];
 
@@ -21630,13 +21656,31 @@ function _recrutDetailHtml(c, m, a) {
       <button class="btn btn-secondary btn-sm perm-guard-edit" onclick="recrutAnalyze('${escHtml(c.id)}')"><i class="fas fa-redo"></i> Rodar análise</button></div>`;
   }
 
+  const valuesLabel = (c.culture_values || []).map(v => RECRUT_VALUE_LABELS[v] || v).join(', ') || '—';
+
+  /* Remuneração + perfil (novos campos) */
+  const pay = `<div class="recrut-sec">
+    <div class="recrut-sec-title">Remuneração e perfil</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div><div class="recrut-q" style="margin-top:0">Diária (freela)</div><b style="font-size:13px">${escHtml(RECRUT_DAYRATE_LABELS[c.day_rate_range] || c.day_rate_range || '—')}</b></div>
+      <div><div class="recrut-q" style="margin-top:0">Salário fixo pretendido</div><b style="font-size:13px">${escHtml(RECRUT_FIXED_LABELS[c.fixed_salary_range] || c.fixed_salary_range || '—')}</b></div>
+      <div><div class="recrut-q" style="margin-top:0">Nível técnico</div><b style="font-size:13px">${escHtml(RECRUT_TECH_LEVEL_LABELS[c.tech_level] || c.tech_level || '—')}</b></div>
+    </div>
+  </div>`;
+
   /* Respostas completas */
   const answers = `<div class="recrut-sec">
     <div class="recrut-sec-title">Respostas completas</div>
     <div class="recrut-q">Trajetória profissional (${escHtml(String(c.experience_years ?? '—'))} anos)</div>
     <div class="recrut-answer">${escHtml(c.experience_text || '—')}</div>
+    <div class="recrut-q">Valores culturais que preza</div>
+    <div class="recrut-answer">${escHtml(valuesLabel)}</div>
     <div class="recrut-q">O que não pode faltar num lugar pra trabalhar bem</div>
     <div class="recrut-answer">${escHtml(c.culture_answer || '—')}</div>
+    <div class="recrut-q">Como aprende algo novo</div>
+    <div class="recrut-answer">${escHtml(RECRUT_LEARNING_LABELS[c.learning_speed] || c.learning_speed || '—')}</div>
+    <div class="recrut-q">Como lida com os próprios erros</div>
+    <div class="recrut-answer">${escHtml(RECRUT_MISTAKE_STYLE_LABELS[c.mistake_style] || c.mistake_style || '—')}</div>
     <div class="recrut-q">Projeto de orgulho</div>
     <div class="recrut-answer">${escHtml(c.proud_project || '—')}</div>
     <div class="recrut-q">Erro que ensinou algo</div>
@@ -21675,7 +21719,7 @@ function _recrutDetailHtml(c, m, a) {
     <div><div class="recrut-q" style="margin-top:0">Data</div>${_recrutFmtDate(c.created_at)}</div>
   </div>`;
 
-  return header + matchHtml + aiHtml + actions + answers;
+  return header + matchHtml + aiHtml + pay + actions + answers;
 }
 
 async function recrutSaveStatus(id) {

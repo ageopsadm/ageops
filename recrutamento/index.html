@@ -86,12 +86,18 @@
       experience_text: answers.experience,
       interests: answers.interests || [],
       tools: answers.tools || [],
+      tech_level: answers.techLevel || null,
       style_profile: answers.style || {},
+      culture_values: answers.values || [],
       culture_answer: answers.culture,
+      learning_speed: answers.learningSpeed || null,
+      mistake_style: answers.mistakeStyle || null,
       proud_project: answers.proudProject,
       mistake: answers.mistake,
       routine: answers.routine,
       delivery: answers.delivery,
+      day_rate_range: answers.dayRate || null,
+      fixed_salary_range: answers.fixedSalary || null,
       ref_source: window.AGE_REF_SOURCE,
       consent_lgpd: !!answers.consentLGPD
     };

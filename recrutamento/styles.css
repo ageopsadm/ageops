@@ -414,12 +414,16 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   border-bottom: 1px solid var(--ink-15);
+  flex-wrap: wrap;
 }
 .form-header-left {
   display: flex;
   align-items: center;
   gap: 20px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 .form-progress {
   font-family: var(--mono);
@@ -481,18 +485,22 @@ body {
 }
 .step-question {
   font-family: var(--serif);
-  font-size: clamp(38px, 5vw, 64px);
-  line-height: 1.02;
+  font-size: clamp(34px, 4.6vw, 58px);
+  line-height: 1.1;
   letter-spacing: -0.025em;
   font-weight: 400;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 .step-question .italic { font-style: italic; }
 .step-hint {
   font-size: 15px;
+  line-height: 1.5;
   color: var(--ink-70);
   margin-bottom: 40px;
-  max-width: 50ch;
+  max-width: 54ch;
 }
 
 /* Inputs */
@@ -538,6 +546,16 @@ body {
 .field input::placeholder, .field textarea::placeholder {
   color: var(--ink-40);
 }
+.field select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+}
+.field select option { font-size: 16px; color: var(--ink); }
 
 /* Chips */
 .chips {
@@ -672,8 +690,23 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   background: var(--paper);
 }
+.form-footer-hint {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-40);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.form-btn { flex-shrink: 0; }
 .form-btn {
   padding: 16px 32px;
   border-radius: 999px;
@@ -918,10 +951,21 @@ body {
   .hero { padding: 100px 24px 40px; }
   .nav { padding: 16px 20px; }
 }
+@media (max-width: 700px) {
+  .form-footer-hint { display: none; }
+  .form-footer { justify-content: space-between; }
+}
 @media (max-width: 600px) {
   .roles-grid { grid-template-columns: 1fr; }
   .nav-right { gap: 12px; }
   .nav-right span:not(.badge-mini) { display: none; }
-  .form-body { padding: 40px 20px; }
+  .form-body { padding: 40px 20px 32px; }
   .progress-bar { width: 100px; }
+  .step-question { font-size: clamp(28px, 8vw, 40px); }
+  .form-header { padding: 16px 20px; }
+  .form-footer { padding: 16px 20px; }
+  .form-btn { padding: 14px 22px; font-size: 14px; }
+  .radio-card { padding: 16px 18px; font-size: 15px; }
+  .field input, .field textarea, .field select { font-size: 18px; }
+  .slider-label { font-size: 19px; }
 }

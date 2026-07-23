@@ -167,3 +167,65 @@ window.DELIVERY_OPTIONS = [
   { id: 'production', label: 'Produção em set, câmera, luz', roles: ['filmmaker'] },
   { id: 'newbiz', label: 'Prospecção, pitch, novos negócios', roles: ['comercial'] }
 ];
+
+// Faixa cobrada por diária (freela)
+window.PAY_DAYRATE_OPTIONS = [
+  { id: 'nao_freela',  label: 'Ainda não trabalho por diária' },
+  { id: 'ate_300',     label: 'Até R$ 300 por diária' },
+  { id: '300_500',     label: 'R$ 300 – 500 por diária' },
+  { id: '500_800',     label: 'R$ 500 – 800 por diária' },
+  { id: '800_1200',    label: 'R$ 800 – 1.200 por diária' },
+  { id: '1200_2000',   label: 'R$ 1.200 – 2.000 por diária' },
+  { id: 'acima_2000',  label: 'Acima de R$ 2.000 por diária' }
+];
+
+// Faixa de salário mensal pretendido num trabalho fixo
+window.PAY_FIXED_OPTIONS = [
+  { id: 'ate_1500',    label: 'Até R$ 1.500 por mês' },
+  { id: '1500_2500',   label: 'R$ 1.500 – 2.500 por mês' },
+  { id: '2500_4000',   label: 'R$ 2.500 – 4.000 por mês' },
+  { id: '4000_6000',   label: 'R$ 4.000 – 6.000 por mês' },
+  { id: '6000_9000',   label: 'R$ 6.000 – 9.000 por mês' },
+  { id: 'acima_9000',  label: 'Acima de R$ 9.000 por mês' },
+  { id: 'negociar',    label: 'Aberto(a) a negociar' }
+];
+
+// Nível de capacidade técnica (autoavaliação)
+window.TECH_LEVEL_OPTIONS = [
+  { id: 'iniciante',     label: 'Iniciante — estou aprendendo, entrego com ajuda' },
+  { id: 'intermediario', label: 'Intermediário — dou conta do dia a dia sozinho(a)' },
+  { id: 'avancado',      label: 'Avançado — resolvo casos complexos e ajudo o time' },
+  { id: 'especialista',  label: 'Especialista — sou referência técnica e defino o padrão' }
+];
+
+// Valores / perfil cultural (múltipla escolha)
+window.VALUE_OPTIONS = [
+  { id: 'autonomia',     label: 'Autonomia' },
+  { id: 'transparencia', label: 'Transparência' },
+  { id: 'colaboracao',   label: 'Colaboração' },
+  { id: 'excelencia',    label: 'Excelência / craft' },
+  { id: 'ritmo',         label: 'Ritmo e velocidade' },
+  { id: 'aprendizado',   label: 'Aprendizado contínuo' },
+  { id: 'proposito',     label: 'Propósito / impacto' },
+  { id: 'estabilidade',  label: 'Estabilidade' },
+  { id: 'reconhecimento',label: 'Reconhecimento' },
+  { id: 'liberdade',     label: 'Liberdade criativa' },
+  { id: 'feedback',      label: 'Feedback direto' },
+  { id: 'equilibrio',    label: 'Equilíbrio vida-trabalho' }
+];
+
+// Facilidade de aprendizagem
+window.LEARNING_OPTIONS = [
+  { id: 'pratica_rapido',   label: 'Boto a mão na massa e aprendo fazendo, rápido' },
+  { id: 'estrutura',        label: 'Prefiro material, curso ou alguém explicando antes' },
+  { id: 'observando',       label: 'Aprendo observando quem já faz bem' },
+  { id: 'tentativa_erro',   label: 'Tentativa e erro até destravar sozinho(a)' }
+];
+
+// Como lida com os próprios erros (capacidade de assumir e errar rápido)
+window.MISTAKE_STYLE_OPTIONS = [
+  { id: 'assumo_na_hora',       label: 'Assumo na hora, aviso o time e corrijo rápido' },
+  { id: 'corrijo_depois_aviso', label: 'Corrijo primeiro e depois comunico o que rolou' },
+  { id: 'analiso_antes',        label: 'Analiso a fundo antes de falar, pra não repetir' },
+  { id: 'evito_expor',          label: 'Tenho dificuldade de expor meus erros' }
+];
