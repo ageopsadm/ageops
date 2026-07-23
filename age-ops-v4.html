@@ -1027,6 +1027,16 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .orc-status.recusado{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3}
 .orc-status.expirado{background:#fafafa;color:#94a3b8;border:1px solid #e2e8f0}
 
+/* modelos de orçamento */
+.orc-tpl-card{
+  background:linear-gradient(180deg,#faf5ff,#f5f3ff);
+  border:1px solid #e9d5ff;border-radius:9px;
+  padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  transition:box-shadow .15s,border-color .15s,transform .12s;
+}
+.orc-tpl-card:hover{box-shadow:0 4px 14px rgba(124,58,237,.14);border-color:#c4b5fd;transform:translateY(-1px)}
+.orc-tpl-name{font-family:var(--font-b);font-size:13px;font-weight:700;color:#111;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 /* catálogo de serviços */
 .orc-catalog-item{
   display:flex;align-items:center;justify-content:space-between;
@@ -4170,6 +4180,16 @@ body:has(#login-screen.visible){
           </div>
         </div>
 
+        <!-- Modelos de orçamento -->
+        <div id="orcTemplatesWrap" style="display:none;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <i class="fas fa-layer-group" style="color:#7c3aed;font-size:12px"></i>
+            <span style="font-family:var(--font-h);font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--text)">MODELOS DE ORÇAMENTO</span>
+            <span style="font-family:var(--font-m);font-size:10px;color:#94a3b8">clique em um modelo para gerar um novo orçamento a partir dele</span>
+          </div>
+          <div id="orcTemplatesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px"></div>
+        </div>
+
         <!-- Lista de orçamentos -->
         <div id="orcList" style="display:flex;flex-direction:column;gap:8px">
           <div style="text-align:center;padding:40px;color:#bbb;font-family:var(--font-m);font-size:11px">
@@ -4368,7 +4388,7 @@ body:has(#login-screen.visible){
                     <input type="number" id="orc-imposto" value="0" min="0" max="100" step="0.1" style="width:60px;text-align:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;color:#fff;padding:4px;font-size:14px" oninput="recalcularTotais()" onchange="recalcularTotais()" />
                   </div>
                   <div style="display:flex;justify-content:space-between">
-                    <span style="opacity:.7">Valor do imposto</span>
+                    <span style="opacity:.7">Valor do imposto <span style="opacity:.55;font-size:10px">(sobre subtotal + margem)</span></span>
                     <span id="orc-valor-imposto" style="color:#fb923c">R$ 0</span>
                   </div>
                   <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;gap:10px;font-size:11px;line-height:1.45">
@@ -4397,6 +4417,9 @@ body:has(#login-screen.visible){
                 </button>
                 <button type="button" onclick="salvarOrcamento('rascunho')" title="Salvar" style="padding:14px 20px;background:transparent;border:2px solid #000;border-radius:12px;cursor:pointer">
                   <i class="fas fa-save"></i>
+                </button>
+                <button type="button" onclick="salvarComoModelo()" title="Salvar como modelo reutilizável" style="padding:14px 20px;background:transparent;border:2px solid #000;border-radius:12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:var(--font-h);font-weight:700;font-size:12px">
+                  <i class="fas fa-layer-group"></i> MODELO
                 </button>
               </div>
             </div>
@@ -12945,17 +12968,18 @@ async function loadDashToolsPanorama(dbProjects, fechByProjectId) {
     cards.push(_dashToolCard({ icon: 'fa-wallet', color: saldo >= 0 ? '#16a34a' : '#dc2626', title: 'FLUXO DE CAIXA ' + ANO, value: fmtBRL(saldo), sub: 'entradas ' + fmtBRL(cRec) + ' · saídas ' + fmtBRL(cCusto), subColor: saldo >= 0 ? '#16a34a' : '#dc2626' }));
   }
 
-  /* ── Orçamentos ── */
-  if((orcs || []).length) {
+  /* ── Orçamentos ── (modelos ficam de fora das métricas) */
+  const orcsReais = (orcs || []).filter(o => !(o.is_template === true || o.status === 'modelo'));
+  if(orcsReais.length) {
     let oAprov = 0, oEnv = 0, oValProp = 0;
-    (orcs || []).forEach(o => {
+    orcsReais.forEach(o => {
       const st = String(o.status || 'rascunho').toLowerCase();
       const v = parseFloat(o.total_value ?? o.total ?? 0) || 0;
       if(st === 'aprovado') oAprov++;
       else if(st === 'enviado') { oEnv++; oValProp += v; }
     });
     const taxa = (oAprov + oEnv) > 0 ? Math.round(oAprov / (oAprov + oEnv) * 100) : 0;
-    cards.push(_dashToolCard({ icon: 'fa-file-invoice-dollar', color: '#2563eb', title: 'ORÇAMENTOS', value: orcs.length, sub: oAprov + ' aprovados · ' + oEnv + ' enviados' }));
+    cards.push(_dashToolCard({ icon: 'fa-file-invoice-dollar', color: '#2563eb', title: 'ORÇAMENTOS', value: orcsReais.length, sub: oAprov + ' aprovados · ' + oEnv + ' enviados' }));
     cards.push(_dashToolCard({ icon: 'fa-percentage', color: '#0891b2', title: 'EM PROPOSTA', value: fmtBRL(oValProp), sub: 'taxa aprovação ' + taxa + '%' }));
   }
 
@@ -18601,8 +18625,10 @@ function orcBuilderGetFinancials() {
   const totalDespesas = (window._orcDespesas || []).reduce((sum, d) => sum + (d.valor || 0), 0);
   const subtotal = totalEquipe + totalCatalogo + totalDespesas;
   const valorMargem = subtotal * margem;
-  const valorImposto = subtotal * imposto;
-  const totalFinal = subtotal + valorMargem + valorImposto;
+  const baseComMargem = subtotal + valorMargem;
+  /* Imposto incide sobre o total já com margem (não sobre o subtotal bruto) */
+  const valorImposto = baseComMargem * imposto;
+  const totalFinal = baseComMargem + valorImposto;
   const margemPct = parseFloat(document.getElementById('orc-margem')?.value || 0) || 0;
   const impostoPct = parseFloat(document.getElementById('orc-imposto')?.value || 0) || 0;
   const margemModo = _orcMargemModo();
@@ -18635,8 +18661,10 @@ function _orcFinancialsFromBuilder(b) {
   const totalDespesas = (b?.despesas || []).reduce((sum, d) => sum + (d.valor || 0), 0);
   const subtotal = totalEquipe + totalCatalogo + totalDespesas;
   const valorMargem = subtotal * margem;
-  const valorImposto = subtotal * imposto;
-  const totalFinal = subtotal + valorMargem + valorImposto;
+  const baseComMargem = subtotal + valorMargem;
+  /* Imposto incide sobre o total já com margem (não sobre o subtotal bruto) */
+  const valorImposto = baseComMargem * imposto;
+  const totalFinal = baseComMargem + valorImposto;
   const margemBrutaEquipe = totalEquipe - totalCustoEquipe;
   return {
     diarias, totalEquipe, totalCustoEquipe, margemBrutaEquipe, linhasEquipe,
@@ -19758,6 +19786,122 @@ async function salvarOrcamento(status) {
   }
 }
 
+/* ── Modelos de orçamento (templates reutilizáveis) ── */
+async function salvarComoModelo() {
+  const fin = orcBuilderGetFinancials();
+  if(fin.subtotal <= 0) { toast('Monte o orçamento (equipe, produtos ou despesas) antes de salvar como modelo', 'err'); return; }
+  const sugerido = document.getElementById('orc-titulo')?.value?.trim()
+    || document.getElementById('orc-cliente')?.value?.trim() || '';
+  const nome = (prompt('Nome do modelo (ex: "Vídeo institucional", "Cobertura de evento"):', sugerido) || '').trim();
+  if(!nome) return;
+
+  const builder = orcSerializeBuilder();
+  /* Um modelo é uma linha de age_orcamentos com status 'modelo' — sem precisar de migração.
+     O nome do modelo fica em client_name (e o título original em project_name). */
+  const payload = {
+    client_name: nome,
+    project_name: document.getElementById('orc-titulo')?.value?.trim() || nome,
+    client_contact: '',
+    date: null,
+    validity: null,
+    items_json: JSON.stringify(builder),
+    discounts_json: JSON.stringify([]),
+    subtotal: fin.subtotal,
+    total_discounts: 0,
+    imposto_pct: fin.impostoPct,
+    imposto_valor: fin.valorImposto,
+    total_value: fin.totalFinal,
+    payment_terms: document.getElementById('orc-pdf-resumo-pagamento')?.value?.trim() || '',
+    notes: document.getElementById('orc-descricao')?.value?.trim() || '',
+    status: 'modelo',
+    created_by: currentUser?.username || 'unknown'
+  };
+  Object.keys(payload).forEach(k => { if(payload[k] === undefined) delete payload[k]; });
+
+  try {
+    await apiPost('age_orcamentos', payload);
+    toast('Modelo salvo! Reutilize em novos orçamentos.');
+    loadOrcamentos();
+  } catch(e) {
+    console.error('[salvarComoModelo]', e);
+    toast('Erro ao salvar modelo', 'err');
+  }
+}
+
+function _orcItemsCount(o) {
+  try {
+    const j = JSON.parse(o.items_json || '[]');
+    if(j && typeof j === 'object' && j.version === 2) {
+      return (j.equipe || []).length
+        + (j.catalogo || []).filter(i => i.descricao).length
+        + (j.despesas || []).filter(d => d.descricao).length;
+    }
+    return Array.isArray(j) ? j.length : 0;
+  } catch(e) { return 0; }
+}
+
+function _orcRenderTemplates(templates) {
+  const wrap = document.getElementById('orcTemplatesWrap');
+  const list = document.getElementById('orcTemplatesList');
+  if(!wrap || !list) return;
+  if(!templates || !templates.length) {
+    wrap.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  wrap.style.display = 'block';
+  list.innerHTML = templates.map(o => {
+    const nome = escHtml(o.template_name || o.client_name || o.project_name || 'Modelo');
+    const n = _orcItemsCount(o);
+    return `
+    <div class="orc-tpl-card" onclick="openOrcFromTemplate('${o.id}')" title="Usar este modelo para um novo orçamento">
+      <div style="flex:1;min-width:0">
+        <div class="orc-tpl-name"><i class="fas fa-layer-group" style="color:#7c3aed;margin-right:6px"></i>${nome}</div>
+        <div class="orc-date" style="margin-top:4px">${n} item${n === 1 ? '' : 's'} · base ${fmtBRL(o.total_value || 0)}</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0" onclick="event.stopPropagation()">
+        <button onclick="openOrcFromTemplate('${o.id}')" class="btn btn-primary btn-sm" style="font-size:9px" title="Criar novo orçamento a partir deste modelo"><i class="fas fa-plus"></i> Usar</button>
+        <button onclick="deleteOrcTemplate('${o.id}')" class="btn btn-danger btn-sm" style="font-size:9px" title="Excluir modelo"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openOrcFromTemplate(id) {
+  try {
+    let o = await apiGet('age_orcamentos', `/${id}`).catch(() => null);
+    if(!o || !o.id) {
+      const list = await fetchAll('age_orcamentos', 300).catch(() => []);
+      o = list.find(x => x.id === id) || null;
+    }
+    if(!o) { toast('Modelo não encontrado', 'err'); return; }
+    /* Abre como NOVO orçamento (não edita o modelo) */
+    openOrcModal();
+    /* Carrega a composição do modelo, mas sem cliente/numero/datas do modelo */
+    loadOrcBuilderFromRow({ ...o, id: undefined, numero: '', client_name: '', date: '', validity: '', status: 'rascunho' });
+    _orcEditId = null;
+    const titleEl = document.getElementById('orcModalTitle');
+    if(titleEl) titleEl.textContent = 'NOVO — a partir de modelo';
+    const fc = document.getElementById('orc-cliente');
+    if(fc) setTimeout(() => fc.focus(), 60);
+    toast('Modelo carregado. Preencha o cliente e ajuste o que precisar.');
+  } catch(e) {
+    console.error('[openOrcFromTemplate]', e);
+    toast('Erro ao abrir modelo', 'err');
+  }
+}
+
+async function deleteOrcTemplate(id) {
+  if(!confirm('Excluir este modelo? Orçamentos já criados a partir dele não são afetados.')) return;
+  try {
+    await apiDel('age_orcamentos', id);
+    toast('Modelo excluído');
+    loadOrcamentos();
+  } catch(e) {
+    toast('Erro ao excluir modelo', 'err');
+  }
+}
+
 function gerarPDFCliente() {
   const client = document.getElementById('orc-cliente')?.value?.trim();
   if(!client) { toast('Informe o nome do cliente', 'err'); return; }
@@ -20605,8 +20749,13 @@ async function loadOrcamentos() {
   try { _orcCatEnsureLoaded(); } catch(_) {}
   if(!_orcCatSupabaseLoaded) { try { _orcCatLoadSupabase(); } catch(_) {} }
   try {
-    const orcs = await fetchAll('age_orcamentos', 200);
+    const all = await fetchAll('age_orcamentos', 200);
+    /* Modelos (is_template) ficam fora da lista/KPIs de orçamentos */
+    const templates = all.filter(o => o.is_template === true || o.status === 'modelo');
+    const orcs = all.filter(o => !(o.is_template === true || o.status === 'modelo'));
     orcs.sort((a,b)=>(b.created_at||0)-(a.created_at||0));
+    templates.sort((a,b)=>(b.created_at||0)-(a.created_at||0));
+    _orcRenderTemplates(templates);
 
     /* KPIs */
     const total  = orcs.length;
@@ -25706,6 +25855,7 @@ async function csOnNovoProjectChange(projectHint) {
     const projTitle = proj ? _ageProjDbTitle(proj).toLowerCase() : '';
     const orcs = await fetchAll('age_orcamentos', 300).catch(() => []);
     orcs.filter(_sbIsRowVisible).forEach(o => {
+      if(o.is_template === true || o.status === 'modelo') return;
       const oc = String(o.client_name || o.client || '').trim().toLowerCase();
       if(!client || oc !== client) return;
       const opn = String(o.project_name || '').trim().toLowerCase();
