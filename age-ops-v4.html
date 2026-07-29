@@ -670,6 +670,7 @@ button.perm-disabled,.btn.perm-disabled{
 .proj-tag{display:inline-block;font-size:7px;font-weight:800;border-radius:4px;padding:1px 4px;letter-spacing:.5px}
 .proj-tag-bd{background:#e0e7ff;color:#4338ca}
 .proj-tag-fut{background:#dbeafe;color:#1d4ed8}
+.proj-tag-rec{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
 .proj-money-wrap{display:flex;align-items:center;gap:4px;min-width:0}
 .proj-money-sym{font-size:10px;font-weight:700;color:#94a3b8;flex-shrink:0;font-family:var(--font-h)}
 .proj-cost-ic{font-size:8px;flex-shrink:0;opacity:.75}
@@ -3460,6 +3461,9 @@ body:has(#login-screen.visible){
       <button type="button" class="nav-item" data-page="recrutamento" data-perm-module="equipe" onclick="navigate('recrutamento')">
         <i class="fas fa-user-plus"></i><span>RECRUTAMENTO</span>
       </button>
+      <button type="button" class="nav-item" data-page="entregas" data-perm-module="gestao" onclick="navigate('entregas')">
+        <i class="fas fa-truck-loading"></i><span>ENTREGAS</span>
+      </button>
       </div>
 
       <div id="sidebarPersonalStaff">
@@ -4186,6 +4190,70 @@ body:has(#login-screen.visible){
         <!-- Board Kanban -->
         <div id="kanbanBoard" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:16px;align-items:flex-start;min-height:calc(100vh - 260px)"></div>
       </div>
+
+      <!-- ══════════════════════════════════
+           ENTREGAS & DIÁRIAS (time)
+      ══════════════════════════════════ -->
+      <div id="page-entregas" class="page">
+        <div class="page-header">
+          <div>
+            <div class="page-title"><i class="fas fa-truck-loading"></i> ENTREGAS &amp; DIÁRIAS</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Acompanhe entregas, responsáveis e diárias de gravação por projeto</div>
+          </div>
+          <div class="page-actions" style="gap:8px">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadEntregasPage()"><i class="fas fa-sync-alt"></i></button>
+            <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="openEntregaModal()"><i class="fas fa-plus"></i> Nova entrega</button>
+            <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="openDiariaModal()"><i class="fas fa-calendar-day"></i> Nova diária</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <div class="kpi-card" style="padding:8px 14px;flex:1;min-width:100px;border-left:3px solid #d97706">
+            <div class="kpi-label">ENTREGAS PENDENTES</div>
+            <div class="kpi-val" id="entKpiPend" style="font-size:16px;color:#d97706">—</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 14px;flex:1;min-width:100px;border-left:3px solid #2563eb">
+            <div class="kpi-label">EM ANDAMENTO / ENVIADAS</div>
+            <div class="kpi-val blue" id="entKpiProg" style="font-size:16px">—</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 14px;flex:1;min-width:100px;border-left:3px solid #16a34a">
+            <div class="kpi-label">APROVADAS</div>
+            <div class="kpi-val green" id="entKpiOk" style="font-size:16px">—</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 14px;flex:1;min-width:100px;border-left:3px solid #7c3aed">
+            <div class="kpi-label">DIÁRIAS (MÊS)</div>
+            <div class="kpi-val" id="entKpiDia" style="font-size:16px;color:#7c3aed">—</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+          <select id="entFilterStatus" onchange="renderEntregasPage()" class="cf-select" style="height:32px;min-width:140px">
+            <option value="">Todos status</option>
+            <option value="pendente">Pendente</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="enviada">Enviada</option>
+            <option value="aprovada">Aprovada</option>
+            <option value="ajustes">Em ajustes</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+          <select id="entFilterAssignee" onchange="renderEntregasPage()" class="cf-select" style="height:32px;min-width:160px">
+            <option value="">Todos responsáveis</option>
+          </select>
+          <input type="text" id="entSearch" placeholder="Buscar projeto, cliente, título…" oninput="renderEntregasPage()" style="height:32px;font-size:11px;min-width:180px;border:1px solid rgba(0,0,0,.12);border-radius:5px;padding:0 10px;flex:1">
+        </div>
+
+        <div class="ent-layout" style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:start">
+          <div>
+            <div style="font-family:var(--font-h);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--textsub);margin-bottom:8px"><i class="fas fa-box-open"></i> Entregas</div>
+            <div id="entList" class="table-wrap"><div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div></div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-h);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--textsub);margin-bottom:8px"><i class="fas fa-calendar-day"></i> Próximas diárias</div>
+            <div id="entDiariasList" class="table-wrap"><div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div></div>
+          </div>
+        </div>
+      </div>
+      <style>@media(max-width:900px){#page-entregas .ent-layout{grid-template-columns:1fr!important}#projPortalWrap > div[style*="grid-template"]{grid-template-columns:1fr!important}}</style>
 
       <!-- ══════════════════════════════════
            ORÇAMENTOS PAGE
@@ -5731,6 +5799,43 @@ body:has(#login-screen.visible){
       </div>
     </div>
 
+    <!-- Portal do cliente + entregas/diárias do projeto -->
+    <div id="projPortalWrap" style="display:none;margin-top:18px;border-top:1px dashed var(--bd);padding-top:14px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <div style="font-family:var(--font-h),sans-serif;font-size:11px;letter-spacing:2px;color:var(--textsub);display:flex;align-items:center;gap:8px">
+            <i class="fas fa-user-lock"></i> PORTAL DO CLIENTE
+          </div>
+          <div style="font-family:var(--font-m);font-size:10px;color:var(--textsub);margin-top:4px;line-height:1.4">Gere um link para o cliente se cadastrar e acompanhar diárias, entregas e pagamentos.</div>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm perm-guard-edit" onclick="convidarClientePortal()"><i class="fas fa-link"></i> Convidar cliente</button>
+      </div>
+      <div id="projPortalLinkBox" style="display:none;margin-bottom:14px">
+        <input id="projPortalLinkText" type="text" readonly style="width:100%;height:36px;font-size:12px;border:1px solid var(--bd);border-radius:8px;padding:0 10px;background:#f8fafc">
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="copiarPortalLink()"><i class="fas fa-copy"></i> Copiar</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="compartilharPortalWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+            <div style="font-family:var(--font-h);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#0f172a"><i class="fas fa-calendar-day"></i> Diárias</div>
+            <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="openDiariaModalFromProject()"><i class="fas fa-plus"></i></button>
+          </div>
+          <div id="projDiariasList" style="font-family:var(--font-m);font-size:11px;color:var(--textsub)">Salve o projeto para gerenciar diárias.</div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+            <div style="font-family:var(--font-h);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#0f172a"><i class="fas fa-box-open"></i> Entregas</div>
+            <button type="button" class="btn btn-ghost btn-sm perm-guard-edit" onclick="openEntregaModalFromProject()"><i class="fas fa-plus"></i></button>
+          </div>
+          <div id="projEntregasList" style="font-family:var(--font-m);font-size:11px;color:var(--textsub)">Salve o projeto para gerenciar entregas.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Ficha integrada: relacionados (pagamentos, conteúdos, tarefas) -->
     <div id="projRelacionadosWrap" style="display:none;margin-top:18px;border-top:1px dashed var(--bd);padding-top:14px">
       <div style="font-family:var(--font-h),sans-serif;font-size:11px;letter-spacing:2px;color:var(--textsub);margin-bottom:10px;display:flex;align-items:center;gap:8px">
@@ -5739,9 +5844,127 @@ body:has(#login-screen.visible){
       <div id="projRelacionados"></div>
     </div>
 
-    <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end">
-      <button class="btn btn-ghost" onclick="closeModal('modalProject')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveProject()"><i class="fas fa-save"></i> Salvar</button>
+    <div style="display:flex;gap:8px;margin-top:18px;justify-content:space-between;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" id="pBtnDuplicate" class="btn btn-ghost perm-guard-edit" style="display:none" onclick="duplicateProjectFromModal()"><i class="fas fa-copy"></i> Duplicar</button>
+        <button type="button" id="pBtnRecurring" class="btn btn-ghost perm-guard-edit" style="display:none" onclick="openProjRecorrenteFromModal()"><i class="fas fa-redo"></i> Recorrente</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-ghost" onclick="closeModal('modalProject')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveProject()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Projeto Recorrente -->
+<div class="modal" id="modalProjRecorrente">
+  <div class="modal-box" style="max-width:440px;width:96vw">
+    <div class="modal-title">
+      <span>PROJETO RECORRENTE</span>
+      <button onclick="closeModal('modalProjRecorrente')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="projRecId">
+    <div style="font-family:var(--font-m);font-size:12px;color:var(--textsub);line-height:1.45;margin-bottom:14px">
+      Gera uma série mensal a partir deste projeto: o atual fica como mês 1 e criamos os demais meses com o mesmo valor, cliente e equipe.
+    </div>
+    <div id="projRecSummary" style="font-family:var(--font-m);font-size:12px;padding:10px 12px;background:#f8fafc;border:1px solid var(--bd);border-radius:8px;margin-bottom:14px"></div>
+    <div class="form-group">
+      <label class="form-label">DURAÇÃO</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <button type="button" class="btn btn-ghost proj-rec-opt" data-months="3" onclick="selectProjRecMonths(3)">3 meses</button>
+        <button type="button" class="btn btn-ghost proj-rec-opt" data-months="6" onclick="selectProjRecMonths(6)">6 meses</button>
+        <button type="button" class="btn btn-ghost proj-rec-opt" data-months="12" onclick="selectProjRecMonths(12)">12 meses</button>
+      </div>
+    </div>
+    <div style="font-family:var(--font-m);font-size:11px;color:var(--textsub);margin-top:10px" id="projRecHint">Selecione a duração da recorrência.</div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalProjRecorrente')">Cancelar</button>
+      <button class="btn btn-primary" id="projRecConfirmBtn" onclick="confirmProjRecorrente()" disabled><i class="fas fa-redo"></i> Gerar série</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Entrega -->
+<div class="modal" id="modalEntrega">
+  <div class="modal-box" style="max-width:520px;width:96vw">
+    <div class="modal-title">
+      <span id="modalEntregaTitle">NOVA ENTREGA</span>
+      <button onclick="closeModal('modalEntrega')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="entId">
+    <input type="hidden" id="entProjectId">
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1" id="entProjectPickRow">
+        <label class="form-label">PROJETO *</label>
+        <select id="entProjectPick"></select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">TÍTULO *</label>
+        <input id="entTitle" type="text" placeholder="Ex.: Corte final Instagram 9:16">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">DESCRIÇÃO</label>
+        <textarea id="entDesc" rows="2" style="width:100%;resize:vertical;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:var(--font-b);font-size:13px"></textarea>
+      </div>
+      <div class="form-group"><label class="form-label">PRAZO</label><input id="entDue" type="date"></div>
+      <div class="form-group"><label class="form-label">STATUS</label>
+        <select id="entStatus">
+          <option value="pendente">Pendente</option>
+          <option value="em_andamento">Em andamento</option>
+          <option value="enviada">Enviada</option>
+          <option value="aprovada">Aprovada</option>
+          <option value="ajustes">Em ajustes</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">RESPONSÁVEL</label><select id="entAssignee"></select></div>
+      <div class="form-group"><label class="form-label">LINK / ARQUIVO</label><input id="entFileUrl" type="url" placeholder="https://…"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalEntrega')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEntrega()"><i class="fas fa-save"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Diária -->
+<div class="modal" id="modalDiaria">
+  <div class="modal-box" style="max-width:520px;width:96vw">
+    <div class="modal-title">
+      <span id="modalDiariaTitle">NOVA DIÁRIA</span>
+      <button onclick="closeModal('modalDiaria')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="diaId">
+    <input type="hidden" id="diaProjectId">
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1" id="diaProjectPickRow">
+        <label class="form-label">PROJETO *</label>
+        <select id="diaProjectPick"></select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">TÍTULO</label>
+        <input id="diaTitle" type="text" placeholder="Diária de gravação" value="Diária de gravação">
+      </div>
+      <div class="form-group"><label class="form-label">DATA *</label><input id="diaDate" type="date"></div>
+      <div class="form-group"><label class="form-label">STATUS</label>
+        <select id="diaStatus">
+          <option value="pendente">Pendente</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="executada">Executada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">LOCAL</label><input id="diaLoc" type="text" placeholder="Estúdio / endereço"></div>
+      <div class="form-group"><label class="form-label">RESPONSÁVEL</label><select id="diaAssignee"></select></div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">OBS</label>
+        <textarea id="diaNotes" rows="2" style="width:100%;resize:vertical;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:var(--font-b);font-size:13px"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalDiaria')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveDiaria()"><i class="fas fa-save"></i> Salvar</button>
     </div>
   </div>
 </div>
@@ -7092,8 +7315,9 @@ const PAGE_PERM_KEYS = {
   pipeline: ['pipeline'],
   postagens: ['pipeline'],
   'conteudos-sociais': ['pipeline', 'projetos'],
-  gestao: ['gestao'],
-  orcamentos: ['orcamentos'],
+      gestao: ['gestao'],
+      entregas: ['gestao', 'projetos'],
+      orcamentos: ['orcamentos'],
   clientes: ['clientes'],
   contratos: ['contratos'],
   pagamentos: ['pagamentos', 'financeiro'],
@@ -11056,7 +11280,8 @@ function initRefFromUrl() {
 ═══════════════════════════════════════════ */
 const PAGE_TITLES = {
   'plan-upgrade':'PLANOS', notificacoes:'NOTIFICAÇÕES', dashboard:'DASHBOARD 2026', projects:'PROJETOS', fechamento:'FECHAMENTO',
-  historico:'HISTÓRICO', clientes:'CLIENTES', gestao:'GESTÃO DE PROJETOS', orcamentos:'ORÇAMENTOS',
+  historico:'HISTÓRICO', clientes:'CLIENTES',   gestao:'GESTÃO DE PROJETOS', orcamentos:'ORÇAMENTOS',
+  entregas:'ENTREGAS & DIÁRIAS',
   contratos:'CONTRATOS',
   pagamentos:'PAGAMENTOS',
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA', recrutamento:'RECRUTAMENTO',
@@ -11119,6 +11344,7 @@ function navigate(page) {
   if(page==='historico')    loadHistorico();
   if(page==='clientes')     loadClientes();
   if(page==='gestao')       loadKanban();
+  if(page==='entregas')     loadEntregasPage();
   if(page==='orcamentos')   loadOrcamentos();
   if(page==='contratos')    loadContratosPage();
   if(page==='pagamentos')   loadPagamentosPage();
@@ -11201,7 +11427,7 @@ const TENANT_SCOPED_TABLES = new Set([
   'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
   'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
   'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow','age_social_posts',
-  'age_support_tickets'
+  'age_support_tickets','age_project_deliveries','age_project_diarias','age_client_users','age_client_invites'
 ]);
 
 function _tenantCidForScope() {
@@ -15142,12 +15368,22 @@ async function loadProjects(opts) {
           segment: p.segment || '',
           project_date: p.project_date || null,
           payment_date: p.payment_date || null,
+          due_date: p.due_date || null,
+          delivery_date: p.delivery_date || null,
+          recording_date: p.recording_date || null,
           total_value: fat,
           cost: costFinal,
           profit_pct: p.profit_pct != null ? parseFloat(p.profit_pct) : margin,
           nps: parseFloat(p.nps) || 0,
           is_new_client: p.is_new_client === true || p.is_new_client === 'true',
           status: p.status || 'pendente',
+          assignees_json: p.assignees_json || null,
+          is_recurring: p.is_recurring === true || p.is_recurring === 'true',
+          recurring_months: p.recurring_months != null ? parseInt(p.recurring_months, 10) : null,
+          recurring_group_id: p.recurring_group_id || null,
+          recurring_index: p.recurring_index != null ? parseInt(p.recurring_index, 10) : null,
+          recurring_parent_id: p.recurring_parent_id || null,
+          company_id: p.company_id || null,
           _sheetIdx: idx,
           _sheetMes: mesFromDate || 1,
           _hasFech: !!fech,
@@ -15213,12 +15449,22 @@ async function loadProjects(opts) {
         segment:      p.segment || '',
         project_date: p.project_date || null,
         payment_date: p.payment_date || null,
+        due_date: p.due_date || null,
+        delivery_date: p.delivery_date || null,
+        recording_date: p.recording_date || null,
         total_value:  fat,
         cost:         costFinal,
         profit_pct:   p.profit_pct != null ? parseFloat(p.profit_pct) : margin,
         nps:          parseFloat(p.nps)||0,
         is_new_client:p.is_new_client === true || p.is_new_client === 'true',
         status:       p.status || 'pendente',
+        assignees_json: p.assignees_json || null,
+        is_recurring: p.is_recurring === true || p.is_recurring === 'true',
+        recurring_months: p.recurring_months != null ? parseInt(p.recurring_months, 10) : null,
+        recurring_group_id: p.recurring_group_id || null,
+        recurring_index: p.recurring_index != null ? parseInt(p.recurring_index, 10) : null,
+        recurring_parent_id: p.recurring_parent_id || null,
+        company_id: p.company_id || null,
         _sheetIdx:    extraSheetIdx++,
         _sheetMes:    mesFromDate || 1,
         _hasFech:     !!fech,
@@ -15383,9 +15629,12 @@ function renderProjRow(p, rowNum) {
         onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
     </td>
     <td class="ie-cell" data-pid="${p.id}" data-f="project_name" data-sidx="${sid}" title="Clique para editar projeto" style="min-width:120px">
-      <input class="ie-input" data-pid="${p.id}" data-f="project_name" data-sidx="${sid}"
-        value="${escAttr(p.project_name)}" style="color:var(--textsub)"
-        onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+      <div style="display:flex;align-items:center;gap:6px;min-width:0">
+        <input class="ie-input" data-pid="${p.id}" data-f="project_name" data-sidx="${sid}"
+          value="${escAttr(p.project_name)}" style="color:var(--textsub);flex:1;min-width:0"
+          onblur="saveSheetCell(this)" onkeydown="ieKeydown(event,this)">
+        ${p.is_recurring ? `<span class="proj-tag proj-tag-rec" title="Recorrente ${escAttr(String(p.recurring_months||''))} meses · #${escAttr(String(p.recurring_index||''))}">REC${p.recurring_months?` ${p.recurring_months}m`:''}</span>` : ''}
+      </div>
     </td>
     <td class="ie-cell proj-payment-date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}" title="Data de pagamento — altera mês automaticamente" style="width:118px">
       <input class="ie-input" type="date" data-pid="${p.id}" data-f="payment_date" data-sidx="${sid}"
@@ -15446,6 +15695,8 @@ function renderProjRow(p, rowNum) {
     <td class="proj-td-actions">
       <div class="proj-row-actions">
         <button type="button" class="btn btn-icon perm-guard-edit" onclick="editProject('${pidJs}')" title="Abrir ficha completa"><i class="fas fa-pen"></i></button>
+        <button type="button" class="btn btn-icon perm-guard-edit" onclick="duplicateProject('${pidJs}')" title="Duplicar projeto"><i class="fas fa-copy"></i></button>
+        <button type="button" class="btn btn-icon perm-guard-edit" onclick="openProjRecorrenteModal('${pidJs}')" title="Tornar recorrente (3/6/12 meses)"><i class="fas fa-redo"></i></button>
         <button type="button" class="btn btn-icon btn-icon-danger perm-guard-edit" onclick="deleteProject('${pidJs}','${escHtml(p.client_name||'').replace(/'/g,'')}')" title="Excluir"><i class="fas fa-trash"></i></button>
       </div>
     </td>
@@ -16202,6 +16453,11 @@ function openProjectModal(proj=null) {
   const canAssign = typeof hasModuleEditForPage === 'function' && hasModuleEditForPage('projetos');
   _projAssignSetSelected(_projAssigneesFromProject(proj));
   if(par) par.style.display = canAssign ? '' : 'none';
+  const realPidEarly = proj?.id && !String(proj.id).startsWith('sheet_') ? proj.id : null;
+  const btnDup = document.getElementById('pBtnDuplicate');
+  const btnRec = document.getElementById('pBtnRecurring');
+  if(btnDup) btnDup.style.display = realPidEarly ? '' : 'none';
+  if(btnRec) btnRec.style.display = realPidEarly ? '' : 'none';
   loadProjectCosts(proj?.id).catch(()=>{});
   openModal('modalProject');
   try {
@@ -16210,10 +16466,25 @@ function openProjectModal(proj=null) {
   } catch(_) {}
   _populateProjectAssignSelect().catch(()=>{});
   const relWrap = document.getElementById('projRelacionadosWrap');
-  const realPid = proj?.id && !String(proj.id).startsWith('sheet_') ? proj.id : null;
+  const portalWrap = document.getElementById('projPortalWrap');
+  const realPid = realPidEarly;
   if(relWrap) {
     if(realPid) { relWrap.style.display = ''; loadProjectRelated(realPid).catch(()=>{}); }
     else { relWrap.style.display = 'none'; const r = document.getElementById('projRelacionados'); if(r) r.innerHTML = ''; }
+  }
+  if(portalWrap) {
+    if(realPid) {
+      portalWrap.style.display = '';
+      loadProjectPortalLists(realPid).catch(()=>{});
+    } else {
+      portalWrap.style.display = 'none';
+      const pl = document.getElementById('projPortalLinkBox');
+      if(pl) pl.style.display = 'none';
+      const d = document.getElementById('projDiariasList');
+      const e = document.getElementById('projEntregasList');
+      if(d) d.innerHTML = 'Salve o projeto para gerenciar diárias.';
+      if(e) e.innerHTML = 'Salve o projeto para gerenciar entregas.';
+    }
   }
 }
 
@@ -16592,6 +16863,246 @@ function deleteProject(id, name) {
       toast('Erro ao excluir projeto. Tente novamente.', 'err');
     }
   });
+}
+
+/* ── Duplicar / Recorrente (3·6·12 meses) ── */
+function _projAddMonths(isoDate, months) {
+  if(!isoDate) return null;
+  const s = String(isoDate).slice(0, 10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if(!m) return s;
+  const y = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10) - 1;
+  const d = parseInt(m[3], 10);
+  const dt = new Date(Date.UTC(y, mo + months, 1));
+  const last = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
+  dt.setUTCDate(Math.min(d, last));
+  return dt.toISOString().slice(0, 10);
+}
+
+function _projNewGroupId() {
+  try {
+    if(typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  } catch(_) {}
+  return 'rg-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+function _projMonthLabel(isoDate) {
+  if(!isoDate) return '';
+  const s = String(isoDate).slice(0, 10);
+  const mo = parseInt(s.slice(5, 7), 10);
+  const yr = s.slice(2, 4);
+  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return (names[mo - 1] || '') + '/' + yr;
+}
+
+function _projStripMonthSuffix(name) {
+  return String(name || '').replace(/\s·\s(?:Jan|Fev|Mar|Abr|Mai|Jun|Jul|Ago|Set|Out|Nov|Dez)\/\d{2}$/i, '').trim();
+}
+
+async function _projFetchSource(id) {
+  const sid = String(id || '');
+  if(!sid || sid.startsWith('sheet_')) return null;
+  const fromCache = (_projAllCache || []).find(p => String(p.id) === sid)
+    || (_projCache || []).find(p => String(p.id) === sid);
+  try {
+    const p = await apiGet('age_projects', `/${sid}`);
+    if(p && p.id) return { ...(fromCache || {}), ...p };
+  } catch(e) {
+    console.warn('[_projFetchSource]', e);
+  }
+  return fromCache || null;
+}
+
+function _projClonePayload(src, opts) {
+  const o = opts || {};
+  const shift = o.monthShift || 0;
+  const titleBase = _projStripMonthSuffix(_ageProjDbTitle(src) || src.project_name || src.title || 'Projeto');
+  let project_name = titleBase;
+  if(o.nameSuffix) project_name = `${titleBase}${o.nameSuffix}`;
+  else if(o.appendMonthLabel) {
+    const baseDate = src.payment_date || src.project_date || new Date().toISOString().slice(0, 10);
+    const shifted = _projAddMonths(baseDate, shift) || baseDate;
+    project_name = `${titleBase} · ${_projMonthLabel(shifted)}`;
+  }
+
+  const shiftDate = (d) => d ? _projAddMonths(d, shift) : null;
+  const pay = shiftDate(src.payment_date) || (shift ? _projAddMonths(new Date().toISOString().slice(0, 10), shift) : (src.payment_date || null));
+  const assignees = _projAssigneesFromProject(src);
+
+  const payload = {
+    client_name: _ageProjDbClient(src) || src.client_name || '',
+    project_name,
+    title: project_name,
+    category: src.category || 'Vídeo',
+    segment: src.segment || '',
+    project_date: shiftDate(src.project_date),
+    payment_date: pay,
+    due_date: shiftDate(src.due_date),
+    delivery_date: shiftDate(src.delivery_date),
+    recording_date: shiftDate(src.recording_date),
+    total_value: parseFloat(src.total_value) || 0,
+    cost: parseFloat(src.cost) || 0,
+    profit_pct: parseFloat(src.profit_pct) || 0,
+    nps: 0,
+    is_new_client: false,
+    status: o.status || 'pendente',
+    created_by: currentUser?.username || 'unknown',
+    company_id: src.company_id || currentUser?.company_id || null,
+    assignees_json: assignees.length ? JSON.stringify(assignees) : '[]'
+  };
+
+  if(o.recurring) {
+    payload.is_recurring = true;
+    payload.recurring_months = o.recurringMonths;
+    payload.recurring_group_id = o.groupId;
+    payload.recurring_index = o.index;
+    payload.recurring_parent_id = o.parentId;
+  }
+
+  return payload;
+}
+
+async function duplicateProject(id) {
+  if(!id || String(id).startsWith('sheet_')) {
+    toast('Sincronize o projeto com o banco antes de duplicar.', 'warn');
+    return;
+  }
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('projetos')) {
+    toast('Sem permissão para duplicar projetos.', 'warn');
+    return;
+  }
+  const src = await _projFetchSource(id);
+  if(!src) { toast('Projeto não encontrado.', 'err'); return; }
+  const label = _ageProjDbTitle(src) || 'projeto';
+  confirm2(`Duplicar "${label}" para o próximo mês?`, async () => {
+    try {
+      const payload = _projClonePayload(src, { monthShift: 1, nameSuffix: ' (cópia)' });
+      await _ageWriteResilient('age_projects', 'POST', null, payload);
+      toast('Projeto duplicado!', 'ok');
+      closeModal('modalProject');
+      await loadProjects();
+      SYNC.emit('project:created', {});
+    } catch(e) {
+      console.error('[duplicateProject]', e);
+      toast('Erro ao duplicar projeto.', 'err');
+    }
+  });
+}
+
+function duplicateProjectFromModal() {
+  const id = document.getElementById('pId')?.value?.trim();
+  if(!id) { toast('Salve o projeto antes de duplicar.', 'warn'); return; }
+  duplicateProject(id);
+}
+
+let _projRecMonths = 0;
+
+function selectProjRecMonths(n) {
+  _projRecMonths = n;
+  document.querySelectorAll('.proj-rec-opt').forEach(btn => {
+    const on = String(btn.getAttribute('data-months')) === String(n);
+    btn.classList.toggle('btn-primary', on);
+    btn.classList.toggle('btn-ghost', !on);
+  });
+  const hint = document.getElementById('projRecHint');
+  if(hint) hint.textContent = `Serão ${n} projetos (mês atual + ${n - 1} seguintes), com datas deslocadas mês a mês.`;
+  const btn = document.getElementById('projRecConfirmBtn');
+  if(btn) btn.disabled = false;
+}
+
+async function openProjRecorrenteModal(id) {
+  if(!id || String(id).startsWith('sheet_')) {
+    toast('Sincronize o projeto com o banco antes.', 'warn');
+    return;
+  }
+  if(typeof hasModuleEditForPage === 'function' && !hasModuleEditForPage('projetos')) {
+    toast('Sem permissão.', 'warn');
+    return;
+  }
+  const src = await _projFetchSource(id);
+  if(!src) { toast('Projeto não encontrado.', 'err'); return; }
+  document.getElementById('projRecId').value = id;
+  _projRecMonths = 0;
+  document.querySelectorAll('.proj-rec-opt').forEach(btn => {
+    btn.classList.add('btn-ghost');
+    btn.classList.remove('btn-primary');
+  });
+  const btn = document.getElementById('projRecConfirmBtn');
+  if(btn) btn.disabled = true;
+  const sum = document.getElementById('projRecSummary');
+  if(sum) {
+    const base = src.payment_date || src.project_date || '—';
+    sum.innerHTML = `<b>${escHtml(_ageProjDbClient(src) || '—')}</b> · ${escHtml(_ageProjDbTitle(src) || 'Projeto')}<br>
+      <span style="color:var(--textsub)">Base: ${escHtml(String(base).slice(0,10))} · ${fmtBRL(parseFloat(src.total_value)||0)}</span>`;
+  }
+  const hint = document.getElementById('projRecHint');
+  if(hint) hint.textContent = 'Selecione a duração da recorrência.';
+  openModal('modalProjRecorrente');
+}
+
+function openProjRecorrenteFromModal() {
+  const id = document.getElementById('pId')?.value?.trim();
+  if(!id) { toast('Salve o projeto antes.', 'warn'); return; }
+  openProjRecorrenteModal(id);
+}
+
+async function confirmProjRecorrente() {
+  const id = document.getElementById('projRecId')?.value?.trim();
+  const months = _projRecMonths;
+  if(!id || ![3, 6, 12].includes(months)) {
+    toast('Escolha 3, 6 ou 12 meses.', 'warn');
+    return;
+  }
+  const src = await _projFetchSource(id);
+  if(!src) { toast('Projeto não encontrado.', 'err'); return; }
+
+  const btn = document.getElementById('projRecConfirmBtn');
+  if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando…'; }
+
+  const groupId = _projNewGroupId();
+  try {
+    /* Mês 1 = projeto atual */
+    const baseDate = src.payment_date || src.project_date || new Date().toISOString().slice(0, 10);
+    const titleBase = _projStripMonthSuffix(_ageProjDbTitle(src) || src.project_name || src.title || 'Projeto');
+    const name1 = `${titleBase} · ${_projMonthLabel(baseDate)}`;
+    await _ageWriteResilient('age_projects', 'PATCH', id, {
+      project_name: name1,
+      title: name1,
+      is_recurring: true,
+      recurring_months: months,
+      recurring_group_id: groupId,
+      recurring_index: 1,
+      recurring_parent_id: id
+    });
+
+    let created = 0;
+    for(let i = 1; i < months; i++) {
+      const payload = _projClonePayload({ ...src, project_name: titleBase, title: titleBase }, {
+        monthShift: i,
+        appendMonthLabel: true,
+        recurring: true,
+        recurringMonths: months,
+        groupId,
+        index: i + 1,
+        parentId: id,
+        status: 'pendente'
+      });
+      await _ageWriteResilient('age_projects', 'POST', null, payload);
+      created++;
+    }
+
+    closeModal('modalProjRecorrente');
+    closeModal('modalProject');
+    toast(`Série de ${months} meses criada (${created} novos + original).`, 'ok');
+    await loadProjects();
+    SYNC.emit('project:created', {});
+  } catch(e) {
+    console.error('[confirmProjRecorrente]', e);
+    toast('Erro ao gerar recorrência. Tente de novo.', 'err');
+  } finally {
+    if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> Gerar série'; }
+  }
 }
 
 function exportProjectsCSV() {
@@ -23470,6 +23981,475 @@ function gerarToken() {
 function getNpsPageUrl(token) {
   const base = window.location.href.replace(/\/[^/]*$/, '/').replace('age-ops-v4.html','');
   return `${base}nps.html?t=${token}`;
+}
+
+function getClientePortalUrl(token) {
+  const base = window.location.href.replace(/\/[^/]*$/, '/').replace('age-ops-v4.html','');
+  return `${base}cliente.html?invite=${encodeURIComponent(token)}`;
+}
+
+function gerarPortalToken() {
+  return 'cli-' + Math.random().toString(36).substr(2,9) + Date.now().toString(36);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ENTREGAS & DIÁRIAS + PORTAL DO CLIENTE
+═══════════════════════════════════════════════════════════ */
+const DELIV_STATUS_LABELS = {
+  pendente:'Pendente', em_andamento:'Em andamento', enviada:'Enviada',
+  aprovada:'Aprovada', ajustes:'Em ajustes', cancelada:'Cancelada'
+};
+const DIARIA_STATUS_LABELS = {
+  pendente:'Pendente', confirmada:'Confirmada', executada:'Executada', cancelada:'Cancelada'
+};
+
+let _entDeliveriesCache = [];
+let _entDiariasCache = [];
+let _entProjectsCache = [];
+
+function _entAssigneeOptionsHtml(selected) {
+  const opts = _projAssignOptionUsers();
+  const sel = String(selected || '');
+  return `<option value="">— Sem responsável —</option>` + opts.map(o =>
+    `<option value="${escAttr(o.username)}"${o.username === sel ? ' selected' : ''}>${escHtml(o.label)}</option>`
+  ).join('');
+}
+
+async function _entFillProjectSelect(selId, selectedId) {
+  const el = document.getElementById(selId);
+  if(!el) return;
+  let projs = _entProjectsCache;
+  if(!projs.length) {
+    try { projs = await fetchAll('age_projects', 2000); } catch(_) { projs = []; }
+    _entProjectsCache = projs || [];
+  }
+  const active = (_entProjectsCache || []).filter(p => {
+    const st = String(p.status || '').toLowerCase();
+    return st !== 'cancelado' && st !== 'cancelada';
+  });
+  el.innerHTML = `<option value="">Selecione…</option>` + active.map(p => {
+    const label = `${_ageProjDbClient(p) || '—'} · ${_ageProjDbTitle(p) || 'Projeto'}`;
+    const sel = String(p.id) === String(selectedId || '') ? ' selected' : '';
+    return `<option value="${escAttr(p.id)}"${sel}>${escHtml(label)}</option>`;
+  }).join('');
+}
+
+function _entResolveProjectMeta(projectId) {
+  const p = (_entProjectsCache || []).find(x => String(x.id) === String(projectId))
+    || (_projAllCache || []).find(x => String(x.id) === String(projectId))
+    || (_projCache || []).find(x => String(x.id) === String(projectId));
+  if(!p) {
+    const client = document.getElementById('pClient')?.value || '';
+    const name = document.getElementById('pName')?.value || '';
+    return { project_name: name, client_name: client };
+  }
+  return {
+    project_name: _ageProjDbTitle(p) || p.project_name || p.title || '',
+    client_name: _ageProjDbClient(p) || p.client_name || ''
+  };
+}
+
+async function loadEntregasPage() {
+  const list = document.getElementById('entList');
+  const diaList = document.getElementById('entDiariasList');
+  if(list) list.innerHTML = `<div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div>`;
+  if(diaList) diaList.innerHTML = `<div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div>`;
+  try {
+    await refreshAgeUsersCache().catch(()=>{});
+    const [dels, dias, projs] = await Promise.all([
+      fetchAll('age_project_deliveries', 3000).catch(e => { console.warn(e); return []; }),
+      fetchAll('age_project_diarias', 3000).catch(e => { console.warn(e); return []; }),
+      fetchAll('age_projects', 2000).catch(() => [])
+    ]);
+    _entDeliveriesCache = dels || [];
+    _entDiariasCache = dias || [];
+    _entProjectsCache = projs || [];
+
+    const asg = document.getElementById('entFilterAssignee');
+    if(asg) {
+      const cur = asg.value;
+      const names = [...new Set(_entDeliveriesCache.map(d => d.assignee_username).filter(Boolean))];
+      asg.innerHTML = `<option value="">Todos responsáveis</option>` + names.map(u =>
+        `<option value="${escAttr(u)}">${escHtml(displayNameForUsername(u) || u)}</option>`
+      ).join('');
+      if(cur) asg.value = cur;
+    }
+    renderEntregasPage();
+  } catch(e) {
+    console.error('[loadEntregasPage]', e);
+    const msg = String(e?.message || e || '');
+    const hint = (msg.includes('404') || msg.toLowerCase().includes('does not exist'))
+      ? 'Rode supabase/sql/age_portal_cliente.sql no Supabase.'
+      : 'Erro ao carregar entregas.';
+    if(list) list.innerHTML = `<div class="table-empty">${escHtml(hint)}</div>`;
+    if(diaList) diaList.innerHTML = `<div class="table-empty">${escHtml(hint)}</div>`;
+  }
+}
+
+function renderEntregasPage() {
+  const stF = document.getElementById('entFilterStatus')?.value || '';
+  const asF = document.getElementById('entFilterAssignee')?.value || '';
+  const q = String(document.getElementById('entSearch')?.value || '').trim().toLowerCase();
+
+  let rows = [...(_entDeliveriesCache || [])];
+  if(stF) rows = rows.filter(r => r.status === stF);
+  if(asF) rows = rows.filter(r => r.assignee_username === asF);
+  if(q) {
+    rows = rows.filter(r => {
+      const blob = `${r.title||''} ${r.project_name||''} ${r.client_name||''} ${r.assignee_name||''}`.toLowerCase();
+      return blob.includes(q);
+    });
+  }
+  rows.sort((a,b) => String(a.due_date||'9999').localeCompare(String(b.due_date||'9999')));
+
+  const pend = (_entDeliveriesCache||[]).filter(d => d.status === 'pendente').length;
+  const prog = (_entDeliveriesCache||[]).filter(d => d.status === 'em_andamento' || d.status === 'enviada' || d.status === 'ajustes').length;
+  const ok = (_entDeliveriesCache||[]).filter(d => d.status === 'aprovada').length;
+  const ym = new Date().toISOString().slice(0,7);
+  const diaMes = (_entDiariasCache||[]).filter(d => String(d.diaria_date||'').startsWith(ym) && d.status !== 'cancelada').length;
+  const setK = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  setK('entKpiPend', pend);
+  setK('entKpiProg', prog);
+  setK('entKpiOk', ok);
+  setK('entKpiDia', diaMes);
+
+  const list = document.getElementById('entList');
+  if(list) {
+    if(!rows.length) {
+      list.innerHTML = `<div class="table-empty">Nenhuma entrega encontrada.</div>`;
+    } else {
+      list.innerHTML = `<table class="data-table" style="width:100%"><thead><tr>
+        <th>Entrega</th><th>Projeto</th><th>Responsável</th><th>Prazo</th><th>Status</th><th></th>
+      </tr></thead><tbody>` + rows.map(d => {
+        const st = d.status || 'pendente';
+        const canEdit = typeof hasModuleEditForPage === 'function' && (hasModuleEditForPage('gestao') || hasModuleEditForPage('projetos'));
+        return `<tr>
+          <td><b>${escHtml(d.title||'—')}</b>${d.description?`<div style="font-size:10px;color:var(--textsub)">${escHtml(String(d.description).slice(0,80))}</div>`:''}</td>
+          <td>${escHtml(d.client_name||'—')}<div style="font-size:10px;color:var(--textsub)">${escHtml(d.project_name||'')}</div></td>
+          <td>${escHtml(d.assignee_name || displayNameForUsername(d.assignee_username) || '—')}</td>
+          <td>${d.due_date ? fmtDate(String(d.due_date).slice(0,10)) : '—'}</td>
+          <td><span style="font-size:10px;font-weight:700;text-transform:uppercase">${escHtml(DELIV_STATUS_LABELS[st]||st)}</span></td>
+          <td style="white-space:nowrap">
+            ${canEdit?`<button type="button" class="btn btn-icon" onclick="openEntregaModal('${escAttr(d.id)}')" title="Editar"><i class="fas fa-pen"></i></button>`:''}
+            ${d.project_id?`<button type="button" class="btn btn-icon" onclick="editProject('${escAttr(d.project_id)}')" title="Abrir projeto"><i class="fas fa-folder-open"></i></button>`:''}
+            ${canEdit?`<button type="button" class="btn btn-icon" onclick="deleteEntrega('${escAttr(d.id)}')" title="Excluir"><i class="fas fa-trash"></i></button>`:''}
+          </td>
+        </tr>`;
+      }).join('') + `</tbody></table>`;
+    }
+  }
+
+  const dias = [...(_entDiariasCache||[])].filter(d => d.status !== 'cancelada')
+    .sort((a,b) => String(a.diaria_date||'').localeCompare(String(b.diaria_date||'')));
+  const upcoming = dias.filter(d => String(d.diaria_date||'') >= new Date().toISOString().slice(0,10)).slice(0,20);
+  const show = upcoming.length ? upcoming : dias.slice(-12).reverse();
+  const diaBox = document.getElementById('entDiariasList');
+  if(diaBox) {
+    if(!show.length) {
+      diaBox.innerHTML = `<div class="table-empty">Nenhuma diária cadastrada.</div>`;
+    } else {
+      const canEdit = typeof hasModuleEditForPage === 'function' && (hasModuleEditForPage('gestao') || hasModuleEditForPage('projetos'));
+      diaBox.innerHTML = show.map(d => {
+        const st = d.status || 'pendente';
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+          <div>
+            <div style="font-weight:700;font-size:12px">${escHtml(d.title||'Diária')}</div>
+            <div style="font-size:10px;color:var(--textsub);margin-top:2px">${fmtDate(String(d.diaria_date||'').slice(0,10))} · ${escHtml(d.client_name||'')} · ${escHtml(d.project_name||'')}</div>
+            <div style="font-size:10px;color:var(--textsub)">${escHtml(d.assignee_name || displayNameForUsername(d.assignee_username) || 'Sem responsável')}${d.location?' · '+escHtml(d.location):''}</div>
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px">${escHtml(DIARIA_STATUS_LABELS[st]||st)}</div>
+            ${canEdit?`<button type="button" class="btn btn-icon" onclick="openDiariaModal('${escAttr(d.id)}')"><i class="fas fa-pen"></i></button>`:''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+async function loadProjectPortalLists(projId) {
+  const dBox = document.getElementById('projDiariasList');
+  const eBox = document.getElementById('projEntregasList');
+  if(dBox) dBox.innerHTML = 'Carregando…';
+  if(eBox) eBox.innerHTML = 'Carregando…';
+  try {
+    const [delsRes, diasRes] = await Promise.all([
+      api('GET', 'age_project_deliveries', `?project_id=eq.${encodeURIComponent(projId)}&order=due_date.asc`).catch(()=>({data:[]})),
+      api('GET', 'age_project_diarias', `?project_id=eq.${encodeURIComponent(projId)}&order=diaria_date.asc`).catch(()=>({data:[]}))
+    ]);
+    const dels = delsRes?.data || (Array.isArray(delsRes) ? delsRes : []);
+    const dias = diasRes?.data || (Array.isArray(diasRes) ? diasRes : []);
+    const canEdit = typeof hasModuleEditForPage === 'function' && hasModuleEditForPage('projetos');
+    if(eBox) {
+      if(!dels.length) eBox.innerHTML = '<span style="color:var(--textsub)">Nenhuma entrega.</span>';
+      else eBox.innerHTML = dels.map(d => `<div style="display:flex;justify-content:space-between;gap:6px;padding:6px 0;border-bottom:1px solid var(--bd)">
+        <span><b>${escHtml(d.title)}</b><br><span style="color:var(--textsub)">${escHtml(DELIV_STATUS_LABELS[d.status]||d.status)} · ${escHtml(d.assignee_name||'—')}</span></span>
+        ${canEdit?`<button type="button" class="btn btn-icon" onclick="openEntregaModal('${escAttr(d.id)}')"><i class="fas fa-pen"></i></button>`:''}
+      </div>`).join('');
+    }
+    if(dBox) {
+      if(!dias.length) dBox.innerHTML = '<span style="color:var(--textsub)">Nenhuma diária.</span>';
+      else dBox.innerHTML = dias.map(d => `<div style="display:flex;justify-content:space-between;gap:6px;padding:6px 0;border-bottom:1px solid var(--bd)">
+        <span><b>${fmtDate(String(d.diaria_date||'').slice(0,10))}</b> · ${escHtml(d.title||'Diária')}<br><span style="color:var(--textsub)">${escHtml(DIARIA_STATUS_LABELS[d.status]||d.status)} · ${escHtml(d.assignee_name||'—')}</span></span>
+        ${canEdit?`<button type="button" class="btn btn-icon" onclick="openDiariaModal('${escAttr(d.id)}')"><i class="fas fa-pen"></i></button>`:''}
+      </div>`).join('');
+    }
+  } catch(e) {
+    console.warn('[loadProjectPortalLists]', e);
+    if(dBox) dBox.innerHTML = 'Erro ao carregar (rode age_portal_cliente.sql).';
+    if(eBox) eBox.innerHTML = 'Erro ao carregar (rode age_portal_cliente.sql).';
+  }
+}
+
+function openEntregaModalFromProject() {
+  const pid = document.getElementById('pId')?.value;
+  if(!pid || String(pid).startsWith('sheet_')) { toast('Salve o projeto antes.', 'warn'); return; }
+  openEntregaModal(null, pid);
+}
+function openDiariaModalFromProject() {
+  const pid = document.getElementById('pId')?.value;
+  if(!pid || String(pid).startsWith('sheet_')) { toast('Salve o projeto antes.', 'warn'); return; }
+  openDiariaModal(null, pid);
+}
+
+async function openEntregaModal(id, forceProjectId) {
+  await refreshAgeUsersCache().catch(()=>{});
+  document.getElementById('entId').value = '';
+  document.getElementById('entProjectId').value = forceProjectId || '';
+  document.getElementById('entTitle').value = '';
+  document.getElementById('entDesc').value = '';
+  document.getElementById('entDue').value = '';
+  document.getElementById('entStatus').value = 'pendente';
+  document.getElementById('entFileUrl').value = '';
+  document.getElementById('entAssignee').innerHTML = _entAssigneeOptionsHtml('');
+  document.getElementById('modalEntregaTitle').textContent = 'NOVA ENTREGA';
+
+  const pickRow = document.getElementById('entProjectPickRow');
+  if(forceProjectId) {
+    if(pickRow) pickRow.style.display = 'none';
+    document.getElementById('entProjectId').value = forceProjectId;
+  } else {
+    if(pickRow) pickRow.style.display = '';
+    await _entFillProjectSelect('entProjectPick', '');
+  }
+
+  if(id) {
+    const row = (_entDeliveriesCache||[]).find(x => String(x.id) === String(id));
+    let d = row;
+    if(!d) {
+      try { d = await apiGet('age_project_deliveries', `/${id}`); } catch(_) {}
+    }
+    if(d && d.id) {
+      document.getElementById('modalEntregaTitle').textContent = 'EDITAR ENTREGA';
+      document.getElementById('entId').value = d.id;
+      document.getElementById('entProjectId').value = d.project_id || '';
+      document.getElementById('entTitle').value = d.title || '';
+      document.getElementById('entDesc').value = d.description || '';
+      document.getElementById('entDue').value = d.due_date ? String(d.due_date).slice(0,10) : '';
+      document.getElementById('entStatus').value = d.status || 'pendente';
+      document.getElementById('entFileUrl').value = d.file_url || '';
+      document.getElementById('entAssignee').innerHTML = _entAssigneeOptionsHtml(d.assignee_username || '');
+      if(pickRow) {
+        pickRow.style.display = '';
+        await _entFillProjectSelect('entProjectPick', d.project_id || '');
+      }
+    }
+  }
+  openModal('modalEntrega');
+}
+
+async function openDiariaModal(id, forceProjectId) {
+  await refreshAgeUsersCache().catch(()=>{});
+  document.getElementById('diaId').value = '';
+  document.getElementById('diaProjectId').value = forceProjectId || '';
+  document.getElementById('diaTitle').value = 'Diária de gravação';
+  document.getElementById('diaDate').value = '';
+  document.getElementById('diaStatus').value = 'pendente';
+  document.getElementById('diaLoc').value = '';
+  document.getElementById('diaNotes').value = '';
+  document.getElementById('diaAssignee').innerHTML = _entAssigneeOptionsHtml('');
+  document.getElementById('modalDiariaTitle').textContent = 'NOVA DIÁRIA';
+
+  const pickRow = document.getElementById('diaProjectPickRow');
+  if(forceProjectId) {
+    if(pickRow) pickRow.style.display = 'none';
+    document.getElementById('diaProjectId').value = forceProjectId;
+  } else {
+    if(pickRow) pickRow.style.display = '';
+    await _entFillProjectSelect('diaProjectPick', '');
+  }
+
+  if(id) {
+    const row = (_entDiariasCache||[]).find(x => String(x.id) === String(id));
+    let d = row;
+    if(!d) {
+      try { d = await apiGet('age_project_diarias', `/${id}`); } catch(_) {}
+    }
+    if(d && d.id) {
+      document.getElementById('modalDiariaTitle').textContent = 'EDITAR DIÁRIA';
+      document.getElementById('diaId').value = d.id;
+      document.getElementById('diaProjectId').value = d.project_id || '';
+      document.getElementById('diaTitle').value = d.title || 'Diária de gravação';
+      document.getElementById('diaDate').value = d.diaria_date ? String(d.diaria_date).slice(0,10) : '';
+      document.getElementById('diaStatus').value = d.status || 'pendente';
+      document.getElementById('diaLoc').value = d.location || '';
+      document.getElementById('diaNotes').value = d.notes || '';
+      document.getElementById('diaAssignee').innerHTML = _entAssigneeOptionsHtml(d.assignee_username || '');
+      if(pickRow) {
+        pickRow.style.display = '';
+        await _entFillProjectSelect('diaProjectPick', d.project_id || '');
+      }
+    }
+  }
+  openModal('modalDiaria');
+}
+
+async function saveEntrega() {
+  const id = document.getElementById('entId').value.trim();
+  let projectId = document.getElementById('entProjectId').value.trim()
+    || document.getElementById('entProjectPick')?.value || '';
+  const title = document.getElementById('entTitle').value.trim();
+  if(!title) { toast('Informe o título da entrega', 'warn'); return; }
+  if(!projectId) { toast('Selecione o projeto', 'warn'); return; }
+  const un = document.getElementById('entAssignee').value.trim();
+  const meta = _entResolveProjectMeta(projectId);
+  const payload = {
+    project_id: projectId,
+    project_name: meta.project_name,
+    client_name: meta.client_name,
+    title,
+    description: document.getElementById('entDesc').value.trim() || null,
+    due_date: document.getElementById('entDue').value || null,
+    status: document.getElementById('entStatus').value || 'pendente',
+    assignee_username: un || null,
+    assignee_name: un ? (displayNameForUsername(un) || un) : null,
+    file_url: document.getElementById('entFileUrl').value.trim() || null,
+    company_id: currentUser?.company_id || null
+  };
+  if(payload.status === 'enviada' || payload.status === 'aprovada') {
+    payload.delivered_at = new Date().toISOString().slice(0,10);
+  }
+  try {
+    if(id) await apiPatch('age_project_deliveries', id, payload);
+    else await apiPost('age_project_deliveries', payload);
+    toast('Entrega salva', 'ok');
+    closeModal('modalEntrega');
+    const pidOpen = document.getElementById('pId')?.value;
+    if(pidOpen && String(pidOpen) === String(projectId)) loadProjectPortalLists(projectId).catch(()=>{});
+    if(document.getElementById('page-entregas')?.classList.contains('active')) loadEntregasPage();
+    else fetchAll('age_project_deliveries', 3000).then(d => { _entDeliveriesCache = d||[]; }).catch(()=>{});
+  } catch(e) {
+    console.error(e);
+    const msg = String(e?.message||e||'');
+    if(msg.includes('404') || msg.toLowerCase().includes('does not exist'))
+      toast('Rode age_portal_cliente.sql no Supabase', 'err');
+    else toast('Erro ao salvar entrega', 'err');
+  }
+}
+
+async function saveDiaria() {
+  const id = document.getElementById('diaId').value.trim();
+  let projectId = document.getElementById('diaProjectId').value.trim()
+    || document.getElementById('diaProjectPick')?.value || '';
+  const diaria_date = document.getElementById('diaDate').value;
+  if(!diaria_date) { toast('Informe a data da diária', 'warn'); return; }
+  if(!projectId) { toast('Selecione o projeto', 'warn'); return; }
+  const un = document.getElementById('diaAssignee').value.trim();
+  const meta = _entResolveProjectMeta(projectId);
+  const payload = {
+    project_id: projectId,
+    project_name: meta.project_name,
+    client_name: meta.client_name,
+    title: document.getElementById('diaTitle').value.trim() || 'Diária de gravação',
+    diaria_date,
+    location: document.getElementById('diaLoc').value.trim() || null,
+    status: document.getElementById('diaStatus').value || 'pendente',
+    assignee_username: un || null,
+    assignee_name: un ? (displayNameForUsername(un) || un) : null,
+    notes: document.getElementById('diaNotes').value.trim() || null,
+    company_id: currentUser?.company_id || null
+  };
+  try {
+    if(id) await apiPatch('age_project_diarias', id, payload);
+    else await apiPost('age_project_diarias', payload);
+    toast('Diária salva', 'ok');
+    closeModal('modalDiaria');
+    const pidOpen = document.getElementById('pId')?.value;
+    if(pidOpen && String(pidOpen) === String(projectId)) loadProjectPortalLists(projectId).catch(()=>{});
+    if(document.getElementById('page-entregas')?.classList.contains('active')) loadEntregasPage();
+    else fetchAll('age_project_diarias', 3000).then(d => { _entDiariasCache = d||[]; }).catch(()=>{});
+  } catch(e) {
+    console.error(e);
+    const msg = String(e?.message||e||'');
+    if(msg.includes('404') || msg.toLowerCase().includes('does not exist'))
+      toast('Rode age_portal_cliente.sql no Supabase', 'err');
+    else toast('Erro ao salvar diária', 'err');
+  }
+}
+
+async function deleteEntrega(id) {
+  if(!id || !confirm('Excluir esta entrega?')) return;
+  try {
+    await apiDel('age_project_deliveries', id);
+    toast('Entrega excluída', 'ok');
+    loadEntregasPage();
+    const pid = document.getElementById('pId')?.value;
+    if(pid) loadProjectPortalLists(pid).catch(()=>{});
+  } catch(e) {
+    toast('Erro ao excluir', 'err');
+  }
+}
+
+async function convidarClientePortal() {
+  const pid = document.getElementById('pId')?.value?.trim();
+  const clientName = document.getElementById('pClient')?.value?.trim();
+  if(!pid || String(pid).startsWith('sheet_')) { toast('Salve o projeto antes de convidar.', 'warn'); return; }
+  if(!clientName) { toast('Informe o nome do cliente no projeto.', 'warn'); return; }
+  if(!currentUser?.company_id) { toast('Empresa não identificada. Faça login novamente.', 'warn'); return; }
+
+  const token = gerarPortalToken();
+  const expires = new Date();
+  expires.setDate(expires.getDate() + 30);
+  try {
+    await apiPost('age_client_invites', {
+      company_id: currentUser.company_id,
+      company_name: currentUser.company_name || '',
+      client_name: clientName,
+      project_id: pid,
+      token,
+      created_by: currentUser.username || '',
+      expires_at: expires.toISOString(),
+      active: true
+    });
+    const url = getClientePortalUrl(token);
+    const box = document.getElementById('projPortalLinkBox');
+    const inp = document.getElementById('projPortalLinkText');
+    if(inp) inp.value = url;
+    if(box) box.style.display = '';
+    window._portalInviteUrl = url;
+    window._portalInviteClient = clientName;
+    toast('Link do portal gerado!', 'ok');
+  } catch(e) {
+    console.error('[convidarClientePortal]', e);
+    const msg = String(e?.message||e||'');
+    if(msg.includes('404') || msg.toLowerCase().includes('does not exist'))
+      toast('Rode age_portal_cliente.sql no Supabase', 'err');
+    else toast('Erro ao gerar convite', 'err');
+  }
+}
+
+function copiarPortalLink() {
+  const t = document.getElementById('projPortalLinkText')?.value || window._portalInviteUrl || '';
+  if(!t) return;
+  navigator.clipboard.writeText(t).then(() => toast('Link copiado!', 'ok')).catch(() => toast('Não foi possível copiar', 'err'));
+}
+
+function compartilharPortalWhatsApp() {
+  const url = document.getElementById('projPortalLinkText')?.value || window._portalInviteUrl || '';
+  if(!url) return;
+  const client = window._portalInviteClient || 'você';
+  const msg = `Olá! 👋\n\nCriamos um acesso para ${client} acompanhar os projetos (diárias, entregas e pagamentos):\n\n${url}\n\nCadastro rápido pelo link. Qualquer dúvida, estamos à disposição.`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
 }
 
 function _npsWhatsAppMessage(url, etapa) {

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Portal do Cliente · AGE OPS</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --bg:#f4f6f9;--card:#fff;--text:#0f172a;--sub:#64748b;--bd:#e2e8f0;
+      --brand:#2563eb;--green:#16a34a;--amber:#d97706;--red:#dc2626;--violet:#7c3aed;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 55%,#2563eb 100%);padding:36px 20px 56px;color:#fff}
+    .hero h1{font-size:clamp(22px,4vw,30px);font-weight:800;margin-top:10px}
+    .hero p{opacity:.8;font-size:14px;margin-top:6px;max-width:42ch}
+    .wrap{max-width:980px;margin:-28px auto 40px;padding:0 16px}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+    .field{margin-bottom:12px}
+    .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:6px}
+    .field input{width:100%;height:42px;border:1px solid var(--bd);border-radius:8px;padding:0 12px;font-size:14px}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:10px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer}
+    .btn-primary{background:var(--brand);color:#fff}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
+    .btn-block{width:100%;justify-content:center}
+    .muted{color:var(--sub);font-size:13px;line-height:1.5}
+    .err{color:var(--red);font-size:13px;margin-top:8px}
+    .ok{color:var(--green);font-size:13px;margin-top:8px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+    .proj{border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px;background:#fff}
+    .proj h3{font-size:16px;font-weight:800}
+    .meta{font-size:12px;color:var(--sub);margin-top:4px}
+    .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid}
+    .b-pendente{background:#fffbeb;color:#b45309;border-color:#fde68a}
+    .b-em_andamento,.b-confirmada,.b-enviada{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+    .b-executada,.b-aprovada,.b-pago,.b-concluido{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}
+    .b-ajustes,.b-parcial{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+    .b-cancelada,.b-cancelado{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+    .sec{margin-top:14px}
+    .sec h4{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);margin-bottom:8px}
+    .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+    .row:last-child{border-bottom:none}
+    .hidden{display:none!important}
+    .tabs{display:flex;gap:8px;margin:12px 0 16px;flex-wrap:wrap}
+    .tab{padding:8px 12px;border-radius:999px;border:1px solid var(--bd);background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:var(--sub)}
+    .tab.on{background:#0f172a;color:#fff;border-color:#0f172a}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div style="max-width:980px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.7">Portal do cliente</div>
+        <h1 id="heroTitle">Acompanhe seus projetos</h1>
+        <p id="heroSub">Diárias, entregas e pagamentos em um só lugar.</p>
+      </div>
+      <button id="btnLogout" class="btn btn-ghost hidden" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- AUTH -->
+    <div id="viewAuth" class="card" style="max-width:440px;margin:0 auto">
+      <div class="tabs">
+        <button class="tab on" id="tabLogin" onclick="showAuth('login')">Entrar</button>
+        <button class="tab" id="tabSignup" onclick="showAuth('signup')">Cadastro rápido</button>
+      </div>
+      <div id="authInviteBanner" class="muted" style="margin-bottom:12px;display:none"></div>
+
+      <div id="formLogin">
+        <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="email"></div>
+        <div class="field"><label>Senha</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+        <button class="btn btn-primary btn-block" onclick="doLogin()"><i class="fas fa-arrow-right"></i> Entrar</button>
+      </div>
+
+      <div id="formSignup" class="hidden">
+        <div class="field"><label>Seu nome</label><input id="suName" type="text" autocomplete="name"></div>
+        <div class="field"><label>Email</label><input id="suEmail" type="email" autocomplete="email"></div>
+        <div class="field"><label>Telefone (opcional)</label><input id="suPhone" type="tel"></div>
+        <div class="field"><label>Senha</label><input id="suPass" type="password" autocomplete="new-password"></div>
+        <div class="field"><label>Confirmar senha</label><input id="suPass2" type="password" autocomplete="new-password"></div>
+        <button class="btn btn-primary btn-block" onclick="doSignup()"><i class="fas fa-user-plus"></i> Criar acesso</button>
+      </div>
+      <div id="authMsg" class="err"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="viewDash" class="hidden">
+      <div class="topbar">
+        <div>
+          <div style="font-weight:800;font-size:18px" id="dashHello">Olá</div>
+          <div class="muted" id="dashCompany">—</div>
+        </div>
+      </div>
+      <div id="dashList"><div class="card muted">Carregando projetos…</div></div>
+    </div>
+  </div>
+
+<script>
+const SUPABASE_URL = 'https://wiiewucszdbbcxzivnyo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
+const LS_KEY = 'age_client_session_v1';
+
+const STAGE_LABELS = {
+  reuniao:'Reunião', orcamento_aprovado:'Orçamento aprovado', producao:'Produção',
+  gravacao:'Gravação', finalizacao:'Finalização', no_ar:'No ar'
+};
+const DELIV_LABELS = { pendente:'Pendente', em_andamento:'Em andamento', enviada:'Enviada', aprovada:'Aprovada', ajustes:'Em ajustes', cancelada:'Cancelada' };
+const DIARIA_LABELS = { pendente:'Pendente', confirmada:'Confirmada', executada:'Executada', cancelada:'Cancelada' };
+
+let invite = null;
+let session = null;
+
+function headers(extra) {
+  return Object.assign({
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json'
+  }, extra || {});
+}
+async function apiGet(table, qs) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, { headers: headers({ Prefer: 'return=representation' }) });
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+async function apiPost(table, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST', headers: headers({ Prefer: 'return=representation' }), body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+async function apiPatch(table, qs, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+    method: 'PATCH', headers: headers({ Prefer: 'return=representation' }), body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(d){
+  if(!d) return '—';
+  const s = String(d).slice(0,10);
+  const x = new Date(s+'T12:00:00');
+  return isNaN(x) ? s : x.toLocaleDateString('pt-BR');
+}
+function fmtBRL(n){ return (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function badge(cls, text){ return `<span class="badge b-${esc(cls)}">${esc(text)}</span>`; }
+
+function setAuthMsg(msg, ok){
+  const el = document.getElementById('authMsg');
+  el.className = ok ? 'ok' : 'err';
+  el.textContent = msg || '';
+}
+
+function showAuth(mode){
+  document.getElementById('formLogin').classList.toggle('hidden', mode !== 'login');
+  document.getElementById('formSignup').classList.toggle('hidden', mode !== 'signup');
+  document.getElementById('tabLogin').classList.toggle('on', mode === 'login');
+  document.getElementById('tabSignup').classList.toggle('on', mode === 'signup');
+  setAuthMsg('');
+}
+
+function saveSession(u){
+  session = u;
+  localStorage.setItem(LS_KEY, JSON.stringify({ id:u.id, email:u.email, name:u.name, company_id:u.company_id, company_name:u.company_name, client_name:u.client_name }));
+}
+function loadSession(){
+  try { session = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { session = null; }
+}
+function logout(){
+  localStorage.removeItem(LS_KEY);
+  session = null;
+  location.href = location.pathname;
+}
+
+async function boot(){
+  const token = new URLSearchParams(location.search).get('invite');
+  loadSession();
+  if(token){
+    try {
+      const rows = await apiGet('age_client_invites', `token=eq.${encodeURIComponent(token)}&active=eq.true&limit=1`);
+      invite = rows[0] || null;
+      if(invite){
+        if(invite.expires_at && new Date(invite.expires_at) < new Date()){
+          invite = null;
+          setAuthMsg('Este convite expirou. Peça um novo link à agência.');
+        } else {
+          const ban = document.getElementById('authInviteBanner');
+          ban.style.display = 'block';
+          ban.innerHTML = `Convite de <b>${esc(invite.company_name || 'sua agência')}</b> para acompanhar projetos de <b>${esc(invite.client_name)}</b>.`;
+          if(invite.email) document.getElementById('suEmail').value = invite.email;
+          showAuth('signup');
+          document.getElementById('heroTitle').textContent = 'Crie seu acesso';
+          document.getElementById('heroSub').textContent = 'Cadastro rápido para acompanhar diárias, entregas e pagamentos.';
+        }
+      } else setAuthMsg('Convite inválido ou já utilizado.');
+    } catch(e){ setAuthMsg('Não foi possível validar o convite.'); }
+  }
+  if(session && session.id){
+    showDash();
+  }
+}
+
+async function doSignup(){
+  const name = document.getElementById('suName').value.trim();
+  const email = document.getElementById('suEmail').value.trim().toLowerCase();
+  const phone = document.getElementById('suPhone').value.trim();
+  const p1 = document.getElementById('suPass').value;
+  const p2 = document.getElementById('suPass2').value;
+  if(!name || !email || !email.includes('@')) return setAuthMsg('Preencha nome e email válidos.');
+  if(p1.length < 4) return setAuthMsg('Senha com pelo menos 4 caracteres.');
+  if(p1 !== p2) return setAuthMsg('As senhas não conferem.');
+  if(!invite) return setAuthMsg('Cadastro só via link de convite da agência.');
+
+  try {
+    const existing = await apiGet('age_client_users', `company_id=eq.${encodeURIComponent(invite.company_id)}&email=eq.${encodeURIComponent(email)}&limit=1`);
+    if(existing.length) return setAuthMsg('Já existe uma conta com este email. Faça login.');
+
+    const created = await apiPost('age_client_users', {
+      company_id: invite.company_id,
+      company_name: invite.company_name || '',
+      client_name: invite.client_name,
+      name, email, phone: phone || null,
+      password_hash: p1,
+      active: true
+    });
+    const user = Array.isArray(created) ? created[0] : created;
+    await apiPatch('age_client_invites', `id=eq.${encodeURIComponent(invite.id)}`, { used_at: new Date().toISOString(), active: false });
+    saveSession(user);
+    history.replaceState({}, '', location.pathname);
+    showDash();
+  } catch(e){
+    console.error(e);
+    setAuthMsg('Erro ao criar conta. Confirme se as tabelas do portal existem no Supabase.');
+  }
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  if(!email || !pass) return setAuthMsg('Informe email e senha.');
+  try {
+    const rows = await apiGet('age_client_users', `email=eq.${encodeURIComponent(email)}&active=eq.true&limit=5`);
+    const user = rows.find(u => String(u.password_hash) === String(pass));
+    if(!user) return setAuthMsg('Email ou senha incorretos.');
+    saveSession(user);
+    showDash();
+  } catch(e){
+    console.error(e);
+    setAuthMsg('Erro ao entrar. Tente novamente.');
+  }
+}
+
+async function showDash(){
+  document.getElementById('viewAuth').classList.add('hidden');
+  document.getElementById('viewDash').classList.remove('hidden');
+  document.getElementById('btnLogout').classList.remove('hidden');
+  document.getElementById('dashHello').textContent = `Olá, ${session.name || 'cliente'}`;
+  document.getElementById('dashCompany').textContent = `${session.company_name || 'Agência'} · ${session.client_name || ''}`;
+  document.getElementById('heroTitle').textContent = 'Seus projetos';
+  document.getElementById('heroSub').textContent = 'Acompanhe etapas, diárias, entregas e pagamentos.';
+  await renderProjects();
+}
+
+async function renderProjects(){
+  const box = document.getElementById('dashList');
+  box.innerHTML = `<div class="card muted">Carregando…</div>`;
+  try {
+    const cid = encodeURIComponent(session.company_id);
+    const cname = encodeURIComponent(session.client_name);
+    const projects = await apiGet('age_projects', `company_id=eq.${cid}&client_name=eq.${cname}&order=created_at.desc&limit=100`);
+    if(!projects.length){
+      box.innerHTML = `<div class="card muted">Nenhum projeto encontrado ainda para <b>${esc(session.client_name)}</b>.</div>`;
+      return;
+    }
+    const ids = projects.map(p => p.id).filter(Boolean);
+    const idList = ids.map(id => `"${id}"`).join(',');
+    const [stages, deliveries, diarias, payments] = await Promise.all([
+      ids.length ? apiGet('age_project_stages', `project_id=in.(${idList})&limit=500`).catch(()=>[]) : [],
+      ids.length ? apiGet('age_project_deliveries', `company_id=eq.${cid}&project_id=in.(${idList})&order=due_date.asc&limit=500`).catch(()=>[]) : [],
+      ids.length ? apiGet('age_project_diarias', `company_id=eq.${cid}&project_id=in.(${idList})&order=diaria_date.asc&limit=500`).catch(()=>[]) : [],
+      ids.length ? apiGet('age_payments', `company_id=eq.${cid}&projeto_id=in.(${idList})&order=created_at.desc&limit=500`).catch(()=>[]) : []
+    ]);
+    const stageBy = {};
+    (stages||[]).forEach(s => { stageBy[s.project_id] = s.stage; });
+
+    box.innerHTML = projects.map(p => {
+      const st = stageBy[p.id] || p.status || '—';
+      const stLabel = STAGE_LABELS[st] || st;
+      const dels = (deliveries||[]).filter(d => String(d.project_id) === String(p.id));
+      const dias = (diarias||[]).filter(d => String(d.project_id) === String(p.id));
+      const pays = (payments||[]).filter(x => String(x.projeto_id) === String(p.id));
+      const delDone = dels.filter(d => d.status === 'aprovada' || d.status === 'enviada').length;
+      const diaDone = dias.filter(d => d.status === 'executada').length;
+      const payPaid = pays.filter(x => String(x.status||'').toLowerCase().includes('pag')).length;
+
+      return `<div class="proj">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+          <div>
+            <h3>${esc(p.project_name || 'Projeto')}</h3>
+            <div class="meta">${esc(p.category || '')}${p.segment ? ' · ' + esc(p.segment) : ''}</div>
+          </div>
+          ${badge(st, stLabel)}
+        </div>
+        <div class="meta" style="margin-top:8px">
+          ${delDone}/${dels.length || 0} entregas · ${diaDone}/${dias.length || 0} diárias · ${payPaid}/${pays.length || 0} pagamentos
+        </div>
+
+        <div class="sec">
+          <h4>Diárias</h4>
+          ${dias.length ? dias.map(d => `<div class="row"><span><b>${esc(d.title||'Diária')}</b><br><span class="meta">${fmtDate(d.diaria_date)}${d.location?' · '+esc(d.location):''}${d.assignee_name?' · '+esc(d.assignee_name):''}</span></span>${badge(d.status, DIARIA_LABELS[d.status]||d.status)}</div>`).join('') : `<div class="muted">Nenhuma diária cadastrada.</div>`}
+        </div>
+
+        <div class="sec">
+          <h4>Entregas</h4>
+          ${dels.length ? dels.map(d => `<div class="row"><span><b>${esc(d.title)}</b><br><span class="meta">Prazo ${fmtDate(d.due_date)}${d.assignee_name?' · '+esc(d.assignee_name):''}${d.file_url?` · <a href="${esc(d.file_url)}" target="_blank" rel="noopener">abrir</a>`:''}</span></span>${badge(d.status, DELIV_LABELS[d.status]||d.status)}</div>`).join('') : `<div class="muted">Nenhuma entrega cadastrada.</div>`}
+        </div>
+
+        <div class="sec">
+          <h4>Pagamentos</h4>
+          ${pays.length ? pays.map(x => {
+            const st = String(x.status||'pendente').toLowerCase();
+            const stKey = st.includes('pag') ? 'pago' : (st.includes('parcial') ? 'parcial' : 'pendente');
+            return `<div class="row"><span><b>${fmtBRL(x.valor||x.amount||0)}</b><br><span class="meta">${esc(x.nome_destinatario||x.projeto_nome||'Pagamento')} · ${fmtDate(x.data_pagamento||x.created_at)}</span></span>${badge(stKey, x.status||'pendente')}</div>`;
+          }).join('') : `<div class="muted">Nenhum pagamento listado ainda.</div>`}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    console.error(e);
+    box.innerHTML = `<div class="card err">Erro ao carregar projetos. Confirme se o SQL do portal foi executado no Supabase.</div>`;
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
