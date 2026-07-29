@@ -1343,6 +1343,38 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   #page-recrutamento .kpi-card .kpi-val{font-size:18px}
 }
 
+/* ── Suporte ── */
+.sup-layout{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:16px;align-items:start}
+@media(max-width:960px){.sup-layout{grid-template-columns:1fr}}
+.sup-form-card,.sup-list-wrap{
+  background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px 18px;
+}
+.sup-card-title{font-family:var(--font-h);font-size:12px;font-weight:800;letter-spacing:.04em;margin-bottom:14px;color:var(--text)}
+.sup-card-title i{opacity:.7;margin-right:6px}
+.sup-ticket{
+  border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:#fff;
+  transition:border-color .12s,box-shadow .12s;
+}
+.sup-ticket:hover{border-color:rgba(0,0,0,.14);box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.sup-ticket-top{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.sup-ticket-title{font-family:var(--font-b);font-size:13px;font-weight:700;color:#111;flex:1;min-width:140px;line-height:1.3}
+.sup-ticket-meta{font-family:var(--font-m);font-size:10px;color:#64748b;margin-top:6px;line-height:1.5}
+.sup-ticket-desc{font-size:12px;color:#334155;margin-top:8px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.sup-badge{display:inline-block;font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid}
+.sup-badge.cat-bug{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.sup-badge.cat-melhoria{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.sup-badge.cat-duvida{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.sup-badge.cat-outro{background:#f1f5f9;color:#475569;border-color:#e2e8f0}
+.sup-badge.st-aberto{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+.sup-badge.st-em_andamento{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}
+.sup-badge.st-resolvido{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.sup-badge.st-fechado{background:#f8fafc;color:#94a3b8;border-color:#e2e8f0}
+.sup-badge.pri-baixa{background:#f8fafc;color:#64748b;border-color:#e2e8f0}
+.sup-badge.pri-media{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.sup-badge.pri-alta{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+.sup-badge.pri-critica{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.sup-admin-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.08)}
+
 /* ── Financeiro Pessoal: cards de resumo (tamanho uniforme) ── */
 .myfin-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .myfin-card{
@@ -3447,6 +3479,9 @@ body:has(#login-screen.visible){
       <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
         <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
       </button>
+      <button type="button" class="nav-item" data-page="suporte" onclick="navigate('suporte')">
+        <i class="fas fa-life-ring"></i><span>SUPORTE</span>
+      </button>
       </div>
 
       <div id="sidebarColaborador" style="display:none">
@@ -3465,6 +3500,9 @@ body:has(#login-screen.visible){
       </button>
       <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
         <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
+      </button>
+      <button type="button" class="nav-item" data-page="suporte" onclick="navigate('suporte')">
+        <i class="fas fa-life-ring"></i><span>SUPORTE</span>
       </button>
       </div>
     </nav>
@@ -5015,6 +5053,80 @@ body:has(#login-screen.visible){
           </div>
         </div>
         <p id="profSaveHint" style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:16px"></p>
+      </div>
+
+      <!-- ══════════════════════════════════
+           SUPORTE — bugs, dúvidas, melhorias
+      ══════════════════════════════════ -->
+      <div id="page-suporte" class="page">
+        <div class="page-header">
+          <div>
+            <div class="page-title"><i class="fas fa-life-ring"></i> SUPORTE</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Relate bugs, peça ajuda ou sugira melhorias — a gente acompanha por aqui</div>
+          </div>
+          <div class="page-actions">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadSuporte()"><i class="fas fa-sync-alt"></i></button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="suporteFocusForm()"><i class="fas fa-plus"></i> Novo relato</button>
+          </div>
+        </div>
+
+        <div class="sup-layout">
+          <div class="sup-form-card" id="supFormCard">
+            <div class="sup-card-title"><i class="fas fa-pen"></i> Novo relato</div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+              <div class="form-group">
+                <label class="form-label">Tipo</label>
+                <select id="supCategory" class="cf-select" style="width:100%">
+                  <option value="bug">Bug / erro</option>
+                  <option value="melhoria">Sugestão de melhoria</option>
+                  <option value="duvida">Dúvida / como fazer</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prioridade</label>
+                <select id="supPriority" class="cf-select" style="width:100%">
+                  <option value="baixa">Baixa</option>
+                  <option value="media" selected>Média</option>
+                  <option value="alta">Alta</option>
+                  <option value="critica">Crítica (bloqueia o trabalho)</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Título</label>
+                <input id="supTitle" type="text" placeholder="Ex.: PDF do orçamento sai com página em branco" style="width:100%" maxlength="160">
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Descrição</label>
+                <textarea id="supDesc" rows="5" placeholder="O que aconteceu, em qual aba, o que você esperava e o que deu errado. Quanto mais detalhe, mais rápido a gente resolve." style="width:100%;resize:vertical;font-family:var(--font-b);font-size:13px;padding:10px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--text)"></textarea>
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Aba / tela (opcional)</label>
+                <input id="supPageCtx" type="text" placeholder="Ex.: Orçamentos, Projetos, Meu Dia…" style="width:100%" maxlength="120">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+              <button type="button" class="btn btn-primary" onclick="salvarSuporteTicket()"><i class="fas fa-paper-plane"></i> Enviar relato</button>
+              <span id="supFormHint" style="font-family:var(--font-m);font-size:10px;color:var(--textsub)"></span>
+            </div>
+          </div>
+
+          <div class="sup-list-wrap">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+              <div class="sup-card-title" style="margin:0"><i class="fas fa-inbox"></i> <span id="supListTitle">Meus relatos</span></div>
+              <select id="supFilterStatus" onchange="renderSuporteList()" class="cf-select" style="margin-left:auto;min-width:140px">
+                <option value="">Todos status</option>
+                <option value="aberto">Aberto</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="resolvido">Resolvido</option>
+                <option value="fechado">Fechado</option>
+              </select>
+            </div>
+            <div id="supList">
+              <div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ══════════════════════════════════
@@ -7030,6 +7142,7 @@ function _userCanManagePermissionsUi() {
 function canViewPage(page) {
   if(page === 'no-access') return true;
   if(page === 'profile') return true;
+  if(page === 'suporte') return true;
   if(page === 'notificacoes') return true;
   if(page === 'plan-upgrade') return true;
   if(!_planAllowsPage(page)) return false;
@@ -7045,6 +7158,7 @@ function canViewPage(page) {
 
 function hasModuleEditForPage(page) {
   if(page === 'profile') return true;
+  if(page === 'suporte') return true;
   if(page === 'equipe-permissoes') return _userCanManagePermissionsUi();
   if(page === 'cashflow') return _userIsAdminLike() || _userIsBootstrapAdmin();
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
@@ -10948,6 +11062,7 @@ const PAGE_TITLES = {
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA', recrutamento:'RECRUTAMENTO',
   myday:'MEU DIA', mytasks:'TAREFAS', mycalendar:'MEU CALENDÁRIO', myfinance:'FINANCEIRO',
   profile:'MEU PERFIL',
+  suporte:'SUPORTE',
   'equipe-permissoes':'EQUIPE & PERMISSÕES',
   'no-access':'ACESSO NEGADO',
   relatorios:'RELATÓRIOS DE PROJETOS',
@@ -10960,7 +11075,7 @@ const PAGE_TITLES = {
 
 function navigate(page) {
   if(typeof page !== 'string') page = 'dashboard';
-  if(page !== 'plan-upgrade' && page !== 'profile' && page !== 'no-access') {
+  if(page !== 'plan-upgrade' && page !== 'profile' && page !== 'suporte' && page !== 'no-access') {
     if(!_planAllowsPage(page)) {
       try { sessionStorage.setItem('age_blocked_module', page); } catch(e) {}
       page = 'plan-upgrade';
@@ -11021,6 +11136,7 @@ function navigate(page) {
   }
   if(page==='myfinance')    loadFinance();
   if(page==='profile')     loadProfile();
+  if(page==='suporte')     loadSuporte();
   if(page==='equipe-permissoes') loadEquipePermissoesPage();
   if(page==='relatorios')   loadRelatorios();
   if(page==='pipeline')     loadPipeline();
@@ -11084,7 +11200,8 @@ const TENANT_SCOPED_TABLES = new Set([
   'age_projects','age_fechamento','age_hist_projects','age_contracts','age_project_stages',
   'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
   'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
-  'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow','age_social_posts'
+  'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow','age_social_posts',
+  'age_support_tickets'
 ]);
 
 function _tenantCidForScope() {
@@ -11349,7 +11466,8 @@ const NOTIF_TYPE_META = {
   indicacao_convertida:{ icon: '🎁', color: '#8b5cf6' },
   novo_colaborador:    { icon: '👤', color: '#06b6d4' },
   projeto_criado:      { icon: '🚀', color: '#22c55e' },
-  orcamento_aprovado:  { icon: '✅', color: '#22c55e' }
+  orcamento_aprovado:  { icon: '✅', color: '#22c55e' },
+  sistema:             { icon: '🛟', color: '#0ea5e9' }
 };
 let _notifCache = [];
 let _notifPollTimer = null;
@@ -28423,6 +28541,237 @@ async function deleteFinance(id) {
     loadFinance();
     toast('Removido');
   } catch(e){ toast('Erro','err'); }
+}
+
+/* ═══════════════════════════════════════════
+   SUPORTE — bugs, dúvidas e melhorias
+═══════════════════════════════════════════ */
+const SUP_CAT_LABELS = { bug:'Bug', melhoria:'Melhoria', duvida:'Dúvida', outro:'Outro' };
+const SUP_PRI_LABELS = { baixa:'Baixa', media:'Média', alta:'Alta', critica:'Crítica' };
+const SUP_ST_LABELS  = { aberto:'Aberto', em_andamento:'Em andamento', resolvido:'Resolvido', fechado:'Fechado' };
+let _supTicketsCache = [];
+
+function _supIsPlatformAdmin() {
+  return typeof _userIsBootstrapAdmin === 'function' && _userIsBootstrapAdmin();
+}
+
+function suporteFocusForm() {
+  const el = document.getElementById('supFormCard');
+  if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('supTitle')?.focus();
+}
+
+async function loadSuporte() {
+  const list = document.getElementById('supList');
+  const title = document.getElementById('supListTitle');
+  const isPlat = _supIsPlatformAdmin();
+  if(title) title.textContent = isPlat ? 'Inbox da plataforma' : 'Meus relatos';
+  if(list) list.innerHTML = `<div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div>`;
+
+  /* Página atual como sugestão de contexto */
+  const ctx = document.getElementById('supPageCtx');
+  if(ctx && !ctx.value) {
+    const active = document.querySelector('.nav-item.active');
+    const label = active?.querySelector('span')?.textContent?.trim();
+    if(label && label !== 'SUPORTE') ctx.placeholder = 'Ex.: ' + label;
+  }
+
+  let prevSusp = false;
+  try {
+    if(isPlat) {
+      prevSusp = !!window.__tenantScopeSuspended;
+      window.__tenantScopeSuspended = true;
+    }
+    const rows = await fetchAll('age_support_tickets', 400);
+    _supTicketsCache = (rows || []).slice().sort((a, b) => {
+      const ta = new Date(a.created_at || 0).getTime();
+      const tb = new Date(b.created_at || 0).getTime();
+      return tb - ta;
+    });
+    if(!isPlat) {
+      const un = String(currentUser?.username || '').toLowerCase();
+      const canSeeCompany = _userIsAdminLike() || _userGestorUnrestricted();
+      _supTicketsCache = _supTicketsCache.filter(t => {
+        if(String(t.username || '').toLowerCase() === un) return true;
+        return canSeeCompany && String(t.company_id || '') === String(currentUser?.company_id || '');
+      });
+    }
+    renderSuporteList();
+  } catch(e) {
+    console.error('[loadSuporte]', e);
+    const msg = String(e?.message || e || '');
+    if(list) {
+      list.innerHTML = msg.includes('404') || msg.toLowerCase().includes('does not exist') || msg.includes('PGRST')
+        ? `<div class="table-empty" style="color:#b45309">Tabela de suporte ainda não existe.<br>Rode <code>supabase/sql/age_support_tickets.sql</code> no SQL Editor do Supabase.</div>`
+        : `<div class="table-empty" style="color:#b91c1c">Erro ao carregar relatos.</div>`;
+    }
+  } finally {
+    if(isPlat) {
+      try { window.__tenantScopeSuspended = prevSusp; } catch(_) {}
+    }
+  }
+}
+
+function renderSuporteList() {
+  const list = document.getElementById('supList');
+  if(!list) return;
+  const stFilter = document.getElementById('supFilterStatus')?.value || '';
+  let rows = _supTicketsCache || [];
+  if(stFilter) rows = rows.filter(t => t.status === stFilter);
+  if(!rows.length) {
+    list.innerHTML = `<div class="table-empty">Nenhum relato ainda.<br>Use o formulário ao lado para enviar o primeiro.</div>`;
+    return;
+  }
+  const isPlat = _supIsPlatformAdmin();
+  list.innerHTML = rows.map(t => {
+    const id = escAttr(String(t.id || ''));
+    const cat = t.category || 'outro';
+    const pri = t.priority || 'media';
+    const st  = t.status || 'aberto';
+    const when = t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : '—';
+    const who = [t.user_name || t.username, t.company_name].filter(Boolean).join(' · ');
+    const stOpts = Object.entries(SUP_ST_LABELS)
+      .map(([v, l]) => `<option value="${v}" ${st === v ? 'selected' : ''}>${l}</option>`).join('');
+    const adminBar = isPlat ? `
+      <div class="sup-admin-bar" onclick="event.stopPropagation()">
+        <select class="cf-select" style="min-width:140px;font-size:11px" onchange="suporteUpdateStatus('${id}', this.value)">${stOpts}</select>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="suporteEditNotes('${id}')" title="Nota interna"><i class="fas fa-sticky-note"></i> Nota</button>
+      </div>
+      ${t.admin_notes ? `<div class="sup-ticket-meta" style="margin-top:8px;color:#7c3aed"><b>Nota interna:</b> ${escHtml(t.admin_notes)}</div>` : ''}
+    ` : `
+      <div class="sup-admin-bar">
+        <span class="sup-badge st-${escAttr(st)}">${escHtml(SUP_ST_LABELS[st] || st)}</span>
+        ${t.admin_notes && (st === 'resolvido' || st === 'fechado' || st === 'em_andamento')
+          ? `<span class="sup-ticket-meta" style="margin:0">Resposta: ${escHtml(t.admin_notes)}</span>` : ''}
+      </div>`;
+    return `
+    <div class="sup-ticket" data-id="${id}">
+      <div class="sup-ticket-top">
+        <div class="sup-ticket-title">${escHtml(t.title || '—')}</div>
+        <span class="sup-badge cat-${escAttr(cat)}">${escHtml(SUP_CAT_LABELS[cat] || cat)}</span>
+        <span class="sup-badge pri-${escAttr(pri)}">${escHtml(SUP_PRI_LABELS[pri] || pri)}</span>
+      </div>
+      <div class="sup-ticket-meta">${escHtml(when)}${who ? ' · ' + escHtml(who) : ''}${t.page_context ? ' · ' + escHtml(t.page_context) : ''}</div>
+      <div class="sup-ticket-desc">${escHtml(t.description || '')}</div>
+      ${adminBar}
+    </div>`;
+  }).join('');
+}
+
+async function salvarSuporteTicket() {
+  const title = document.getElementById('supTitle')?.value?.trim() || '';
+  const description = document.getElementById('supDesc')?.value?.trim() || '';
+  const category = document.getElementById('supCategory')?.value || 'bug';
+  const priority = document.getElementById('supPriority')?.value || 'media';
+  const page_context = document.getElementById('supPageCtx')?.value?.trim() || '';
+  const hint = document.getElementById('supFormHint');
+  if(!title || title.length < 4) { toast('Escreva um título mais descritivo', 'warn'); return; }
+  if(!description || description.length < 15) { toast('Descreva o problema com um pouco mais de detalhe', 'warn'); return; }
+  if(!currentUser?.username) { toast('Faça login novamente', 'warn'); return; }
+
+  const payload = {
+    company_id: currentUser.company_id || null,
+    company_name: currentUser.company_name || '',
+    username: String(currentUser.username).toLowerCase(),
+    user_name: currentUser.name || currentUser.username || '',
+    user_email: currentUser.email || '',
+    category, priority, title, description,
+    page_context: page_context || null,
+    status: 'aberto'
+  };
+  Object.keys(payload).forEach(k => { if(payload[k] === undefined) delete payload[k]; });
+
+  try {
+    if(hint) hint.textContent = 'Enviando…';
+    await apiPost('age_support_tickets', payload);
+    toast('Relato enviado! Vamos olhar em breve.');
+    document.getElementById('supTitle').value = '';
+    document.getElementById('supDesc').value = '';
+    document.getElementById('supPageCtx').value = '';
+    if(hint) hint.textContent = '';
+    /* Avisa admins da plataforma */
+    for(const admin of ['gustavowng', 'vraulin']) {
+      try {
+        await createNotification({
+          username: admin,
+          company_id: null,
+          type: 'sistema',
+          title: 'Novo relato de suporte',
+          message: `${payload.user_name || payload.username}: ${title}`,
+          link: 'suporte',
+          dedupe_key: `sup_${Date.now()}_${admin}`
+        });
+      } catch(_) {}
+    }
+    loadSuporte();
+  } catch(e) {
+    console.error('[salvarSuporteTicket]', e);
+    const msg = String(e?.message || e || '');
+    if(hint) hint.textContent = '';
+    if(msg.includes('404') || msg.toLowerCase().includes('does not exist')) {
+      toast('Tabela de suporte não encontrada. Rode age_support_tickets.sql no Supabase.', 'err');
+    } else {
+      toast('Erro ao enviar relato', 'err');
+    }
+  }
+}
+
+async function suporteUpdateStatus(id, status) {
+  if(!id || !status) return;
+  try {
+    let prevSusp = false;
+    if(_supIsPlatformAdmin()) {
+      prevSusp = !!window.__tenantScopeSuspended;
+      window.__tenantScopeSuspended = true;
+    }
+    await apiPatch('age_support_tickets', id, { status });
+    const t = _supTicketsCache.find(x => String(x.id) === String(id));
+    if(t) t.status = status;
+    /* Avisa o autor */
+    if(t?.username && (status === 'resolvido' || status === 'em_andamento')) {
+      try {
+        await createNotification({
+          username: t.username,
+          company_id: t.company_id || null,
+          type: 'sistema',
+          title: status === 'resolvido' ? 'Seu relato foi resolvido' : 'Seu relato está em andamento',
+          message: t.title || 'Atualização do suporte',
+          link: 'suporte',
+          dedupe_key: `sup_st_${id}_${status}`
+        });
+      } catch(_) {}
+    }
+    toast('Status atualizado');
+    renderSuporteList();
+    if(_supIsPlatformAdmin()) {
+      try { window.__tenantScopeSuspended = prevSusp; } catch(_) {}
+    }
+  } catch(e) {
+    toast('Erro ao atualizar status', 'err');
+  }
+}
+
+async function suporteEditNotes(id) {
+  const t = _supTicketsCache.find(x => String(x.id) === String(id));
+  const cur = t?.admin_notes || '';
+  const notes = prompt('Nota interna / resposta ao usuário:', cur);
+  if(notes === null) return;
+  try {
+    let prevSusp = false;
+    if(_supIsPlatformAdmin()) {
+      prevSusp = !!window.__tenantScopeSuspended;
+      window.__tenantScopeSuspended = true;
+    }
+    await apiPatch('age_support_tickets', id, { admin_notes: notes.trim() });
+    if(t) t.admin_notes = notes.trim();
+    toast('Nota salva');
+    renderSuporteList();
+    if(_supIsPlatformAdmin()) {
+      try { window.__tenantScopeSuspended = prevSusp; } catch(_) {}
+    }
+  } catch(e) {
+    toast('Erro ao salvar nota', 'err');
+  }
 }
 
 /* ═══════════════════════════════════════════
