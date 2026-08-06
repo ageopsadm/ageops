@@ -124,17 +124,20 @@ body {
 
 .hero-headline {
   font-family: var(--serif);
-  font-size: clamp(60px, 14vw, 240px);
-  line-height: 0.88;
+  font-size: clamp(44px, 9vw, 120px);
+  line-height: 1.08;
   letter-spacing: -0.03em;
   font-weight: 400;
   margin: auto 0;
-  padding: 60px 0;
+  padding: 40px 0;
+  /* evita “bloco verde” com linhas coladas uma sobre a outra */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .hero-headline .italic { font-style: italic; }
 .hero-headline .marker {
-  background: var(--highlight);
-  padding: 0 0.08em;
+  background: linear-gradient(180deg, transparent 62%, var(--highlight) 62%);
+  padding: 0 0.06em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -351,14 +354,22 @@ body {
 }
 .cta-final h2 {
   font-family: var(--serif);
-  font-size: clamp(60px, 10vw, 180px);
-  line-height: 0.9;
+  font-size: clamp(44px, 8vw, 110px);
+  line-height: 1.08;
   letter-spacing: -0.03em;
   font-weight: 400;
   margin-bottom: 60px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .cta-final h2 .italic { font-style: italic; }
-.cta-final h2 .marker { background: var(--highlight); color: var(--ink); padding: 0 0.05em; }
+.cta-final h2 .marker {
+  background: linear-gradient(180deg, transparent 62%, var(--highlight) 62%);
+  color: var(--paper);
+  padding: 0 0.05em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
 .cta-btn {
   display: inline-flex;
   align-items: center;
@@ -758,15 +769,22 @@ body {
 }
 .result-role {
   font-family: var(--serif);
-  font-size: clamp(72px, 12vw, 180px);
-  line-height: 0.9;
+  font-size: clamp(40px, 8vw, 96px);
+  line-height: 1.1;
   letter-spacing: -0.03em;
   font-weight: 400;
   padding-bottom: 32px;
   border-bottom: 1px solid var(--ink-15);
   margin-bottom: 32px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
-.result-role .marker { background: var(--highlight); padding: 0 0.05em; }
+.result-role .marker {
+  background: linear-gradient(180deg, transparent 62%, var(--highlight) 62%);
+  padding: 0 0.05em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
 
 .result-meta {
   display: grid;

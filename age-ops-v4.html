@@ -5856,7 +5856,7 @@ body:has(#login-screen.visible){
     <div style="display:flex;gap:8px;margin-top:18px;justify-content:space-between;flex-wrap:wrap">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" id="pBtnDuplicate" class="btn btn-ghost perm-guard-edit" style="display:none" onclick="duplicateProjectFromModal()"><i class="fas fa-copy"></i> Duplicar</button>
-        <button type="button" id="pBtnRecurring" class="btn btn-ghost perm-guard-edit" style="display:none" onclick="openProjRecorrenteFromModal()"><i class="fas fa-redo"></i> Recorrente</button>
+        <button type="button" id="pBtnRecurring" class="btn btn-ghost perm-guard-edit" style="display:none" onclick="openProjRecorrenteFromModal()"><i class="fas fa-redo"></i> Tornar recorrente</button>
       </div>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="btn btn-ghost" onclick="closeModal('modalProject')">Cancelar</button>
@@ -5868,25 +5868,28 @@ body:has(#login-screen.visible){
 
 <!-- Modal Projeto Recorrente -->
 <div class="modal" id="modalProjRecorrente">
-  <div class="modal-box" style="max-width:440px;width:96vw">
+  <div class="modal-box" style="max-width:480px;width:96vw">
     <div class="modal-title">
       <span>PROJETO RECORRENTE</span>
       <button onclick="closeModal('modalProjRecorrente')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
     </div>
     <input type="hidden" id="projRecId">
     <div style="font-family:var(--font-m);font-size:12px;color:var(--textsub);line-height:1.45;margin-bottom:14px">
-      Gera uma série mensal a partir deste projeto: o atual fica como mês 1 e criamos os demais meses com o mesmo valor, cliente e equipe.
+      Marca este projeto como recorrente e <b>duplica automaticamente</b> nos meses seguintes (mesmo cliente, valor, custo e equipe), com datas deslocadas mês a mês.
     </div>
     <div id="projRecSummary" style="font-family:var(--font-m);font-size:12px;padding:10px 12px;background:#f8fafc;border:1px solid var(--bd);border-radius:8px;margin-bottom:14px"></div>
     <div class="form-group">
       <label class="form-label">DURAÇÃO</label>
+      <button type="button" class="btn btn-ghost proj-rec-opt" id="projRecYearEndBtn" data-months="0" onclick="selectProjRecMonths(parseInt(this.dataset.months,10))" style="width:100%;margin-bottom:8px;justify-content:center">
+        Até o fim do ano
+      </button>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
         <button type="button" class="btn btn-ghost proj-rec-opt" data-months="3" onclick="selectProjRecMonths(3)">3 meses</button>
         <button type="button" class="btn btn-ghost proj-rec-opt" data-months="6" onclick="selectProjRecMonths(6)">6 meses</button>
         <button type="button" class="btn btn-ghost proj-rec-opt" data-months="12" onclick="selectProjRecMonths(12)">12 meses</button>
       </div>
     </div>
-    <div style="font-family:var(--font-m);font-size:11px;color:var(--textsub);margin-top:10px" id="projRecHint">Selecione a duração da recorrência.</div>
+    <div style="font-family:var(--font-m);font-size:11px;color:var(--textsub);margin-top:10px;line-height:1.45" id="projRecHint">Selecione a duração da recorrência.</div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('modalProjRecorrente')">Cancelar</button>
       <button class="btn btn-primary" id="projRecConfirmBtn" onclick="confirmProjRecorrente()" disabled><i class="fas fa-redo"></i> Gerar série</button>
@@ -13674,7 +13677,7 @@ async function loadDashboard() {
       };
     } catch(_) { supa2026 = null; }
 
-    /* Análise profunda: SEMPRE o ano completo (mappedAll), nunca o filtro mensal/trimestral */
+    /* Análise profunda: ano completo + cruzamento com as demais abas (Projetos, Orçamentos, etc.) */
     renderDeepAnalysis(mappedAll, {
       fat: supa2026?.fat ?? fat,
       cost: supa2026?.cost ?? custoTotal,
@@ -13690,8 +13693,10 @@ async function loadDashboard() {
       clientes: (supa2026?.clientes != null) ? supa2026.clientes : 0,
       supa2026,
       filtroDashboard: _dashPeriodLabel(),
-      companyName: currentUser?.company_name || ''
-    });
+      companyName: currentUser?.company_name || '',
+      rawProjects: dbProjects || [],
+      fechByProjectId
+    }).catch(e => console.warn('[renderDeepAnalysis]', e));
 
     if(window._dashRefreshTimer) clearInterval(window._dashRefreshTimer);
     window._dashRefreshTimer = setInterval(() => {
@@ -13757,12 +13762,759 @@ function _deepIsOwnageCompany(kpis) {
   return name.includes('ownage') || user === 'gustavowng';
 }
 
-function renderDeepAnalysis(filtered2026, kpis) {
+/** Snapshot cruzado de TODAS as abas Age Ops. */
+async function _deepFetchOpsSnapshot(rawProjects, fechByProjectId) {
+  const ANO = 2026;
+  const hojeStr = new Date().toISOString().slice(0, 10);
+  fechByProjectId = fechByProjectId instanceof Map ? fechByProjectId : new Map();
+
+  if (typeof _relCache !== 'undefined' && (!_relCache || !_relCache.length) && typeof loadRelatorios === 'function') {
+    try { await loadRelatorios(); } catch (_) {}
+  }
+
+  let raw = Array.isArray(rawProjects) ? rawProjects : [];
+  if (!raw.length && typeof fetchAgeProjectsScoped === 'function') {
+    raw = await fetchAgeProjectsScoped(1500).catch(() => []);
+  }
+  if (!fechByProjectId.size) {
+    const fechs = await fetchAll('age_fechamento', 1000).catch(() => []);
+    (fechs || []).forEach(f => {
+      if (f && f.project_id != null) fechByProjectId.set(f.project_id, f);
+    });
+  }
+
+  const [
+    pays, orcs, cash, posts, tasks, contracts, leads, npsCamp, npsResp,
+    colabs, clients, stages, deliveries, diarias, candidates, support,
+    calendar, assigned, users, hist
+  ] = await Promise.all([
+    fetchAll('age_payments', 5000).catch(() => []),
+    fetchAll('age_orcamentos', 3000).catch(() => []),
+    fetchAll('age_cashflow', 6000).catch(() => []),
+    fetchAll('age_social_posts', 4000).catch(() => []),
+    fetchAll('age_tasks', 4000).catch(() => []),
+    fetchAll('age_contracts', 4000).catch(() => []),
+    fetchAll('age_leads', 2000).catch(() => []),
+    fetchAll('age_nps_campanhas', 500).catch(() => []),
+    fetchAll('age_nps_respostas', 2000).catch(() => []),
+    fetchAll('age_colaboradores', 800).catch(() => []),
+    fetchAll('age_clients_db', 1000).catch(() => []),
+    fetchAll('age_project_stages', 2000).catch(() => []),
+    fetchAll('age_project_deliveries', 3000).catch(() => []),
+    fetchAll('age_project_diarias', 3000).catch(() => []),
+    fetchAll('age_candidates', 800).catch(() => []),
+    fetchAll('age_support_tickets', 400).catch(() => []),
+    fetchAll('age_team_calendar', 3000).catch(() => []),
+    fetchAll('age_assigned_tasks', 3000).catch(() => []),
+    fetchAll('age_users', 500).catch(() => []),
+    fetchAll('age_hist_projects', 2000).catch(() => [])
+  ]);
+
+  const projAtivos = (raw || []).filter(p => typeof _projRowNotDeleted === 'function' ? _projRowNotDeleted(p) : !p?.deleted);
+  const statusCount = {};
+  projAtivos.forEach(p => {
+    const s = (typeof _projStatusNormDash === 'function' ? _projStatusNormDash(p.status) : String(p.status || '')) || '—';
+    statusCount[s] = (statusCount[s] || 0) + 1;
+  });
+  const emAnd = (statusCount['em_andamento'] || 0) + (statusCount['in_progress'] || 0);
+  const concl = (statusCount['concluido'] || 0) + (statusCount['completed'] || 0);
+  let atrasados = 0, conclSemFech = 0, semCusto = 0, semValor = 0, recorrentes = 0, semNpsProj = 0;
+  const _hasFech = (id) => fechByProjectId.has(id) || fechByProjectId.has(String(id));
+  projAtivos.forEach(p => {
+    const sNorm = typeof _projStatusNormDash === 'function' ? _projStatusNormDash(p.status) : String(p.status || '').toLowerCase();
+    const concluido = ['concluido', 'completed'].includes(sNorm);
+    const cancelado = ['cancelado', 'canceled', 'cancelled'].includes(sNorm);
+    const due = p.due_date || p.delivery_date || p.end_date;
+    if (!concluido && !cancelado && due) {
+      const dl = String(due).slice(0, 10);
+      if (dl && dl < hojeStr) atrasados++;
+    }
+    if (concluido && !_hasFech(p.id)) conclSemFech++;
+    if (!cancelado && !(parseFloat(p.cost) > 0)) semCusto++;
+    if (!cancelado && !(parseFloat(p.total_value) > 0)) semValor++;
+    if (p.is_recurring === true || p.is_recurring === 'true') recorrentes++;
+    if (!cancelado && !(parseFloat(p.nps) > 0)) semNpsProj++;
+  });
+
+  const normP = s => {
+    s = String(s || '').toLowerCase();
+    if (s.includes('pag')) return 'pago';
+    if (s.includes('atras')) return 'atrasado';
+    if (s.includes('cancel')) return 'cancelado';
+    return 'pendente';
+  };
+  let pPend = 0, pPendN = 0, pAtras = 0, pAtrasN = 0, pPagoAno = 0;
+  (pays || []).forEach(p => {
+    const st = normP(p.status);
+    const v = parseFloat(p.valor ?? p.amount ?? 0) || 0;
+    const venc = String(p.data_vencimento || '').slice(0, 10);
+    if (st === 'cancelado') return;
+    if (st === 'pago') {
+      const dp = String(p.data_pagamento || p.paid_at || '').slice(0, 10);
+      if (dp.startsWith(String(ANO)) || (!dp && venc.startsWith(String(ANO)))) pPagoAno += v;
+    } else {
+      pPend += v; pPendN++;
+      if (st === 'atrasado' || (venc && venc < hojeStr)) { pAtras += v; pAtrasN++; }
+    }
+  });
+
+  let cRec = 0, cCusto = 0, cFixo = 0, cVar = 0;
+  (cash || []).forEach(c => {
+    const t = String(c.tipo || '').toLowerCase();
+    const ano = parseInt(c.ano || 0, 10);
+    if (ano && ano !== ANO) return;
+    const v = (parseFloat(c.valor_total ?? 0) || (parseFloat(c.valor_unitario || 0) * parseFloat(c.quantidade || 1))) || 0;
+    if (t.includes('receita')) cRec += v;
+    else if (t.includes('fixo')) { cCusto += v; cFixo += v; }
+    else if (t.includes('custo') || t.includes('variavel')) { cCusto += v; cVar += v; }
+  });
+
+  const orcsReais = (orcs || []).filter(o => !(o.is_template === true || o.status === 'modelo'));
+  let oAprov = 0, oEnv = 0, oRasc = 0, oValProp = 0, oValAprov = 0, oRecusado = 0;
+  orcsReais.forEach(o => {
+    const st = String(o.status || 'rascunho').toLowerCase();
+    const v = parseFloat(o.total_value ?? o.total ?? 0) || 0;
+    if (st === 'aprovado') { oAprov++; oValAprov += v; }
+    else if (st === 'enviado') { oEnv++; oValProp += v; }
+    else if (st.includes('recus') || st.includes('perd') || st === 'rejeitado') oRecusado++;
+    else if (st === 'rascunho' || !st) oRasc++;
+  });
+  const taxaOrc = (oAprov + oEnv) > 0 ? Math.round(oAprov / (oAprov + oEnv) * 100) : null;
+
+  const leadBySt = {};
+  (leads || []).forEach(l => {
+    const st = String(l.status || l.stage || 'novo').toLowerCase() || 'novo';
+    leadBySt[st] = (leadBySt[st] || 0) + 1;
+  });
+  const leadsAbertos = (leads || []).filter(l => {
+    const st = String(l.status || l.stage || '').toLowerCase();
+    return !['ganho', 'fechado', 'perdido', 'won', 'lost', 'arquivado'].includes(st);
+  }).length;
+
+  let postados = 0, postsPend = 0, postsProntos = 0;
+  (posts || []).forEach(p => {
+    const stg = String(p.editorial_stage || p.status || '').toLowerCase();
+    if (stg === 'postado' || p.published_at) postados++;
+    else if (stg.includes('pronto')) postsProntos++;
+    else postsPend++;
+  });
+
+  const tasksOpen = (tasks || []).filter(t => {
+    const st = String(t.status || '').toLowerCase();
+    return !['done', 'concluida', 'concluido', 'completed', 'cancelado'].includes(st);
+  }).length;
+  const tasksOverdue = (tasks || []).filter(t => {
+    const st = String(t.status || '').toLowerCase();
+    if (['done', 'concluida', 'concluido', 'completed', 'cancelado'].includes(st)) return false;
+    const d = String(t.due_date || t.deadline || '').slice(0, 10);
+    return d && d < hojeStr;
+  }).length;
+
+  const contractsAtivos = (contracts || []).filter(c => {
+    const st = String(c.status || '').toLowerCase();
+    return !['cancelado', 'encerrado', 'expirado', 'rascunho'].includes(st);
+  }).length;
+  const contractsVencendo = (contracts || []).filter(c => {
+    const st = String(c.status || '').toLowerCase();
+    if (['cancelado', 'encerrado', 'expirado'].includes(st)) return false;
+    const end = String(c.end_date || c.validade || c.data_fim || '').slice(0, 10);
+    if (!end) return false;
+    const lim = new Date(); lim.setDate(lim.getDate() + 30);
+    return end <= lim.toISOString().slice(0, 10) && end >= hojeStr;
+  }).length;
+
+  const rels = (typeof _relCache !== 'undefined' && Array.isArray(_relCache)) ? _relCache : [];
+  const relsComProblema = rels.filter(r => String(r.status || '') === 'problema' || (r.problemas && String(r.problemas).trim())).length;
+
+  const clientsAtivos = (clients || []).filter(c => {
+    const st = String(c.status || '').toLowerCase();
+    return !st || st === 'ativo' || st === 'recorrente';
+  }).length;
+  const clientsInativos = (clients || []).filter(c => String(c.status || '').toLowerCase() === 'inativo').length;
+
+  const colabAtivos = (colabs || []).filter(c => {
+    const st = String(c.status || c.ativo || '').toLowerCase();
+    if (st === 'inativo' || st === 'false' || c.ativo === false) return false;
+    return true;
+  }).length;
+
+  const stagesPend = (stages || []).filter(s => {
+    const st = String(s.stage || s.status || '').toLowerCase();
+    return st && !['done', 'concluido', 'entregue', 'completed'].includes(st);
+  }).length;
+
+  const delivAtras = (deliveries || []).filter(d => {
+    const st = String(d.status || '').toLowerCase();
+    if (['aprovada', 'enviada', 'cancelada'].includes(st)) return false;
+    const due = String(d.due_date || '').slice(0, 10);
+    return due && due < hojeStr;
+  }).length;
+  const delivPend = (deliveries || []).filter(d => {
+    const st = String(d.status || '').toLowerCase();
+    return ['pendente', 'em_andamento', 'ajustes'].includes(st) || !st;
+  }).length;
+
+  const diariasProx = (diarias || []).filter(d => {
+    const st = String(d.status || '').toLowerCase();
+    if (st === 'cancelada' || st === 'executada') return false;
+    const dt = String(d.diaria_date || '').slice(0, 10);
+    return dt && dt >= hojeStr;
+  }).length;
+  const diariasPassadasPend = (diarias || []).filter(d => {
+    const st = String(d.status || '').toLowerCase();
+    if (st === 'executada' || st === 'cancelada') return false;
+    const dt = String(d.diaria_date || '').slice(0, 10);
+    return dt && dt < hojeStr;
+  }).length;
+
+  const candNovos = (candidates || []).filter(c => {
+    const st = String(c.status || '').toLowerCase();
+    return ['novo', 'recebido', 'triagem', 'pendente', ''].includes(st) || !c.status;
+  }).length;
+
+  const supportOpen = (support || []).filter(t => {
+    const st = String(t.status || '').toLowerCase();
+    return !['resolvido', 'fechado', 'closed', 'done'].includes(st);
+  }).length;
+
+  const calProx7 = (() => {
+    const lim = new Date(); lim.setDate(lim.getDate() + 7);
+    const limS = lim.toISOString().slice(0, 10);
+    return (calendar || []).filter(ev => {
+      const d = String(ev.event_date || ev.date || ev.start_date || '').slice(0, 10);
+      return d && d >= hojeStr && d <= limS;
+    }).length;
+  })();
+
+  const assignedOpen = (assigned || []).filter(t => {
+    const st = String(t.status || '').toLowerCase();
+    return !['done', 'concluido', 'completed', 'cancelado'].includes(st);
+  }).length;
+
+  const npsRespN = (npsResp || []).length;
+  const npsAvg = (() => {
+    const nums = (npsResp || []).map(r => parseFloat(r.score ?? r.nota ?? r.nps ?? 0)).filter(n => n > 0);
+    if (!nums.length) return 0;
+    return nums.reduce((a, b) => a + b, 0) / nums.length;
+  })();
+
+  const teamUsers = (users || []).filter(u => u.company_id || u.username).length;
+
+  return {
+    ano: ANO,
+    projetos: {
+      total: projAtivos.length, emAndamento: emAnd, concluidos: concl, atrasados,
+      conclSemFech, semCusto, semValor, recorrentes, semNps: semNpsProj, porStatus: statusCount,
+      fechamentos: fechByProjectId.size
+    },
+    pagamentos: { n: (pays || []).length, pendente: pPend, pendenteN: pPendN, atrasado: pAtras, atrasadoN: pAtrasN, pagoAno: pPagoAno },
+    caixa: { n: (cash || []).length, receitas: cRec, custos: cCusto, fixos: cFixo, variaveis: cVar, saldo: cRec - cCusto },
+    orcamentos: {
+      n: orcsReais.length, aprovados: oAprov, enviados: oEnv, rascunhos: oRasc, recusados: oRecusado,
+      valorEmProposta: oValProp, valorAprovado: oValAprov, taxaAprovacao: taxaOrc
+    },
+    leads: { n: (leads || []).length, abertos: leadsAbertos, porStatus: leadBySt },
+    conteudos: { n: (posts || []).length, postados, pendentes: postsPend, prontos: postsProntos },
+    tarefas: { n: (tasks || []).length, abertas: tasksOpen, atrasadas: tasksOverdue, assignedAbertas: assignedOpen },
+    contratos: { n: (contracts || []).length, ativos: contractsAtivos, vencendo30d: contractsVencendo },
+    nps: { campanhas: (npsCamp || []).length, respostas: npsRespN, mediaRespostas: npsAvg },
+    relatorios: { n: rels.length, comProblema: relsComProblema },
+    clientes: { n: (clients || []).length, ativos: clientsAtivos, inativos: clientsInativos },
+    equipe: { colaboradores: (colabs || []).length, ativos: colabAtivos, usuarios: teamUsers },
+    gestao: { stages: (stages || []).length, stagesPendentes: stagesPend },
+    entregas: { n: (deliveries || []).length, pendentes: delivPend, atrasadas: delivAtras },
+    diarias: { n: (diarias || []).length, proximas: diariasProx, passadasPendentes: diariasPassadasPend },
+    recrutamento: { n: (candidates || []).length, novos: candNovos },
+    suporte: { n: (support || []).length, abertos: supportOpen },
+    cronograma: { n: (calendar || []).length, proximos7d: calProx7 },
+    historico: { n: (hist || []).length }
+  };
+}
+
+function _deepPush(diagnosticos, item) {
+  if (!item || !item.titulo) return;
+  diagnosticos.push(item);
+}
+
+/** Gera insights/avisos de TODAS as áreas — inclusive módulos vazios. */
+function _deepPushOpsDiagnosticos(diagnosticos, ops, kpis) {
+  if (!ops) return;
+  const P = ops.projetos || {};
+  const Pay = ops.pagamentos || {};
+  const Cx = ops.caixa || {};
+  const Or = ops.orcamentos || {};
+  const Ld = ops.leads || {};
+  const Tk = ops.tarefas || {};
+  const Rel = ops.relatorios || {};
+  const Cl = ops.clientes || {};
+  const Eq = ops.equipe || {};
+  const Ct = ops.contratos || {};
+  const Co = ops.conteudos || {};
+  const Np = ops.nps || {};
+  const Ge = ops.gestao || {};
+  const En = ops.entregas || {};
+  const Di = ops.diarias || {};
+  const Rc = ops.recrutamento || {};
+  const Su = ops.suporte || {};
+  const Cr = ops.cronograma || {};
+  const fat = (kpis && kpis.fat) || 0;
+
+  /* ── PROJETOS ── */
+  if (!P.total) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'PROJETOS', icone: 'fa-project-diagram',
+      titulo: 'Nenhum projeto cadastrado na aba Projetos',
+      corpo: 'Sem projetos, o dashboard e o financeiro ficam sem base operacional.',
+      pontosCego: ['Crie o primeiro projeto ou sincronize o banco.', 'Orçamentos aprovados podem virar projeto em 1 clique.'],
+      acao: 'Abrir Projetos e cadastrar jobs ativos / pipeline fechado.'
+    });
+  } else {
+    if (P.atrasados > 0) {
+      _deepPush(diagnosticos, {
+        nivel: P.atrasados >= 3 ? 'critico' : 'alerta', categoria: 'PROJETOS · PRAZO', icone: 'fa-clock',
+        titulo: `${P.atrasados} projeto(s) com prazo vencido`,
+        corpo: `<b>${P.total}</b> projetos · <b>${P.emAndamento}</b> em andamento · <b>${P.concluidos}</b> concluídos.`,
+        pontosCego: [`${P.conclSemFech} concluído(s) sem fechamento.`, `${P.semCusto} sem custo · ${P.semValor} sem valor.`, `${P.recorrentes} recorrente(s).`],
+        acao: 'Filtrar atrasados na aba Projetos e renegociar prazo ou concluir.'
+      });
+    }
+    if (P.conclSemFech > 0) {
+      _deepPush(diagnosticos, {
+        nivel: 'alerta', categoria: 'PROJETOS · FECHAMENTO', icone: 'fa-clipboard-check',
+        titulo: `${P.conclSemFech} concluído(s) sem fechamento financeiro`,
+        corpo: `Há ${P.fechamentos || 0} fechamento(s) no sistema — mas parte dos concluídos ainda não foi fechada.`,
+        pontosCego: ['Margem do dashboard fica incompleta.', 'Fechamento alimenta custos reais por projeto.'],
+        acao: 'Ir em Fechamento e completar os pendentes.'
+      });
+    }
+    if (P.semCusto >= Math.max(3, Math.floor(P.total * 0.4))) {
+      _deepPush(diagnosticos, {
+        nivel: 'alerta', categoria: 'PROJETOS · CUSTOS', icone: 'fa-coins',
+        titulo: `${P.semCusto} projeto(s) sem custo cadastrado`,
+        corpo: 'Sem custo, a margem bruta fica artificialmente alta.',
+        pontosCego: ['Use gastos do projeto ou o campo custo no modal.', 'Fechamento também preenche custo.'],
+        acao: 'Preencher custo nos projetos com faturamento relevante.'
+      });
+    }
+    if (P.semNps >= Math.max(3, Math.floor(P.total * 0.5))) {
+      _deepPush(diagnosticos, {
+        nivel: 'info', categoria: 'PROJETOS · NPS', icone: 'fa-star',
+        titulo: `${P.semNps} projeto(s) sem NPS no cadastro`,
+        corpo: 'Satisfação por projeto ainda pouco registrada na aba Projetos.',
+        pontosCego: ['Campanhas NPS (aba NPS) complementam a nota do projeto.', 'NPS alto = base para recorrência/indicação.'],
+        acao: 'Pedir nota 0–10 no fechamento de cada entrega.'
+      });
+    }
+    if (P.recorrentes === 0 && P.total >= 5) {
+      _deepPush(diagnosticos, {
+        nivel: 'info', categoria: 'PROJETOS · RECORRÊNCIA', icone: 'fa-redo',
+        titulo: 'Nenhuma série recorrente ativa',
+        corpo: 'Receita previsível sobe quando jobs mensais viram série (até o fim do ano / 3·6·12).',
+        pontosCego: ['Use o botão ↻ no card do projeto.', 'Retainers estabilizam caixa e equipe.'],
+        acao: 'Escolher 1–2 clientes fiéis e gerar recorrência até dezembro.'
+      });
+    }
+  }
+
+  /* ── PIPELINE / LEADS ── */
+  if (!Ld.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'PIPELINE · LEADS', icone: 'fa-funnel-dollar',
+      titulo: 'Pipeline de leads vazio',
+      corpo: 'A aba Pipeline não tem leads — o comercial depende só de demanda espontânea.',
+      pontosCego: ['Sem funil documentado, sazonalidade vira surpresa.', 'Meta de ritmo exige leads sempre no radar.'],
+      acao: 'Cadastrar leads quentes e definir follow-up semanal.'
+    });
+  } else if (Ld.abertos === 0 && (Or.enviados || 0) === 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'PIPELINE · LEADS', icone: 'fa-funnel-dollar',
+      titulo: 'Leads existem, mas o funil está parado',
+      corpo: `<b>${Ld.n}</b> lead(s) · <b>0</b> aberto(s) · orçamentos enviados: <b>${Or.enviados || 0}</b>.`,
+      pontosCego: Object.entries(Ld.porStatus || {}).slice(0, 4).map(([k, v]) => `${escHtml(k)}: ${v}`),
+      acao: 'Reabrir leads ou gerar novas oportunidades e orçamentos.'
+    });
+  } else if (Ld.abertos >= 5) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'PIPELINE · LEADS', icone: 'fa-funnel-dollar',
+      titulo: `${Ld.abertos} lead(s) aberto(s) esperando conversão`,
+      corpo: `Total no pipeline: <b>${Ld.n}</b>.`,
+      pontosCego: Object.entries(Ld.porStatus || {}).slice(0, 4).map(([k, v]) => `${escHtml(k)}: ${v}`),
+      acao: 'Qualificar top 5 e abrir orçamento nesta semana.'
+    });
+  }
+
+  /* ── ORÇAMENTOS ── */
+  if (!Or.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'ORÇAMENTOS', icone: 'fa-file-invoice-dollar',
+      titulo: 'Nenhum orçamento na aba Orçamentos',
+      corpo: 'Sem propostas formais, o fechamento comercial fica informal e difícil de medir.',
+      pontosCego: ['Orçamento aprovado pode virar projeto.', 'Taxa de conversão só existe com enviados + aprovados.'],
+      acao: 'Criar e enviar ao menos 3 propostas esta semana.'
+    });
+  } else {
+    if (Or.enviados > 0 && Or.taxaAprovacao != null && Or.taxaAprovacao < 35) {
+      _deepPush(diagnosticos, {
+        nivel: 'alerta', categoria: 'ORÇAMENTOS · CONVERSÃO', icone: 'fa-percentage',
+        titulo: `Taxa de aprovação ${Or.taxaAprovacao}%`,
+        corpo: `<b>${Or.aprovados}</b> aprov. · <b>${Or.enviados}</b> env. · <b>${fmtBRL(Or.valorEmProposta)}</b> em proposta · <b>${fmtBRL(Or.valorAprovado)}</b> aprovado.`,
+        pontosCego: [`${Or.rascunhos} rascunho(s) · ${Or.recusados || 0} recusado(s).`, 'Follow-up em 3–5 dias eleva conversão.'],
+        acao: 'Follow-up nos enviados e revisar preço/escopo.'
+      });
+    }
+    if (Or.rascunhos >= 3 && Or.enviados === 0) {
+      _deepPush(diagnosticos, {
+        nivel: 'info', categoria: 'ORÇAMENTOS', icone: 'fa-file-invoice-dollar',
+        titulo: `${Or.rascunhos} rascunho(s) e nenhum enviado`,
+        corpo: `Total de orçamentos: <b>${Or.n}</b>.`,
+        pontosCego: ['Trabalho comercial parado na aba.', 'Enviar é o que move o funil.'],
+        acao: 'Finalizar e enviar os rascunhos mais quentes.'
+      });
+    }
+    if (Or.aprovados > 0 && P.total > 0 && Or.aprovados > P.emAndamento + 2) {
+      _deepPush(diagnosticos, {
+        nivel: 'info', categoria: 'ORÇAMENTOS → PROJETOS', icone: 'fa-link',
+        titulo: 'Há orçamentos aprovados além dos projetos em andamento',
+        corpo: `<b>${Or.aprovados}</b> aprovados vs <b>${P.emAndamento}</b> projetos em andamento — possível gap de kickoff.`,
+        pontosCego: ['Converter aprovado em projeto evita receita “fantasma”.', 'Alinhar datas de início no cronograma.'],
+        acao: 'Abrir orçamentos aprovados e gerar/atualizar o projeto correspondente.'
+      });
+    }
+  }
+
+  /* ── CLIENTES ── */
+  if (!Cl.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'CLIENTES', icone: 'fa-users',
+      titulo: 'Banco de clientes ainda vazio',
+      corpo: 'A aba Clientes não tem base consolidada — histórico e LTV ficam difíceis.',
+      pontosCego: ['Clientes também nascem dos projetos.', 'Status ativo/recorrente/inativo ajuda reativação.'],
+      acao: 'Sincronizar/cadastrar clientes a partir dos projetos do ano.'
+    });
+  } else if (Cl.inativos >= 5 && Cl.ativos > 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'CLIENTES · REATIVAÇÃO', icone: 'fa-user-clock',
+      titulo: `${Cl.inativos} cliente(s) inativo(s) na base`,
+      corpo: `<b>${Cl.n}</b> no banco · <b>${Cl.ativos}</b> ativos/recorrentes.`,
+      pontosCego: ['Reativação custa menos que aquisição.', 'Cruzar com NPS alto do passado.'],
+      acao: 'Campanha de reativação para top inativos por histórico de fat.'
+    });
+  }
+
+  /* ── GESTÃO / KANBAN ── */
+  if (!Ge.stages) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'GESTÃO (KANBAN)', icone: 'fa-columns',
+      titulo: 'Kanban de produção sem stages registrados',
+      corpo: 'A aba Gestão não mostra fluxo de etapas — risco de projeto “sumir” entre briefing e entrega.',
+      pontosCego: ['Stages ligam projeto à produção.', 'Atrasos ficam invisíveis sem board.'],
+      acao: 'Usar a Gestão para mover jobs por etapa esta semana.'
+    });
+  } else if (Ge.stagesPendentes >= 5) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'GESTÃO (KANBAN)', icone: 'fa-columns',
+      titulo: `${Ge.stagesPendentes} etapa(s) ainda em aberto no kanban`,
+      corpo: `Total de stages: <b>${Ge.stages}</b>.`,
+      pontosCego: ['Board desatualizado esconde gargalo real.', 'Alinhar com prazos da aba Projetos.'],
+      acao: 'Atualizar o kanban e limpar cards parados.'
+    });
+  }
+
+  /* ── ENTREGAS & DIÁRIAS ── */
+  if (!En.n && P.emAndamento > 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'ENTREGAS', icone: 'fa-box-open',
+      titulo: 'Projetos em andamento sem entregas cadastradas',
+      corpo: `<b>${P.emAndamento}</b> em andamento · <b>0</b> entregas na aba Entregas.`,
+      pontosCego: ['Entregas alimentam o portal do cliente.', 'Prazo de arquivo/corte fica no escuro.'],
+      acao: 'Cadastrar entregáveis dos projetos ativos.'
+    });
+  } else if (En.atrasadas > 0) {
+    _deepPush(diagnosticos, {
+      nivel: En.atrasadas >= 3 ? 'critico' : 'alerta', categoria: 'ENTREGAS · PRAZO', icone: 'fa-box-open',
+      titulo: `${En.atrasadas} entrega(s) atrasada(s)`,
+      corpo: `<b>${En.n}</b> entregas · <b>${En.pendentes}</b> pendentes.`,
+      pontosCego: ['Atraso de entrega vira NPS baixo.', 'Portal do cliente expõe o status.'],
+      acao: 'Priorizar entregas vencidas e comunicar o cliente.'
+    });
+  }
+  if (Di.passadasPendentes > 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'DIÁRIAS', icone: 'fa-camera',
+      titulo: `${Di.passadasPendentes} diária(s) passada(s) ainda não executada(s)`,
+      corpo: `<b>${Di.n}</b> diárias · <b>${Di.proximas}</b> próximas.`,
+      pontosCego: ['Diária sem status polui o cronograma.', 'Afeta custo e equipe no dia.'],
+      acao: 'Marcar como executada/cancelada ou remarcar.'
+    });
+  } else if (!Di.n && P.emAndamento > 2) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'DIÁRIAS', icone: 'fa-camera',
+      titulo: 'Sem diárias de gravação registradas',
+      corpo: 'A aba Entregas/Diárias está vazia apesar de projetos em andamento.',
+      pontosCego: ['Diárias organizam set, locação e equipe.', 'Evita conflito de agenda.'],
+      acao: 'Lançar próximas diárias dos projetos ativos.'
+    });
+  }
+
+  /* ── CONTRATOS ── */
+  if (!Ct.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'CONTRATOS', icone: 'fa-file-contract',
+      titulo: 'Nenhum contrato na aba Contratos',
+      corpo: 'Risco jurídico e de escopo sobe sem contrato padronizado.',
+      pontosCego: ['Termo de imagem e revisões deveriam estar no contrato.', 'Retainers pedem contrato recorrente.'],
+      acao: 'Criar template e anexar aos próximos fechamentos.'
+    });
+  } else if (Ct.vencendo30d > 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'CONTRATOS · VENCIMENTO', icone: 'fa-file-contract',
+      titulo: `${Ct.vencendo30d} contrato(s) vencendo em 30 dias`,
+      corpo: `<b>${Ct.ativos}</b> ativos · <b>${Ct.n}</b> no total.`,
+      pontosCego: ['Renovação evita buraco de receita.', 'Aproveitar para upsell.'],
+      acao: 'Contatar clientes com contrato perto do fim.'
+    });
+  }
+
+  /* ── PAGAMENTOS ── */
+  if (!Pay.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'PAGAMENTOS', icone: 'fa-money-bill-wave',
+      titulo: 'Aba Pagamentos sem lançamentos',
+      corpo: 'Freelas e fornecedores sem controle de vencimento aumentam risco de atraso operacional.',
+      pontosCego: ['Pagamentos atrasados travam equipe.', 'Dá para vincular ao projeto.'],
+      acao: 'Lançar diárias/fornecedores pendentes com vencimento.'
+    });
+  } else if (Pay.atrasadoN > 0) {
+    _deepPush(diagnosticos, {
+      nivel: Pay.atrasadoN >= 3 ? 'critico' : 'alerta', categoria: 'PAGAMENTOS', icone: 'fa-money-bill-wave',
+      titulo: `${Pay.atrasadoN} pagamento(s) atrasado(s) · ${fmtBRL(Pay.atrasado)}`,
+      corpo: `A pagar: <b>${fmtBRL(Pay.pendente)}</b> (${Pay.pendenteN}) · Pago ${ops.ano}: <b>${fmtBRL(Pay.pagoAno)}</b>.`,
+      pontosCego: ['Priorizar o que bloqueia gravação/edição.', 'Cruzar com diárias da semana.'],
+      acao: 'Quitar atrasados e renegociar vencimentos.'
+    });
+  }
+
+  /* ── FINANCEIRO / CAIXA ── */
+  if (!Cx.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'FINANCEIRO · CAIXA', icone: 'fa-wallet',
+      titulo: 'Fluxo de caixa sem lançamentos',
+      corpo: 'Sem custos fixos/variáveis no Financeiro, a margem “líquida” do negócio fica no escuro.',
+      pontosCego: ['Lucro de projeto ≠ saldo de caixa.', 'Cadastre aluguel, software, folha como fixo.'],
+      acao: 'Abrir Fluxo de Caixa e lançar custos fixos do ano.'
+    });
+  } else {
+    if (Cx.saldo < 0) {
+      _deepPush(diagnosticos, {
+        nivel: 'critico', categoria: 'FINANCEIRO · CAIXA', icone: 'fa-wallet',
+        titulo: `Caixa ${ops.ano} negativo: ${fmtBRL(Cx.saldo)}`,
+        corpo: `Entradas <b>${fmtBRL(Cx.receitas)}</b> · Saídas <b>${fmtBRL(Cx.custos)}</b> (fixos ${fmtBRL(Cx.fixos)}).`,
+        pontosCego: ['Revisar fixos e acelerar recebíveis.', 'Comparar com faturamento de projetos.'],
+        acao: 'Cortar/renegociar fixos e priorizar propostas aprovadas.'
+      });
+    }
+    if (fat > 0 && Cx.fixos > 0 && (Cx.fixos / fat) > 0.45) {
+      _deepPush(diagnosticos, {
+        nivel: 'alerta', categoria: 'FINANCEIRO · CUSTO FIXO', icone: 'fa-balance-scale',
+        titulo: `Custos fixos = ${Math.round(Cx.fixos / fat * 100)}% do faturamento de projetos`,
+        corpo: `Fixos <b>${fmtBRL(Cx.fixos)}</b> vs fat projetos <b>${fmtBRL(fat)}</b>.`,
+        pontosCego: ['Estrutura pesada demais para o ritmo atual.', 'Retainers ajudam a cobrir fixo.'],
+        acao: 'Mapear o que é essencial vs cortável nos fixos.'
+      });
+    }
+  }
+
+  /* ── EQUIPE / COLABORADORES ── */
+  if (!Eq.colaboradores) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'EQUIPE', icone: 'fa-user-friends',
+      titulo: 'Nenhum colaborador no banco de equipe',
+      corpo: 'Sem cadastro, fica difícil alocar diárias, pagamentos e recrutamento.',
+      pontosCego: ['Colaboradores alimentam pagamentos e cronograma.', `${Eq.usuarios || 0} usuário(s) na empresa.`],
+      acao: 'Cadastrar freelas/equipe fixa na aba Colaboradores.'
+    });
+  } else if (Eq.ativos === 0 && Eq.colaboradores > 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'EQUIPE', icone: 'fa-user-friends',
+      titulo: 'Colaboradores cadastrados, mas nenhum ativo',
+      corpo: `<b>${Eq.colaboradores}</b> no banco · <b>0</b> ativos.`,
+      pontosCego: ['Reativar quem ainda presta serviço.', 'Limpar cadastros mortos.'],
+      acao: 'Revisar status dos colaboradores.'
+    });
+  }
+
+  /* ── RECRUTAMENTO ── */
+  if (!Rc.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'RECRUTAMENTO', icone: 'fa-user-plus',
+      titulo: 'Recrutamento sem candidatos',
+      corpo: 'Banco de talentos vazio — contratar sob urgência costuma sair caro.',
+      pontosCego: ['Links de recrutamento geram pipeline de freelas.', 'Útil antes de picos de diárias.'],
+      acao: 'Abrir vaga/link se houver demanda de equipe.'
+    });
+  } else if (Rc.novos > 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'RECRUTAMENTO', icone: 'fa-user-plus',
+      titulo: `${Rc.novos} candidato(s) novos para triagem`,
+      corpo: `Total: <b>${Rc.n}</b> na aba Recrutamento.`,
+      pontosCego: ['Responder rápido melhora taxa de aceite.', 'Cruzar com gaps de função nas diárias.'],
+      acao: 'Triar e mover status dos candidatos novos.'
+    });
+  }
+
+  /* ── CRONOGRAMA ── */
+  if (!Cr.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'CRONOGRAMA', icone: 'fa-calendar-alt',
+      titulo: 'Cronograma da equipe vazio',
+      corpo: 'Sem eventos no calendário, conflitos de agenda aparecem só no dia.',
+      pontosCego: ['Ligue diárias e gravações ao cronograma.', 'My Calendar do colaborador depende disso.'],
+      acao: 'Lançar compromissos da próxima semana.'
+    });
+  } else if (Cr.proximos7d === 0 && P.emAndamento > 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'CRONOGRAMA', icone: 'fa-calendar-alt',
+      titulo: 'Projetos em andamento, mas nada nos próximos 7 dias no calendário',
+      corpo: `<b>${Cr.n}</b> evento(s) no total · <b>0</b> nos próximos 7 dias.`,
+      pontosCego: ['Agenda desconectada da produção.', 'Risco de ociosidade ou atropelo.'],
+      acao: 'Planejar a semana no Cronograma com base nos projetos ativos.'
+    });
+  }
+
+  /* ── TAREFAS / MY DAY ── */
+  if (!Tk.n && !Tk.assignedAbertas) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'TAREFAS', icone: 'fa-tasks',
+      titulo: 'Sem tarefas registradas (My Day / Tarefas)',
+      corpo: 'Operação só na cabeça aumenta chance de esquecer follow-ups e entregas.',
+      pontosCego: ['Tarefas amarram comercial + produção.', 'Assigned tasks distribuem carga.'],
+      acao: 'Criar checklist da semana (follow-ups, edições, envios).'
+    });
+  } else if (Tk.atrasadas > 0) {
+    _deepPush(diagnosticos, {
+      nivel: Tk.atrasadas >= 5 ? 'alerta' : 'info', categoria: 'TAREFAS', icone: 'fa-tasks',
+      titulo: `${Tk.atrasadas} tarefa(s) atrasada(s) · ${Tk.abertas} aberta(s)`,
+      corpo: `Total: <b>${Tk.n}</b> · assigned abertas: <b>${Tk.assignedAbertas || 0}</b>.`,
+      pontosCego: ['Atraso interno vira atraso de cliente.', 'Triagem: fazer, remarcar ou cancelar.'],
+      acao: 'Limpar atrasadas hoje no My Day.'
+    });
+  }
+
+  /* ── CONTEÚDOS / POSTAGENS ── */
+  if (!Co.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'CONTEÚDOS', icone: 'fa-bullhorn',
+      titulo: 'Nenhum conteúdo social planejado',
+      corpo: 'Aba Conteúdos/Postagens vazia — marketing da própria marca (ou do cliente) sem calendário.',
+      pontosCego: ['Conteúdo pronto sem postar = receita/marca parada.', 'Dá para vincular a projetos.'],
+      acao: 'Planejar a semana editorial se houver demanda de social.'
+    });
+  } else if (Co.prontos > 0 && Co.postados === 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'CONTEÚDOS', icone: 'fa-bullhorn',
+      titulo: `${Co.prontos} conteúdo(s) pronto(s) ainda não postado(s)`,
+      corpo: `<b>${Co.n}</b> no board · <b>${Co.pendentes}</b> em produção · <b>${Co.postados}</b> postados.`,
+      pontosCego: ['Gargalo na publicação, não na criação.', 'Agendar evita acúmulo.'],
+      acao: 'Publicar/agendar os prontos esta semana.'
+    });
+  } else if (Co.pendentes >= 8) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'CONTEÚDOS', icone: 'fa-bullhorn',
+      titulo: `${Co.pendentes} conteúdos pendentes no board`,
+      corpo: `<b>${Co.postados}</b> já postados · <b>${Co.prontos}</b> prontos.`,
+      pontosCego: ['Fila longa atrasa cliente de social.', 'Priorizar por data de post.'],
+      acao: 'Priorizar e mover cards no kanban de conteúdos.'
+    });
+  }
+
+  /* ── NPS ── */
+  if (!Np.campanhas && !Np.respostas) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'NPS', icone: 'fa-smile',
+      titulo: 'Módulo NPS sem campanhas nem respostas',
+      corpo: 'Sem pesquisa estruturada, satisfação fica só no feeling.',
+      pontosCego: ['Campanhas anônimas aumentam sinceridade.', 'Cruzar com projetos sem nota.'],
+      acao: 'Criar uma campanha NPS e enviar aos últimos clientes.'
+    });
+  } else if (Np.campanhas > 0 && Np.respostas === 0) {
+    _deepPush(diagnosticos, {
+      nivel: 'alerta', categoria: 'NPS', icone: 'fa-smile',
+      titulo: `${Np.campanhas} campanha(s) NPS sem respostas`,
+      corpo: 'Campanha criada, mas ninguém respondeu ainda.',
+      pontosCego: ['Reenviar link / WhatsApp.', 'Encurtar formulário ajuda.'],
+      acao: 'Reativar envio da campanha para clientes recentes.'
+    });
+  } else if (Np.respostas > 0 && Np.mediaRespostas > 0 && Np.mediaRespostas < 7) {
+    _deepPush(diagnosticos, {
+      nivel: 'critico', categoria: 'NPS', icone: 'fa-frown',
+      titulo: `NPS médio das respostas: ${Np.mediaRespostas.toFixed(1)}`,
+      corpo: `<b>${Np.respostas}</b> resposta(s) · <b>${Np.campanhas}</b> campanha(s).`,
+      pontosCego: ['Abaixo de 7 = risco de churn/indicação negativa.', 'Ler comentários e agir projeto a projeto.'],
+      acao: 'Contatar detratores e criar plano de recuperação.'
+    });
+  }
+
+  /* ── RELATÓRIOS ── */
+  if (!Rel.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'RELATÓRIOS', icone: 'fa-clipboard-list',
+      titulo: 'Sem relatórios de projeto',
+      corpo: 'Aprendizado operacional não está sendo documentado.',
+      pontosCego: ['Problemas repetidos só aparecem se registrados.', 'Alimenta o diagnóstico profundo.'],
+      acao: 'Registrar relatório pós-mortem dos últimos projetos.'
+    });
+  } else if (Rel.comProblema > 0) {
+    _deepPush(diagnosticos, {
+      nivel: Rel.comProblema >= 3 ? 'alerta' : 'info', categoria: 'RELATÓRIOS', icone: 'fa-clipboard-list',
+      titulo: `${Rel.comProblema} relatório(s) com problema`,
+      corpo: `De <b>${Rel.n}</b> na aba Relatórios.`,
+      pontosCego: ['Padronizar ação corretiva.', 'Cruzar com margem/NPS do mesmo job.'],
+      acao: 'Ler e definir 1 correção por padrão recorrente.'
+    });
+  }
+
+  /* ── SUPORTE ── */
+  if (Su.abertos > 0) {
+    _deepPush(diagnosticos, {
+      nivel: Su.abertos >= 3 ? 'alerta' : 'info', categoria: 'SUPORTE', icone: 'fa-life-ring',
+      titulo: `${Su.abertos} chamado(s) de suporte aberto(s)`,
+      corpo: `Total: <b>${Su.n}</b> tickets.`,
+      pontosCego: ['Bugs/dúvidas abertas travam adoção do time.', 'Priorizar o que bloqueia operação.'],
+      acao: 'Triar e responder os tickets abertos.'
+    });
+  }
+
+  /* ── HISTÓRICO ── */
+  if (!ops.historico?.n) {
+    _deepPush(diagnosticos, {
+      nivel: 'info', categoria: 'HISTÓRICO', icone: 'fa-archive',
+      titulo: 'Histórico multi-ano pouco povoado no banco',
+      corpo: 'Comparativos YoY ficam limitados sem age_hist_projects.',
+      pontosCego: ['OWNAGE pode usar HIST_SUMMARY embutido.', 'Outras empresas dependem do banco.'],
+      acao: 'Importar anos anteriores se quiser série histórica completa.'
+    });
+  }
+}
+
+async function renderDeepAnalysis(filtered2026, kpis) {
   const el = document.getElementById('deepAnalysisSection');
   if (!el) return;
 
   const projects = Array.isArray(filtered2026) ? filtered2026 : [];
   kpis = kpis || {};
+
+  el.innerHTML = `<div class="panel" style="padding:18px;color:#64748b;font-size:12px">
+    <i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>
+    Cruzando todas as abas Age Ops (Projetos, Pipeline, Orçamentos, Clientes, Gestão, Entregas, Contratos, Pagamentos, Caixa, Equipe, Cronograma, Tarefas, Conteúdos, NPS, Relatórios, Recrutamento, Suporte)…
+  </div>`;
+
+  let ops = null;
+  try {
+    ops = await _deepFetchOpsSnapshot(kpis.rawProjects || [], kpis.fechByProjectId);
+  } catch (e) {
+    console.warn('[deep ops snapshot]', e);
+    ops = null;
+  }
 
   const PROB_MAP = {
     'prazo_entrega': { label: 'Prazo de entrega', cor: '#dc2626' },
@@ -14018,6 +14770,9 @@ function renderDeepAnalysis(filtered2026, kpis) {
     });
   }
 
+  /* Cruzamento com TODAS as abas Age Ops */
+  _deepPushOpsDiagnosticos(diagnosticos, ops, kpis);
+
   LICOES_SISTEMICAS.slice(0, 3).forEach(l => {
     const pm = PROB_MAP[l.prob] || { label: l.prob, cor: '#64748b' };
     diagnosticos.push({
@@ -14059,10 +14814,32 @@ function renderDeepAnalysis(filtered2026, kpis) {
   };
   const nCrit = diagnosticos.filter(d => d.nivel === 'critico').length;
   const nAlert = diagnosticos.filter(d => d.nivel === 'alerta').length;
+  const nInfo = diagnosticos.filter(d => d.nivel === 'info').length;
   const histTitle = useHist ? 'EVOLUÇÃO 2021 → 2026' : 'ANO ATUAL (2026)';
   const srcNote = (typeof SUPABASE_IS_SOURCE_OF_TRUTH !== 'undefined' && SUPABASE_IS_SOURCE_OF_TRUTH)
     ? '2026 = projetos ao vivo (Supabase). Histórico 2021–2025 só entra para OWNAGE.'
     : '2026 pode misturar planilha local + banco.';
+
+  const opsMods = ops ? [
+    { t: 'Projetos', v: String(ops.projetos?.total ?? 0), s: `${ops.projetos?.emAndamento || 0} and. · ${ops.projetos?.atrasados || 0} atras. · ${ops.projetos?.conclSemFech || 0} s/fech.`, c: (ops.projetos?.atrasados || 0) ? '#dc2626' : '#6366f1' },
+    { t: 'Pipeline', v: String(ops.leads?.n ?? 0), s: `${ops.leads?.abertos || 0} leads abertos`, c: !(ops.leads?.n) ? '#d97706' : '#0891b2' },
+    { t: 'Orçamentos', v: String(ops.orcamentos?.n ?? 0), s: `${ops.orcamentos?.aprovados || 0} aprov. · ${ops.orcamentos?.enviados || 0} env. · ${ops.orcamentos?.taxaAprovacao != null ? ops.orcamentos.taxaAprovacao + '%' : '—'}`, c: '#2563eb' },
+    { t: 'Clientes', v: String(ops.clientes?.n ?? 0), s: `${ops.clientes?.ativos || 0} ativos · ${ops.clientes?.inativos || 0} inativos`, c: '#0ea5e9' },
+    { t: 'Gestão', v: String(ops.gestao?.stages ?? 0), s: `${ops.gestao?.stagesPendentes || 0} etapas abertas`, c: '#8b5cf6' },
+    { t: 'Entregas', v: String(ops.entregas?.n ?? 0), s: `${ops.entregas?.atrasadas || 0} atras. · ${ops.entregas?.pendentes || 0} pend.`, c: (ops.entregas?.atrasadas || 0) ? '#dc2626' : '#14b8a6' },
+    { t: 'Diárias', v: String(ops.diarias?.n ?? 0), s: `${ops.diarias?.proximas || 0} próximas · ${ops.diarias?.passadasPendentes || 0} passadas pend.`, c: (ops.diarias?.passadasPendentes || 0) ? '#d97706' : '#06b6d4' },
+    { t: 'Contratos', v: String(ops.contratos?.ativos ?? 0), s: `${ops.contratos?.n || 0} total · ${ops.contratos?.vencendo30d || 0} venc. 30d`, c: (ops.contratos?.vencendo30d || 0) ? '#d97706' : '#7c3aed' },
+    { t: 'Pagamentos', v: ops.pagamentos?.n ? fmtBRL(ops.pagamentos.pendente) : '—', s: ops.pagamentos?.n ? `${ops.pagamentos.atrasadoN || 0} atras. · pago ${fmtBRL(ops.pagamentos.pagoAno || 0)}` : 'sem lançamentos', c: (ops.pagamentos?.atrasadoN || 0) ? '#dc2626' : '#16a34a' },
+    { t: 'Caixa', v: ops.caixa?.n ? fmtBRL(ops.caixa.saldo) : '—', s: ops.caixa?.n ? `ent. ${fmtBRL(ops.caixa.receitas)} · saí. ${fmtBRL(ops.caixa.custos)}` : 'sem linhas', c: (ops.caixa?.saldo || 0) < 0 ? '#dc2626' : '#16a34a' },
+    { t: 'Equipe', v: String(ops.equipe?.colaboradores ?? 0), s: `${ops.equipe?.ativos || 0} ativos · ${ops.equipe?.usuarios || 0} users`, c: '#64748b' },
+    { t: 'Recrutamento', v: String(ops.recrutamento?.n ?? 0), s: `${ops.recrutamento?.novos || 0} novos p/ triagem`, c: '#f59e0b' },
+    { t: 'Cronograma', v: String(ops.cronograma?.n ?? 0), s: `${ops.cronograma?.proximos7d || 0} nos próximos 7 dias`, c: '#0284c7' },
+    { t: 'Tarefas', v: String(ops.tarefas?.abertas ?? 0), s: `${ops.tarefas?.atrasadas || 0} atras. · ${ops.tarefas?.n || 0} total`, c: (ops.tarefas?.atrasadas || 0) ? '#d97706' : '#64748b' },
+    { t: 'Conteúdos', v: String(ops.conteudos?.n ?? 0), s: `${ops.conteudos?.postados || 0} post. · ${ops.conteudos?.prontos || 0} prontos · ${ops.conteudos?.pendentes || 0} pend.`, c: '#9333ea' },
+    { t: 'NPS', v: String(ops.nps?.respostas ?? 0), s: `${ops.nps?.campanhas || 0} camp. · média ${ops.nps?.mediaRespostas ? ops.nps.mediaRespostas.toFixed(1) : '—'}`, c: '#db2777' },
+    { t: 'Relatórios', v: String(ops.relatorios?.n ?? 0), s: `${ops.relatorios?.comProblema || 0} com problema`, c: (ops.relatorios?.comProblema || 0) ? '#d97706' : '#64748b' },
+    { t: 'Suporte', v: String(ops.suporte?.abertos ?? 0), s: `${ops.suporte?.n || 0} tickets no total`, c: (ops.suporte?.abertos || 0) ? '#d97706' : '#94a3b8' },
+  ] : [];
 
   el.innerHTML = `
   <div style="display:flex;align-items:center;gap:12px;margin:18px 0 14px">
@@ -14073,19 +14850,33 @@ function renderDeepAnalysis(filtered2026, kpis) {
     <div style="flex:1;height:1px;background:rgba(0,0,0,.08)"></div>
   </div>
   <div style="font-size:10px;color:#64748b;margin:-6px 0 12px;line-height:1.45">
-    Base: <b>ano completo 2026</b> (${projects.length} projetos)${kpis.filtroDashboard ? ` · filtro do dashboard: <b>${escHtml(kpis.filtroDashboard)}</b> (não afeta este bloco)` : ''}.
+    Base financeira: <b>ano completo 2026</b> (${projects.length} projetos no dashboard)${kpis.filtroDashboard ? ` · filtro do topo: <b>${escHtml(kpis.filtroDashboard)}</b> (não afeta este bloco)` : ''}.
     ${srcNote}
+    ${ops ? ' · <b>Varredura completa</b> de todas as ferramentas Age Ops (avisos também quando a aba está vazia).' : ' · Não foi possível carregar o cruzamento das outras abas.'}
   </div>
+
+  ${opsMods.length ? `
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-title"><i class="fas fa-layer-group" style="color:#6366f1"></i> TODAS AS ÁREAS — VISÃO ÚNICA</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px" class="responsive-5col">
+      ${opsMods.map(m => `<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;border-left:3px solid ${m.c}">
+        <div style="font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.08em;margin-bottom:4px">${m.t.toUpperCase()}</div>
+        <div style="font-size:15px;font-weight:900;color:#0f172a">${m.v}</div>
+        <div style="font-size:9px;color:#64748b;margin-top:3px;line-height:1.35">${m.s}</div>
+      </div>`).join('')}
+    </div>
+  </div>` : ''}
 
   <div class="panel" style="margin-bottom:14px;border:1px solid rgba(220,38,38,.15)">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px">
       <div>
-        <div class="panel-title" style="color:#dc2626;margin-bottom:4px"><i class="fas fa-microscope" style="color:#dc2626"></i> DIAGNÓSTICO PROFUNDO — baseado nos seus dados</div>
-        <div style="font-size:10px;color:#64748b;font-family:var(--font-m)">${diagnosticos.length} achado(s) · sem narrativa fixa de clientes</div>
+        <div class="panel-title" style="color:#dc2626;margin-bottom:4px"><i class="fas fa-microscope" style="color:#dc2626"></i> DIAGNÓSTICO PROFUNDO — empresa inteira</div>
+        <div style="font-size:10px;color:#64748b;font-family:var(--font-m)">${diagnosticos.length} achado(s) em finanças + todas as abas (críticos, atenção e insights)</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${nCrit} CRÍTICO${nCrit !== 1 ? 'S' : ''}</span>
         <span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${nAlert} ATENÇÃO</span>
+        <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${nInfo} INSIGHT${nInfo !== 1 ? 'S' : ''}</span>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -15083,7 +15874,7 @@ function renderProjRow(p, rowNum) {
       <div class="proj-row-actions">
         <button type="button" class="btn btn-icon perm-guard-edit" onclick="editProject('${pidJs}')" title="Abrir ficha completa"><i class="fas fa-pen"></i></button>
         <button type="button" class="btn btn-icon perm-guard-edit" onclick="duplicateProject('${pidJs}')" title="Duplicar projeto"><i class="fas fa-copy"></i></button>
-        <button type="button" class="btn btn-icon perm-guard-edit" onclick="openProjRecorrenteModal('${pidJs}')" title="Tornar recorrente (3/6/12 meses)"><i class="fas fa-redo"></i></button>
+        <button type="button" class="btn btn-icon perm-guard-edit" onclick="openProjRecorrenteModal('${pidJs}')" title="Marcar recorrente e duplicar nos meses seguintes"><i class="fas fa-redo"></i></button>
         <button type="button" class="btn btn-icon btn-icon-danger perm-guard-edit" onclick="deleteProject('${pidJs}','${escHtml(p.client_name||'').replace(/'/g,'')}')" title="Excluir"><i class="fas fa-trash"></i></button>
       </div>
     </td>
@@ -16338,7 +17129,7 @@ function deleteProject(id, name) {
   });
 }
 
-/* ── Duplicar / Recorrente (3·6·12 meses) ── */
+/* ── Duplicar / Recorrente (fim do ano · 3 · 6 · 12 meses) ── */
 function _projAddMonths(isoDate, months) {
   if(!isoDate) return null;
   const s = String(isoDate).slice(0, 10);
@@ -16353,6 +17144,18 @@ function _projAddMonths(isoDate, months) {
   return dt.toISOString().slice(0, 10);
 }
 
+/** Quantos meses do mês-base até dezembro (inclusive). Ex.: ago → 5 (Ago…Dez). */
+function _projMonthsUntilYearEnd(isoDate) {
+  const s = String(isoDate || new Date().toISOString().slice(0, 10)).slice(0, 10);
+  const mo = parseInt(s.slice(5, 7), 10);
+  if (!(mo >= 1 && mo <= 12)) return 1;
+  return 12 - mo + 1;
+}
+
+function _projMonthNamePt(mo) {
+  return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][mo - 1] || '';
+}
+
 function _projNewGroupId() {
   try {
     if(typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -16365,8 +17168,7 @@ function _projMonthLabel(isoDate) {
   const s = String(isoDate).slice(0, 10);
   const mo = parseInt(s.slice(5, 7), 10);
   const yr = s.slice(2, 4);
-  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  return (names[mo - 1] || '') + '/' + yr;
+  return (_projMonthNamePt(mo) || '') + '/' + yr;
 }
 
 function _projStripMonthSuffix(name) {
@@ -16472,14 +17274,21 @@ function duplicateProjectFromModal() {
 let _projRecMonths = 0;
 
 function selectProjRecMonths(n) {
-  _projRecMonths = n;
+  const months = parseInt(n, 10);
+  if (!(months >= 2 && months <= 24)) {
+    toast('Escolha uma duração de pelo menos 2 meses.', 'warn');
+    return;
+  }
+  _projRecMonths = months;
   document.querySelectorAll('.proj-rec-opt').forEach(btn => {
-    const on = String(btn.getAttribute('data-months')) === String(n);
+    const on = String(btn.getAttribute('data-months')) === String(months);
     btn.classList.toggle('btn-primary', on);
     btn.classList.toggle('btn-ghost', !on);
   });
   const hint = document.getElementById('projRecHint');
-  if(hint) hint.textContent = `Serão ${n} projetos (mês atual + ${n - 1} seguintes), com datas deslocadas mês a mês.`;
+  if(hint) {
+    hint.textContent = `Serão ${months} projetos: o atual (mês 1) + ${months - 1} cópia(s) nos meses seguintes, com datas e nome · Mês/Ano.`;
+  }
   const btn = document.getElementById('projRecConfirmBtn');
   if(btn) btn.disabled = false;
 }
@@ -16495,23 +17304,52 @@ async function openProjRecorrenteModal(id) {
   }
   const src = await _projFetchSource(id);
   if(!src) { toast('Projeto não encontrado.', 'err'); return; }
+
+  if(src.is_recurring === true || src.is_recurring === 'true') {
+    toast('Este projeto já faz parte de uma série recorrente.', 'warn');
+    return;
+  }
+
   document.getElementById('projRecId').value = id;
   _projRecMonths = 0;
   document.querySelectorAll('.proj-rec-opt').forEach(btn => {
     btn.classList.add('btn-ghost');
     btn.classList.remove('btn-primary');
   });
+
+  const baseDate = src.payment_date || src.project_date || new Date().toISOString().slice(0, 10);
+  const yearEndMonths = _projMonthsUntilYearEnd(baseDate);
+  const startMo = parseInt(String(baseDate).slice(5, 7), 10) || (new Date().getMonth() + 1);
+  const yearEndBtn = document.getElementById('projRecYearEndBtn');
+  if(yearEndBtn) {
+    yearEndBtn.dataset.months = String(yearEndMonths);
+    if(yearEndMonths < 2) {
+      yearEndBtn.disabled = true;
+      yearEndBtn.textContent = 'Já é dezembro — use 3/6/12 meses (cruza o ano)';
+      yearEndBtn.classList.add('btn-ghost');
+    } else {
+      yearEndBtn.disabled = false;
+      yearEndBtn.innerHTML = `<i class="fas fa-calendar-alt" style="margin-right:6px"></i>Até o fim do ano · ${_projMonthNamePt(startMo)}→Dez (${yearEndMonths} meses)`;
+    }
+  }
+
   const btn = document.getElementById('projRecConfirmBtn');
   if(btn) btn.disabled = true;
   const sum = document.getElementById('projRecSummary');
   if(sum) {
-    const base = src.payment_date || src.project_date || '—';
     sum.innerHTML = `<b>${escHtml(_ageProjDbClient(src) || '—')}</b> · ${escHtml(_ageProjDbTitle(src) || 'Projeto')}<br>
-      <span style="color:var(--textsub)">Base: ${escHtml(String(base).slice(0,10))} · ${fmtBRL(parseFloat(src.total_value)||0)}</span>`;
+      <span style="color:var(--textsub)">Base: ${escHtml(String(baseDate).slice(0,10))} · ${fmtBRL(parseFloat(src.total_value)||0)}</span>`;
   }
   const hint = document.getElementById('projRecHint');
-  if(hint) hint.textContent = 'Selecione a duração da recorrência.';
+  if(hint) {
+    hint.textContent = yearEndMonths >= 2
+      ? `Sugestão: até o fim do ano cria ${yearEndMonths - 1} cópia(s) automática(s) a partir de ${_projMonthNamePt(startMo)}.`
+      : 'Selecione 3, 6 ou 12 meses (a série pode atravessar o ano).';
+  }
+
   openModal('modalProjRecorrente');
+  /* Pré-seleciona “até o fim do ano” quando fizer sentido */
+  if(yearEndMonths >= 2) selectProjRecMonths(yearEndMonths);
 }
 
 function openProjRecorrenteFromModal() {
@@ -16522,20 +17360,24 @@ function openProjRecorrenteFromModal() {
 
 async function confirmProjRecorrente() {
   const id = document.getElementById('projRecId')?.value?.trim();
-  const months = _projRecMonths;
-  if(!id || ![3, 6, 12].includes(months)) {
-    toast('Escolha 3, 6 ou 12 meses.', 'warn');
+  const months = parseInt(_projRecMonths, 10);
+  if(!id || !(months >= 2 && months <= 24)) {
+    toast('Escolha a duração da recorrência.', 'warn');
     return;
   }
   const src = await _projFetchSource(id);
   if(!src) { toast('Projeto não encontrado.', 'err'); return; }
+
+  if(src.is_recurring === true || src.is_recurring === 'true') {
+    toast('Este projeto já é recorrente.', 'warn');
+    return;
+  }
 
   const btn = document.getElementById('projRecConfirmBtn');
   if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando…'; }
 
   const groupId = _projNewGroupId();
   try {
-    /* Mês 1 = projeto atual */
     const baseDate = src.payment_date || src.project_date || new Date().toISOString().slice(0, 10);
     const titleBase = _projStripMonthSuffix(_ageProjDbTitle(src) || src.project_name || src.title || 'Projeto');
     const name1 = `${titleBase} · ${_projMonthLabel(baseDate)}`;
@@ -16567,12 +17409,17 @@ async function confirmProjRecorrente() {
 
     closeModal('modalProjRecorrente');
     closeModal('modalProject');
-    toast(`Série de ${months} meses criada (${created} novos + original).`, 'ok');
+    toast(`Recorrência criada: ${created} mês(es) gerado(s) + original (${months} no total).`, 'ok');
     await loadProjects();
     SYNC.emit('project:created', {});
   } catch(e) {
     console.error('[confirmProjRecorrente]', e);
-    toast('Erro ao gerar recorrência. Tente de novo.', 'err');
+    const msg = String(e?.message || e || '');
+    if(/is_recurring|recurring_/i.test(msg)) {
+      toast('Falta a coluna de recorrência no Supabase. Rode supabase/sql/age_projects_recurring.sql', 'err');
+    } else {
+      toast('Erro ao gerar recorrência. Tente de novo.', 'err');
+    }
   } finally {
     if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> Gerar série'; }
   }
