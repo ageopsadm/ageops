@@ -3690,6 +3690,7 @@ body:has(#login-screen.visible){
               <option value="1" selected>1º Semestre — Jan a Jun</option>
               <option value="2">2º Semestre — Jul a Dez</option>
             </select>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="exportEmpresaCompleta()" title="Exportar dados da empresa para análise"><i class="fas fa-file-export"></i> Exportar empresa</button>
             <button type="button" id="dashRefreshBtn" class="btn btn-ghost btn-sm" onclick="refreshDashboardManual()"><i class="fas fa-sync-alt" id="dashRefreshIcon"></i></button>
           </div>
         </div>
@@ -4110,8 +4111,8 @@ body:has(#login-screen.visible){
         </div>
         <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);padding:6px 8px;margin-bottom:8px;background:rgba(255,255,255,.03);border-radius:5px;border:1px solid var(--bd)">
           <i class="fas fa-info-circle" style="color:rgba(255,255,255,.3)"></i>
-          &nbsp;<b style="color:rgba(255,255,255,.7)">2026</b> — planilha JS (PROJ_2026_SHEET) &nbsp;|&nbsp;
-          <b style="color:rgba(255,255,255,.7)">2021–2025</b> — dados fixos (HIST_SUMMARY) &nbsp;|&nbsp;
+          &nbsp;<b style="color:rgba(255,255,255,.7)">2026</b> — projetos ao vivo (Supabase) quando fonte da verdade &nbsp;|&nbsp;
+          <b style="color:rgba(255,255,255,.7)">2021–2025</b> — histórico OWNAGE (HIST_SUMMARY), se aplicável &nbsp;|&nbsp;
           Nenhuma fonte é usada duas vezes.
         </div>
         <div class="year-tabs" id="histYearTabs"></div>
@@ -5712,7 +5713,15 @@ body:has(#login-screen.visible){
     </div>
     <input type="hidden" id="pId">
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">CLIENTE *</label><input id="pClient" type="text" placeholder="Nome do cliente"></div>
+      <div class="form-group">
+        <label class="form-label">CLIENTE *</label>
+        <select id="pClientSelect" onchange="onProjClientSelectChange()" style="width:100%">
+          <option value="">Selecione um cliente…</option>
+          <option value="__new__">+ Adicionar novo cliente</option>
+        </select>
+        <input id="pClient" type="text" placeholder="Nome do novo cliente" style="display:none;margin-top:8px;width:100%" autocomplete="organization">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin-top:5px;line-height:1.35">Escolha um cliente da lista ou adicione um novo.</div>
+      </div>
       <div class="form-group"><label class="form-label">PROJETO *</label><input id="pName" type="text" placeholder="Nome do projeto"></div>
       <div class="form-group"><label class="form-label">CATEGORIA</label>
         <select id="pCat">
@@ -6841,8 +6850,8 @@ const PAGARME_PLANS = {
   agencia_anual:    '6967916'
 };
 
-/** OpenAI — análise IA no dashboard; nunca commite chave real (use env/proxy em produção) */
-const OPENAI_KEY = 'sk-SUA_CHAVE_AQUI';
+/** OpenAI no front (legado). Preferir edge ai-command — não precisa de chave no HTML. */
+const OPENAI_KEY = '';
 
 /**
  * Quando true: Supabase é a única fonte operacional (projetos, clientes ativos).
@@ -12582,7 +12591,7 @@ function setDashPeriod(period) {
 function _dashMesesFiltro() {
   if(_dashPeriod === 'anual') return null; /* null = todos */
   if(_dashPeriod === 'mensal') {
-    const m = parseInt(document.getElementById('dashMesSelect')?.value) || 4;
+    const m = parseInt(document.getElementById('dashMesSelect')?.value) || (new Date().getMonth() + 1);
     return [m];
   }
   if(_dashPeriod === 'trimestral') {
@@ -12599,7 +12608,7 @@ function _dashMesesFiltro() {
 function _dashPeriodLabel() {
   if(_dashPeriod==='anual') return 'Anual 2026';
   if(_dashPeriod==='mensal') {
-    const m = parseInt(document.getElementById('dashMesSelect')?.value)||4;
+    const m = parseInt(document.getElementById('dashMesSelect')?.value)|| (new Date().getMonth() + 1);
     return MONTHS[m-1]+' 2026';
   }
   if(_dashPeriod==='trimestral') {
@@ -12837,11 +12846,13 @@ function _dashRowFromSupabase(p, fechByProjectId) {
   return row;
 }
 
-function _projRawInDashboardPeriod(p, fechByProjectId, mesesFiltro) {
-  if(!mesesFiltro) return true;
+function _projRawInDashboardPeriod(p, fechByProjectId, mesesFiltro, anoAlvo) {
+  const ano = anoAlvo != null ? anoAlvo : 2026;
   const row = _dashRowFromSupabase(p, fechByProjectId);
   const ma = _dashResolveMesAno(row);
-  return !!(ma && mesesFiltro.includes(ma.mes));
+  if(!ma || ma.ano !== ano) return false;
+  if(!mesesFiltro) return true;
+  return mesesFiltro.includes(ma.mes);
 }
 
 function refreshDashboardManual() {
@@ -12869,6 +12880,7 @@ function _dashIntelVisible() {
 function _dashIntelMonthFatMap(mappedAll) {
   const bm = {};
   (mappedAll || []).forEach(p => {
+    if(_projExcludedFromReceitaSum(p)) return;
     const ma = _dashResolveMesAno(p);
     if(!ma || ma.ano !== 2026) return;
     const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
@@ -13103,29 +13115,23 @@ function renderDashInteligencia(items) {
 }
 
 function _dashIntelOpenAiPlaceholder() {
-  const k = String(typeof OPENAI_KEY !== 'undefined' ? OPENAI_KEY : '');
-  return !k || k === 'sk-SUA_CHAVE_AQUI' || /sk-SUA_CHAVE/i.test(k);
+  /* Análise do dashboard usa a edge ai-command (Anthropic no Supabase) — sem chave no front. */
+  return false;
 }
 
 function updateDashIntelIaButton() {
   const btn = document.getElementById('dashIntelIaBtn');
   const hint = document.getElementById('dashIntelIaHint');
   if(!btn) return;
-  const ph = _dashIntelOpenAiPlaceholder();
-  if(ph) {
-    btn.disabled = true;
-    btn.textContent = 'Configure a chave OpenAI para usar esta função';
-    if(hint) hint.textContent = '';
-  } else {
-    btn.disabled = false;
-    btn.textContent = 'Análise completa com IA →';
-    if(hint) hint.textContent = '';
-  }
+  btn.disabled = false;
+  btn.textContent = 'Análise completa com IA →';
+  if(hint) hint.textContent = 'via assistente Age Ops';
 }
 
 function _dashIntelTopClients(filtered, n) {
   const map = {};
   (filtered || []).forEach(p => {
+    if(_projExcludedFromReceitaSum(p)) return;
     const c = String(p.cliente || '').trim() || '(sem nome)';
     const f = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     map[c] = (map[c] || 0) + f;
@@ -13154,10 +13160,6 @@ function _dashIntelLast6MonthsSeries(mappedAll, refMonth) {
 
 async function runDashIntelOpenAI() {
   if(!_dashIntelVisible()) return;
-  if(_dashIntelOpenAiPlaceholder()) {
-    toast('Configure OPENAI_KEY no código para usar a análise com IA.', 'warn');
-    return;
-  }
   const ctx = window._dashIntelContext;
   if(!ctx) {
     toast('Carregue o dashboard novamente.', 'warn');
@@ -13177,39 +13179,58 @@ async function runDashIntelOpenAI() {
   if(loadEl) loadEl.style.display = 'block';
   openModal('modalDashIntelIA');
 
-  const systemPrompt =
-    'Você é um analista financeiro especialista em produtoras de vídeo e agências de conteúdo brasileiras.\n' +
-    'Analise os dados fornecidos e gere um relatório executivo em português com: pontos críticos, oportunidades, ' +
-    'sugestões práticas e uma previsão para o próximo mês. Seja direto, use números reais, máximo 300 palavras.';
+  const comando =
+    'Responda APENAS com JSON válido (sem markdown): ' +
+    '{"acao":"consultar","resposta":"<relatório em português>"}. ' +
+    'Você é analista financeiro de produtora de vídeo. Com os dados do dashboard abaixo, ' +
+    'gere um relatório executivo (máx. 280 palavras) com: pontos críticos, oportunidades, ' +
+    'sugestões práticas e previsão do próximo mês. Use os números reais. ' +
+    'DADOS: ' + JSON.stringify(ctx);
 
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
+    const edgeUrl = String(typeof AI_EDGE_URL !== 'undefined' ? AI_EDGE_URL : '').trim();
+    if(!edgeUrl || !anon) throw new Error('Assistente não configurado (Supabase).');
+
+    const res = await fetch(edgeUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + OPENAI_KEY
+        Authorization: 'Bearer ' + anon,
+        apikey: anon
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        temperature: 0.4,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: JSON.stringify(ctx, null, 0) }
-        ]
+        comando,
+        contexto: {
+          origem: 'dashboard_intel',
+          usuario: currentUser?.username || '',
+          empresa: currentUser?.company_name || '',
+          periodo: ctx.periodo
+        }
       })
     });
     const data = await res.json().catch(() => ({}));
-    if(!res.ok) {
-      const err = data.error?.message || res.statusText || 'Erro na API';
-      throw new Error(err);
+    let text = '';
+    if(data?.acao === 'consultar' || data?.acao === 'desconhecido') {
+      text = String(data.resposta || '').trim();
+    } else if(data?.acao === 'erro') {
+      text = String(data.resposta || 'IA indisponível.').trim();
+    } else if(data?.resposta) {
+      text = String(data.resposta).trim();
+    } else if(data?.confirmacao) {
+      text = String(data.confirmacao).trim();
     }
-    const text = data.choices?.[0]?.message?.content?.trim() || '';
-    body.textContent = text || '(Resposta vazia)';
+    if(!text) {
+      text = !res.ok
+        ? `Assistente indisponível (HTTP ${res.status}). Confira o secret ANTHROPIC_API_KEY no Supabase.`
+        : 'A IA não retornou texto. Tente de novo.';
+    }
+    body.textContent = text;
     window._dashIntelIaLastText = text;
     if(copyBtn && text) copyBtn.style.display = 'inline-block';
   } catch(e) {
     console.error(e);
-    body.textContent = 'Não foi possível obter a análise. Em navegadores, chamadas diretas à OpenAI podem ser bloqueadas (CORS); use extensão, proxy ou backend. Detalhes: ' + (e.message || e);
+    body.textContent = 'Não foi possível obter a análise. ' + (e.message || e);
     window._dashIntelIaLastText = body.textContent;
     if(copyBtn) copyBtn.style.display = 'inline-block';
   }
@@ -13361,10 +13382,10 @@ async function loadDashboard() {
   _dashSetKpisLoading(true);
   try {
     try { updateTrialBanner(); ensureReferralTokenAndUi(); } catch(e) {}
-    /* Fonte única: Supabase (evita oscilar entre planilha embutida e DB) */
+    /* Fonte única: mesmos projetos da aba Projetos (escopo da empresa) */
     const [dbProjects, dbFechs] = await Promise.all([
-      fetchAll('age_projects', 500).catch(()=>[]),
-      fetchAll('age_fechamento', 300).catch(()=>[])
+      fetchAgeProjectsScoped(1000).catch(()=>[]),
+      fetchAll('age_fechamento', 500).catch(()=>[])
     ]);
     maybeNotifyProjectDeadlines(dbProjects).catch(()=>{});
 
@@ -13372,6 +13393,8 @@ async function loadDashboard() {
     (dbFechs || []).forEach(f => {
       if(f && f.project_id != null) fechByProjectId.set(f.project_id, f);
     });
+
+    const DASH_ANO = 2026;
 
     const allProjects = SUPABASE_IS_SOURCE_OF_TRUTH
       ? (dbProjects || []).map(p => _dashRowFromSupabase(p, fechByProjectId))
@@ -13401,8 +13424,9 @@ async function loadDashboard() {
         })();
 
     const mappedAll = allProjects.filter(p => {
+      if(_projExcludedFromReceitaSum(p)) return false;
       const ma = _dashResolveMesAno(p);
-      return ma && ma.ano === 2026;
+      return ma && ma.ano === DASH_ANO;
     });
 
     /* Filtrar pelo período selecionado */
@@ -13416,7 +13440,7 @@ async function loadDashboard() {
 
     let inPeriodRaw = null;
 
-    /* KPIs — Supabase: mesmas colunas e mesmas somas que a aba Projetos (total_value / cost) */
+    /* KPIs — mesma base/ano dos gráficos (2026) + mesmo escopo da aba Projetos */
     let fat;
     let cost;
     let lucro;
@@ -13425,7 +13449,7 @@ async function loadDashboard() {
 
     if(SUPABASE_IS_SOURCE_OF_TRUTH && dbProjects) {
       const projetosFiltrados = dbProjects.filter(p => _projRowNotDeleted(p));
-      const inPeriod = projetosFiltrados.filter(p => _projRawInDashboardPeriod(p, fechByProjectId, mesesFiltro));
+      const inPeriod = projetosFiltrados.filter(p => _projRawInDashboardPeriod(p, fechByProjectId, mesesFiltro, DASH_ANO));
       inPeriodRaw = inPeriod;
       fat = calcularReceitaProjetos(inPeriod);
       lucro = calcularLucroProjetos(inPeriod, fechByProjectId);
@@ -13445,13 +13469,7 @@ async function loadDashboard() {
           receitaTotal: fat,
           lucroTotal: lucro,
           emAndamento,
-          concluidos,
-          projetos: projetosFiltrados.slice(0, 40).map(p => ({
-            nome: p.project_name,
-            valor: p.total_value,
-            custo: p.cost,
-            status: p.status
-          }))
+          concluidos
         });
       } catch(_) {}
     } else {
@@ -13462,9 +13480,8 @@ async function loadDashboard() {
       nTotal = filtered.length;
     }
 
-    const nProjKpi = inPeriodRaw
-      ? inPeriodRaw.filter(p => _projRowNotDeleted(p)).length
-      : filtered.length;
+    /* Contagem de projetos do KPI alinhada à receita (exclui cancelados) */
+    const nProjKpi = nTotal;
 
     const nNovos = inPeriodRaw
       ? inPeriodRaw.filter(p => p.is_new_client === true || p.is_new_client === 'true').length
@@ -13627,19 +13644,54 @@ async function loadDashboard() {
     _dashChartSourceCache = mappedAll;
     renderDashCharts(mappedAll);
 
-    /* Totais do ano 2026 (planilha + Supabase, todos os meses) — série histórica na análise profunda */
+    /* Totais do ano 2026 (sempre o ano completo — independente do filtro do dashboard) */
     let supa2026 = null;
+    let avgNpsYear = 0;
     try {
-      const fatY = mappedAll.reduce((s, p) => s + (p.fat || 0), 0);
-      const costY = mappedAll.reduce((s, p) => s + (p.cost || 0), 0);
+      const fatY = mappedAll.reduce((s, p) => s + (parseFloat(p.fat ?? p.total_value) || 0), 0);
+      const costY = mappedAll.reduce((s, p) => s + (parseFloat(p.cost) || 0), 0);
       const nY = mappedAll.length;
       const novosY = mappedAll.filter(p => p.novo).length;
       const cliSet = new Set(mappedAll.map(p => (p.cliente || '').toLowerCase()).filter(Boolean));
-      supa2026 = { fat: fatY, cost: costY, n: nY, novos: novosY, clientes: cliSet.size };
+      const npsY = mappedAll.map(p => parseFloat(p._nps ?? p.nps ?? 0)).filter(n => n > 0);
+      avgNpsYear = npsY.length ? npsY.reduce((s, n) => s + n, 0) / npsY.length : 0;
+      const byMonthFatY = {};
+      mappedAll.forEach(p => {
+        const ma = _dashResolveMesAno(p);
+        if(!ma) return;
+        byMonthFatY[ma.mes] = (byMonthFatY[ma.mes] || 0) + (parseFloat(p.fat ?? p.total_value) || 0);
+      });
+      const mesesAtivosY = Object.values(byMonthFatY).filter(v => v > 0);
+      const medMesY = mesesAtivosY.length ? fatY / mesesAtivosY.length : 0;
+      let bestMY = 0, bestVY = 0;
+      Object.entries(byMonthFatY).forEach(([m, v]) => { if(v > bestVY) { bestVY = v; bestMY = parseInt(m, 10); } });
+      supa2026 = {
+        fat: fatY, cost: costY, n: nY, novos: novosY, clientes: cliSet.size,
+        lucro: fatY - costY,
+        margem: fatY > 0 ? ((fatY - costY) / fatY * 100) : 0,
+        ticket: nY > 0 ? fatY / nY : 0,
+        medMes: medMesY, bestM: bestMY, bestV: bestVY, avgNps: avgNpsYear
+      };
     } catch(_) { supa2026 = null; }
 
-    /* Análise corporativa profunda — 2021-2025 via HIST_SUMMARY; 2026 via Supabase */
-    renderDeepAnalysis(filtered, { fat, cost: custoTotal, lucro, margem, avgNps, nTotal, nNovos, ticket, medMes, bestM, bestV, supa2026 });
+    /* Análise profunda: SEMPRE o ano completo (mappedAll), nunca o filtro mensal/trimestral */
+    renderDeepAnalysis(mappedAll, {
+      fat: supa2026?.fat ?? fat,
+      cost: supa2026?.cost ?? custoTotal,
+      lucro: (supa2026?.lucro != null) ? supa2026.lucro : lucro,
+      margem: (supa2026?.margem != null) ? supa2026.margem : margem,
+      avgNps: (supa2026?.avgNps != null) ? supa2026.avgNps : avgNps,
+      nTotal: (supa2026?.n != null) ? supa2026.n : nTotal,
+      nNovos: (supa2026?.novos != null) ? supa2026.novos : nNovos,
+      ticket: (supa2026?.ticket != null) ? supa2026.ticket : ticket,
+      medMes: (supa2026?.medMes != null) ? supa2026.medMes : medMes,
+      bestM: (supa2026?.bestM != null) ? supa2026.bestM : bestM,
+      bestV: (supa2026?.bestV != null) ? supa2026.bestV : bestV,
+      clientes: (supa2026?.clientes != null) ? supa2026.clientes : 0,
+      supa2026,
+      filtroDashboard: _dashPeriodLabel(),
+      companyName: currentUser?.company_name || ''
+    });
 
     if(window._dashRefreshTimer) clearInterval(window._dashRefreshTimer);
     window._dashRefreshTimer = setInterval(() => {
@@ -13659,171 +13711,360 @@ async function loadDashboard() {
 
 /* ═══════════════════════════════════════════════════════════════
    ANÁLISE CORPORATIVA PROFUNDA — renderDeepAnalysis()
-   Cruza dados 2021-2026: crescimento, concentração, sazonalidade,
-   eficiência, alertas ocultos e projeções.
+   100% data-driven: ano 2026 ao vivo + histórico só quando existir.
+   Sem diagnósticos hardcoded de clientes/projetos.
 ═══════════════════════════════════════════════════════════════ */
+function _deepDeriveLicoesFromRels(projects2026) {
+  const PROB_RULES = [
+    { prob: 'prazo_entrega', re: /prazo|atraso|entrega atras|demora na entrega/i },
+    { prob: 'margem_baixa', re: /margem|budget|custo alto|não valeu financeiramente/i },
+    { prob: 'colaborador_fraco', re: /colaborador|freela|equipe.*abaixo|não entregou/i },
+    { prob: 'operador_camera', re: /c[aâ]mera|operador/i },
+    { prob: 'logistica_cara', re: /log[ií]stica|deslocamento|passagem|hotel|fora de\s*sp|rio de janeiro/i },
+    { prob: 'producao_documental', re: /termo de|pr[eé]-produ[cç][aã]o|contrato|documenta/i },
+    { prob: 'edicao_realtime', re: /edi[cç][aã]o|real-?time|editor/i },
+    { prob: 'sobrecarga_equipe', re: /sobrecarga|ac[uú]mulo|simult[aâ]ne/i },
+  ];
+  const projKeys = new Set((projects2026 || []).map(p =>
+    `${String(p.cliente || '').toLowerCase()}|${String(p.projeto || '').toLowerCase()}`
+  ));
+  if (!projKeys.size) return [];
+  const rels = (typeof _relCache !== 'undefined' && Array.isArray(_relCache)) ? _relCache : [];
+  const matched = rels.filter(r => {
+    const k = `${String(r.cliente || '').toLowerCase()}|${String(r.projeto || '').toLowerCase()}`;
+    return projKeys.has(k);
+  });
+  const bag = {};
+  matched.forEach(r => {
+    const txt = `${r.problemas || ''} ${r.obs || ''} ${r.positivo || ''}`;
+    if (!txt.trim()) return;
+    const label = `${r.cliente || '?'} (${r.projeto || '?'})`;
+    PROB_RULES.forEach(rule => {
+      if (!rule.re.test(txt)) return;
+      if (!bag[rule.prob]) bag[rule.prob] = { prob: rule.prob, freq: 0, projetos: [] };
+      bag[rule.prob].freq++;
+      if (!bag[rule.prob].projetos.includes(label) && bag[rule.prob].projetos.length < 6) {
+        bag[rule.prob].projetos.push(label);
+      }
+    });
+  });
+  return Object.values(bag).sort((a, b) => b.freq - a.freq);
+}
+
+function _deepIsOwnageCompany(kpis) {
+  const name = String(kpis?.companyName || (typeof currentUser !== 'undefined' && currentUser?.company_name) || '').toLowerCase();
+  const user = String((typeof currentUser !== 'undefined' && currentUser?.username) || '').toLowerCase();
+  return name.includes('ownage') || user === 'gustavowng';
+}
+
 function renderDeepAnalysis(filtered2026, kpis) {
   const el = document.getElementById('deepAnalysisSection');
-  if(!el) return;
+  if (!el) return;
 
-  /* ══════════════════════════════════════════════════════════════
-     BLOCO EXTRA: ANÁLISE DE RELATÓRIOS DE PROJETOS (problemas reais)
-  ══════════════════════════════════════════════════════════════ */
+  const projects = Array.isArray(filtered2026) ? filtered2026 : [];
+  kpis = kpis || {};
+
   const PROB_MAP = {
-    'budget_desalinhado':     { label:'Budget desalinhado', cor:'#d97706' },
-    'prazo_entrega':          { label:'Prazo de entrega', cor:'#dc2626' },
-    'margem_baixa':           { label:'Margem baixa / abaixo do ideal', cor:'#dc2626' },
-    'logistica_cara':         { label:'Logística cara', cor:'#d97706' },
-    'colaborador_fraco':      { label:'Colaborador abaixo do esperado', cor:'#dc2626' },
-    'operador_camera':        { label:'Operador de câmera inadequado', cor:'#dc2626' },
-    'producao_documental':    { label:'Erro de pré-produção/documentação', cor:'#d97706' },
-    'cliente_desorganizado':  { label:'Cliente desorganizado', cor:'#94a3b8' },
-    'edicao_realtime':        { label:'Edição real-time não executada', cor:'#d97706' },
-    'sobrecarga_equipe':      { label:'Sobrecarga de equipe', cor:'#dc2626' },
+    'prazo_entrega': { label: 'Prazo de entrega', cor: '#dc2626' },
+    'margem_baixa': { label: 'Margem / budget', cor: '#dc2626' },
+    'colaborador_fraco': { label: 'Colaborador abaixo do esperado', cor: '#dc2626' },
+    'operador_camera': { label: 'Operação de câmera', cor: '#dc2626' },
+    'logistica_cara': { label: 'Logística / deslocamento', cor: '#d97706' },
+    'producao_documental': { label: 'Pré-produção / documentação', cor: '#d97706' },
+    'edicao_realtime': { label: 'Edição / real-time', cor: '#d97706' },
+    'sobrecarga_equipe': { label: 'Sobrecarga de equipe', cor: '#dc2626' },
   };
 
-  /* Lições sistêmicas extraídas dos relatórios */
-  const LICOES_SISTEMICAS = [
-    { prob:'prazo_entrega',       freq:5, projetos:'Yuri (CD), Thiago Sub (CD), MC Bill (CD), Irmãs Lira (CD), Marcella' },
-    { prob:'margem_baixa',        freq:3, projetos:'Marcella (Miss Brasil), Talita Perosa, Ecologyk' },
-    { prob:'colaborador_fraco',   freq:1, projetos:'Escola de Planejados (Amarante)' },
-    { prob:'operador_camera',     freq:1, projetos:'Thadeu Meneghini (Ao Vivo)' },
-    { prob:'logistica_cara',      freq:1, projetos:'Talita Perosa (Rio de Janeiro)' },
-    { prob:'producao_documental', freq:2, projetos:'Casa 46 (Jonas) — termo de imagem ausente, Casa 46 (Jonas) — erro de lente/locação' },
-    { prob:'edicao_realtime',     freq:1, projetos:'Viezes (Leilão)' },
-    { prob:'sobrecarga_equipe',   freq:2, projetos:'Escola de Planejados, Thadeu Meneghini (Ao Vivo)' },
-  ];
+  const LICOES_SISTEMICAS = _deepDeriveLicoesFromRels(projects).map(l => ({
+    ...l,
+    projetos: Array.isArray(l.projetos) ? l.projetos.join(', ') : String(l.projetos || '')
+  }));
 
-  /* ── 1. SÉRIE HISTÓRICA 2021-2026 ── (2026 pode vir do dashboard Supabase via kpis.supa2026) */
-  const years  = [2021,2022,2023,2024,2025,2026];
-  const hFats  = years.map(y => HIST_SUMMARY[y]?.fat  || 0);
-  const hCosts = years.map(y => HIST_SUMMARY[y]?.cost || 0);
-  const hN     = years.map(y => HIST_SUMMARY[y]?.n   || 0);
-  const hClts  = years.map(y => HIST_SUMMARY[y]?.clientes || 0);
-  if(kpis && kpis.supa2026) {
-    hFats[5]  = kpis.supa2026.fat      ?? hFats[5];
-    hCosts[5] = kpis.supa2026.cost     ?? hCosts[5];
-    hN[5]     = kpis.supa2026.n        ?? hN[5];
-    hClts[5]  = kpis.supa2026.clientes ?? hClts[5];
+  const useHist = _deepIsOwnageCompany(kpis);
+  const years = useHist ? [2021, 2022, 2023, 2024, 2025, 2026] : [2026];
+  const hFats = years.map(y => (y === 2026 ? 0 : (useHist ? (HIST_SUMMARY[y]?.fat || 0) : 0)));
+  const hCosts = years.map(y => (y === 2026 ? 0 : (useHist ? (HIST_SUMMARY[y]?.cost || 0) : 0)));
+  const hN = years.map(y => (y === 2026 ? 0 : (useHist ? (HIST_SUMMARY[y]?.n || 0) : 0)));
+  const hClts = years.map(y => (y === 2026 ? 0 : (useHist ? (HIST_SUMMARY[y]?.clientes || 0) : 0)));
+  const idx2026 = years.indexOf(2026);
+  if (kpis.supa2026 && idx2026 >= 0) {
+    hFats[idx2026] = kpis.supa2026.fat ?? hFats[idx2026];
+    hCosts[idx2026] = kpis.supa2026.cost ?? hCosts[idx2026];
+    hN[idx2026] = kpis.supa2026.n ?? hN[idx2026];
+    hClts[idx2026] = kpis.supa2026.clientes ?? hClts[idx2026];
+  } else if (idx2026 >= 0) {
+    hFats[idx2026] = kpis.fat || 0;
+    hCosts[idx2026] = kpis.cost || 0;
+    hN[idx2026] = kpis.nTotal || projects.length;
+    hClts[idx2026] = kpis.clientes || 0;
   }
-  const hLucro = years.map((y, i) => (hFats[i] || 0) - (hCosts[i] || 0));
-  const hMargem= years.map((y,i) => hFats[i]>0 ? (hLucro[i]/hFats[i]*100) : 0);
-  const hTicket= years.map((y,i) => hN[i]>0 ? hFats[i]/hN[i] : 0);
+  const hLucro = years.map((_, i) => (hFats[i] || 0) - (hCosts[i] || 0));
+  const hMargem = years.map((_, i) => hFats[i] > 0 ? (hLucro[i] / hFats[i] * 100) : 0);
+  const yoyFat = years.map((_, i) => i === 0 ? null : hFats[i - 1] > 0 ? ((hFats[i] - hFats[i - 1]) / hFats[i - 1] * 100) : null);
 
-  /* YoY crescimento */
-  const yoyFat = years.map((y,i) => i===0 ? null : hFats[i-1]>0 ? ((hFats[i]-hFats[i-1])/hFats[i-1]*100) : null);
-
-  /* ── 2. SAZONALIDADE 2026 (por mês) ── */
   const byMes = {};
-  filtered2026.forEach(p => {
-    const ma = _dashResolveMesAno(p);
-    const m = ma ? ma.mes : 1;
+  projects.forEach(p => {
+    const ma = typeof _dashResolveMesAno === 'function' ? _dashResolveMesAno(p) : null;
+    const m = ma ? ma.mes : (parseInt(p.mes, 10) || 1);
     const pf = parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     const pc = parseFloat(p.cost ?? p.custo_total ?? 0) || 0;
-    if(!byMes[m]) byMes[m] = { fat:0, n:0, lucro:0 };
-    byMes[m].fat   += pf;
+    if (!byMes[m]) byMes[m] = { fat: 0, n: 0, lucro: 0 };
+    byMes[m].fat += pf;
     byMes[m].n++;
     byMes[m].lucro += (p.lucro != null ? p.lucro : pf - pc);
   });
-  const mesesAtivos = Object.keys(byMes).map(Number).sort((a,b)=>a-b);
-  const totalMeses  = mesesAtivos.length;
+  const mesesAtivos = Object.keys(byMes).map(Number).sort((a, b) => a - b);
+  const totalMeses = mesesAtivos.length || 1;
 
-  /* ── 3. CONCENTRAÇÃO DE CLIENTES (HHI) ── */
   const cliMap = {};
-  filtered2026.forEach(p => {
-    const k = (p.cliente||'').toLowerCase();
-    cliMap[k] = (cliMap[k]||0) + (p.fat||0);
+  projects.forEach(p => {
+    const k = (p.cliente || '—').trim() || '—';
+    const key = k.toLowerCase();
+    if (!cliMap[key]) cliMap[key] = { name: k, fat: 0 };
+    cliMap[key].fat += parseFloat(p.fat ?? p.total_value ?? 0) || 0;
   });
-  const totalFat2026 = kpis.fat || 1;
-  const cliShares = Object.values(cliMap).map(v => v/totalFat2026);
-  const hhi = cliShares.reduce((s,v) => s + v*v, 0); // 0=diversificado, 1=monopolio
-  const top1Cli = Object.entries(cliMap).sort((a,b)=>b[1]-a[1])[0];
-  const top1Pct = top1Cli ? Math.round(top1Cli[1]/totalFat2026*100) : 0;
-  const top3Fat = Object.values(cliMap).sort((a,b)=>b-a).slice(0,3).reduce((s,v)=>s+v,0);
-  const top3Pct = Math.round(top3Fat/totalFat2026*100);
+  const totalFat2026 = kpis.fat || Object.values(cliMap).reduce((s, v) => s + v.fat, 0) || 1;
+  const cliShares = Object.values(cliMap).map(v => v.fat / totalFat2026);
+  const hhi = cliShares.reduce((s, v) => s + v * v, 0);
+  const top1Entry = Object.values(cliMap).sort((a, b) => b.fat - a.fat)[0];
+  const top1Pct = top1Entry ? Math.round(top1Entry.fat / totalFat2026 * 100) : 0;
+  const top3Fat = Object.values(cliMap).sort((a, b) => b.fat - a.fat).slice(0, 3).reduce((s, v) => s + v.fat, 0);
+  const top3Pct = Math.round(top3Fat / totalFat2026 * 100);
 
-  /* ── 4. CLIENTES SEM NPS (risco silencioso) ── */
-  const semNps  = filtered2026.filter(p => !(p.nps||p._nps||0));
-  const comNps  = filtered2026.filter(p =>  (p.nps||p._nps||0) > 0);
-  const pctSemNps = Math.round(semNps.length / Math.max(filtered2026.length,1) * 100);
+  const semNps = projects.filter(p => !(parseFloat(p.nps ?? p._nps ?? 0) > 0));
+  const pctSemNps = Math.round(semNps.length / Math.max(projects.length, 1) * 100);
+  const baixaMargem = projects.filter(p => {
+    const m = parseFloat(p.margin ?? p.profit_pct ?? 0) || 0;
+    return m > 0 && m < 30;
+  });
 
-  /* ── 5. PROJETOS COM MARGEM CRÍTICA (< 30%) ── */
-  const baixaMargem = filtered2026.filter(p => p.margin > 0 && p.margin < 30);
-  const zeromargem  = filtered2026.filter(p => !p.margin || p.margin === 0);
-
-  /* ── 6. SEGMENTOS — concentração e tendência ── */
   const segMap = {};
-  filtered2026.forEach(p => {
-    const k = p.seg||'Outros';
-    if(!segMap[k]) segMap[k]={fat:0,n:0};
-    segMap[k].fat += p.fat||0;
+  projects.forEach(p => {
+    const k = p.seg || p.category || 'Outros';
+    if (!segMap[k]) segMap[k] = { fat: 0, n: 0 };
+    segMap[k].fat += parseFloat(p.fat ?? p.total_value ?? 0) || 0;
     segMap[k].n++;
   });
-  const segsSorted = Object.entries(segMap).sort((a,b)=>b[1].fat-a[1].fat);
-  const topSeg = segsSorted[0];
+  const segsSorted = Object.entries(segMap).sort((a, b) => b[1].fat - a[1].fat);
 
-  /* ── 7. TICKET MÉDIO — evolução histórica ── */
-  const ticketEvol = years.map((y,i)=>({ ano:y, ticket:hTicket[i] }));
-
-  /* ── 8. PROJEÇÃO ANUAL 2026 ── */
   const mesesDecorridos = Math.max(totalMeses, 1);
-  const projecao2026    = mesesDecorridos > 0 ? (kpis.fat / mesesDecorridos) * 12 : 0;
-  const metaAnual2026   = 250000; // meta interna (ajustável)
-  const pctMeta         = Math.round(kpis.fat / metaAnual2026 * 100);
+  const projecao2026 = mesesDecorridos > 0 ? ((kpis.fat || 0) / mesesDecorridos) * 12 : 0;
+  const fatPrev = useHist ? (HIST_SUMMARY[2025]?.fat || 0) : 0;
+  const metaAnual2026 = Math.max(
+    Math.round(projecao2026 * 1.15) || 0,
+    Math.round(fatPrev * 1.2) || 0,
+    Math.round((kpis.fat || 0) * 1.35) || 0,
+    50000
+  );
+  const pctMeta = Math.min(Math.round((kpis.fat || 0) / metaAnual2026 * 100), 999);
 
-  /* ── 9. MELHOR E PIOR ANO ── */
-  const anosMedMargem = years.map((y,i)=>({ ano:y, margem:hMargem[i], fat:hFats[i] })).filter(x=>x.fat>0);
-  const melhorAnoFat  = [...anosMedMargem].sort((a,b)=>b.fat-a.fat)[0];
-  const melhorAnoMgm  = [...anosMedMargem].sort((a,b)=>b.margem-a.margem)[0];
-  const piorAnoMgm    = [...anosMedMargem].sort((a,b)=>a.margem-b.margem)[0];
+  const anosMedMargem = years.map((y, i) => ({ ano: y, margem: hMargem[i], fat: hFats[i] })).filter(x => x.fat > 0);
+  const melhorAnoFat = [...anosMedMargem].sort((a, b) => b.fat - a.fat)[0];
+  const melhorAnoMgm = [...anosMedMargem].sort((a, b) => b.margem - a.margem)[0];
+  const piorAnoMgm = [...anosMedMargem].sort((a, b) => a.margem - b.margem)[0];
 
-  /* ── 10. CÁLCULOS AVANÇADOS PARA DIAGNÓSTICO ── */
-  const mesAtualNum   = new Date().getMonth() + 1;
-  const yoy2026       = hFats[4] > 0 ? ((kpis.fat - hFats[4]) / hFats[4] * 100) : null;
-  const META_300K     = 300000;
-  const faltaMeta300  = Math.max(META_300K - kpis.fat, 0);
-  const mesesRest300  = Math.max(12 - mesAtualNum, 1);
-  const mediaNec300   = faltaMeta300 / mesesRest300;
-  const ticketAtual   = kpis.ticket || 1;
-  const mediaAtualMes = kpis.medMes || 1;
-  const mult300       = mediaAtualMes > 0 ? mediaNec300 / mediaAtualMes : 0;
-  // Taxa de retorno de clientes
-  const retornoMap    = {};
-  filtered2026.forEach(p => { retornoMap[p.cliente] = (retornoMap[p.cliente]||0) + 1; });
-  const cliUmaVez     = Object.values(retornoMap).filter(n => n === 1).length;
-  const taxaRetorno   = Object.keys(retornoMap).length > 0
-    ? Math.round((Object.keys(retornoMap).length - cliUmaVez) / Object.keys(retornoMap).length * 100) : 0;
-  // Variação sazonal
-  const variacaoMes   = Object.values(byMes).length >= 2
-    ? Math.max(...Object.values(byMes).map(x=>x.fat)) / Math.min(...Object.values(byMes).map(x=>x.fat))
-    : 1;
-  // Custo fixo estimado e margem líquida operacional
-  const custoFixoEst  = 8000;
-  const margemLiqOper = kpis.fat > 0
-    ? ((kpis.lucro - custoFixoEst * mesesDecorridos) / kpis.fat * 100) : 0;
-  // Runway financeiro (meses com zero receita = buraco)
-  const mesesSemFat   = [1,2,3,4,5,6].filter(m => m <= mesAtualNum && !byMes[m]);
-  // Eficiência: lucro por projeto
-  const lucroPorProj  = kpis.nTotal > 0 ? kpis.lucro / kpis.nTotal : 0;
-  // Crescimento necessário para bater 300k
-  const crescNec      = mediaAtualMes > 0 ? ((META_300K / (mediaAtualMes * 12) - 1) * 100) : 0;
-  // Projetos por mês (cadência)
-  const projPorMes    = kpis.nTotal / Math.max(mesesDecorridos, 1);
-  // Contratos necessários por semana (genérico) para meta
-  const contSemNec    = Math.ceil(mediaNec300 / ticketAtual / 4.33);
-  // Análise de segmento único
-  const segRisco      = segsSorted.length > 0 && segsSorted[0][1].fat / totalFat2026 > 0.6;
+  const mesAtualNum = new Date().getMonth() + 1;
+  const idxPrev = years.indexOf(2025);
+  const yoy2026 = (useHist && idxPrev >= 0 && hFats[idxPrev] > 0)
+    ? (((kpis.fat || 0) - hFats[idxPrev]) / hFats[idxPrev] * 100)
+    : null;
+  const faltaMeta = Math.max(metaAnual2026 - (kpis.fat || 0), 0);
+  const mesesRest = Math.max(12 - mesAtualNum, 1);
+  const mediaNec = faltaMeta / mesesRest;
+  const ticketAtual = kpis.ticket || 1;
+  const mediaAtualMes = kpis.medMes || ((kpis.fat || 0) / Math.max(mesesDecorridos, 1)) || 1;
+  const multMeta = mediaAtualMes > 0 ? mediaNec / mediaAtualMes : 0;
 
-  /* ── HELPER: cor da barra histórica ── */
+  const retornoMap = {};
+  projects.forEach(p => {
+    const c = (p.cliente || '').trim();
+    if (!c) return;
+    retornoMap[c] = (retornoMap[c] || 0) + 1;
+  });
+  const cliUmaVez = Object.values(retornoMap).filter(n => n === 1).length;
+  const nCli = Object.keys(retornoMap).length;
+  const taxaRetorno = nCli > 0 ? Math.round((nCli - cliUmaVez) / nCli * 100) : 0;
+  const fatsMes = Object.values(byMes).map(x => x.fat).filter(v => v > 0);
+  const variacaoMes = fatsMes.length >= 2 ? Math.max(...fatsMes) / Math.min(...fatsMes) : 1;
+  const mesesSemFat = [1,2,3,4,5,6,7,8,9,10,11,12].filter(m => m <= mesAtualNum && !(byMes[m] && byMes[m].fat > 0));
+  const projPorMes = (kpis.nTotal || projects.length) / Math.max(mesesDecorridos, 1);
+  const margemBruta = kpis.margem != null ? kpis.margem : (kpis.fat > 0 ? ((kpis.lucro || 0) / kpis.fat * 100) : 0);
+  const MONTHS_L = (typeof MONTHS !== 'undefined') ? MONTHS : ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const yrColor = (y) => {
     const i = years.indexOf(y);
-    const pcts = ['#94a3b8','#60a5fa','#34d399','#f59e0b','#a78bfa','#2563eb'];
-    return pcts[i] || '#aaa';
+    return ['#94a3b8','#60a5fa','#34d399','#f59e0b','#a78bfa','#2563eb'][i] || '#aaa';
   };
 
-  /* ── RENDER ── */
+  const diagnosticos = [];
+  const clientesSoUmaVez = Object.entries(retornoMap).filter(([, n]) => n === 1);
+  const projSemNec = Math.max(1, Math.ceil(mediaNec / Math.max(ticketAtual, 1) / 4.33));
+
+  if (top1Pct >= 20 && top1Entry) {
+    diagnosticos.push({
+      nivel: top1Pct >= 40 ? 'critico' : top1Pct >= 25 ? 'alerta' : 'info',
+      categoria: 'RISCO · CONCENTRAÇÃO',
+      icone: 'fa-sitemap',
+      titulo: top1Pct >= 40
+        ? `Dependência crítica: ${top1Pct}% da receita em 1 cliente`
+        : `Concentração: ${top1Pct}% em ${escHtml(top1Entry.name)}`,
+      corpo: `<b>${escHtml(top1Entry.name)}</b> representa ${top1Pct}% do faturamento do ano (${fmtBRL(top1Entry.fat)}). Top 3 = <b>${top3Pct}%</b>. HHI: <b>${(hhi * 100).toFixed(0)}/100</b>.`,
+      pontosCego: [
+        `Se o maior cliente pausar, o impacto imediato é ~${top1Pct}% da receita.`,
+        `${nCli} clientes ativos no ano — diversificar reduz risco de caixa.`,
+        `Meta saudável: nenhum cliente acima de 20% da receita.`
+      ],
+      acao: 'Prospectar novos clientes e propor recorrência aos top clientes com NPS alto.'
+    });
+  }
+
+  if (multMeta > 1.2 && faltaMeta > 0) {
+    diagnosticos.push({
+      nivel: multMeta >= 3 ? 'critico' : multMeta >= 2 ? 'alerta' : 'info',
+      categoria: 'META · VELOCIDADE',
+      icone: 'fa-tachometer-alt',
+      titulo: `Ritmo atual precisa de ${multMeta.toFixed(1)}× para a meta derivada (${fmtBRL(metaAnual2026)})`,
+      corpo: `Média atual: <b>${fmtBRL(mediaAtualMes)}/mês</b>. Necessário: <b>${fmtBRL(mediaNec)}/mês</b> nos próximos ${mesesRest} meses. Projeção atual: <b>${fmtBRL(projecao2026)}</b>.`,
+      pontosCego: [
+        `Cadência: ${projPorMes.toFixed(1)} projetos/mês.`,
+        'Meta calculada a partir da projeção/histórico — não é valor fixo inventado.',
+        `Já decorreram ${mesAtualNum} de 12 meses.`
+      ],
+      acao: 'Documentar funil comercial e priorizar pacotes de ticket maior até fechar o gap.'
+    });
+  }
+
+  if (nCli >= 3 && taxaRetorno < 50) {
+    diagnosticos.push({
+      nivel: taxaRetorno < 20 ? 'critico' : 'alerta',
+      categoria: 'RETENÇÃO',
+      icone: 'fa-door-open',
+      titulo: `Retorno de ${taxaRetorno}% — ${cliUmaVez} cliente(s) com só 1 projeto`,
+      corpo: `De ${nCli} clientes em 2026, <b>${cliUmaVez}</b> fizeram apenas um projeto. NPS médio: <b>${kpis.avgNps > 0 ? kpis.avgNps.toFixed(1) : 'sem dados'}</b>.`,
+      pontosCego: [
+        'NPS alto sem proposta de continuidade = receita na mesa.',
+        clientesSoUmaVez.slice(0, 3).map(([c]) => escHtml(c)).join(', ') || 'Priorizar follow-up por ticket.',
+        'Reter costuma ser mais barato do que adquirir.'
+      ],
+      acao: 'Contato de continuidade esta semana com clientes de 1 projeto (maior ticket/NPS primeiro).'
+    });
+  }
+
+  if (pctSemNps > 35 && projects.length) {
+    diagnosticos.push({
+      nivel: pctSemNps > 65 ? 'critico' : 'alerta',
+      categoria: 'INTELIGÊNCIA · NPS',
+      icone: 'fa-eye-slash',
+      titulo: `${pctSemNps}% dos projetos sem NPS registrado`,
+      corpo: `${semNps.length} projeto(s) sem nota: <b>${semNps.slice(0, 5).map(p => escHtml(p.cliente || '?')).join(', ')}${semNps.length > 5 ? '…' : ''}</b>.`,
+      pontosCego: [
+        'Sem NPS, churn e detratores ficam invisíveis.',
+        'Priorize projetos com margem baixa ou status problema.',
+        'Tornem o NPS obrigatório no fechamento.'
+      ],
+      acao: 'Enviar pesquisa rápida (0–10) para todos os projetos sem NPS esta semana.'
+    });
+  }
+
+  if (margemBruta < 40 && (kpis.fat || 0) > 0) {
+    diagnosticos.push({
+      nivel: margemBruta < 20 ? 'critico' : 'alerta',
+      categoria: 'SAÚDE FINANCEIRA',
+      icone: 'fa-heartbeat',
+      titulo: `Margem bruta do ano: ${margemBruta.toFixed(0)}%`,
+      corpo: `Fat <b>${fmtBRL(kpis.fat)}</b> · Custo <b>${fmtBRL(kpis.cost || 0)}</b> · Lucro <b>${fmtBRL(kpis.lucro || 0)}</b>. ${baixaMargem.length ? `<b>${baixaMargem.length}</b> projeto(s) com margem &lt; 30%.` : ''}`,
+      pontosCego: [
+        'Margem bruta não inclui custos fixos — a líquida real é menor.',
+        baixaMargem.slice(0, 3).map(p => `${escHtml(p.cliente || '')} (${parseFloat(p.margin || 0).toFixed(0)}%)`).join(', ') || 'Revisar projetos sem custo.',
+        'Referência típica de produtora: margem bruta ≥ 40–55%.'
+      ],
+      acao: 'Revisar precificação dos projetos &lt; 30% e mapear custos fixos no financeiro.'
+    });
+  }
+
+  if (mesesSemFat.length > 0 || variacaoMes > 2.5) {
+    diagnosticos.push({
+      nivel: mesesSemFat.length >= 2 ? 'critico' : 'alerta',
+      categoria: 'SAZONALIDADE',
+      icone: 'fa-chart-bar',
+      titulo: mesesSemFat.length
+        ? `${mesesSemFat.length} mês(es) sem faturamento até agora`
+        : `Volatilidade ${variacaoMes.toFixed(1)}× entre meses`,
+      corpo: mesesSemFat.length
+        ? `Meses sem receita: <b>${mesesSemFat.map(m => MONTHS_L[m - 1] || m).join(', ')}</b>.`
+        : `Melhor mês faturou ${variacaoMes.toFixed(1)}× o pior.`,
+      pontosCego: [
+        'Retainers estabilizam caixa.',
+        'Prospecção 60–90 dias antes reduz buracos.',
+        `Cadência: ${projPorMes.toFixed(1)} projetos/mês.`
+      ],
+      acao: 'Montar pipeline 90 dias e testar 1–2 propostas de recorrência.'
+    });
+  }
+
+  const ticketNec = mediaNec / Math.max(projPorMes, 1);
+  if (faltaMeta > 0 && ticketAtual < ticketNec * 0.85 && ticketNec > 0) {
+    diagnosticos.push({
+      nivel: 'alerta',
+      categoria: 'PRECIFICAÇÃO · TICKET',
+      icone: 'fa-tags',
+      titulo: `Ticket médio ${fmtBRL(ticketAtual)} abaixo do necessário (~${fmtBRL(ticketNec)})`,
+      corpo: `Com ${projPorMes.toFixed(1)} projetos/mês, ticket mínimo estimado para a meta: <b>${fmtBRL(ticketNec)}</b>.`,
+      pontosCego: [
+        'Subir ticket e/ou cadência.',
+        'Add-ons elevam ticket sem dobrar esforço.',
+        'Projetos sem custo distorcem margem.'
+      ],
+      acao: 'Revisar tabela e ofertar add-ons em todo briefing.'
+    });
+  }
+
+  LICOES_SISTEMICAS.slice(0, 3).forEach(l => {
+    const pm = PROB_MAP[l.prob] || { label: l.prob, cor: '#64748b' };
+    diagnosticos.push({
+      nivel: l.freq >= 3 ? 'critico' : 'alerta',
+      categoria: 'OPERAÇÃO · RELATÓRIOS',
+      icone: 'fa-clipboard-list',
+      titulo: `${pm.label}: ${l.freq} relatório(s)`,
+      corpo: `Padrão extraído dos relatórios: <b>${escHtml(l.projetos || '—')}</b>.`,
+      pontosCego: [
+        'Fonte: textos dos relatórios (não lista fixa).',
+        'Tratar causa raiz evita repetir prejuízo.',
+        'Cruzar com NPS e margem dos mesmos projetos.'
+      ],
+      acao: 'Abrir os relatórios citados e definir 1 ação corretiva no checklist.'
+    });
+  });
+
+  if (!diagnosticos.length) {
+    diagnosticos.push({
+      nivel: 'sucesso',
+      categoria: 'STATUS',
+      icone: 'fa-check-circle',
+      titulo: 'Sem alertas críticos com os dados atuais',
+      corpo: `${projects.length} projeto(s) · ${fmtBRL(kpis.fat || 0)} · margem ${margemBruta.toFixed(0)}% · ${nCli} cliente(s).`,
+      pontosCego: [
+        'Continue registrando NPS e custos.',
+        'Relatórios alimentam diagnósticos operacionais.',
+        kpis.filtroDashboard ? `Filtro do dashboard “${escHtml(kpis.filtroDashboard)}” não afeta este bloco (ano completo).` : 'Análise do ano completo.'
+      ],
+      acao: 'Revisar esta seção mensalmente.'
+    });
+  }
+
+  const NIVEL_STYLE = {
+    critico: { bg: '#fef2f2', borda: '#fecaca', icor: '#dc2626', tag: 'CRÍTICO', tagBg: '#fecaca', tagCol: '#991b1b' },
+    alerta: { bg: '#fffbeb', borda: '#fde68a', icor: '#d97706', tag: 'ATENÇÃO', tagBg: '#fde68a', tagCol: '#92400e' },
+    info: { bg: '#eff6ff', borda: '#bfdbfe', icor: '#2563eb', tag: 'INSIGHT', tagBg: '#dbeafe', tagCol: '#1e40af' },
+    sucesso: { bg: '#f0fdf4', borda: '#bbf7d0', icor: '#16a34a', tag: 'OK', tagBg: '#dcfce7', tagCol: '#166534' },
+  };
+  const nCrit = diagnosticos.filter(d => d.nivel === 'critico').length;
+  const nAlert = diagnosticos.filter(d => d.nivel === 'alerta').length;
+  const histTitle = useHist ? 'EVOLUÇÃO 2021 → 2026' : 'ANO ATUAL (2026)';
+  const srcNote = (typeof SUPABASE_IS_SOURCE_OF_TRUTH !== 'undefined' && SUPABASE_IS_SOURCE_OF_TRUTH)
+    ? '2026 = projetos ao vivo (Supabase). Histórico 2021–2025 só entra para OWNAGE.'
+    : '2026 pode misturar planilha local + banco.';
+
   el.innerHTML = `
-  <!-- DIVISOR -->
   <div style="display:flex;align-items:center;gap:12px;margin:18px 0 14px">
     <div style="flex:1;height:1px;background:rgba(0,0,0,.08)"></div>
     <div style="font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.15em;color:#94a3b8;text-transform:uppercase;white-space:nowrap">
@@ -13831,1064 +14072,210 @@ function renderDeepAnalysis(filtered2026, kpis) {
     </div>
     <div style="flex:1;height:1px;background:rgba(0,0,0,.08)"></div>
   </div>
+  <div style="font-size:10px;color:#64748b;margin:-6px 0 12px;line-height:1.45">
+    Base: <b>ano completo 2026</b> (${projects.length} projetos)${kpis.filtroDashboard ? ` · filtro do dashboard: <b>${escHtml(kpis.filtroDashboard)}</b> (não afeta este bloco)` : ''}.
+    ${srcNote}
+  </div>
 
-  <!-- DIAGNÓSTICO PROFUNDO -->
-  ${(()=>{
-    /* ════════════════════════════════════════════════════════════
-       MOTOR DE DIAGNÓSTICO PROFUNDO — AGE OPS 2026
-       Analisa 15 dimensões: financeira, comercial, operacional,
-       estratégica, risco, eficiência e crescimento.
-    ════════════════════════════════════════════════════════════ */
-    const diagnosticos = [];
-    const projecaoAno  = mediaAtualMes * 12;
-    const eficienciaOper = kpis.cost > 0 ? ((kpis.fat - kpis.cost) / kpis.cost * 100) : 0;
-    const lucroProjMed = kpis.nTotal > 0 ? kpis.lucro / kpis.nTotal : 0;
-    const clientesSoUmaVez = Object.entries(retornoMap).filter(([,n]) => n === 1);
-    const projSemNec = Math.ceil(mediaNec300 / ticketAtual / 4.33);
-
-    /* ── D1. RISCO DE CONCENTRAÇÃO DE RECEITA ── */
-    if(top1Pct >= 20) diagnosticos.push({
-      nivel: top1Pct >= 40 ? 'critico' : top1Pct >= 25 ? 'alerta' : 'info',
-      categoria: 'RISCO · CONCENTRAÇÃO',
-      icone: 'fa-sitemap',
-      titulo: top1Pct >= 40
-        ? `🔴 DEPENDÊNCIA CRÍTICA: ${top1Pct}% da receita em 1 cliente — risco de colapso`
-        : `🟡 Concentração moderada: ${top1Pct}% em ${escHtml(top1Cli[0]||'—')}`,
-      corpo: `<b>${escHtml(top1Cli[0]||'—')}</b> gera R$${Math.round(top1Pct/100*kpis.fat/1000)}k (${top1Pct}% do total). Top 3 clientes = <b>${top3Pct}%</b>.
-        Índice HHI de concentração: <b>${(hhi*100).toFixed(0)}/100</b> (${hhi<0.15?'✅ saudável':hhi<0.30?'⚠️ moderado':'🔴 concentrado'}).
-        Produtoras saudáveis mantêm HHI abaixo de 15 e nenhum cliente acima de 20% da receita.`,
-      pontosCego: [
-        `Se ${escHtml(top1Cli[0]||'este cliente')} pausar por 1 mês, você perde R$${Math.round(top1Pct/100*mediaAtualMes/1000)}k imediatos`,
-        `Com ${Object.keys(cliMap).length} clientes, o risco de saída de qualquer um deles é elevado sem fidelização ativa`,
-        `Cobertec tem contrato trimestral ativo (R$3k/mês) — ✅ primeiro retainer formalizado. Replicar esse modelo para Yuri e Jonas (Casa 46)`
-      ],
-      acao: `Prospectar 3 novos clientes esta semana. Meta: nenhum cliente com mais de 20% da receita até ago/2026. Usar Cobertec como modelo para propor retainer para Yuri Guillen e Jonas.`
-    });
-
-    /* ── D2. GAP DE VELOCIDADE PARA META R$300K ── */
-    if(mult300 > 1.2) diagnosticos.push({
-      nivel: mult300 >= 3 ? 'critico' : mult300 >= 2 ? 'alerta' : 'info',
-      categoria: 'META · VELOCIDADE COMERCIAL',
-      icone: 'fa-tachometer-alt',
-      titulo: mult300 >= 3
-        ? `🔴 ALERTA DE META: precisa crescer ${mult300.toFixed(1)}x o ritmo atual para bater R$300k`
-        : `🟡 Aceleração necessária: ${mult300.toFixed(1)}x o ritmo atual nos próximos ${mesesRest300} meses`,
-      corpo: `Média atual: <b>${fmtBRL(mediaAtualMes)}/mês</b>. Para R$300k precisaria de <b>${fmtBRL(mediaNec300)}/mês</b> nos próximos ${mesesRest300} meses.
-        Projeção com ritmo atual: <b>${fmtBRL(projecaoAno)}</b> — gap de <b>${fmtBRL(Math.max(META_300K - projecaoAno, 0))}</b> para a meta.
-        Isso equivale a fechar <b>${projSemNec} contrato${projSemNec>1?'s':''} por semana</b> com ticket médio atual.`,
-      pontosCego: [
-        `O ritmo atual de ${projPorMes.toFixed(1)} projetos/mês é ${(mediaNec300/ticketAtual/projPorMes).toFixed(1)}x menor que o necessário`,
-        `Sem pipeline documentado, você não sabe se vai bater o mês — e já percorreu ${mesAtualNum} de 12 meses`,
-        `A meta de R$300k exige R$25k/mês. Você está em R$${Math.round(mediaAtualMes/1000)}k/mês.`
-      ],
-      acao: `Implementar funil comercial documentado. Definir meta semanal de fechamento. Priorizar pacotes de maior ticket (Videoclipe R$8k+, Evento Completo R$7k) sobre serviços menores.`
-    });
-
-    /* ── D3. CHURN SILENCIOSO — CLIENTES SEM RETORNO ── */
-    if(taxaRetorno < 50) diagnosticos.push({
-      nivel: taxaRetorno < 20 ? 'critico' : 'alerta',
-      categoria: 'RETENÇÃO · CHURN OCULTO',
-      icone: 'fa-door-open',
-      titulo: taxaRetorno < 20
-        ? `🔴 CHURN ALTO: apenas ${taxaRetorno}% dos clientes retornam — você está num balde furado`
-        : `🟡 Retenção baixa: ${taxaRetorno}% de retorno — ${clientesSoUmaVez.length} clientes fizeram só 1 projeto`,
-      corpo: `De ${Object.keys(cliMap).length} clientes em 2026, <b>${clientesSoUmaVez.length}</b> fizeram apenas 1 projeto e sumiram.
-        Custo de aquisição de cliente novo vs retenção: adquirir custa 5–7x mais que reter.
-        Com NPS médio ${kpis.avgNps > 0 ? kpis.avgNps.toFixed(1) : 'não coletado'}, há clientes satisfeitos que simplesmente não receberam proposta de continuidade.`,
-      pontosCego: [
-        `Clientes com NPS 9–10 raramente recebem proposta de próximo projeto — oportunidade perdida passivamente`,
-        `✅ Cobertec: contrato trimestral formalizado (R$3k/mês — maio, junho garantidos). Próximo passo: propor renovação para Q3`,
-        `Yuri Guillen e Jonas (Casa 46 + Escola de Planejados) ainda sem contrato recorrente — oportunidade imediata de retainer R$3–5k/mês cada`,
-        `Cada cliente perdido = meses de custo de prospecção para substituir`
-      ],
-      acao: `Esta semana: ligar para ${clientesSoUmaVez.slice(0,3).map(([c])=>c).join(', ')} e propor próximo projeto. Criar proposta de retainer mensal para top-3 clientes satisfeitos.`
-    });
-
-    /* ── D4. PONTO CEGO DE NPS — INTELIGÊNCIA DE SATISFAÇÃO ── */
-    if(pctSemNps > 35) diagnosticos.push({
-      nivel: pctSemNps > 65 ? 'critico' : 'alerta',
-      categoria: 'INTELIGÊNCIA · NPS AUSENTE',
-      icone: 'fa-eye-slash',
-      titulo: `${pctSemNps > 65 ? '🔴' : '🟡'} ${pctSemNps}% dos projetos sem NPS — pontos cegos na satisfação`,
-      corpo: `Você não sabe como ${semNps.length} cliente${semNps.length>1?'s':''} avaliaram o trabalho: <b>${semNps.slice(0,5).map(p=>p.cliente).join(', ')}${semNps.length>5?'...':''}</b>.
-        Problema real: clientes insatisfeitos raramente reclamam — simplesmente não voltam e falam mal para outros.
-        Empresas com NPS sistemático têm 30–40% menos churn e 2,5x mais indicações orgânicas.`,
-      pontosCego: [
-        `Você pode ter detratores ativos (NPS 0–6) sem saber — eles estão destruindo indicações silenciosamente`,
-        `Projetos com problemas documentados (Thadeu, Talita, Ecologyk) precisam de NPS para fechar o ciclo de aprendizado`,
-        `Sem NPS, impossível saber se o problema de prazo de entrega afetou satisfação geral`
-      ],
-      acao: `Criar template de pesquisa de NPS (WhatsApp + 1 pergunta: "Nota de 0-10 para nos indicar?"). Enviar para todos os projetos sem NPS esta semana. Registrar resultado obrigatoriamente após cada projeto.`
-    });
-
-    /* ── D5. MARGEM OPERACIONAL REAL — O QUE SOBRA DE VERDADE ── */
-    if(margemLiqOper < 35 && kpis.fat > 0) diagnosticos.push({
-      nivel: margemLiqOper < 15 ? 'critico' : 'alerta',
-      categoria: 'SAÚDE FINANCEIRA · MARGEM REAL',
-      icone: 'fa-heartbeat',
-      titulo: margemLiqOper < 15
-        ? `🔴 MARGEM LÍQUIDA REAL ESTIMADA: ${margemLiqOper.toFixed(0)}% — você está trabalhando quase de graça`
-        : `🟡 Margem operacional líquida: ${margemLiqOper.toFixed(0)}% — abaixo do ideal (40–55%)`,
-      corpo: `Margem bruta aparente: <b>${kpis.margem ? kpis.margem.toFixed(0) : '—'}%</b>.
-        Descontando custo fixo estimado de <b>R$${custoFixoEst.toLocaleString('pt-BR')}/mês</b> × ${mesesDecorridos} meses = R$${(custoFixoEst*mesesDecorridos).toLocaleString('pt-BR')},
-        a margem líquida real cai para <b>${margemLiqOper.toFixed(0)}%</b>.
-        Lucro médio por projeto: <b>${fmtBRL(lucroProjMed)}</b>. Eficiência operacional: R$${eficienciaOper.toFixed(0)} de retorno por R$100 de custo.`,
-      pontosCego: [
-        `Custos fixos não mapeados (Gustavo, softwares, deslocamentos) podem consumir 20–30% a mais da margem`,
-        `Projetos com margem < 40% estão subsidiando a estrutura — identifique quais e ajuste preços`,
-        `Marcella (Miss Brasil) e Ecologyk têm margem abaixo de 72% do custo necessário para a meta`
-      ],
-      acao: `Mapear TODOS os custos fixos mensais em planilha separada. Qualquer custo > 15% do faturamento é candidato a corte. Meta: margem líquida real ≥ 40%.`
-    });
-
-    /* ── D6. SAZONALIDADE E RISCO DE VAZIOS ── */
-    if(mesesSemFat.length > 0 || variacaoMes > 2.5) diagnosticos.push({
-      nivel: mesesSemFat.length >= 2 ? 'critico' : 'alerta',
-      categoria: 'SAZONALIDADE · ESTABILIDADE',
-      icone: 'fa-chart-bar',
-      titulo: mesesSemFat.length > 0
-        ? `🔴 Buracos de receita: ${mesesSemFat.length} mês${mesesSemFat.length>1?'es':''} sem faturamento — ${mesesSemFat.map(m=>MONTHS[m-1]).join(', ')}`
-        : `🟡 Volatilidade de ${variacaoMes.toFixed(1)}x entre meses — receita imprevisível`,
-      corpo: `${mesesSemFat.length > 0
-        ? `<b>${mesesSemFat.map(m=>MONTHS[m-1]).join(' e ')}</b> não registraram nenhuma receita. Cada mês vazio = pressão de caixa que atrasa investimentos e contratações.`
-        : `O melhor mês faturou ${variacaoMes.toFixed(1)}x mais que o pior.`}
-        Sem receita previsível, é impossível contratar, planejar ou investir com segurança.
-        Produtoras maduras têm pelo menos 40% da receita em contratos fixos mensais.`,
-      pontosCego: [
-        `Pipeline vazio em meses específicos pode indicar falta de prospecção 60–90 dias antes`,
-        `Sem retainers, qualquer pausa de cliente existente cria crise de caixa imediata`,
-        `Calendário comercial não estruturado — você não sabe quais meses do ano são historicamente fracos`
-      ],
-      acao: `Criar 3 contratos de Social Media recorrente (R$5.5k/mês cada = R$16.5k fixo/mês). Usar histórico 2021–2025 para identificar meses sazonais fracos e dobrar prospecção 90 dias antes.`
-    });
-
-    /* ── D7. TICKET MÉDIO vs NECESSÁRIO PARA META ── */
-    const ticketNecMeta = mediaNec300 / Math.max(projPorMes, 1);
-    if(ticketAtual < ticketNecMeta * 0.85) diagnosticos.push({
-      nivel: 'alerta',
-      categoria: 'PRECIFICAÇÃO · TICKET',
-      icone: 'fa-tags',
-      titulo: `🟡 Ticket médio (${fmtBRL(ticketAtual)}) é ${Math.round((1-ticketAtual/ticketNecMeta)*100)}% menor que o necessário para R$300k`,
-      corpo: `Com ${projPorMes.toFixed(1)} projetos/mês, o ticket mínimo para bater a meta seria <b>${fmtBRL(ticketNecMeta)}</b>.
-        Diferença atual: <b>${fmtBRL(ticketNecMeta - ticketAtual)}</b> por projeto.
-        Tabela atual subutilizada: Videoclipe R$8k (pode ser R$10k+), Content Day R$4.5k (vale R$6k com editor RT incluso).`,
-      pontosCego: [
-        `Add-ons do catálogo (drone, 2ª câmera, editor RT) raramente são oferecidos ativamente — perda de R$1–3k por projeto`,
-        `Nenhum pacote premium existe formalmente — clientes dispostos a pagar mais não têm opção`,
-        `Desconto implícito dado em negociações não documentadas corrói ticket médio silenciosamente`
-      ],
-      acao: `Aumentar tabela em 15%: Videoclipe R$9.5k, Inst. R$9.5k, Content Day R$5.5k, Social R$6.5k. Criar pacote Premium com editor RT obrigatório (+R$1.5k). Nenhum desconto acima de 10% sem aprovação.`
-    });
-
-    /* ── D8. GARGALO OPERACIONAL — SOBRECARGA E EDIÇÃO ── */
-    diagnosticos.push({
-      nivel: 'critico',
-      categoria: 'OPERACIONAL · GARGALO SISTÊMICO',
-      icone: 'fa-cogs',
-      titulo: `🔴 Gargalo sistêmico de edição: prazo foi problema em 5+ projetos — está travando crescimento`,
-      corpo: `Prazo de entrega foi identificado como falha em: <b>Yuri (Content Day), Thiago Sub (CD), MC Bill (CD), Irmãs Lira (CD), Marcella</b>.
-        Sintoma: Gustavo acumula direção + captação + edição. Sem editor dedicado, cada novo cliente piora a situação.
-        Impacto oculto: atrasos geram NPS baixo, menos indicações e clientes que não voltam.`,
-      pontosCego: [
-        `Você está atingindo o teto de capacidade atual — crescer receita sem resolver edição = colapso operacional`,
-        `Content Day com editor RT não é custo extra — é diferencial competitivo que justifica cobrar R$1.5k a mais`,
-        `Sobrecarga de Gustavo é risco de saúde e qualidade — projetos simultâneos sem buffer destroem entrega`
-      ],
-      acao: `URGENTE: contratar/treinar editor freelancer para Content Days até próximo projeto. Regra: máximo 2 CDs simultâneos. Cobrar obrigatoriamente R$1.5k a mais por editor RT — custo justificado.`
-    });
-
-    /* ── D9. EFICIÊNCIA DE COLABORADORES ── */
-    diagnosticos.push({
-      nivel: 'alerta',
-      categoria: 'EQUIPE · EFICIÊNCIA COLABORADORES',
-      icone: 'fa-users-cog',
-      titulo: `🟡 Critério de colaboradores falhou em 2 projetos — custo em qualidade e margem`,
-      corpo: `<b>Amarante (Escola de Planejados)</b>: colaborador abaixo do esperado sobrecarregou Gustavo. Resultado: margem comprimida, entrega prejudicada.
-        <b>Operadora de câmera (Thadeu Ao Vivo)</b>: câmera inadequada para evento ao vivo comprometeu resultado.
-        Sem critério formal de seleção, cada novo colaborador é uma aposta.`,
-      pontosCego: [
-        `Não existe banco de colaboradores avaliados — risco de repetir o erro com qualquer novo projeto`,
-        `Custo de um colaborador ruim: retrabalho de edição + possível perda de cliente + sobrecarga de equipe`,
-        `Colaboradores novos nunca devem entrar diretamente em projetos de grande porte`
-      ],
-      acao: `Criar ficha de avaliação de colaboradores (técnica + postura + pontualidade). Nenhum colaborador novo em projeto acima de R$5k sem projeto-piloto. Montar banco de fornecedores confiáveis por função.`
-    });
-
-    /* ── D10. RISCO JURÍDICO E DE PRÉ-PRODUÇÃO ── */
-    diagnosticos.push({
-      nivel: 'alerta',
-      categoria: 'JURÍDICO · PRÉ-PRODUÇÃO',
-      icone: 'fa-file-contract',
-      titulo: `🟡 Falhas de pré-produção e jurídico em 2+ projetos — risco de processo e perda de material`,
-      corpo: `<b>Casa 46 (cliente: Jonas)</b>: sem termo de uso de imagem assinado no projeto Visita Benjamim Back + erro de pré-produção de lente/locação. Casa 46 e Escola de Planejados são empresas do Jonas — cliente estratégico da Age.
-        <b>Ecologyk</b>: cliente totalmente separado — projeto de clipe com margem zero (custo não coberto). Sem relação com Jonas ou com Casa 46.
-        Sem assinatura de uso de imagem, qualquer entregável publicado pode ser questionado legalmente.`,
-      pontosCego: [
-        `Cada projeto sem contrato assinado é risco jurídico real — um cliente insatisfeito pode acionar você`,
-        `Checklist de pré-produção inexistente significa que cada gravação é uma surpresa`,
-        `Nenhum contrato padronizado = negociações informais = margens não protegidas`
-      ],
-      acao: `Criar: (1) Template de contrato padrão com cláusulas de uso de imagem, prazo, revisões. (2) Checklist de pré-produção de 15 pontos (locação, lentes, equipe, termo, backup). Obrigatório antes de qualquer gravação.`
-    });
-
-    /* ── D11. LOGÍSTICA FORA DE SP — MARGEM DESTRUÍDA ── */
-    if(filtered2026.some(p => (p.seg||'').toLowerCase().includes('rio') || (p.projeto||'').toLowerCase().includes('rio') || (p.cliente||'').toLowerCase().includes('talita'))) diagnosticos.push({
-      nivel: 'alerta',
-      categoria: 'ESTRATÉGIA · FORA DE SP',
-      icone: 'fa-map-marked-alt',
-      titulo: `🟡 Projetos fora de SP destroem margem — Talita Perosa (RJ) teve ~21% de margem real`,
-      corpo: `Ir ao Rio de Janeiro para 1 diária de captação = passagem + hotel + alimentação + tempo = margem de 21%.
-        A solução mais lucrativa: <b>captador local no destino + edição em SP</b> = margem de 60%+.
-        Mesmo modelo pode ser aplicado para qualquer cliente fora de SP.`,
-      pontosCego: [
-        `Sem política formal, próximo cliente fora de SP vai comprimir margem do mesmo jeito`,
-        `Rede de captadores locais em outras cidades é ativo estratégico que ainda não existe`,
-        `Clientes fora de SP pagam "deslocamento" escondido no preço — você não cobra, eles não sabem que poderiam`
-      ],
-      acao: `Formalizar: projetos fora de 50km de SP têm adicional de deslocamento ou usam captador local. Mapear captadores confiáveis em RJ, BH, Cuiabá para ter opção imediata.`
-    });
-
-    /* ── D12. RECEITA OCULTA NÃO CAPTURADA ── */
-    diagnosticos.push({
-      nivel: 'info',
-      categoria: 'CRESCIMENTO · RECEITA OCULTA',
-      icone: 'fa-gem',
-      titulo: `💎 R$${Math.round((mediaAtualMes * 2.5)/1000)}k–${Math.round((mediaAtualMes * 4)/1000)}k/mês em receita oculta não capturada`,
-      corpo: `<b>3 fontes identificadas:</b>
-        1. <b>Retainers de clientes satisfeitos</b>: ✅ Cobertec já formalizado (R$3k/mês — contrato trimestral). Yuri, Casa 46, Thadeu → potencial R$9–15k/mês adicional fixo.
-        2. <b>Add-ons não ofertados</b>: drone, 2ª câmera, editor RT, making-of → +R$1.5–3k por projeto.
-        3. <b>Social Media recorrente</b>: clientes de vídeo sem gestão de redes → potencial R$5.5k/mês cada.`,
-      pontosCego: [
-        `Cada projeto entregue sem proposta de continuidade é receita jogada fora`,
-        `Add-ons do catálogo existem mas nunca são ofertados ativamente — perda passiva`,
-        `Upsell de Social Media para clientes de vídeo é o produto de menor atrito e mais recorrente`
-      ],
-      acao: `Criar ritual pós-entrega: sempre apresentar 3 opções de continuidade (retainer, próximo projeto, upsell). Meta: converter 2 clientes existentes em contratos mensais até jun/2026.`
-    });
-
-    /* ── D13. VELOCIDADE COMERCIAL DOCUMENTADA ── */
-    diagnosticos.push({
-      nivel: 'info',
-      categoria: 'COMERCIAL · PIPELINE',
-      icone: 'fa-funnel-dollar',
-      titulo: `ℹ️ Pipeline comercial não documentado — você está navegando sem radar`,
-      corpo: `Com ${projPorMes.toFixed(1)} projetos/mês em média e meta de ${projSemNec}/semana para R$300k,
-        o funil comercial precisa estar sempre abastecido.
-        Produtoras com CRM simples (mesmo uma planilha) fecham 3x mais contratos que as que operam por intuição.`,
-      pontosCego: [
-        `Você não sabe quantas oportunidades estão abertas agora, em que fase e qual o valor total do pipeline`,
-        `Leads não respondidos após 5 dias têm 80% menos chance de fechar`,
-        `Sazonalidade histórica (meses fracos) não está sendo usada para planejar prospecção preventiva`
-      ],
-      acao: `Criar kanban simples: Leads → Proposta enviada → Negociação → Fechado. Atualizar toda segunda. Meta: 10 leads ativos sempre no funil. Follow-up automático em 3 dias após proposta.`
-    });
-
-    const NIVEL_STYLE = {
-      critico: { bg:'#fef2f2', borda:'#fecaca', icor:'#dc2626', tag:'CRÍTICO', tagBg:'#fecaca', tagCol:'#991b1b' },
-      alerta:  { bg:'#fffbeb', borda:'#fde68a', icor:'#d97706', tag:'ATENÇÃO', tagBg:'#fde68a', tagCol:'#92400e' },
-      info:    { bg:'#eff6ff', borda:'#bfdbfe', icor:'#2563eb', tag:'INSIGHT', tagBg:'#dbeafe', tagCol:'#1e40af' },
-      sucesso: { bg:'#f0fdf4', borda:'#bbf7d0', icor:'#16a34a', tag:'OK',      tagBg:'#dcfce7', tagCol:'#166534' },
-    };
-    const nCrit  = diagnosticos.filter(d=>d.nivel==='critico').length;
-    const nAlert = diagnosticos.filter(d=>d.nivel==='alerta').length;
-
-    return `<div class="panel" style="margin-bottom:14px;border:1px solid rgba(220,38,38,.15)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-        <div>
-          <div class="panel-title" style="color:#dc2626;margin-bottom:4px"><i class="fas fa-microscope" style="color:#dc2626"></i> DIAGNÓSTICO PROFUNDO — 13 Dimensões Analisadas</div>
-          <div style="font-size:10px;color:#64748b;font-family:var(--font-m)">Análise cruzada de financeiro, comercial, operacional, jurídico e estratégia</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${nCrit} CRÍTICO${nCrit!==1?'S':''}</span>
-          <span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${nAlert} ATENÇÃO</span>
-          <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${diagnosticos.length-nCrit-nAlert} INSIGHT${diagnosticos.length-nCrit-nAlert!==1?'S':''}</span>
-        </div>
+  <div class="panel" style="margin-bottom:14px;border:1px solid rgba(220,38,38,.15)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+      <div>
+        <div class="panel-title" style="color:#dc2626;margin-bottom:4px"><i class="fas fa-microscope" style="color:#dc2626"></i> DIAGNÓSTICO PROFUNDO — baseado nos seus dados</div>
+        <div style="font-size:10px;color:#64748b;font-family:var(--font-m)">${diagnosticos.length} achado(s) · sem narrativa fixa de clientes</div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${diagnosticos.map(d => {
-          const st = NIVEL_STYLE[d.nivel] || NIVEL_STYLE.info;
-          return `<div style="background:${st.bg};border:1px solid ${st.borda};border-radius:8px;overflow:hidden">
-            <div style="padding:11px 14px">
-              <div style="display:flex;gap:10px;align-items:flex-start">
-                <i class="fas ${d.icone}" style="color:${st.icor};font-size:13px;margin-top:3px;flex-shrink:0"></i>
-                <div style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">
-                    <span style="font-size:7px;font-weight:800;background:${st.tagBg};color:${st.tagCol};border-radius:3px;padding:2px 7px;letter-spacing:.8px">${st.tag}</span>
-                    <span style="font-size:7px;color:#94a3b8;font-family:var(--font-m);letter-spacing:.5px">${d.categoria}</span>
-                  </div>
-                  <div style="font-size:11px;font-weight:700;color:#0f172a;margin-bottom:6px;line-height:1.35">${d.titulo}</div>
-                  <div style="font-size:10px;color:#374151;line-height:1.65;margin-bottom:8px">${d.corpo}</div>
-                  ${d.pontosCego ? `<div style="background:rgba(0,0,0,.04);border-radius:6px;padding:8px 10px;margin-bottom:8px">
-                    <div style="font-size:8px;font-weight:800;color:#94a3b8;letter-spacing:.08em;margin-bottom:5px;text-transform:uppercase">🔎 Pontos Cegos Identificados</div>
-                    ${d.pontosCego.map(pc=>`<div style="font-size:9.5px;color:#64748b;line-height:1.55;padding:2px 0;display:flex;gap:6px"><span style="color:#d97706;flex-shrink:0">•</span><span>${pc}</span></div>`).join('')}
-                  </div>` : ''}
-                  <div style="display:flex;gap:6px;align-items:flex-start">
-                    <span style="font-size:9px;color:${st.icor};font-weight:800;flex-shrink:0;margin-top:1px">→ AÇÃO IMEDIATA:</span>
-                    <span style="font-size:10px;color:#374151;line-height:1.5;font-style:italic">${d.acao}</span>
-                  </div>
-                </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${nCrit} CRÍTICO${nCrit !== 1 ? 'S' : ''}</span>
+        <span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:8px;font-weight:800;border-radius:5px;padding:4px 10px">${nAlert} ATENÇÃO</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${diagnosticos.map(d => {
+        const st = NIVEL_STYLE[d.nivel] || NIVEL_STYLE.info;
+        return `<div style="background:${st.bg};border:1px solid ${st.borda};border-radius:10px;padding:12px 14px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <i class="fas ${d.icone}" style="color:${st.icor};margin-top:2px"></i>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+                <span style="font-size:8px;font-weight:800;background:${st.tagBg};color:${st.tagCol};border-radius:4px;padding:2px 7px">${st.tag}</span>
+                <span style="font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.08em">${d.categoria}</span>
+              </div>
+              <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px;line-height:1.35">${d.titulo}</div>
+              <div style="font-size:10.5px;color:#374151;line-height:1.55;margin-bottom:8px">${d.corpo}</div>
+              ${(d.pontosCego || []).length ? `<div style="margin-bottom:8px">${d.pontosCego.map(pc =>
+                `<div style="font-size:9.5px;color:#64748b;line-height:1.55;padding:2px 0;display:flex;gap:6px"><span style="color:#d97706;flex-shrink:0">•</span><span>${pc}</span></div>`
+              ).join('')}</div>` : ''}
+              <div style="display:flex;gap:6px;align-items:flex-start">
+                <span style="font-size:9px;color:${st.icor};font-weight:800;flex-shrink:0;margin-top:1px">→ AÇÃO:</span>
+                <span style="font-size:10px;color:#374151;line-height:1.5;font-style:italic">${d.acao}</span>
               </div>
             </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  })()}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
 
-  <!-- LINHA 1: Evolução histórica + Projeção -->
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px" class="responsive-2col">
-
-    <!-- Evolução histórica -->
     <div class="panel">
-      <div class="panel-title"><i class="fas fa-history" style="color:#2563eb"></i> EVOLUÇÃO 2021 → 2026 — Faturamento &amp; Margem</div>
+      <div class="panel-title"><i class="fas fa-history" style="color:#2563eb"></i> ${histTitle} — Faturamento &amp; Margem</div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:10px;min-width:420px">
           <thead>
             <tr style="border-bottom:2px solid rgba(0,0,0,.08)">
-              <th style="text-align:left;padding:6px 8px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700;letter-spacing:.1em">ANO</th>
-              <th style="text-align:right;padding:6px 8px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700;letter-spacing:.1em">FATURAMENTO</th>
-              <th style="text-align:right;padding:6px 8px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700;letter-spacing:.1em">LUCRO</th>
-              <th style="text-align:right;padding:6px 8px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700;letter-spacing:.1em">MARGEM</th>
-              <th style="text-align:right;padding:6px 8px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700;letter-spacing:.1em">PROJ.</th>
-              <th style="text-align:right;padding:6px 8px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700;letter-spacing:.1em">YoY</th>
-              <th style="padding:6px 8px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700;letter-spacing:.1em">BARRA</th>
+              <th style="text-align:left;padding:6px 8px;font-size:8px;color:#aaa;font-weight:700">ANO</th>
+              <th style="text-align:right;padding:6px 8px;font-size:8px;color:#aaa;font-weight:700">FATURAMENTO</th>
+              <th style="text-align:right;padding:6px 8px;font-size:8px;color:#aaa;font-weight:700">LUCRO</th>
+              <th style="text-align:right;padding:6px 8px;font-size:8px;color:#aaa;font-weight:700">MARGEM</th>
+              <th style="text-align:right;padding:6px 8px;font-size:8px;color:#aaa;font-weight:700">PROJ.</th>
+              <th style="text-align:right;padding:6px 8px;font-size:8px;color:#aaa;font-weight:700">YoY</th>
+              <th style="padding:6px 8px;font-size:8px;color:#aaa;font-weight:700">BARRA</th>
             </tr>
           </thead>
           <tbody>
-            ${years.map((y,i) => {
-              const isThis = y===2026;
-              const mgm    = hMargem[i];
-              const mgmCol = mgm>=55?'#16a34a':mgm>=30?'#d97706':'#dc2626';
-              const yoy    = yoyFat[i];
-              const yoyTxt = yoy===null ? '—' : (yoy>=0?'<span style="color:#16a34a">▲ +':'<span style="color:#dc2626">▼ ')+Math.abs(yoy).toFixed(0)+'%</span>';
-              const barPct = hFats[i]>0 ? Math.round(hFats[i]/Math.max(...hFats)*100) : 0;
-              const note   = HIST_SUMMARY[y]?.semCusto ? '<span style="font-size:8px;color:#aaa;margin-left:4px" title="Custo não registrado neste ano">*</span>' : '';
-              return `<tr style="border-bottom:1px solid rgba(0,0,0,.05);${isThis?'background:rgba(37,99,235,.04)':''}">
-                <td style="padding:7px 8px;font-family:var(--font-h);font-weight:700;color:${isThis?'#2563eb':'#374151'}">${y}${isThis?'<span style="font-size:8px;color:#2563eb;margin-left:4px">◀ atual</span>':''}</td>
-                <td style="padding:7px 8px;text-align:right;font-family:var(--font-h);font-weight:700;color:#0f172a">${fmtBRL(hFats[i])}${note}</td>
-                <td style="padding:7px 8px;text-align:right;font-family:var(--font-h);font-weight:700;color:${hLucro[i]>=0?'#16a34a':'#dc2626'}">${fmtBRL(hLucro[i])}</td>
-                <td style="padding:7px 8px;text-align:right;font-weight:700;color:${mgmCol}">${mgm>0?mgm.toFixed(0)+'%':'—'}</td>
+            ${years.map((y, i) => {
+              const isThis = y === 2026;
+              const mgm = hMargem[i];
+              const mgmCol = mgm >= 55 ? '#16a34a' : mgm >= 30 ? '#d97706' : '#dc2626';
+              const yoy = yoyFat[i];
+              const yoyTxt = yoy === null ? '—' : (yoy >= 0 ? '<span style="color:#16a34a">▲ +' : '<span style="color:#dc2626">▼ ') + Math.abs(yoy).toFixed(0) + '%</span>';
+              const barPct = hFats[i] > 0 ? Math.round(hFats[i] / Math.max(...hFats, 1) * 100) : 0;
+              const note = (useHist && HIST_SUMMARY[y]?.semCusto) ? '<span style="font-size:8px;color:#aaa;margin-left:4px">*</span>' : '';
+              return `<tr style="border-bottom:1px solid rgba(0,0,0,.05);${isThis ? 'background:rgba(37,99,235,.04)' : ''}">
+                <td style="padding:7px 8px;font-weight:700;color:${isThis ? '#2563eb' : '#374151'}">${y}${isThis ? '<span style="font-size:8px;color:#2563eb;margin-left:4px">◀ atual</span>' : ''}</td>
+                <td style="padding:7px 8px;text-align:right;font-weight:700">${fmtBRL(hFats[i])}${note}</td>
+                <td style="padding:7px 8px;text-align:right;font-weight:700;color:${hLucro[i] >= 0 ? '#16a34a' : '#dc2626'}">${fmtBRL(hLucro[i])}</td>
+                <td style="padding:7px 8px;text-align:right;font-weight:700;color:${mgmCol}">${mgm > 0 ? mgm.toFixed(0) + '%' : '—'}</td>
                 <td style="padding:7px 8px;text-align:right;color:#64748b;font-size:9px">${hN[i]}p / ${hClts[i]}c</td>
                 <td style="padding:7px 8px;text-align:right;font-size:10px">${yoyTxt}</td>
-                <td style="padding:7px 8px;min-width:80px">
-                  <div style="background:rgba(0,0,0,.06);border-radius:3px;height:6px;overflow:hidden">
-                    <div style="height:100%;width:${barPct}%;background:${yrColor(y)};border-radius:3px;transition:width .4s"></div>
-                  </div>
-                </td>
+                <td style="padding:7px 8px;min-width:80px"><div style="background:rgba(0,0,0,.06);border-radius:3px;height:6px;overflow:hidden"><div style="height:100%;width:${barPct}%;background:${yrColor(y)};border-radius:3px"></div></div></td>
               </tr>`;
             }).join('')}
           </tbody>
-          <tfoot>
-            <tr style="background:rgba(37,99,235,.04);border-top:2px solid rgba(37,99,235,.2)">
-              <td style="padding:7px 8px;font-family:var(--font-m);font-size:8px;font-weight:700;color:#2563eb">ACUMULADO</td>
-              <td style="padding:7px 8px;text-align:right;font-family:var(--font-h);font-weight:900;color:#0f172a">${fmtBRL(hFats.reduce((s,v)=>s+v,0))}</td>
-              <td style="padding:7px 8px;text-align:right;font-family:var(--font-h);font-weight:900;color:#16a34a">${fmtBRL(hLucro.reduce((s,v)=>s+v,0))}</td>
-              <td colspan="4" style="padding:7px 8px;font-size:9px;color:#94a3b8">* anos sem registro de custo</td>
-            </tr>
-          </tfoot>
         </table>
       </div>
+      ${!useHist ? '<div style="font-size:9px;color:#94a3b8;margin-top:8px">Série 2021–2025 oculta: histórico embutido é da OWNAGE.</div>' : ''}
     </div>
 
-    <!-- Projeção 2026 + Meta -->
     <div class="panel" style="display:flex;flex-direction:column;gap:14px">
       <div>
         <div class="panel-title" style="margin-bottom:10px"><i class="fas fa-rocket" style="color:#7c3aed"></i> PROJEÇÃO 2026</div>
-        <div style="font-size:9px;color:#94a3b8;margin-bottom:4px;font-family:var(--font-m);letter-spacing:.08em">PROJEÇÃO ANUAL (extrapolação)</div>
-        <div style="font-size:22px;font-weight:900;color:#7c3aed;font-family:var(--font-h)">${fmtBRL(projecao2026)}</div>
-        <div style="font-size:9px;color:#64748b;margin-top:2px">baseado em ${mesesDecorridos} mês${mesesDecorridos>1?'es':''} × ${fmtBRL(kpis.medMes)}/mês</div>
-
-        <div style="margin-top:16px;font-size:9px;color:#94a3b8;margin-bottom:6px;font-family:var(--font-m);letter-spacing:.08em">META INTERNA — R$ 250k</div>
+        <div style="font-size:9px;color:#94a3b8;margin-bottom:4px">PROJEÇÃO ANUAL</div>
+        <div style="font-size:22px;font-weight:900;color:#7c3aed">${fmtBRL(projecao2026)}</div>
+        <div style="font-size:9px;color:#64748b;margin-top:2px">${mesesDecorridos} mês(es) × ${fmtBRL(mediaAtualMes)}/mês</div>
+        <div style="margin-top:16px;font-size:9px;color:#94a3b8;margin-bottom:6px">META DERIVADA — ${fmtBRL(metaAnual2026)}</div>
         <div style="background:rgba(0,0,0,.06);border-radius:6px;height:10px;overflow:hidden;margin-bottom:6px">
-          <div style="height:100%;width:${Math.min(pctMeta,100)}%;background:${pctMeta>=80?'#16a34a':pctMeta>=50?'#2563eb':'#f59e0b'};border-radius:6px;transition:width .5s"></div>
+          <div style="height:100%;width:${Math.min(pctMeta, 100)}%;background:${pctMeta >= 80 ? '#16a34a' : pctMeta >= 50 ? '#2563eb' : '#f59e0b'};border-radius:6px"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b">
-          <span>${pctMeta}% atingido</span>
-          <span>faltam ${fmtBRL(Math.max(metaAnual2026-kpis.fat,0))}</span>
+          <span>${Math.min(pctMeta, 100)}% atingido</span>
+          <span>faltam ${fmtBRL(faltaMeta)}</span>
         </div>
       </div>
-
-      <div style="border-top:1px solid rgba(0,0,0,.07);padding-top:14px">
-        <div style="font-size:9px;color:#94a3b8;margin-bottom:10px;font-family:var(--font-m);letter-spacing:.08em">RECORDES HISTÓRICOS</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:10px;color:#64748b">🏆 Maior fat. (ano)</span>
-            <span style="font-size:11px;font-weight:700;color:#2563eb">${melhorAnoFat?.ano} · ${fmtBRL(melhorAnoFat?.fat||0)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:10px;color:#64748b">💚 Melhor margem</span>
-            <span style="font-size:11px;font-weight:700;color:#16a34a">${melhorAnoMgm?.ano} · ${melhorAnoMgm?.margem.toFixed(0)||0}%</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:10px;color:#64748b">⚠️ Pior margem</span>
-            <span style="font-size:11px;font-weight:700;color:#d97706">${piorAnoMgm?.ano} · ${piorAnoMgm?.margem.toFixed(0)||0}%</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:10px;color:#64748b">📈 Maior crescim.</span>
-            <span style="font-size:11px;font-weight:700;color:#7c3aed">${(()=>{ let bY=null,bV=-Infinity; yoyFat.forEach((v,i)=>{ if(v!==null&&v>bV){bV=v;bY=years[i];} }); return bY?(bY+' · +'+bV.toFixed(0)+'%'):'—'; })()}</span>
-          </div>
-        </div>
+      <div style="border-top:1px solid rgba(0,0,0,.07);padding-top:14px;font-size:10px;color:#64748b;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between"><span>Maior fat.</span><b style="color:#2563eb">${melhorAnoFat?.ano || '—'} · ${fmtBRL(melhorAnoFat?.fat || 0)}</b></div>
+        <div style="display:flex;justify-content:space-between"><span>Melhor margem</span><b style="color:#16a34a">${melhorAnoMgm?.ano || '—'} · ${(melhorAnoMgm?.margem || 0).toFixed(0)}%</b></div>
+        <div style="display:flex;justify-content:space-between"><span>Pior margem</span><b style="color:#d97706">${piorAnoMgm?.ano || '—'} · ${(piorAnoMgm?.margem || 0).toFixed(0)}%</b></div>
+        ${yoy2026 != null ? `<div style="display:flex;justify-content:space-between"><span>YoY vs 2025</span><b style="color:${yoy2026 >= 0 ? '#16a34a' : '#dc2626'}">${yoy2026 >= 0 ? '+' : ''}${yoy2026.toFixed(0)}%</b></div>` : ''}
       </div>
     </div>
   </div>
 
-  <!-- LINHA 2: Concentração de clientes + Sazonalidade + Ticket -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px" class="responsive-3col">
-
-    <!-- Concentração de receita -->
     <div class="panel">
-      <div class="panel-title"><i class="fas fa-sitemap" style="color:#db2777"></i> CONCENTRAÇÃO DE RECEITA</div>
-      <div style="margin-bottom:12px">
-        <div style="font-size:9px;color:#94a3b8;font-family:var(--font-m);letter-spacing:.08em;margin-bottom:6px">ÍNDICE HHI (diversificação)</div>
-        <div style="background:rgba(0,0,0,.06);border-radius:6px;height:8px;overflow:hidden;margin-bottom:4px">
-          <div style="height:100%;width:${Math.min(Math.round(hhi*100),100)}%;background:${hhi<0.15?'#16a34a':hhi<0.30?'#d97706':'#dc2626'};border-radius:6px"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b">
-          <span>${hhi<0.15?'✅ Diversificado':hhi<0.30?'⚠️ Moderado':'🔴 Concentrado'}</span>
-          <span>HHI: ${(hhi*100).toFixed(0)}/100</span>
-        </div>
-      </div>
-      ${Object.entries(cliMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([cli,fat],i)=>{
-        const pct = Math.round(fat/totalFat2026*100);
-        const col = i===0?'#2563eb':i===1?'#16a34a':i===2?'#7c3aed':i===3?'#d97706':'#0891b2';
+      <div class="panel-title"><i class="fas fa-sitemap" style="color:#db2777"></i> CONCENTRAÇÃO</div>
+      <div style="margin-bottom:10px;font-size:9px;color:#64748b">HHI ${(hhi * 100).toFixed(0)}/100 · ${hhi < 0.15 ? 'diversificado' : hhi < 0.30 ? 'moderado' : 'concentrado'}</div>
+      ${Object.values(cliMap).sort((a, b) => b.fat - a.fat).slice(0, 5).map((cli, i) => {
+        const pct = Math.round(cli.fat / totalFat2026 * 100);
+        const col = ['#2563eb','#16a34a','#7c3aed','#d97706','#0891b2'][i];
         return `<div style="margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-size:10px;font-weight:600;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">${escHtml(cli)}</span>
-            <span style="font-size:10px;font-weight:700;color:${col};flex-shrink:0">${pct}% · ${fmtBRL(fat)}</span>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px">
+            <span style="font-weight:600;max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(cli.name)}</span>
+            <span style="font-weight:700;color:${col}">${pct}% · ${fmtBRL(cli.fat)}</span>
           </div>
-          <div style="background:rgba(0,0,0,.06);border-radius:3px;height:5px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${col};opacity:.8;border-radius:3px"></div>
-          </div>
+          <div style="background:rgba(0,0,0,.06);border-radius:3px;height:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div></div>
         </div>`;
       }).join('')}
-      <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06);font-size:9px;color:#94a3b8">
-        Top 3 clientes = <b style="color:#374151">${top3Pct}%</b> da receita · ${Object.keys(cliMap).length} clientes ativos
-      </div>
+      <div style="margin-top:8px;font-size:9px;color:#94a3b8">Top 3 = <b style="color:#374151">${top3Pct}%</b> · ${Object.keys(cliMap).length} clientes</div>
     </div>
-
-    <!-- Sazonalidade mensal 2026 -->
     <div class="panel">
       <div class="panel-title"><i class="fas fa-calendar-week" style="color:#0891b2"></i> SAZONALIDADE 2026</div>
       ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => {
-        const d = byMes[m];
-        const maxF = Math.max(...Object.values(byMes).map(x=>x.fat), 1);
-        const pct  = d ? Math.round(d.fat/maxF*100) : 0;
-        const isNow = m === (new Date().getMonth()+1);
-        const isFut = m > (new Date().getMonth()+1);
+        const fat = byMes[m]?.fat || 0;
+        const maxF = Math.max(...[1,2,3,4,5,6,7,8,9,10,11,12].map(x => byMes[x]?.fat || 0), 1);
+        const pct = Math.round(fat / maxF * 100);
+        const empty = m <= mesAtualNum && fat <= 0;
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-          <span style="font-family:var(--font-m);font-size:9px;color:${isNow?'#2563eb':isFut?'#c4c4c4':'#64748b'};width:26px;flex-shrink:0;font-weight:${isNow?'700':'400'}">${MONTHS[m-1].substring(0,3)}</span>
-          <div style="flex:1;background:rgba(0,0,0,.05);border-radius:3px;height:7px;overflow:hidden">
-            ${d ? `<div style="height:100%;width:${pct}%;background:${isNow?'#2563eb':'#0891b2'};border-radius:3px;opacity:${isFut?0.3:0.85}"></div>` : (isFut?'':'')}
-          </div>
-          <span style="font-size:9px;color:${d?'#374151':'#c4c4c4'};width:70px;text-align:right;flex-shrink:0">${d?fmtBRL(d.fat):'sem dados'}</span>
-          ${d?`<span style="font-size:9px;color:#94a3b8;width:14px;text-align:right;flex-shrink:0">${d.n}p</span>`:'<span style="width:14px"></span>'}
+          <span style="width:28px;font-size:9px;font-weight:700;color:${empty ? '#dc2626' : '#64748b'}">${MONTHS_L[m-1]||m}</span>
+          <div style="flex:1;background:rgba(0,0,0,.06);border-radius:3px;height:6px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${empty ? '#fecaca' : '#0891b2'};border-radius:3px"></div></div>
+          <span style="width:70px;text-align:right;font-size:9px;font-weight:700;color:${empty ? '#dc2626' : '#374151'}">${fat > 0 ? fmtBRL(fat) : (m <= mesAtualNum ? 'vazio' : '—')}</span>
         </div>`;
       }).join('')}
     </div>
-
-    <!-- Evolução do ticket médio -->
     <div class="panel">
-      <div class="panel-title"><i class="fas fa-receipt" style="color:#f59e0b"></i> TICKET MÉDIO — Evolução</div>
-      ${ticketEvol.filter(t=>t.ticket>0).map((t,i,arr) => {
-        const prev = arr[i-1]?.ticket || 0;
-        const delta = prev>0 ? ((t.ticket-prev)/prev*100) : null;
-        const maxT  = Math.max(...arr.map(x=>x.ticket),1);
-        const pct   = Math.round(t.ticket/maxT*100);
-        const isThis= t.ano===2026;
-        return `<div style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-            <span style="font-size:11px;font-weight:${isThis?'800':'600'};color:${isThis?'#7c3aed':'#374151'}">${t.ano}</span>
-            <div style="display:flex;align-items:center;gap:6px">
-              ${delta!==null?`<span style="font-size:9px;color:${delta>=0?'#16a34a':'#dc2626'}">${delta>=0?'▲':'▼'} ${Math.abs(delta).toFixed(0)}%</span>`:''}
-              <span style="font-size:11px;font-weight:700;color:${isThis?'#7c3aed':'#0f172a'}">${fmtBRL(t.ticket)}</span>
-            </div>
+      <div class="panel-title"><i class="fas fa-receipt" style="color:#7c3aed"></i> TICKET &amp; MIX</div>
+      <div style="font-size:22px;font-weight:900;color:#7c3aed;margin-bottom:4px">${fmtBRL(ticketAtual)}</div>
+      <div style="font-size:9px;color:#64748b;margin-bottom:12px">${kpis.nTotal || projects.length} projetos · ${baixaMargem.length} com margem &lt; 30%</div>
+      ${segsSorted.slice(0, 5).map(([seg, v]) => {
+        const pct = Math.round(v.fat / totalFat2026 * 100);
+        return `<div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+            <span style="font-weight:600;color:#374151">${escHtml(seg)}</span>
+            <span style="color:#64748b">${pct}% · ${v.n}p</span>
           </div>
-          <div style="background:rgba(0,0,0,.06);border-radius:3px;height:5px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${isThis?'#7c3aed':'#94a3b8'};border-radius:3px;opacity:${isThis?1:0.65}"></div>
-          </div>
+          <div style="background:rgba(0,0,0,.06);border-radius:3px;height:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#7c3aed;border-radius:3px;opacity:.75"></div></div>
         </div>`;
-      }).join('')}
-      <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
-        <div style="font-size:9px;color:#94a3b8;margin-bottom:4px;font-family:var(--font-m)">TICKET 2026 VS MELHOR ANO</div>
-        ${(()=>{
-          const best = ticketEvol.filter(t=>t.ticket>0).sort((a,b)=>b.ticket-a.ticket)[0];
-          const curr = ticketEvol.find(t=>t.ano===2026);
-          if(!best||!curr) return '<span style="font-size:10px;color:#aaa">Sem dados suficientes</span>';
-          const diff = curr.ticket - best.ticket;
-          return `<span style="font-size:10px;color:${diff>=0?'#16a34a':'#dc2626'}">${diff>=0?'✅ Melhor ticket da história!':'⚠️ '+fmtBRL(Math.abs(diff))+' abaixo do recorde ('+best.ano+')'}</span>`;
-        })()}
+      }).join('') || '<div style="font-size:10px;color:#94a3b8">Sem segmentos.</div>'}
+      <div style="margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06);font-size:9px;color:#94a3b8">
+        Retorno: <b style="color:#374151">${taxaRetorno}%</b> · sem NPS: <b style="color:#374151">${pctSemNps}%</b>
       </div>
     </div>
   </div>
 
-  <!-- LINHA 3: Análise de segmentos + NPS qualidade + Eficiência -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" class="responsive-2col">
-
-    <!-- Segmentos: receita vs quantidade -->
-    <div class="panel">
-      <div class="panel-title"><i class="fas fa-layer-group" style="color:#16a34a"></i> ANÁLISE POR SEGMENTO — Receita vs Eficiência</div>
-      <table style="width:100%;border-collapse:collapse;font-size:10px">
-        <thead>
-          <tr style="border-bottom:1px solid rgba(0,0,0,.08)">
-            <th style="text-align:left;padding:5px 6px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700">SEGMENTO</th>
-            <th style="text-align:right;padding:5px 6px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700">FAT.</th>
-            <th style="text-align:right;padding:5px 6px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700">PROJ.</th>
-            <th style="text-align:right;padding:5px 6px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700">TICKET</th>
-            <th style="text-align:right;padding:5px 6px;font-family:var(--font-m);font-size:8px;color:#aaa;font-weight:700">% TOTAL</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${segsSorted.map(([seg,d],i)=>{
-            const pct   = Math.round(d.fat/totalFat2026*100);
-            const ticket= d.n>0?d.fat/d.n:0;
-            const cols  = ['#2563eb','#16a34a','#7c3aed','#d97706','#0891b2','#db2777'];
-            const col   = cols[i%cols.length];
-            return `<tr style="border-bottom:1px solid rgba(0,0,0,.04)">
-              <td style="padding:6px 6px;font-weight:600;color:#374151">${escHtml(seg)}</td>
-              <td style="padding:6px 6px;text-align:right;font-weight:700;color:#0f172a">${fmtBRL(d.fat)}</td>
-              <td style="padding:6px 6px;text-align:right;color:#64748b">${d.n}</td>
-              <td style="padding:6px 6px;text-align:right;color:#64748b">${fmtBRL(ticket)}</td>
-              <td style="padding:6px 6px;text-align:right">
-                <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end">
-                  <div style="width:40px;background:rgba(0,0,0,.06);border-radius:3px;height:4px;overflow:hidden">
-                    <div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div>
-                  </div>
-                  <span style="font-weight:700;color:${col};width:28px;text-align:right">${pct}%</span>
-                </div>
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-title" style="color:#16a34a"><i class="fas fa-bullseye" style="color:#16a34a"></i> ROTA PARA A META DERIVADA</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px" class="responsive-4col">
+      ${[
+        { label: 'Realizado', val: fmtBRL(kpis.fat || 0), sub: Math.min(pctMeta, 100) + '% da meta' },
+        { label: 'Falta', val: fmtBRL(faltaMeta), sub: mesesRest + ' meses restantes' },
+        { label: 'Média necessária', val: fmtBRL(mediaNec), sub: multMeta > 0 ? multMeta.toFixed(1) + '× ritmo atual' : '—' },
+        { label: 'Projeção', val: fmtBRL(projecao2026), sub: '~' + projSemNec + ' contrato(s)/sem' },
+      ].map(k => `<div style="background:#f8fafc;border-radius:8px;padding:12px">
+        <div style="font-size:8px;color:#94a3b8;font-weight:700;margin-bottom:4px">${k.label.toUpperCase()}</div>
+        <div style="font-size:16px;font-weight:900;color:#0f172a">${k.val}</div>
+        <div style="font-size:9px;color:#64748b;margin-top:2px">${k.sub}</div>
+      </div>`).join('')}
     </div>
+    <div style="font-size:10px;color:#64748b;line-height:1.5">Meta <b>${fmtBRL(metaAnual2026)}</b> derivada dos seus números (não R$250k/300k fixos).</div>
+  </div>
 
-    <!-- Qualidade NPS + Clientes sem retorno -->
-    <div class="panel">
-      <div class="panel-title"><i class="fas fa-microscope" style="color:#f59e0b"></i> QUALIDADE DE RELACIONAMENTO</div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div style="background:#f8fafc;border-radius:7px;padding:12px;text-align:center">
-          <div style="font-size:9px;color:#94a3b8;font-family:var(--font-m);margin-bottom:5px">COM NPS</div>
-          <div style="font-size:22px;font-weight:900;color:#16a34a">${comNps.length}</div>
-          <div style="font-size:9px;color:#64748b">${Math.round(comNps.length/Math.max(filtered2026.length,1)*100)}% dos projetos</div>
-        </div>
-        <div style="background:#fef2f2;border-radius:7px;padding:12px;text-align:center">
-          <div style="font-size:9px;color:#94a3b8;font-family:var(--font-m);margin-bottom:5px">SEM NPS</div>
-          <div style="font-size:22px;font-weight:900;color:#dc2626">${semNps.length}</div>
-          <div style="font-size:9px;color:#64748b">${pctSemNps}% sem avaliação</div>
-        </div>
-      </div>
-
-      ${comNps.length ? `
-      <div style="font-size:9px;color:#94a3b8;font-family:var(--font-m);letter-spacing:.08em;margin-bottom:8px">DISTRIBUIÇÃO NPS</div>
-      ${[{label:'Promotores (9-10)',min:9,max:10,col:'#16a34a'},{label:'Neutros (7-8)',min:7,max:8,col:'#f59e0b'},{label:'Detratores (0-6)',min:0,max:6,col:'#dc2626'}].map(zone=>{
-        const cnt = comNps.filter(p=>{const n=p.nps||p._nps||0;return n>=zone.min&&n<=zone.max;}).length;
-        const pct = comNps.length>0?Math.round(cnt/comNps.length*100):0;
-        return `<div style="margin-bottom:7px">
+  ${LICOES_SISTEMICAS.length ? `
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-title"><i class="fas fa-exclamation-circle" style="color:#dc2626"></i> PADRÕES NOS RELATÓRIOS</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${LICOES_SISTEMICAS.map(l => {
+        const prob = PROB_MAP[l.prob] || { label: l.prob, cor: '#64748b' };
+        const maxF = Math.max(...LICOES_SISTEMICAS.map(x => x.freq), 1);
+        const barW = Math.round(l.freq / maxF * 100);
+        return `<div>
           <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-size:10px;color:#374151">${zone.label}</span>
-            <span style="font-size:10px;font-weight:700;color:${zone.col}">${cnt} proj. (${pct}%)</span>
+            <span style="font-size:10px;font-weight:700">${prob.label}</span>
+            <span style="font-size:10px;font-weight:700;color:${prob.cor}">${l.freq}×</span>
           </div>
-          <div style="background:rgba(0,0,0,.06);border-radius:3px;height:6px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${zone.col};border-radius:3px;opacity:.8"></div>
-          </div>
+          <div style="background:rgba(0,0,0,.06);border-radius:3px;height:6px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:${barW}%;background:${prob.cor};border-radius:3px"></div></div>
+          <div style="font-size:9px;color:#64748b">${escHtml(l.projetos)}</div>
         </div>`;
-      }).join('')}` : '<div style="font-size:11px;color:#94a3b8;padding:10px 0;text-align:center">Nenhum NPS registrado no período.</div>'}
-
-      ${semNps.length ? `
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.06)">
-        <div style="font-size:9px;color:#dc2626;font-family:var(--font-m);font-weight:700;margin-bottom:6px">⚠️ CLIENTES SEM NPS — coletar urgente</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">
-          ${semNps.map(p=>`<span style="font-size:9px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;padding:2px 7px">${escHtml(p.cliente)}</span>`).join('')}
-        </div>
-      </div>` : ''}
+      }).join('')}
     </div>
-  </div>
-
-  <!-- LINHA 4: Síntese executiva -->
-  <div class="panel" style="margin-bottom:6px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border:none">
-    <div class="panel-title" style="color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.1)"><i class="fas fa-file-contract" style="color:#4ade80"></i> SÍNTESE EXECUTIVA — Diagnóstico AGE OPS 2026</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:4px 0" class="responsive-3col">
-      ${[
-        {
-          titulo:'💰 Financeiro',
-          cor:'#4ade80',
-          itens:[
-            `Faturamento acumulado: <b>${fmtBRL(kpis.fat)}</b>`,
-            `Margem líquida: <b>${kpis.margem.toFixed(1)}%</b> ${kpis.margem>=55?'✅':kpis.margem>=30?'⚠️':'🔴'}`,
-            `Média mensal: <b>${fmtBRL(kpis.medMes)}</b>`,
-            `Projeção 2026: <b>${fmtBRL(projecao2026)}</b>`,
-            `Meta (R$250k): <b>${pctMeta}% atingido</b>`
-          ]
-        },
-        {
-          titulo:'📊 Operacional',
-          cor:'#60a5fa',
-          itens:[
-            `Projetos no período: <b>${kpis.nTotal}</b>`,
-            `Novos clientes: <b>${kpis.nNovos}</b> (${Math.round(kpis.nNovos/Math.max(kpis.nTotal,1)*100)}%)`,
-            `Ticket médio: <b>${fmtBRL(kpis.ticket)}</b>`,
-            `Segmento líder: <b>${escHtml(topSeg?topSeg[0]:'—')}</b>`,
-            `Clientes ativos: <b>${Object.keys(cliMap).length}</b>`
-          ]
-        },
-        {
-          titulo:'🎯 Estratégico',
-          cor:'#fb923c',
-          itens:[
-            `Concentração top-1: <b>${top1Pct}%</b> ${top1Pct>35?'🔴 crítico':top1Pct>20?'⚠️':'✅'}`,
-            `NPS médio: <b>${kpis.avgNps>0?kpis.avgNps.toFixed(1)+' ★':'sem dados'}</b>`,
-            `Sem NPS: <b>${semNps.length} projetos</b> ${pctSemNps>40?'⚠️':''}`,
-            `YoY vs 2025: <b>${yoy2026!==null?(yoy2026>=0?'▲ +':'')+yoy2026.toFixed(1)+'%':'—'}</b>`,
-            `Melhor ano histórico: <b>${melhorAnoFat?.ano} (${fmtBRL(melhorAnoFat?.fat||0)})</b>`
-          ]
-        }
-      ].map(card=>`
-        <div>
-          <div style="font-size:10px;font-weight:700;color:${card.cor};font-family:var(--font-m);letter-spacing:.1em;margin-bottom:10px">${card.titulo}</div>
-          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
-            ${card.itens.map(it=>`<li style="font-size:10px;color:rgba(255,255,255,.7);line-height:1.45">${it}</li>`).join('')}
-          </ul>
-        </div>
-      `).join('')}
+  </div>` : `
+  <div class="panel" style="margin-bottom:14px;background:#f8fafc">
+    <div style="font-size:11px;color:#64748b;line-height:1.5">
+      <i class="fas fa-info-circle"></i>
+      Sem padrões operacionais extraídos dos relatórios cruzados com os projetos do ano.
+      A lista fixa antiga (Yuri, Marcella, Casa 46…) foi removida.
     </div>
-  </div>
-
-  <!-- ══ PAINEL: ROTA PARA R$300K ══ -->
-  <div style="display:flex;align-items:center;gap:12px;margin:22px 0 14px">
-    <div style="flex:1;height:1px;background:rgba(0,0,0,.08)"></div>
-    <div style="font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.15em;color:#16a34a;text-transform:uppercase;white-space:nowrap">
-      <i class="fas fa-bullseye" style="margin-right:5px"></i>ROTA PARA R$ 300.000 EM 2026
-    </div>
-    <div style="flex:1;height:1px;background:rgba(0,0,0,.08)"></div>
-  </div>
-
-  ${(()=>{
-    /* ════════════════════════════════════════════════════════════
-       ROTA R$300K — CALCULADORA DE CONTRATOS POR SEMANA
-       Usa ORC_PACKAGES para calcular exatamente quantos contratos
-       de cada pacote são necessários para bater a meta.
-    ════════════════════════════════════════════════════════════ */
-    const META       = 300000;
-    const fatAtual   = kpis.fat;
-    const faltam     = Math.max(META - fatAtual, 0);
-    const mRest      = Math.max(12 - (new Date().getMonth() + 1), 1);
-    const mediaAtual = kpis.medMes || 1;
-    const mediaNec   = faltam / mRest;
-    const mult       = mediaAtual > 0 ? (mediaNec / mediaAtual) : 0;
-    const pctMeta    = Math.min(Math.round(fatAtual / META * 100), 100);
-    const projecaoAt = mediaAtual * 12;
-    const gapProj    = META - projecaoAt;
-    const semsRest   = mRest * 4.33;
-
-    /* ── Pacotes AGE OPS com metas semanais ── */
-    const PKGS_META = [
-      { id:'videoclipe',        nome:'Videoclipe',            preco:8000,  margem:0.525, cor:'#7c3aed', icone:'fa-film',          desc:'Clipe completo 16:9 + vertical + grade' },
-      { id:'institucional',     nome:'Vídeo Institucional',   preco:8000,  margem:0.60,  cor:'#2563eb', icone:'fa-building',      desc:'Institucional completo + trilha + master' },
-      { id:'video_simples',     nome:'Vídeo Simples',         preco:3500,  margem:0.543, cor:'#0891b2', icone:'fa-video',         desc:'Captação + edição básica' },
-      { id:'visita_horizontal', nome:'Visita Horizontal',     preco:5000,  margem:0.58,  cor:'#059669', icone:'fa-camera',        desc:'Tour / visita gravada com edição' },
-      { id:'podcast',           nome:'Podcast Completo',      preco:3500,  margem:0.60,  cor:'#16a34a', icone:'fa-microphone',    desc:'Gravação + edição + até 5 Reels' },
-      { id:'evento_completo',   nome:'Evento Ao Vivo — Full', preco:7000,  margem:0.543, cor:'#dc2626', icone:'fa-broadcast-tower',desc:'Live + highlight + 5 cortes sociais' },
-      { id:'evento_basico',     nome:'Evento Ao Vivo — Basic',preco:3500,  margem:0.571, cor:'#f59e0b', icone:'fa-video',         desc:'1 câmera live + highlight + 3 cortes' },
-      { id:'content_day',       nome:'Content Day',           preco:4500,  margem:0.578, cor:'#d97706', icone:'fa-calendar-day',  desc:'1 dia de captação + 4 Reels + BTS + fotos' },
-      { id:'content_day_prem',  nome:'Content Day Premium',   preco:6000,  margem:0.60,  cor:'#ea580c', icone:'fa-star',          desc:'CD + editor RT + 6 Reels + drone' },
-      { id:'social_standard',   nome:'Social Media Standard', preco:5500,  margem:0.673, cor:'#db2777', icone:'fa-hashtag',       desc:'16 posts + 4 Reels + editorial/mês' },
-      { id:'social_premium',    nome:'Social Media Premium',  preco:8000,  margem:0.75,  cor:'#9333ea', icone:'fa-chart-line',    desc:'SM Standard + Ads + extras + relatório' },
-      { id:'retainer_basico',   nome:'Retainer Mensal Básico',preco:2500,  margem:0.80,  cor:'#0284c7', icone:'fa-sync',          desc:'Contrato fixo mensal – conteúdo básico' },
-      { id:'retainer_full',     nome:'Retainer Mensal Full',  preco:5000,  margem:0.80,  cor:'#0369a1', icone:'fa-handshake',     desc:'Contrato fixo – vídeo + social + stories' },
-    ];
-
-    /* Calcula contratos por semana necessários para cada pacote */
-    PKGS_META.forEach(pk => {
-      const lucroUnit   = pk.preco * pk.margem;
-      const lucroMes    = mediaNec; // meta de faturamento mensal necessário
-      // Contratos/sem para cobrir a meta SOZINHO com esse pacote
-      pk.contSemSolo    = (mediaNec / pk.preco / 4.33);
-      pk.contMesSolo    = Math.ceil(mediaNec / pk.preco);
-      pk.lucroUnit      = lucroUnit;
-      // Mix recomendado (% da meta mensal)
-      pk.pctMix         = pk.id === 'videoclipe' ? 25
-        : pk.id === 'institucional'  ? 15
-        : pk.id === 'evento_completo'? 15
-        : pk.id === 'content_day'    ? 20
-        : pk.id === 'social_standard'? 15
-        : pk.id === 'retainer_full'  ? 10 : 0;
-    });
-
-    /* Mix ideal de pacotes para R$25k/mês */
-    const metaMes   = Math.ceil(META / 12);
-    const mixIdeal  = [
-      { id:'videoclipe',        qtdMes:1, qtdSem:0.25 },
-      { id:'evento_completo',   qtdMes:1, qtdSem:0.25 },
-      { id:'content_day_prem',  qtdMes:2, qtdSem:0.46 },
-      { id:'social_standard',   qtdMes:2, qtdSem:0.46 },
-      { id:'retainer_full',     qtdMes:2, qtdSem:0.46 },
-      { id:'institucional',     qtdMes:1, qtdSem:0.25 },
-    ].map(mx => {
-      const pkg = PKGS_META.find(p=>p.id===mx.id);
-      return { ...mx, pkg, fatMes: mx.qtdMes * (pkg?.preco||0) };
-    });
-    const mixFatTotal = mixIdeal.reduce((s,m)=>s+m.fatMes, 0);
-
-    /* Trajetória mensal */
-    const MESES_R = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    const mesAtual = new Date().getMonth() + 1;
-    const trajetoria = Array.from({length:12}, (_,i) => {
-      const m = i+1;
-      if(m < mesAtual && byMes[m]) return { m, fat:byMes[m].fat, tipo:'real' };
-      if(m === mesAtual && byMes[m]) return { m, fat:byMes[m].fat, tipo:'atual' };
-      return { m, fat: mediaNec * (1 + (i - mesAtual) * 0.03), tipo:'meta' };
-    });
-
-    return `
-    <!-- KPIs da meta R$300k -->
-    <div class="panel" style="margin-bottom:14px;border:2px solid rgba(22,163,74,.2);background:linear-gradient(135deg,rgba(22,163,74,.03) 0%,#fff 100%)">
-      <div class="panel-title" style="color:#16a34a"><i class="fas fa-trophy" style="color:#16a34a"></i> META R$ 300.000 — Status, Calculadora e Rota de Chegada</div>
-
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-        ${[
-          { label:'Faltam para R$300k',     val:fmtBRL(faltam),      cor:faltam>0?'#dc2626':'#16a34a', sub:pctMeta+'% concluído' },
-          { label:'Meses restantes',         val:mRest,               cor:'#0f172a',                    sub:'até dez/2026' },
-          { label:'Meta mensal necessária',  val:fmtBRL(mediaNec),    cor:mediaNec>mediaAtual*2?'#dc2626':mediaNec>mediaAtual?'#d97706':'#16a34a', sub:'vs atual '+fmtBRL(mediaAtual) },
-          { label:'Multiplicador necessário',val:mult.toFixed(1)+'x', cor:mult>3?'#dc2626':mult>1.5?'#d97706':'#16a34a', sub:'vs ritmo atual' }
-        ].map(k=>`<div style="background:#f8fafc;border-radius:8px;padding:12px 14px;border:1px solid rgba(0,0,0,.07)">
-            <div style="font-size:7px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;font-family:var(--font-m)">${k.label}</div>
-            <div style="font-size:18px;font-weight:900;color:${k.cor};font-family:var(--font-h);line-height:1">${k.val}</div>
-            <div style="font-size:9px;color:#64748b;margin-top:4px">${k.sub}</div>
-          </div>`).join('')}
-      </div>
-
-      <!-- Barra de progresso -->
-      <div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#16a34a">PROGRESSO PARA R$ 300.000</span>
-          <span style="font-family:var(--font-h);font-size:11px;font-weight:900;color:#0f172a">${fmtBRL(fatAtual)} / R$ 300.000</span>
-        </div>
-        <div style="background:rgba(0,0,0,.07);border-radius:8px;height:14px;overflow:hidden;position:relative">
-          <div style="height:100%;width:${pctMeta}%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:8px;transition:width .6s;position:relative">
-            ${pctMeta>8?`<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:8px;font-weight:700;color:#fff;font-family:var(--font-m)">${pctMeta}%</span>`:''}
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-top:3px">
-          <span>Realizado: ${fmtBRL(fatAtual)}</span>
-          <span style="color:${gapProj>0?'#dc2626':'#16a34a'}">${gapProj>0?'⚠️ Projeção ('+fmtBRL(projecaoAt)+') abaixo da meta':'✅ Projeção supera a meta!'}</span>
-          <span>Meta: R$ 300k</span>
-        </div>
-      </div>
-
-      <!-- Trajetória mensal -->
-      <div>
-        <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#0f172a;letter-spacing:.1em;margin-bottom:8px;text-transform:uppercase">Trajetória Mensal — Real vs Ritmo Necessário</div>
-        <div style="display:flex;gap:3px;align-items:flex-end;height:56px">
-          ${trajetoria.map(t=>{
-            const maxV = Math.max(...trajetoria.map(x=>x.fat), mediaNec, 1);
-            const h = Math.max(Math.round(t.fat/maxV*52), 2);
-            return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-              <div title="${MESES_R[t.m-1]}: ${fmtBRL(t.fat)}"
-                style="width:100%;height:${h}px;background:${t.tipo==='real'?'#2563eb':t.tipo==='atual'?'#059669':'rgba(22,163,74,.3)'};
-                       border-radius:3px 3px 0 0;border:${t.tipo==='meta'?'1px dashed #16a34a':'none'};min-height:2px"></div>
-              <span style="font-size:6.5px;color:${t.m===mesAtual?'#2563eb':'#94a3b8'};font-weight:${t.m===mesAtual?700:400}">${MESES_R[t.m-1]}</span>
-            </div>`;
-          }).join('')}
-        </div>
-        <div style="display:flex;gap:14px;margin-top:6px;font-size:9px;color:#64748b">
-          <span><span style="display:inline-block;width:9px;height:9px;background:#2563eb;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Real</span>
-          <span><span style="display:inline-block;width:9px;height:9px;background:#059669;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Mês atual</span>
-          <span><span style="display:inline-block;width:9px;height:9px;background:rgba(22,163,74,.3);border:1px dashed #16a34a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Meta necessária</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- CALCULADORA DE CONTRATOS POR SEMANA — PRINCIPAL NOVIDADE -->
-    <div class="panel" style="margin-bottom:14px;border:2px solid rgba(37,99,235,.15)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        <div>
-          <div class="panel-title" style="color:#2563eb;margin-bottom:3px"><i class="fas fa-calculator" style="color:#2563eb"></i> CALCULADORA — Contratos por Semana por Pacote para R$ 300k</div>
-          <div style="font-size:10px;color:#64748b">Para bater R$${Math.round(META/1000)}k/ano precisa de <b style="color:#2563eb">${fmtBRL(mediaNec)}/mês</b> · <b style="color:#dc2626">${Math.ceil(semsRest)} semanas restantes</b></div>
-        </div>
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 16px;text-align:center">
-          <div style="font-size:8px;color:#1e40af;font-family:var(--font-m);letter-spacing:.08em">CONTRATOS/SEM NECESSÁRIOS</div>
-          <div style="font-size:28px;font-weight:900;color:#2563eb;font-family:var(--font-h);line-height:1">${(mediaNec/ticketAtual/4.33).toFixed(1)}</div>
-          <div style="font-size:9px;color:#64748b">com ticket atual ${fmtBRL(ticketAtual)}</div>
-        </div>
-      </div>
-
-      <!-- Tabela por pacote -->
-      <div style="overflow-x:auto;margin-bottom:16px">
-        <table style="width:100%;border-collapse:collapse;font-size:10px;min-width:600px">
-          <thead>
-            <tr style="background:#f8fafc;border-bottom:2px solid rgba(37,99,235,.15)">
-              <th style="text-align:left;padding:8px 10px;font-family:var(--font-m);font-size:8px;color:#64748b;font-weight:700;letter-spacing:.1em">PACOTE</th>
-              <th style="text-align:right;padding:8px 10px;font-family:var(--font-m);font-size:8px;color:#64748b;font-weight:700;letter-spacing:.1em">PREÇO</th>
-              <th style="text-align:right;padding:8px 10px;font-family:var(--font-m);font-size:8px;color:#64748b;font-weight:700;letter-spacing:.1em">MARGEM</th>
-              <th style="text-align:right;padding:8px 10px;font-family:var(--font-m);font-size:8px;color:#64748b;font-weight:700;letter-spacing:.1em">LUCRO/UNIT</th>
-              <th style="text-align:right;padding:8px 10px;font-family:var(--font-m);font-size:8px;color:#64748b;font-weight:700;letter-spacing:.1em">CONTRATOS/MÊS</th>
-              <th style="text-align:center;padding:8px 10px;font-family:var(--font-m);font-size:8px;color:#64748b;font-weight:700;letter-spacing:.1em">CONTRATOS/SEM</th>
-              <th style="padding:8px 10px;font-family:var(--font-m);font-size:8px;color:#64748b;font-weight:700;letter-spacing:.1em">VIABILIDADE</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${PKGS_META.map(pk => {
-              const viab = pk.preco >= 6000 ? {label:'ALTO TICKET', cor:'#16a34a', bg:'#dcfce7'} :
-                           pk.preco >= 4000 ? {label:'MÉDIO TICKET', cor:'#d97706', bg:'#fef9c3'} :
-                                              {label:'VOLUME', cor:'#2563eb', bg:'#dbeafe'};
-              const semStr = pk.contSemSolo < 0.5 ? '1 a cada '+(1/pk.contSemSolo).toFixed(0)+' sem'
-                           : pk.contSemSolo < 1.5 ? '~1/sem'
-                           : Math.ceil(pk.contSemSolo)+'/sem';
-              const barW = Math.min(Math.round(pk.preco / 8000 * 100), 100);
-              return `<tr style="border-bottom:1px solid rgba(0,0,0,.05);transition:background .2s" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-                <td style="padding:9px 10px">
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <span style="width:28px;height:28px;background:${pk.cor}18;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                      <i class="fas ${pk.icone}" style="color:${pk.cor};font-size:11px"></i>
-                    </span>
-                    <div>
-                      <div style="font-weight:700;color:#0f172a;font-size:10.5px">${pk.nome}</div>
-                      <div style="font-size:8.5px;color:#94a3b8">${pk.desc}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style="padding:9px 10px;text-align:right;font-family:var(--font-h);font-weight:700;color:#0f172a">${fmtBRL(pk.preco)}</td>
-                <td style="padding:9px 10px;text-align:right;font-weight:700;color:${pk.margem>=0.6?'#16a34a':pk.margem>=0.45?'#d97706':'#dc2626'}">${(pk.margem*100).toFixed(0)}%</td>
-                <td style="padding:9px 10px;text-align:right;font-family:var(--font-h);font-weight:700;color:#16a34a">${fmtBRL(pk.lucroUnit)}</td>
-                <td style="padding:9px 10px;text-align:right">
-                  <span style="font-size:14px;font-weight:900;color:${pk.cor};font-family:var(--font-h)">${pk.contMesSolo}</span>
-                  <span style="font-size:9px;color:#94a3b8">/mês</span>
-                </td>
-                <td style="padding:9px 10px;text-align:center">
-                  <div style="background:${pk.cor}15;border-radius:6px;padding:4px 8px;display:inline-block">
-                    <span style="font-size:10.5px;font-weight:800;color:${pk.cor}">${semStr}</span>
-                  </div>
-                </td>
-                <td style="padding:9px 10px">
-                  <span style="font-size:8px;font-weight:700;background:${viab.bg};color:${viab.cor};border-radius:4px;padding:3px 7px">${viab.label}</span>
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-          <tfoot>
-            <tr style="background:rgba(37,99,235,.04);border-top:2px solid rgba(37,99,235,.15)">
-              <td colspan="7" style="padding:8px 10px;font-size:9px;color:#64748b">
-                <i class="fas fa-info-circle" style="color:#2563eb;margin-right:4px"></i>
-                Cálculo: contratos/mês = R$${Math.round(mediaNec/1000)}k (meta mensal) ÷ preço do pacote · Contratos/sem = contratos/mês ÷ 4,33 semanas
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-
-      <!-- MIX IDEAL DE PACOTES -->
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px">
-        <div style="font-family:var(--font-m);font-size:9px;font-weight:700;color:#16a34a;letter-spacing:.1em;margin-bottom:10px;text-transform:uppercase">
-          <i class="fas fa-balance-scale" style="margin-right:5px"></i>MIX IDEAL RECOMENDADO — Combinação para R$${Math.round(metaMes/1000)}k/mês
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px" class="responsive-3col">
-          ${mixIdeal.map(mx => {
-            const pk = mx.pkg;
-            if(!pk) return '';
-            return `<div style="background:#fff;border-radius:8px;padding:10px 12px;border:1px solid rgba(22,163,74,.2)">
-              <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">
-                <i class="fas ${pk.icone}" style="color:${pk.cor};font-size:12px"></i>
-                <span style="font-size:10px;font-weight:700;color:#0f172a">${pk.nome}</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:baseline">
-                <div>
-                  <div style="font-size:16px;font-weight:900;color:${pk.cor};font-family:var(--font-h)">${mx.qtdMes}×/mês</div>
-                  <div style="font-size:8.5px;color:#94a3b8">${mx.qtdSem < 0.5 ? '1 a cada '+(1/mx.qtdSem).toFixed(0)+' sem' : mx.qtdSem.toFixed(1)+'/sem'}</div>
-                </div>
-                <div style="text-align:right">
-                  <div style="font-size:11px;font-weight:800;color:#16a34a">${fmtBRL(mx.fatMes)}</div>
-                  <div style="font-size:8px;color:#94a3b8">faturamento</div>
-                </div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#16a34a;color:#fff;border-radius:8px;padding:10px 14px">
-          <div>
-            <div style="font-size:8px;font-family:var(--font-m);letter-spacing:.1em;opacity:.8">FATURAMENTO TOTAL DO MIX</div>
-            <div style="font-size:20px;font-weight:900;font-family:var(--font-h)">${fmtBRL(mixFatTotal)}<span style="font-size:11px;font-weight:500;opacity:.8">/mês</span></div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:8px;font-family:var(--font-m);letter-spacing:.1em;opacity:.8">PROJEÇÃO ANUAL</div>
-            <div style="font-size:18px;font-weight:900;font-family:var(--font-h)">${fmtBRL(mixFatTotal * 12)}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PLANO DE AÇÃO SEMANAL DETALHADO -->
-    <div class="panel" style="margin-bottom:14px">
-      <div class="panel-title"><i class="fas fa-calendar-check" style="color:#d97706"></i> PLANO DE AÇÃO SEMANAL — Execução para Bater R$ 300k</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" class="responsive-2col">
-        ${[
-          { semana:'SEMANA 1–2', foco:'Reativar pipeline e fechar imediatos', cor:'#dc2626', urgencia:'URGENTE',
-            kpi: 'Meta: '+fmtBRL(mediaNec)+' em contratos assinados',
-            acoes:[
-              'Follow-up em todos os leads quentes + reativar orçamentos sem resposta (Viezes, clientes inativos)',
-              '✅ Cobertec: retainer trimestral ativo (R$3k/mês — maio e junho garantidos). Propor renovação para Q3 + propor retainer para Yuri e Casa 46 (meta: +R$6k/mês recorrente)',
-              'Enviar proposta de Content Day Premium (R$6k) para 5 clientes potenciais de Reels',
-              'Meta da semana: 2 contratos assinados · Ticket médio mínimo: '+fmtBRL(mediaNec/2)
-            ]
-          },
-          { semana:'SEMANA 3–4', foco:'Subir ticket médio + novo catálogo', cor:'#d97706', urgencia:'ALTO',
-            kpi: 'Meta: tabela nova publicada e 3 upsells enviados',
-            acoes:[
-              'Publicar nova tabela: Videoclipe R$9.5k, Evento Full R$8.5k, Content Day R$5.5k, Social R$6.5k',
-              'Criar pacote Content Day Premium (editor RT incluso) — cobrar obrigatoriamente R$6k',
-              'Oferecer upsell de Social Media para todo cliente de vídeo que ainda não tem gestão de redes',
-              'Meta da semana: '+Math.ceil(mediaNec/8000)+' contratos · Subir ticket médio para R$6k+'
-            ]
-          },
-          { semana:'SEMANA 5–6', foco:'Resolver gargalo de edição', cor:'#2563eb', urgencia:'CRÍTICO',
-            kpi: 'Meta: editor dedicado contratado ou treinado',
-            acoes:[
-              'Contratar editor freelancer para Content Days: R$800/dia (cobre 3 dias de CD por R$2.4k em custos)',
-              'Regra: máximo 2 Content Days simultâneos · buffer mínimo de 5 dias úteis de edição',
-              'Implementar editor RT como add-on obrigatório em todos os CDs — inclui no pacote Premium',
-              'Meta: prazo máximo de entrega de 5 dias úteis pós-gravação comunicado em todos os contratos'
-            ]
-          },
-          { semana:'SEMANA 7–8', foco:'Indicações ativas + novos clientes', cor:'#7c3aed', urgencia:'ESTRATÉGICO',
-            kpi: 'Meta: 5 novos leads qualificados por semana',
-            acoes:[
-              'Ligar para NPS 9–10 (Yuri, Thadeu, Irmãs Lira, Thiago Sub) e pedir 1 indicação cada',
-              'Programa de indicação: 10% desconto no próximo projeto por cada indicação que fechar',
-              'Prospecção ativa: 5 DMs por dia no Instagram para criadores com 10k–500k seguidores',
-              'Participar de 1 evento de moda/música/negócios como cobertura fotográfica/vídeo mensal'
-            ]
-          }
-        ].map(pl=>`<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;border-left:4px solid ${pl.cor}">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-            <span style="font-family:var(--font-m);font-size:8px;font-weight:700;color:${pl.cor};letter-spacing:.12em">${pl.semana}</span>
-            <span style="font-size:7px;font-weight:700;background:${pl.cor}20;color:${pl.cor};border-radius:3px;padding:2px 7px">${pl.urgencia}</span>
-          </div>
-          <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:3px">${pl.foco}</div>
-          <div style="font-size:9px;color:#16a34a;font-weight:600;margin-bottom:8px;font-style:italic">📊 ${pl.kpi}</div>
-          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
-            ${pl.acoes.map(a=>`<li style="display:flex;gap:7px;align-items:flex-start">
-              <span style="color:${pl.cor};flex-shrink:0;font-size:10px;margin-top:1px">→</span>
-              <span style="font-size:9.5px;color:#374151;line-height:1.5">${a}</span>
-            </li>`).join('')}
-          </ul>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  })()}
-
-  <!-- ══ ANÁLISE DOS PROBLEMAS RECORRENTES ══ -->
-  <div style="display:flex;align-items:center;gap:12px;margin:22px 0 14px">
-    <div style="flex:1;height:1px;background:rgba(0,0,0,.08)"></div>
-    <div style="font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.15em;color:#dc2626;text-transform:uppercase;white-space:nowrap">
-      <i class="fas fa-bug" style="margin-right:5px"></i>ANÁLISE DE FALHAS SISTÊMICAS — O QUE ESTÁ NOS TRAVANDO
-    </div>
-    <div style="flex:1;height:1px;background:rgba(0,0,0,.08)"></div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" class="responsive-2col">
-
-    <!-- Problemas por frequência -->
-    <div class="panel">
-      <div class="panel-title"><i class="fas fa-exclamation-circle" style="color:#dc2626"></i> PROBLEMAS RECORRENTES — Frequência por Projeto</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        ${LICOES_SISTEMICAS.sort((a,b)=>b.freq-a.freq).map(l => {
-          const prob = PROB_MAP[l.prob] || { label: l.prob, cor: '#64748b' };
-          const barW = Math.round(l.freq / Math.max(...LICOES_SISTEMICAS.map(x=>x.freq)) * 100);
-          return `<div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-              <span style="font-size:10px;font-weight:700;color:#0f172a">${prob.label}</span>
-              <span style="font-size:10px;font-weight:700;color:${prob.cor}">${l.freq}x</span>
-            </div>
-            <div style="background:rgba(0,0,0,.06);border-radius:3px;height:6px;overflow:hidden;margin-bottom:4px">
-              <div style="height:100%;width:${barW}%;background:${prob.cor};border-radius:3px;opacity:.8"></div>
-            </div>
-            <div style="font-size:9px;color:#64748b">Projetos: ${l.projetos}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- Soluções sistêmicas -->
-    <div class="panel">
-      <div class="panel-title"><i class="fas fa-tools" style="color:#2563eb"></i> SOLUÇÕES SISTÊMICAS — O QUE IMPLEMENTAR AGORA</div>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        ${[
-          {
-            titulo: '1. Editor real-time obrigatório nos Content Days',
-            cor: '#dc2626', badge: 'RESOLVE 5 projetos',
-            desc: 'O problema de prazo apareceu em 5 projetos diferentes. A solução única que resolve tudo: ter um editor presente no dia ou fazer export parcial no mesmo dia.'
-          },
-          {
-            titulo: '2. Checklist de pré-produção obrigatório',
-            cor: '#d97706', badge: 'EVITA VACILO',
-            desc: 'Termo de uso de imagem, visita técnica de locação, especificação de lentes, lista de presença da equipe. Nunca chegar numa gravação sem ter verificado esses pontos.'
-          },
-          {
-            titulo: '3. Critério mínimo de margem: 40%',
-            cor: '#7c3aed', badge: 'FILTRO FINANCEIRO',
-            desc: 'Projetos com margem abaixo de 40% só devem ser aceitos com justificativa estratégica (novo cliente, mercado estratégico). Marcella e Ecologyk não deveriam ter sido aceitos nos termos que foram.'
-          },
-          {
-            titulo: '4. Avaliação de colaboradores antes de projetos críticos',
-            cor: '#0891b2', badge: 'PROTEGE ENTREGA',
-            desc: 'Amarante custou caro e sobrecarregou o Gustavo. Nenhum colaborador novo deve entrar direto em projeto de grande evento sem um projeto-piloto de menor risco.'
-          },
-          {
-            titulo: '5. Modelo remoto para clientes fora de SP',
-            cor: '#16a34a', badge: 'AUMENTA MARGEM',
-            desc: 'Talita Perosa comprovou: ir ao Rio para 1 diária = margem de 21%. Contratar captador local + editar em SP = margem de 60%+. Replicar para todos os clientes fora de SP.'
-          }
-        ].map(s => `
-          <div style="border-left:3px solid ${s.cor};padding:8px 0 8px 12px">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;gap:8px">
-              <span style="font-size:10px;font-weight:800;color:#0f172a;line-height:1.3">${s.titulo}</span>
-              <span style="font-size:7px;font-weight:700;background:${s.cor}20;color:${s.cor};border-radius:3px;padding:2px 6px;white-space:nowrap;flex-shrink:0">${s.badge}</span>
-            </div>
-            <p style="font-size:10px;color:#64748b;line-height:1.55;margin:0">${s.desc}</p>
-          </div>`).join('')}
-      </div>
-    </div>
-  </div>
-
-  <!-- Diagnóstico de potencial oculto -->
-  <div class="panel" style="margin-bottom:6px;border:1px solid rgba(124,58,237,.2);background:linear-gradient(135deg,rgba(124,58,237,.04),#fff)">
-    <div class="panel-title" style="color:#7c3aed"><i class="fas fa-gem" style="color:#7c3aed"></i> POTENCIAL OCULTO — Receita que você está deixando na mesa</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" class="responsive-3col">
-      ${[
-        {
-          titulo: 'Recorrência dos satisfeitos',
-          valor: 'R$8.000–15.000/mês',
-          cor: '#16a34a',
-          desc: 'Yuri, Thadeu, Casa 46, Irmãs Lira (NPS 10) não têm contrato de recorrência. Um pacote mensal de R$2k–5k com cada = R$8k–20k/mês recorrente garantido.',
-          acao: 'Criar proposta de retainer para clientes com NPS ≥ 9 essa semana'
-        },
-        {
-          titulo: 'Upsell em clientes ativos',
-          valor: 'R$3.000–6.000/mês',
-          cor: '#2563eb',
-          desc: 'Cobertec paga recorrência mas ainda pode receber consultoria de imagem e organização (+R$2k). Escola de Planejados tem calendário anual de eventos (+R$4k/evento).',
-          acao: 'Apresentar proposta de consultoria de imagem para Cobertec em 7 dias'
-        },
-        {
-          titulo: 'Precificação do Content Day',
-          valor: '+R$600–1.500 por CD',
-          cor: '#7c3aed',
-          desc: 'Content Day atual custa R$1.500. Com editor real-time incluso, vale cobrar R$2.500–3.000. A melhora na entrega justifica o aumento — e resolve o problema de prazo.',
-          acao: 'Novo pacote Premium Content Day com editor real-time: R$2.800'
-        }
-      ].map(p => `
-        <div style="background:#f8fafc;border-radius:8px;padding:14px 16px;border-top:3px solid ${p.cor}">
-          <div style="font-size:10px;font-weight:800;color:#0f172a;margin-bottom:4px">${p.titulo}</div>
-          <div style="font-size:18px;font-weight:900;color:${p.cor};font-family:var(--font-h);margin-bottom:8px">${p.valor}</div>
-          <p style="font-size:10px;color:#64748b;line-height:1.55;margin:0 0 8px">${p.desc}</p>
-          <div style="background:${p.cor}15;border-radius:5px;padding:6px 8px">
-            <span style="font-size:9px;font-weight:700;color:${p.cor}">→ ${p.acao}</span>
-          </div>
-        </div>`).join('')}
-    </div>
-  </div>`;
+  </div>`}
+  `;
 }
-
 function renderDashProjTable(filtered) {
   const tbody = document.getElementById('dashProjTable');
   const count = document.getElementById('dashProjCount');
@@ -16464,6 +15851,7 @@ function openProjectModal(proj=null) {
     const box = document.querySelector('#modalProject .modal-box');
     if(box) box.scrollTop = 0;
   } catch(_) {}
+  _populateProjectClientSelect(_ageProjDbClient(proj)).catch(()=>{});
   _populateProjectAssignSelect().catch(()=>{});
   const relWrap = document.getElementById('projRelacionadosWrap');
   const portalWrap = document.getElementById('projPortalWrap');
@@ -16486,6 +15874,88 @@ function openProjectModal(proj=null) {
       if(e) e.innerHTML = 'Salve o projeto para gerenciar entregas.';
     }
   }
+}
+
+/** Lista de clientes existentes no select do modal de projeto (+ opção de novo). */
+async function _populateProjectClientSelect(selectedName) {
+  const sel = document.getElementById('pClientSelect');
+  const inp = document.getElementById('pClient');
+  if(!sel || !inp) return;
+
+  const names = new Map(); /* lower -> display */
+  const add = (raw) => {
+    const n = String(raw || '').trim();
+    if(!n) return;
+    const k = n.toLowerCase();
+    if(!names.has(k)) names.set(k, n);
+  };
+
+  (_clientsCache || []).forEach(c => add(c.name));
+  (_projAllCache || []).forEach(p => add(_ageProjDbClient(p)));
+  (PROJ_2026_SHEET || []).forEach(s => add(s.cliente));
+
+  try {
+    const dbClients = await fetchAll('age_clients_db', 500).catch(() => []);
+    (dbClients || []).forEach(r => add(r.client_name || r.name || r.nome));
+  } catch(_) {}
+
+  if(names.size < 2) {
+    try {
+      const projs = await fetchAgeProjectsScoped(1500).catch(() => []);
+      (projs || []).forEach(p => add(_ageProjDbClient(p)));
+    } catch(_) {}
+  }
+
+  const sorted = [...names.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const selName = String(selectedName || '').trim();
+  const match = sorted.find(n => n.toLowerCase() === selName.toLowerCase());
+
+  sel.innerHTML = `<option value="">Selecione um cliente…</option>`
+    + sorted.map(n => `<option value="${escAttr(n)}">${escHtml(n)}</option>`).join('')
+    + `<option value="__new__">+ Adicionar novo cliente</option>`;
+
+  if(match) {
+    sel.value = match;
+    inp.value = match;
+    inp.style.display = 'none';
+  } else if(selName) {
+    sel.value = '__new__';
+    inp.value = selName;
+    inp.style.display = '';
+  } else {
+    sel.value = '';
+    inp.value = '';
+    inp.style.display = 'none';
+  }
+}
+
+function onProjClientSelectChange() {
+  const sel = document.getElementById('pClientSelect');
+  const inp = document.getElementById('pClient');
+  if(!sel || !inp) return;
+  if(sel.value === '__new__') {
+    inp.style.display = '';
+    inp.value = '';
+    inp.focus();
+    const novo = document.getElementById('pNovo');
+    if(novo) novo.value = 'true';
+  } else if(sel.value) {
+    inp.style.display = 'none';
+    inp.value = sel.value;
+    const novo = document.getElementById('pNovo');
+    if(novo) novo.value = 'false';
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
+  }
+}
+
+function _projResolveClientNameFromForm() {
+  const sel = document.getElementById('pClientSelect');
+  const inp = document.getElementById('pClient');
+  if(sel && sel.value && sel.value !== '__new__') return String(sel.value).trim();
+  if(inp) return String(inp.value || '').trim();
+  return _ageProjFormVal('pClient', 'client_name', 'pCliente', 'projectClient');
 }
 
 /* Ficha integrada do projeto: reúne pagamentos, conteúdos (postagens) e tarefas
@@ -16644,13 +16114,16 @@ async function editProject(id) {
 async function saveProject() {
   const id         = document.getElementById('pId').value.trim();
   const fat        = parseFloat(document.getElementById('pFat').value)||0;
-  const clientName = _ageProjFormVal('pClient', 'client_name', 'pCliente', 'projectClient');
+  const clientName = _projResolveClientNameFromForm();
   const projName   = _ageProjFormVal('pName', 'projectName', 'project_name', 'pTitle', 'title');
   const statusVal  = document.getElementById('pStatus').value;
   const npsVal     = parseFloat(document.getElementById('pNps').value)||0;
   const isNewVal   = document.getElementById('pNovo').value === 'true';
 
   if(!clientName || !projName) { toast('Preencha cliente e projeto', 'warn'); return; }
+  /* Mantém o input sincronizado (outros helpers leem #pClient). */
+  const pClientEl = document.getElementById('pClient');
+  if(pClientEl) pClientEl.value = clientName;
 
   const canAssign = typeof hasModuleEditForPage === 'function' && hasModuleEditForPage('projetos');
   const assignees = Array.isArray(_projModalAssignees) ? [...new Set(_projModalAssignees.filter(Boolean))] : [];
@@ -17120,6 +16593,164 @@ function exportProjectsCSV() {
   const a=document.createElement('a'); a.href=url; a.download=`age_projetos_2026_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   toast('CSV exportado!');
+}
+
+function _exportDownloadBlob(filename, content, mime) {
+  const blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function _exportRowsToCsv(rows) {
+  if(!rows || !rows.length) return '\uFEFF';
+  const cols = [...new Set(rows.flatMap(r => Object.keys(r || {})))];
+  const esc = (v) => {
+    const s = v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+    return `"${s.replace(/"/g, '""')}"`;
+  };
+  return '\uFEFF' + [cols.join(',')].concat(rows.map(r => cols.map(c => esc(r[c])).join(','))).join('\n');
+}
+
+/** Exporta pacote completo da empresa logada (JSON + CSVs) para análise externa. */
+async function exportEmpresaCompleta() {
+  if(!currentUser?.company_id) {
+    toast('Faça login com uma empresa para exportar.', 'warn');
+    return;
+  }
+  toast('Gerando relatório da empresa…');
+  try {
+    const cid = currentUser.company_id;
+    const [
+      projects, payments, orcs, colabs, team, leads, fechs, cash, stages, npsCamp, tasks
+    ] = await Promise.all([
+      fetchAgeProjectsScoped(2000).catch(() => []),
+      fetchAll('age_payments', 3000).catch(() => []),
+      fetchAll('age_orcamentos', 1000).catch(() => []),
+      fetchAll('age_colaboradores', 500).catch(() => []),
+      fetchAll('age_users', 300).catch(() => []),
+      fetchAll('age_leads', 1000).catch(() => []),
+      fetchAll('age_fechamento', 1000).catch(() => []),
+      fetchAll('age_cashflow', 2000).catch(() => []),
+      fetchAll('age_project_stages', 2000).catch(() => []),
+      fetchAll('age_nps_campanhas', 500).catch(() => []),
+      fetchAll('age_tasks', 3000).catch(() => [])
+    ]);
+
+    const proj = (projects || []).filter(p => _projRowNotDeleted(p));
+    const active = proj.filter(p => !_projExcludedFromReceitaSum(p));
+    const fat = calcularReceitaProjetos(active);
+    const lucro = calcularLucroProjetos(active, null);
+    const cost = fat - lucro;
+
+    const clients = {};
+    active.forEach(p => {
+      const n = _ageProjDbClient(p); if(!n) return;
+      if(!clients[n]) clients[n] = { projetos: 0, faturamento: 0, nps: [] };
+      clients[n].projetos++;
+      clients[n].faturamento += parseFloat(p.total_value) || 0;
+      if(parseFloat(p.nps) > 0) clients[n].nps.push(parseFloat(p.nps));
+    });
+
+    const byMonth = {};
+    active.forEach(p => {
+      const raw = p.payment_date || p.project_date || p.created_at || '';
+      const ym = String(raw).slice(0, 7);
+      if(ym.length < 7) return;
+      if(!byMonth[ym]) byMonth[ym] = { projetos: 0, faturamento: 0, custo: 0 };
+      byMonth[ym].projetos++;
+      byMonth[ym].faturamento += parseFloat(p.total_value) || 0;
+      byMonth[ym].custo += parseFloat(p.cost) || 0;
+    });
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const slug = String(currentUser.company_name || 'empresa').replace(/[^\w\-]+/g, '_').slice(0, 32);
+    const summary = {
+      gerado_em: new Date().toISOString(),
+      company_id: cid,
+      company_name: currentUser.company_name || '',
+      exportado_por: currentUser.username || '',
+      kpis: {
+        projetos: proj.length,
+        faturamento: fat,
+        custo: cost,
+        lucro,
+        margem_pct: fat > 0 ? +((lucro / fat) * 100).toFixed(2) : 0,
+        clientes: Object.keys(clients).length,
+        colaboradores: (colabs || []).length,
+        usuarios: (team || []).length,
+        orcamentos: (orcs || []).length,
+        leads: (leads || []).length,
+        pagamentos: (payments || []).length,
+        fechamentos: (fechs || []).length,
+        cashflow_linhas: (cash || []).length,
+        tarefas: (tasks || []).length,
+        nps_campanhas: (npsCamp || []).length,
+        stages: (stages || []).length
+      },
+      por_status: proj.reduce((m, p) => { const s = p.status || '—'; m[s] = (m[s] || 0) + 1; return m; }, {}),
+      por_mes: byMonth,
+      top_clientes: Object.entries(clients).map(([nome, v]) => ({
+        nome, projetos: v.projetos, faturamento: v.faturamento,
+        nps_medio: v.nps.length ? +(v.nps.reduce((a, b) => a + b, 0) / v.nps.length).toFixed(2) : null
+      })).sort((a, b) => b.faturamento - a.faturamento)
+    };
+
+    const pack = {
+      summary,
+      projects: proj,
+      payments: payments || [],
+      orcamentos: orcs || [],
+      leads: leads || [],
+      fechamentos: fechs || [],
+      cashflow: cash || [],
+      stages: stages || [],
+      tasks: tasks || [],
+      users: team || [],
+      colaboradores: colabs || [],
+      nps_campanhas: npsCamp || []
+    };
+
+    _exportDownloadBlob(`${slug}_completo_${stamp}.json`, JSON.stringify(pack, null, 2), 'application/json');
+
+    await new Promise(r => setTimeout(r, 250));
+    _exportDownloadBlob(`${slug}_resumo_${stamp}.json`, JSON.stringify(summary, null, 2), 'application/json');
+
+    await new Promise(r => setTimeout(r, 250));
+    _exportDownloadBlob(`${slug}_projetos_${stamp}.csv`, _exportRowsToCsv(proj.map(p => ({
+      id: p.id,
+      cliente: _ageProjDbClient(p),
+      projeto: _ageProjDbTitle(p),
+      categoria: p.category,
+      segmento: p.segment,
+      status: p.status,
+      faturamento: p.total_value,
+      custo: p.cost,
+      margem_pct: p.profit_pct,
+      nps: p.nps,
+      data_pagamento: p.payment_date,
+      data_projeto: p.project_date,
+      criado_em: p.created_at
+    }))), 'text/csv;charset=utf-8');
+
+    await new Promise(r => setTimeout(r, 250));
+    _exportDownloadBlob(`${slug}_clientes_${stamp}.csv`, _exportRowsToCsv(summary.top_clientes), 'text/csv;charset=utf-8');
+
+    await new Promise(r => setTimeout(r, 250));
+    _exportDownloadBlob(`${slug}_mensal_${stamp}.csv`, _exportRowsToCsv(
+      Object.entries(byMonth).sort().map(([mes, v]) => ({ mes, ...v, lucro: v.faturamento - v.custo }))
+    ), 'text/csv;charset=utf-8');
+
+    toast('Relatório exportado (JSON + CSVs). Verifique os downloads.', 'ok');
+  } catch(e) {
+    console.error('[exportEmpresaCompleta]', e);
+    toast('Erro ao exportar relatório da empresa.', 'err');
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -19991,12 +19622,13 @@ function _orcBuildPdfWrapFromVm(vm) {
   return wrap;
 }
 
-/** Posiciona o wrap fora da viewport de forma que o html2canvas meça só o conteúdo (evita página em branco). */
+/** Posiciona o wrap fora da viewport para o html2canvas medir o conteúdo (sem opacity:0 — isso gera PDF em branco). */
 function _orcMountPdfWrap(wrap) {
   wrap.style.position = 'fixed';
-  wrap.style.left = '0';
+  wrap.style.left = '-10000px';
   wrap.style.top = '0';
-  wrap.style.opacity = '0';
+  wrap.style.opacity = '1';
+  wrap.style.visibility = 'visible';
   wrap.style.pointerEvents = 'none';
   wrap.style.zIndex = '-1';
   wrap.style.height = 'auto';
@@ -20004,7 +19636,7 @@ function _orcMountPdfWrap(wrap) {
   wrap.style.overflow = 'visible';
   document.body.appendChild(wrap);
   void wrap.offsetHeight;
-  const h = Math.max(wrap.scrollHeight, wrap.offsetHeight);
+  const h = Math.max(wrap.scrollHeight, wrap.offsetHeight, 1);
   wrap.style.height = h + 'px';
   wrap.style.overflow = 'hidden';
   return h;
@@ -20019,6 +19651,7 @@ function _orcPdfHtml2Opts(filename, mobile, contentHeightPx) {
     html2canvas: {
       scale: mobile ? 1.35 : 2,
       useCORS: true,
+      backgroundColor: '#ffffff',
       windowWidth: 794,
       width: 794,
       scrollX: 0,
@@ -20028,11 +19661,12 @@ function _orcPdfHtml2Opts(filename, mobile, contentHeightPx) {
       ...(h ? { height: h, windowHeight: h } : {})
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css'], avoid: ['.orc-pdf-root', '.pdf-keep', 'tr', 'img'] }
+    /* avoid-all + evitar .orc-pdf-root no elemento raiz empurra tudo p/ página 2 (PDF em branco). */
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['.pdf-keep', 'img'] }
   };
 }
 
-/** Remove última página se o html2pdf criou folha extra quase vazia (bug comum com legacy/altura). */
+/** Remove páginas extras vazias no fim; se só sobrou 1 página e havia mais, mantém o conteúdo. */
 function _orcTrimTrailingBlankPages(pdf, contentHeightPx, opt) {
   if(!pdf || !contentHeightPx) return pdf;
   const marginMm = Array.isArray(opt?.margin) ? (opt.margin[0] || 10) : 10;
@@ -20042,7 +19676,8 @@ function _orcTrimTrailingBlankPages(pdf, contentHeightPx, opt) {
   const pageInnerPx = Math.max(1, pageInnerMm * pxPerMm);
   const expected = Math.max(1, Math.ceil(contentHeightPx / pageInnerPx));
   let total = pdf.internal.getNumberOfPages();
-  while(total > expected && total > 1) {
+  /* Só remove sobras no fim — nunca deixar menos páginas do que o conteúdo precisa. */
+  while(total > expected + 1 && total > 1) {
     pdf.deletePage(total);
     total--;
   }
@@ -20614,8 +20249,9 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
       + '.</p>';
   const pdfFontId = (srcBuilder && srcBuilder.pdfMeta && srcBuilder.pdfMeta.pdfFont) || _orcPdfFontId();
   const wrap = document.createElement('div');
-  wrap.className = 'orc-pdf-export-wrap orc-pdf-root';
-  wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(pdfFontId) + ';font-size:13px;line-height:1.45;width:794px;box-sizing:border-box;page-break-after:avoid';
+  /* Não usar orc-pdf-root no elemento raiz do html2pdf — evita página em branco. */
+  wrap.className = 'orc-pdf-export-wrap';
+  wrap.style.cssText = 'padding:28px 32px;background:#fff;color:#111;font-family:' + _orcPdfFontStack(pdfFontId) + ';font-size:13px;line-height:1.45;width:794px;box-sizing:border-box';
   const eqRows = (fin.linhasEquipe || []).map(l => {
     const m = l.membro;
     const margemCor = l.margem >= 0 ? '#15803d' : '#b91c1c';
@@ -20641,6 +20277,7 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
     <td colspan="4"></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${fmtBRL(d.valor||0)}</td>
     <td colspan="2"></td></tr>`).join('');
   wrap.innerHTML = `
+    <div class="orc-pdf-root" style="background:#fff;color:#111">
     <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;letter-spacing:0.5px;margin-bottom:16px;color:#666">DOCUMENTO INTERNO — NÃO ENVIAR AO CLIENTE</div>
     <h1 style="font-size:20px;margin-bottom:8px">Breakdown financeiro — ${escHtml(tituloProj)}</h1>
     <p style="opacity:.75;margin-bottom:6px">Cliente: ${escHtml(client)}</p>
@@ -20708,23 +20345,28 @@ function gerarPDFInterno(srcBuilder, srcCtx) {
       <span>Total cobrado do cliente</span><span>${fmtBRL(fin.totalFinal)}</span></div>
     </div>
     <p style="font-size:10px;color:#94a3b8;margin-top:16px;line-height:1.5">Lucro = total cobrado − custo total. Produtos/serviços e despesas entram como repasse (custo igual ao cobrado); a margem vem do markup da equipe + margem da agência. Imposto/taxas (${fin.impostoModo}) entram no total cobrado${fin.impostoModo === 'diluida' ? ' sem discriminação ao cliente' : ''}. Diária custo: cadastro em colaboradores ou campo CUSTO no builder.</p>
+    </div>
   `;
-  const opt = _orcPdfHtml2Opts(
-    `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
-    _orcIsMobileDevice()
-  );
   const contentH = _orcMountPdfWrap(wrap);
   wrap._orcContentHeight = contentH;
-  opt.html2canvas = { ...opt.html2canvas, height: contentH, windowHeight: contentH };
-  toast('Gerando PDF interno…');
-  _orcEnsurePdfFont(pdfFontId).then(() =>
-    _orcRunHtml2Pdf(wrap, opt)
-      .then(() => toast('PDF interno gerado'))
-      .catch((e) => {
-        console.warn('[gerarPDFInterno]', e);
-        toast('Erro ao gerar PDF interno. Tente no desktop ou reduza o conteúdo.', 'err');
-      })
+  const opt = _orcPdfHtml2Opts(
+    `Orcamento_INTERNO_${String(tituloProj || 'interno').replace(/[^\w\d\-]+/g, '_').slice(0, 24)}.pdf`,
+    _orcIsMobileDevice(),
+    contentH
   );
+  toast('Gerando PDF interno…');
+  _orcEnsurePdfFont(pdfFontId).then(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        _orcRunHtml2Pdf(wrap, opt)
+          .then(() => toast('PDF interno gerado'))
+          .catch((e) => {
+            console.warn('[gerarPDFInterno]', e);
+            toast('Erro ao gerar PDF interno. Tente no desktop ou reduza o conteúdo.', 'err');
+          });
+      }, 80);
+    });
+  });
 }
 
 /** Gera o PDF interno (custos + margem) a partir de um orçamento salvo (botão da lista). */
