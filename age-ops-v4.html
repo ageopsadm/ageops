@@ -2333,10 +2333,11 @@ select.login-input{cursor:pointer}
 }
 .pay2-toolbar select,.pay2-toolbar input{height:36px}
 .pay2-summary{
-  display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;margin:0 0 14px;
+  display:grid;grid-template-columns:repeat(6,minmax(140px,1fr));gap:12px;margin:0 0 14px;
 }
-@media (max-width: 980px){ .pay2-summary{grid-template-columns:repeat(2,minmax(160px,1fr));} }
-@media (max-width: 520px){ .pay2-summary{grid-template-columns:1fr;} }
+@media (max-width: 1200px){ .pay2-summary{grid-template-columns:repeat(3,minmax(160px,1fr));} }
+@media (max-width: 720px){ .pay2-summary{grid-template-columns:repeat(2,minmax(140px,1fr));} }
+@media (max-width: 420px){ .pay2-summary{grid-template-columns:1fr;} }
 .pay2-card{
   background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
   box-shadow:0 18px 50px rgba(0,0,0,.18);
@@ -2347,10 +2348,47 @@ select.login-input{cursor:pointer}
 .pay2-card .val{
   font-family:var(--font-h);font-size:18px;font-weight:900;margin-top:6px;color:#fff;
 }
+.pay2-card .sub{
+  font-family:var(--font-m);font-size:10px;color:rgba(255,255,255,.45);margin-top:4px;
+}
 .pay2-card.red  .val{color:#f87171}
 .pay2-card.green .val{color:#86efac}
 .pay2-card.orange .val{color:#fdba74}
 .pay2-card.blue .val{color:#93c5fd}
+.pay2-card.purple .val{color:#c4b5fd}
+.pay2-card.teal .val{color:#5eead4}
+
+.pay2-alerts{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
+.pay2-alert{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--bd);background:var(--bg2);font-family:var(--font-m);font-size:12px;color:var(--text);
+}
+.pay2-alert i{margin-top:2px;flex-shrink:0}
+.pay2-alert.critico{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.pay2-alert.alerta{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.pay2-alert.info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af}
+.pay2-alert .pay2-alert-act{margin-left:auto;flex-shrink:0}
+.pay2-intel{
+  display:grid;grid-template-columns:1.4fr .9fr;gap:14px;margin:0 0 14px;
+}
+@media (max-width: 980px){ .pay2-intel{grid-template-columns:1fr;} }
+.pay2-charts{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+@media (max-width: 720px){ .pay2-charts{grid-template-columns:1fr;} }
+.pay2-chart-panel{padding:12px 14px;margin:0}
+.pay2-chart-panel .panel-title{margin-bottom:8px;font-size:11px}
+.pay2-chart-box{position:relative;height:220px}
+.pay2-chart-box.sm{height:200px}
+.pay2-side{display:flex;flex-direction:column;gap:12px}
+.pay2-side .panel{padding:12px 14px;margin:0}
+.pay2-side-list{display:flex;flex-direction:column;gap:0}
+.pay2-side-row{
+  display:flex;justify-content:space-between;gap:10px;align-items:baseline;
+  padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-family:var(--font-m);font-size:11px;
+}
+.pay2-side-row:last-child{border-bottom:none}
+.pay2-side-row .nm{font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pay2-side-row .meta{color:var(--textsub);font-size:10px;white-space:nowrap}
+.pay2-side-row .amt{font-family:var(--font-h);font-weight:800;white-space:nowrap}
 
 .pay2-table-wrap{
   background:var(--bg2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;
@@ -5253,20 +5291,65 @@ body:has(#login-screen.visible){
 
         <div class="pay2-summary">
           <div class="pay2-card red">
-            <div class="lbl">Total Pendente</div>
+            <div class="lbl">Pendente</div>
             <div class="val" id="paySumPendente">—</div>
-          </div>
-          <div class="pay2-card green">
-            <div class="lbl">Total Pago no Mês</div>
-            <div class="val" id="paySumPagoMes">—</div>
+            <div class="sub" id="paySumPendenteN"></div>
           </div>
           <div class="pay2-card orange">
-            <div class="lbl">Total Atrasado</div>
+            <div class="lbl">Atrasado</div>
             <div class="val" id="paySumAtrasado">—</div>
+            <div class="sub" id="paySumAtrasadoN"></div>
+          </div>
+          <div class="pay2-card green">
+            <div class="lbl">Pago no mês</div>
+            <div class="val" id="paySumPagoMes">—</div>
+            <div class="sub" id="paySumPagoMesN"></div>
           </div>
           <div class="pay2-card blue">
-            <div class="lbl">Total Geral do Mês</div>
+            <div class="lbl">Total do mês</div>
             <div class="val" id="paySumTotalMes">—</div>
+            <div class="sub" id="paySumTotalMesN"></div>
+          </div>
+          <div class="pay2-card purple">
+            <div class="lbl">Vence em 7 dias</div>
+            <div class="val" id="paySumProx7">—</div>
+            <div class="sub" id="paySumProx7N"></div>
+          </div>
+          <div class="pay2-card teal">
+            <div class="lbl">Ticket médio</div>
+            <div class="val" id="paySumTicket">—</div>
+            <div class="sub" id="paySumTicketN"></div>
+          </div>
+        </div>
+
+        <div id="payAlerts" class="pay2-alerts"></div>
+
+        <div class="pay2-intel">
+          <div class="pay2-charts">
+            <div class="panel pay2-chart-panel">
+              <div class="panel-title"><i class="fas fa-chart-column"></i> ÚLTIMOS 6 MESES · PAGO × A PAGAR</div>
+              <div class="pay2-chart-box"><canvas id="payChartMonth"></canvas></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="panel pay2-chart-panel">
+                <div class="panel-title"><i class="fas fa-chart-pie"></i> POR TIPO</div>
+                <div class="pay2-chart-box sm"><canvas id="payChartTipo"></canvas></div>
+              </div>
+              <div class="panel pay2-chart-panel">
+                <div class="panel-title"><i class="fas fa-circle-notch"></i> POR STATUS</div>
+                <div class="pay2-chart-box sm"><canvas id="payChartStatus"></canvas></div>
+              </div>
+            </div>
+          </div>
+          <div class="pay2-side">
+            <div class="panel">
+              <div class="panel-title"><i class="fas fa-bell" style="color:#dc2626"></i> PRÓXIMOS / ATRASADOS</div>
+              <div id="payNextDue" class="pay2-side-list"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-title"><i class="fas fa-users" style="color:#6366f1"></i> TOP DESTINATÁRIOS</div>
+              <div id="payTopDest" class="pay2-side-list"></div>
+            </div>
           </div>
         </div>
 
@@ -30974,29 +31057,317 @@ function aplicarFiltrosPagamentos() {
   });
 
   calcularResumosPagamentos();
+  renderPayInsights();
   renderTabelaPagamentos(_pagamentosView);
 }
 
-function calcularResumosPagamentos() {
-  const elP = document.getElementById('paySumPendente');
-  const elG = document.getElementById('paySumPagoMes');
-  const elA = document.getElementById('paySumAtrasado');
-  const elT = document.getElementById('paySumTotalMes');
-  const ym = _pagamentosFilters.ym || new Date().toISOString().slice(0,7);
+function _payAddDays(iso, days) {
+  const d = new Date(String(iso).slice(0, 10) + 'T12:00:00');
+  if (isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
-  let pend = 0, pagMes = 0, atras = 0, totMes = 0;
-  for(const p of _pagamentosView) {
+function _payYmShift(ym, delta) {
+  const [y, m] = String(ym || '').split('-').map(Number);
+  if (!y || !m) return '';
+  const d = new Date(y, m - 1 + delta, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function calcularResumosPagamentos() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const ym = _pagamentosFilters.ym || _payToday().slice(0, 7);
+  const today = _payToday();
+  const in7 = _payAddDays(today, 7);
+
+  let pend = 0, pendN = 0, atras = 0, atrasN = 0;
+  let pagMes = 0, pagMesN = 0, totMes = 0, totMesN = 0;
+  let prox7 = 0, prox7N = 0, ticketBase = 0, ticketN = 0;
+
+  for (const p of _pagamentosView) {
     const v = parseFloat(p.valor ?? p.amount ?? 0) || 0;
-    const st = _normStatus(p.status);
-    if(st === 'pendente') pend += v;
-    if(st === 'atrasado') atras += v;
-    if(_ymFromDate(p.data_vencimento) === ym) totMes += v;
-    if(st === 'pago' && _ymFromDate(p.data_pagamento) === ym) pagMes += v;
+    const st = _payEffectiveStatus(p);
+    const venc = String(p.data_vencimento || p.due_date || '').slice(0, 10);
+    const pagoYm = _ymFromDate(p.data_pagamento || p.paid_at);
+    const vencYm = _ymFromDate(venc);
+
+    if (st === 'cancelado') continue;
+    if (st === 'pendente') { pend += v; pendN++; }
+    if (st === 'atrasado') { atras += v; atrasN++; }
+    if (vencYm === ym) { totMes += v; totMesN++; }
+    if (st === 'pago' && pagoYm === ym) { pagMes += v; pagMesN++; }
+    if ((st === 'pendente' || st === 'atrasado') && venc && venc >= today && venc <= in7) {
+      prox7 += v; prox7N++;
+    }
+    if (st !== 'cancelado' && v > 0) { ticketBase += v; ticketN++; }
   }
-  if(elP) elP.textContent = fmtBRL(pend);
-  if(elG) elG.textContent = fmtBRL(pagMes);
-  if(elA) elA.textContent = fmtBRL(atras);
-  if(elT) elT.textContent = fmtBRL(totMes);
+
+  set('paySumPendente', fmtBRL(pend));
+  set('paySumPendenteN', pendN ? pendN + ' lançamento(s)' : 'em dia');
+  set('paySumAtrasado', fmtBRL(atras));
+  set('paySumAtrasadoN', atrasN ? atrasN + ' em atraso' : 'nenhum');
+  set('paySumPagoMes', fmtBRL(pagMes));
+  set('paySumPagoMesN', pagMesN ? pagMesN + ' quitado(s)' : 'sem pagamentos');
+  set('paySumTotalMes', fmtBRL(totMes));
+  set('paySumTotalMesN', totMesN ? totMesN + ' no mês filtrado' : 'sem vencimentos');
+  set('paySumProx7', fmtBRL(prox7));
+  set('paySumProx7N', prox7N ? prox7N + ' a vencer' : 'janela limpa');
+  set('paySumTicket', ticketN ? fmtBRL(ticketBase / ticketN) : '—');
+  set('paySumTicketN', ticketN ? 'média dos filtrados' : 'sem base');
+}
+
+function renderPayInsights() {
+  renderPayAlerts();
+  renderPayCharts();
+  renderPaySideLists();
+}
+
+function renderPayAlerts() {
+  const host = document.getElementById('payAlerts');
+  if (!host) return;
+  const today = _payToday();
+  const in7 = _payAddDays(today, 7);
+  const src = _pagamentosAll || [];
+  const alerts = [];
+
+  const atrasados = src.filter(p => _payEffectiveStatus(p) === 'atrasado');
+  const atrasSum = atrasados.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
+  if (atrasados.length) {
+    alerts.push({
+      nivel: atrasados.length >= 3 || atrasSum >= 5000 ? 'critico' : 'alerta',
+      icon: 'fa-triangle-exclamation',
+      html: `<b>${atrasados.length}</b> pagamento(s) atrasado(s) · <b>${fmtBRL(atrasSum)}</b>`,
+      act: `<button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('payFilterStatus').value='atrasado';aplicarFiltrosPagamentos()">Ver atrasados</button>`
+    });
+  }
+
+  const prox = src.filter(p => {
+    const st = _payEffectiveStatus(p);
+    const venc = String(p.data_vencimento || '').slice(0, 10);
+    return (st === 'pendente' || st === 'atrasado') && venc && venc >= today && venc <= in7;
+  });
+  const proxSum = prox.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
+  if (prox.length) {
+    alerts.push({
+      nivel: 'alerta',
+      icon: 'fa-clock',
+      html: `<b>${prox.length}</b> vencem nos próximos 7 dias · <b>${fmtBRL(proxSum)}</b>`,
+      act: ''
+    });
+  }
+
+  const semProj = src.filter(p => {
+    const st = _payEffectiveStatus(p);
+    return st !== 'pago' && st !== 'cancelado' && !String(p.projeto_id || '').trim();
+  });
+  if (semProj.length >= 2) {
+    alerts.push({
+      nivel: 'info',
+      icon: 'fa-link',
+      html: `<b>${semProj.length}</b> a pagar sem projeto vinculado — dificulta custo real no fechamento.`,
+      act: ''
+    });
+  }
+
+  const openPays = src.filter(p => {
+    const st = _payEffectiveStatus(p);
+    return st === 'pendente' || st === 'atrasado';
+  });
+  const byDest = {};
+  openPays.forEach(p => {
+    const k = String(p.nome_destinatario || '—').trim() || '—';
+    byDest[k] = (byDest[k] || 0) + (parseFloat(p.valor) || 0);
+  });
+  const openTot = openPays.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
+  const top = Object.entries(byDest).sort((a, b) => b[1] - a[1])[0];
+  if (top && openTot > 0 && top[1] / openTot >= 0.4) {
+    alerts.push({
+      nivel: 'info',
+      icon: 'fa-chart-pie',
+      html: `Concentração: <b>${escHtml(top[0])}</b> representa <b>${Math.round(top[1] / openTot * 100)}%</b> do a pagar (${fmtBRL(top[1])}).`,
+      act: ''
+    });
+  }
+
+  if (!alerts.length) {
+    host.innerHTML = `<div class="pay2-alert info"><i class="fas fa-check-circle"></i><span>Nenhum alerta crítico — pagamentos em dia no momento.</span></div>`;
+    return;
+  }
+  host.innerHTML = alerts.map(a => `
+    <div class="pay2-alert ${a.nivel}">
+      <i class="fas ${a.icon}"></i>
+      <span>${a.html}</span>
+      ${a.act ? `<span class="pay2-alert-act">${a.act}</span>` : ''}
+    </div>`).join('');
+}
+
+function renderPayCharts() {
+  if (typeof Chart === 'undefined') return;
+  const src = _pagamentosAll || [];
+  const todayYm = _payToday().slice(0, 7);
+  const labels = [];
+  const pagoSeries = [];
+  const openSeries = [];
+  for (let i = 5; i >= 0; i--) {
+    const ym = _payYmShift(todayYm, -i);
+    labels.push(ym.slice(5) + '/' + ym.slice(2, 4));
+    let pago = 0, open = 0;
+    src.forEach(p => {
+      const st = _payEffectiveStatus(p);
+      const v = parseFloat(p.valor) || 0;
+      if (st === 'cancelado') return;
+      if (st === 'pago' && _ymFromDate(p.data_pagamento || p.paid_at) === ym) pago += v;
+      else if ((st === 'pendente' || st === 'atrasado') && _ymFromDate(p.data_vencimento) === ym) open += v;
+    });
+    pagoSeries.push(pago);
+    openSeries.push(open);
+  }
+
+  const tipoMap = {};
+  const stMap = { pendente: 0, atrasado: 0, pago: 0, cancelado: 0 };
+  const viewBase = (_pagamentosView && _pagamentosView.length) ? _pagamentosView : src;
+  viewBase.forEach(p => {
+    const st = _payEffectiveStatus(p);
+    const v = parseFloat(p.valor) || 0;
+    const tp = _normTipo(p.tipo_destinatario);
+    tipoMap[tp] = (tipoMap[tp] || 0) + v;
+    if (stMap[st] != null) stMap[st] += v;
+  });
+
+  const base = typeof _chartDefaults === 'function' ? _chartDefaults() : {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#444', font: { size: 10 } } } }
+  };
+
+  _destroyChart('payMonth');
+  const ctxM = document.getElementById('payChartMonth');
+  if (ctxM) {
+    _charts.payMonth = new Chart(ctxM, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Pago', data: pagoSeries, backgroundColor: 'rgba(22,163,74,.25)', borderColor: '#16a34a', borderWidth: 2, borderRadius: 4 },
+          { label: 'A pagar (venc.)', data: openSeries, backgroundColor: 'rgba(220,38,38,.18)', borderColor: '#dc2626', borderWidth: 2, borderRadius: 4 }
+        ]
+      },
+      options: {
+        ...base,
+        scales: {
+          x: { ticks: { color: '#888', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,.04)' } },
+          y: { ticks: { color: '#888', font: { size: 9 }, callback: v => (typeof fmtBRLk === 'function' ? fmtBRLk(v) : v) }, grid: { color: 'rgba(0,0,0,.04)' } }
+        },
+        plugins: {
+          ...base.plugins,
+          tooltip: {
+            ...(base.plugins?.tooltip || {}),
+            callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtBRL(c.raw) }
+          }
+        }
+      }
+    });
+  }
+
+  const tipoLabels = Object.keys(tipoMap);
+  const tipoVals = tipoLabels.map(k => tipoMap[k]);
+  const tipoColors = ['#2563eb', '#7c3aed', '#16a34a', '#0e7490', '#ea580c', '#64748b'];
+  _destroyChart('payTipo');
+  const ctxT = document.getElementById('payChartTipo');
+  if (ctxT) {
+    _charts.payTipo = new Chart(ctxT, {
+      type: 'doughnut',
+      data: {
+        labels: tipoLabels.map(t => t.charAt(0).toUpperCase() + t.slice(1)),
+        datasets: [{ data: tipoVals, backgroundColor: tipoLabels.map((_, i) => tipoColors[i % tipoColors.length]), borderWidth: 0 }]
+      },
+      options: {
+        ...base,
+        cutout: '62%',
+        plugins: {
+          ...base.plugins,
+          legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 9 }, boxWidth: 8 } },
+          tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmtBRL(c.raw) } }
+        }
+      }
+    });
+  }
+
+  const stLabels = ['Pendente', 'Atrasado', 'Pago', 'Cancelado'];
+  const stVals = [stMap.pendente, stMap.atrasado, stMap.pago, stMap.cancelado];
+  const stColors = ['#f59e0b', '#dc2626', '#16a34a', '#94a3b8'];
+  _destroyChart('payStatus');
+  const ctxS = document.getElementById('payChartStatus');
+  if (ctxS) {
+    _charts.payStatus = new Chart(ctxS, {
+      type: 'doughnut',
+      data: {
+        labels: stLabels,
+        datasets: [{ data: stVals, backgroundColor: stColors, borderWidth: 0 }]
+      },
+      options: {
+        ...base,
+        cutout: '62%',
+        plugins: {
+          ...base.plugins,
+          legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 9 }, boxWidth: 8 } },
+          tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmtBRL(c.raw) } }
+        }
+      }
+    });
+  }
+}
+
+function renderPaySideLists() {
+  const nextEl = document.getElementById('payNextDue');
+  const topEl = document.getElementById('payTopDest');
+  const today = _payToday();
+  const src = _pagamentosAll || [];
+
+  if (nextEl) {
+    const open = src
+      .filter(p => {
+        const st = _payEffectiveStatus(p);
+        return st === 'pendente' || st === 'atrasado';
+      })
+      .sort((a, b) => String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || '')))
+      .slice(0, 8);
+    nextEl.innerHTML = open.length ? open.map(p => {
+      const st = _payEffectiveStatus(p);
+      const venc = String(p.data_vencimento || '').slice(0, 10);
+      const late = st === 'atrasado' || (venc && venc < today);
+      return `<div class="pay2-side-row">
+        <div style="min-width:0;flex:1">
+          <div class="nm">${escHtml(p.nome_destinatario || '—')}</div>
+          <div class="meta" style="color:${late ? '#dc2626' : 'var(--textsub)'}">${late ? 'Atrasado · ' : ''}${venc ? fmtDate(venc) : 's/ venc.'}</div>
+        </div>
+        <div class="amt" style="color:${late ? '#dc2626' : 'inherit'}">${fmtBRL(p.valor || 0)}</div>
+      </div>`;
+    }).join('') : `<div style="padding:10px 0;color:var(--textsub);font-size:11px;font-family:var(--font-m)">Nada pendente — ótimo.</div>`;
+  }
+
+  if (topEl) {
+    const map = {};
+    src.forEach(p => {
+      if (_payEffectiveStatus(p) === 'cancelado') return;
+      const k = String(p.nome_destinatario || '—').trim() || '—';
+      if (!map[k]) map[k] = { n: 0, v: 0 };
+      map[k].n++;
+      map[k].v += parseFloat(p.valor) || 0;
+    });
+    const top = Object.entries(map).sort((a, b) => b[1].v - a[1].v).slice(0, 6);
+    topEl.innerHTML = top.length ? top.map(([nome, o]) => `
+      <div class="pay2-side-row">
+        <div style="min-width:0;flex:1">
+          <div class="nm">${escHtml(nome)}</div>
+          <div class="meta">${o.n} lançamento(s)</div>
+        </div>
+        <div class="amt">${fmtBRL(o.v)}</div>
+      </div>`).join('') : `<div style="padding:10px 0;color:var(--textsub);font-size:11px;font-family:var(--font-m)">Sem dados.</div>`;
+  }
 }
 
 function renderTabelaPagamentos(list) {
