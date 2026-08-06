@@ -18,9 +18,7 @@ function ResultScreen({ result, candidateName, submitting, onRestart, onBackHome
         </div>
 
         <div className="result-headline">A sua função ideal na AGE é</div>
-        <h1 className="result-role">
-          <span className="marker">{topRole.name}.</span>
-        </h1>
+        <h1 className="result-role">{topRole?.name || '—'}</h1>
 
         <div className="result-meta">
           <div className="result-meta-block">

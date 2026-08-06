@@ -769,21 +769,23 @@ body {
 }
 .result-role {
   font-family: var(--serif);
-  font-size: clamp(40px, 8vw, 96px);
-  line-height: 1.1;
+  font-size: clamp(36px, 6.5vw, 72px);
+  line-height: 1.15;
   letter-spacing: -0.03em;
   font-weight: 400;
-  padding-bottom: 32px;
-  border-bottom: 1px solid var(--ink-15);
+  color: var(--ink);
+  padding-bottom: 28px;
   margin-bottom: 32px;
+  border-bottom: 3px solid var(--ink);
   overflow-wrap: anywhere;
   word-break: break-word;
+  /* sem .marker / highlight verde — evita bloco sobreposto no resultado */
 }
 .result-role .marker {
-  background: linear-gradient(180deg, transparent 62%, var(--highlight) 62%);
-  padding: 0 0.05em;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+  background: none !important;
+  padding: 0;
+  box-decoration-break: unset;
+  -webkit-box-decoration-break: unset;
 }
 
 .result-meta {
@@ -837,18 +839,19 @@ body {
 }
 .score-block .num {
   font-family: var(--serif);
-  font-size: clamp(72px, 10vw, 140px);
-  line-height: 0.9;
+  font-size: clamp(48px, 7vw, 88px);
+  line-height: 1;
   font-weight: 400;
   letter-spacing: -0.02em;
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 4px;
 }
 .score-block .num .pct {
-  font-size: 24px;
+  font-size: 20px;
   color: var(--ink-40);
-  margin-top: 12px;
+  margin-top: 0;
+  line-height: 1;
 }
 .score-block .bar {
   height: 3px;

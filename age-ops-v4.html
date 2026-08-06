@@ -3395,10 +3395,10 @@ body:has(#login-screen.visible){
         <button type="button" class="nav-item" data-page="pipeline" data-perm-module="pipeline" onclick="navigate('pipeline')">
           <i class="fas fa-filter"></i><span>PIPELINE</span>
         </button>
-        <button type="button" class="nav-item" data-page="postagens" data-perm-module="pipeline" onclick="navigate('postagens')">
+        <button type="button" class="nav-item" data-page="postagens" data-perm-module="postagens" onclick="navigate('postagens')">
           <i class="fas fa-share-alt"></i><span>POSTAGENS</span>
         </button>
-        <button type="button" class="nav-item" data-page="conteudos-sociais" data-perm-module="pipeline" onclick="navigate('conteudos-sociais')">
+        <button type="button" class="nav-item" data-page="conteudos-sociais" data-perm-module="conteudos" onclick="navigate('conteudos-sociais')">
           <i class="fas fa-columns"></i><span>CONTEÚDOS · REDES</span>
         </button>
       </div>
@@ -3491,15 +3491,15 @@ body:has(#login-screen.visible){
       <div id="sidebarColaborador" style="display:none">
       <div class="nav-group-label">MINHA ÁREA</div>
       <button type="button" class="nav-item" data-page="myday" data-perm-module="myday" onclick="navigate('myday')">
-        <i class="fas fa-crosshairs"></i><span>MEU DIA</span>
+        <i class="fas fa-crosshairs"></i><span>MINHA ÁREA</span>
       </button>
-      <button type="button" class="nav-item" data-page="mytasks" data-perm-module="mytasks" onclick="navigate('mytasks')">
+      <button type="button" class="nav-item" data-page="mytasks" data-perm-module="mytasks" onclick="navigate('mytasks')" style="display:none">
         <i class="fas fa-tasks"></i><span>MINHAS TAREFAS</span>
       </button>
-      <button type="button" class="nav-item" data-page="mycalendar" data-perm-module="mytasks" onclick="navigate('mycalendar')">
+      <button type="button" class="nav-item" data-page="mycalendar" data-perm-module="mytasks" onclick="navigate('mycalendar')" style="display:none">
         <i class="fas fa-calendar-day"></i><span>MEU CALENDÁRIO</span>
       </button>
-      <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')">
+      <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')" style="display:none">
         <i class="fas fa-wallet"></i><span>FINANCEIRO PESSOAL</span>
       </button>
       <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
@@ -3743,7 +3743,7 @@ body:has(#login-screen.visible){
             <div class="kpi-sub" id="dBestMesSub"></div>
           </div>
           <div class="kpi-card" style="border-left:3px solid #7c3aed">
-            <div class="kpi-label">CRESCIM. ANUAL</div>
+            <div class="kpi-label" id="dGrowthLabel">CRESCIMENTO</div>
             <div class="kpi-val" id="dGrowth">—</div>
             <div class="kpi-sub" id="dGrowthSub"></div>
           </div>
@@ -4882,6 +4882,17 @@ body:has(#login-screen.visible){
           </div>
         </div>
         <div id="mydayList"></div>
+        <!-- Hub colaborador: pagamentos designados (mesma fonte de myfinance) -->
+        <div id="mydayColabHub" style="display:none;margin-top:18px">
+          <div class="panel" style="padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+              <div class="page-title" style="font-size:12px;margin:0"><i class="fas fa-money-bill-wave" style="color:#16a34a"></i> MEUS PAGAMENTOS</div>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="loadMyDay()"><i class="fas fa-sync-alt"></i> Atualizar</button>
+            </div>
+            <p style="font-family:var(--font-m);font-size:9px;color:var(--textsub);margin:0 0 10px">Valores e status informados pela gestão · tarefas do dia acima.</p>
+            <div id="mydayMyPayments"></div>
+          </div>
+        </div>
       </div>
 
       <!-- ══════════════════════════════════
@@ -7268,6 +7279,27 @@ function _userIsAdminLike() {
   return r === 'admin' || r === 'gestor';
 }
 
+/** Membro convidado (colaborador): não é dono da assinatura — sem trial/cartão/planos. */
+function _userIsBillingExempt() {
+  if (!currentUser) return false;
+  if (_userIsBootstrapAdmin()) return false;
+  if (_userIsColaborador()) return true;
+  /* Gestor convidado na empresa de outro: também não vê cobrança do trial do dono */
+  const r = _normalizeRole(currentUser.role);
+  if (r === 'gestor' && currentUser.company_id && !currentUser._isCompanyOwner) {
+    return true;
+  }
+  return false;
+}
+
+/** Páginas pessoais unificadas no hub Meu Dia para colaborador. */
+const COLAB_HUB_PAGES = ['myday', 'mytasks', 'mycalendar', 'myfinance'];
+function _colabHubRedirect(page) {
+  if (!_userIsColaborador()) return page;
+  if (page === 'mytasks' || page === 'mycalendar' || page === 'myfinance') return 'myday';
+  return page;
+}
+
 function _roleDisplayLabel(roleNorm) {
   const r = _normalizeRole(roleNorm);
   if(r === 'admin') return 'Admin';
@@ -7279,19 +7311,19 @@ function _roleDisplayLabel(roleNorm) {
 /** Colaborador com pelo menos um módulo corporativo liberado: usa o menu lateral corporativo (filtrado por permissão). */
 function _colabShouldSeeCorpSidebar() {
   if(!_userIsColaborador()) return false;
-  const keys = ['dashboard','projetos','pipeline','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma'];
+  const keys = ['dashboard','projetos','pipeline','postagens','conteudos','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma'];
   return keys.some(k => currentUser.permissions?.[k]?.view === true);
 }
 
 const READONLY_TOOLTIP = 'Você tem acesso somente leitura';
 
 const PERM_ALL_MODULES = [
-  'dashboard','projetos','pipeline','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma','myday','mytasks','myfinance'
+  'dashboard','projetos','pipeline','postagens','conteudos','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma','myday','mytasks','myfinance'
 ];
 
 /** Cadastro via convite: módulos corporativos bloqueados até o admin liberar; myday liberado para área pessoal */
 const INVITE_SIGNUP_PERM_MODULES_LOCKED = [
-  'dashboard','projetos','pipeline','orcamentos','clientes','contratos','pagamentos','equipe','financeiro',
+  'dashboard','projetos','pipeline','postagens','conteudos','orcamentos','clientes','contratos','pagamentos','equipe','financeiro',
   'fechamento','historico','cronograma'
 ];
 
@@ -7325,11 +7357,12 @@ const PAGE_PERM_KEYS = {
   dashboard: ['dashboard'],
   projects: ['projetos'],
   pipeline: ['pipeline'],
-  postagens: ['pipeline'],
-  'conteudos-sociais': ['pipeline', 'projetos'],
-      gestao: ['gestao'],
-      entregas: ['gestao', 'projetos'],
-      orcamentos: ['orcamentos'],
+  /* postagens/conteudos: módulos próprios; pipeline legado ainda libera (compat) */
+  postagens: ['postagens', 'pipeline'],
+  'conteudos-sociais': ['conteudos', 'pipeline'],
+  gestao: ['gestao'],
+  entregas: ['gestao', 'projetos'],
+  orcamentos: ['orcamentos'],
   clientes: ['clientes'],
   contratos: ['contratos'],
   pagamentos: ['pagamentos', 'financeiro'],
@@ -7441,7 +7474,10 @@ function _canShowNavModule(mod) {
   if(_userPermFullBypass() || _userGestorUnrestricted()) return true;
   if(_normalizeRole(currentUser?.role) !== 'colaborador') return true;
   if(PERSONAL_AUTO_MODULES.includes(mod)) return true;
-  return currentUser.permissions?.[mod]?.view === true;
+  if(currentUser.permissions?.[mod]?.view === true) return true;
+  /* Compat: postagens/conteudos liberados se o colaborador já tinha Pipeline */
+  if((mod === 'postagens' || mod === 'conteudos') && currentUser.permissions?.pipeline?.view === true) return true;
+  return false;
 }
 
 function _syncPermissionNav() {
@@ -7455,6 +7491,21 @@ function _syncPermissionNav() {
     const mod = btn.getAttribute('data-perm-module');
     btn.style.display = _canShowNavModule(mod) ? '' : 'none';
   });
+  /* Colaborador: uma só entrada pessoal (Meu Dia = hub de tarefas + pagamentos) */
+  if (_userIsColaborador()) {
+    document.querySelectorAll(
+      '#sidebarColaborador .nav-item[data-page="mytasks"],' +
+      '#sidebarColaborador .nav-item[data-page="mycalendar"],' +
+      '#sidebarColaborador .nav-item[data-page="myfinance"],' +
+      '#sidebarPersonalStaff .nav-item[data-page="mytasks"],' +
+      '#sidebarPersonalStaff .nav-item[data-page="mycalendar"],' +
+      '#sidebarPersonalStaff .nav-item[data-page="myfinance"]'
+    ).forEach(btn => { btn.style.display = 'none'; });
+    document.querySelectorAll(
+      '#sidebarColaborador .nav-item[data-page="myday"] span,' +
+      '#sidebarPersonalStaff .nav-item[data-page="myday"] span'
+    ).forEach(span => { span.textContent = 'MINHA ÁREA'; });
+  }
   ['sidebarCorp', 'sidebarEquipe', 'sidebarPersonalStaff'].forEach(sid => {
     const el = document.getElementById(sid);
     if(!el) return;
@@ -7596,25 +7647,27 @@ async function openPermissoesModalFor(username) {
   const corpRows = [
     ['dashboard', 'Dashboard'],
     ['projetos', 'Projetos'],
-    ['pipeline', 'Pipeline / Kanban'],
+    ['pipeline', 'Pipeline comercial'],
+    ['postagens', 'Cronograma de postagens'],
+    ['conteudos', 'Conteúdos · Redes'],
     ['gestao', 'Gestão de Projetos'],
     ['orcamentos', 'Orçamentos'],
     ['clientes', 'Clientes'],
     ['contratos', 'Contratos'],
     ['pagamentos', 'Pagamentos'],
-    ['financeiro', 'Financeiro'],
+    ['financeiro', 'Financeiro / Fluxo de caixa'],
     ['equipe', 'Equipe'],
+    ['cronograma', 'Cronograma da equipe'],
     ['fechamento', 'Fechamento'],
     ['historico', 'Histórico'],
     ['nps', 'NPS'],
     ['relatorios', 'Relatórios']
   ];
   const persRows = [
-    ['myday', 'Meu Dia', true],
+    ['myday', 'Meu Dia / Minha Área', true],
     ['mytasks', 'Minhas Tarefas', true],
     ['mycalendar', 'Meu Calendário', true],
-    ['myfinance', 'Fin. Pessoal', true],
-    ['cronograma', 'Cronograma', false]
+    ['myfinance', 'Fin. Pessoal', true]
   ];
 
   let html = `<div style="font-family:var(--font-b);font-size:10px;font-weight:700;color:#94a3b8;margin:10px 0 6px">ÁREA CORPORATIVA</div>
@@ -8019,6 +8072,26 @@ async function applyFreshUserRowFromSupabase() {
   }
 }
 
+async function _resolveIsCompanyOwnerFlag() {
+  if (!currentUser) return;
+  currentUser._isCompanyOwner = false;
+  const un = String(currentUser.username || '').toLowerCase();
+  const cid = currentUser.company_id;
+  if (!un) return;
+  try {
+    let qs = cid
+      ? `?id=eq.${encodeURIComponent(String(cid))}&limit=1`
+      : `?owner_username=eq.${encodeURIComponent(un)}&limit=1`;
+    const d = await apiGet('age_companies', qs);
+    const co = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible)[0];
+    if (co && String(co.owner_username || '').toLowerCase() === un) {
+      currentUser._isCompanyOwner = true;
+    }
+  } catch (e) {
+    if (_normalizeRole(currentUser.role) === 'admin') currentUser._isCompanyOwner = true;
+  }
+}
+
 /**
  * Admin (ou bootstrap admin): se company_id está vazio, associa automaticamente à empresa em
  * age_companies onde owner_username = usuário atual (sem ação manual).
@@ -8257,6 +8330,15 @@ async function applyLoginSessionFromRow(row) {
     await applyFreshUserRowFromSupabase();
   } catch(e) {
     console.warn('Não foi possível atualizar dados do usuário:', e);
+  }
+  try {
+    await _resolveIsCompanyOwnerFlag();
+  } catch(_) {}
+  /* Colaborador convidado nunca herda trial/cobrança do dono */
+  if (_userIsColaborador()) {
+    currentUser.subscription_status = null;
+    currentUser.trial_ends_at = null;
+    currentUser.pagarme_subscription_id = null;
   }
   try {
     _ageUsersCache = await refreshAgeUsersCache().catch(()=>[]);
@@ -9423,7 +9505,12 @@ async function submitInviteAccept() {
       company_name: inv.company_name || '',
       password_hash: p1,
       active: true,
-      deleted: false
+      deleted: false,
+      /* Membro convidado: sem trial/cobrança própria */
+      subscription_status: null,
+      trial_ends_at: null,
+      plan: null,
+      pagarme_subscription_id: null
     };
 
     window.__tenantScopeSuspended = true;
@@ -10527,6 +10614,8 @@ function _effectiveUserPlan() {
 
 function _planAllowsPage(page) {
   if (_userIsBootstrapAdmin()) return true;
+  /* Colaborador convidado herda o plano da empresa — nunca bloqueia por trial/cartão */
+  if (_userIsBillingExempt()) return true;
   if (page === 'equipe-permissoes' && (_userPermFullBypass() || _userGestorUnrestricted())) return true;
   const pl = _effectiveUserPlan();
   if (pl === 'enterprise' || pl === 'agencia') return true;
@@ -10841,6 +10930,10 @@ async function skipPlanDefaultEnter() {
 }
 
 function openPlansOverlayGlobal() {
+  if (_userIsBillingExempt()) {
+    toast('Planos e cobrança são gerenciados pela empresa. Fale com o admin.', 'warn');
+    return;
+  }
   document.getElementById('plansOverlayGlobal')?.classList.add('open');
   document.getElementById('plansOverlayGlobal')?.setAttribute('aria-hidden', 'false');
   _planBillGlobal = 'monthly';
@@ -11143,7 +11236,7 @@ function updateTrialBanner() {
   const bar = document.getElementById('trialBanner');
   const main = document.getElementById('main');
   if(!bar || !main) return;
-  if(_userIsBootstrapAdmin()) {
+  if(_userIsBootstrapAdmin() || _userIsBillingExempt()) {
     bar.style.display = 'none';
     main.classList.remove('has-trial-banner');
     return;
@@ -11198,7 +11291,7 @@ function updateTrialBanner() {
 async function ensureReferralTokenAndUi() {
   const card = document.getElementById('dashboardReferralCard');
   if(!card || !currentUser?.id) return;
-  if(_userIsBootstrapAdmin()) {
+  if(_userIsBootstrapAdmin() || _userIsBillingExempt()) {
     card.style.display = 'none';
     return;
   }
@@ -11312,6 +11405,11 @@ const PAGE_TITLES = {
 
 function navigate(page) {
   if(typeof page !== 'string') page = 'dashboard';
+  /* Colaborador: Financeiro / Tarefas / Calendário → hub único Meu Dia */
+  page = _colabHubRedirect(page);
+  if (_userIsBillingExempt() && page === 'plan-upgrade') {
+    page = canViewPage('myday') ? 'myday' : 'profile';
+  }
   if(page !== 'plan-upgrade' && page !== 'profile' && page !== 'suporte' && page !== 'no-access') {
     if(!_planAllowsPage(page)) {
       try { sessionStorage.setItem('age_blocked_module', page); } catch(e) {}
@@ -11347,7 +11445,10 @@ function navigate(page) {
   if(!nav) nav = document.querySelector(`#sidebar .nav-item[data-page="${page}"]`);
   if(nav) nav.classList.add('active');
   const ttl = document.getElementById('topbarTitle');
-  if(ttl) ttl.textContent = PAGE_TITLES[page] || page.toUpperCase();
+  if(ttl) {
+    if (page === 'myday' && _userIsColaborador()) ttl.textContent = 'MINHA ÁREA';
+    else ttl.textContent = PAGE_TITLES[page] || page.toUpperCase();
+  }
 
   if(page==='dashboard')    loadDashboard();
   if(page==='notificacoes')  loadNotificationsFullPage();
@@ -11875,19 +11976,23 @@ function navigateFromNotificationLink(link) {
     navigate(_defaultLandingPage());
     return;
   }
-  if(raw === 'planos') {
+  if(raw === 'planos' || raw === 'plan-upgrade' || raw === 'plan_upgrade') {
+    if (_userIsBillingExempt()) {
+      navigate(canViewPage('myday') ? 'myday' : 'profile');
+      return;
+    }
     openPlansOverlayGlobal();
     navigate('plan-upgrade');
     return;
   }
   const map = {
-    mytasks: 'mytasks', projetos: 'projects', projects: 'projects', myfinance: 'myfinance',
+    mytasks: 'mytasks', myday: 'myday', projetos: 'projects', projects: 'projects', myfinance: 'myfinance',
     perfil: 'profile', profile: 'profile', equipe: 'colaboradores', colaboradores: 'colaboradores',
     orcamentos: 'orcamentos', plan_upgrade: 'plan-upgrade', 'plan-upgrade': 'plan-upgrade'
   };
   const page = map[raw] || raw;
   try {
-    if(canViewPage(page)) navigate(page);
+    if(canViewPage(page) || (_userIsColaborador() && COLAB_HUB_PAGES.includes(page))) navigate(page);
     else navigate(_defaultLandingPage());
   } catch(e) {
     navigate(_defaultLandingPage());
@@ -12043,7 +12148,7 @@ async function onNotifFullItemClick(id) {
 }
 
 async function maybeNotifyTrialExpiring() {
-  if(!currentUser?.username || _userIsBootstrapAdmin()) return;
+  if(!currentUser?.username || _userIsBootstrapAdmin() || _userIsBillingExempt()) return;
   const st = String(currentUser.subscription_status || '').toLowerCase();
   if(st !== 'trial' && st !== 'trialing') return;
   const ends = currentUser.trial_ends_at ? new Date(currentUser.trial_ends_at) : null;
@@ -12718,13 +12823,31 @@ function _payNormStatusSimple(s) {
   return 'pendente';
 }
 
+/** Status efetivo do pagamento: prioriza data de pagamento e vencimento sobre status stale no banco.
+ *  Ex.: status="atrasado" com vencimento no futuro → pendente; com data_pagamento → pago. */
+function _payEffectiveStatus(p, today) {
+  if (!p) return 'pendente';
+  const todayStr = today || (typeof _payToday === 'function'
+    ? _payToday()
+    : new Date().toISOString().slice(0, 10));
+  const raw = (typeof _normStatus === 'function')
+    ? _normStatus(p.status)
+    : _payNormStatusSimple(p.status);
+  if (raw === 'cancelado') return 'cancelado';
+  const paid = String(p.data_pagamento || p.paid_at || p.paid_date || '').slice(0, 10);
+  if (raw === 'pago' || paid) return 'pago';
+  const venc = String(p.data_vencimento || p.due_date || p.vencimento || '').slice(0, 10);
+  if (venc && venc < todayStr) return 'atrasado';
+  return 'pendente';
+}
+
 /* Soma de pagamentos vinculados a um projeto (pago e total) — base do "custo real". */
 function _projPaysSummary(projId, pays) {
-  const linked = (pays || []).filter(p => String(p.projeto_id || '') === String(projId));
+  const linked = (pays || []).filter(p => String(p.projeto_id || p.project_id || '') === String(projId));
   let pago = 0, pendente = 0;
   linked.forEach(p => {
     const v = parseFloat(p.valor ?? p.amount ?? 0) || 0;
-    const st = _payNormStatusSimple(p.status);
+    const st = _payEffectiveStatus(p);
     if(st === 'pago') pago += v;
     else if(st !== 'cancelado') pendente += v;
   });
@@ -13263,7 +13386,7 @@ async function loadDashToolsPanorama(dbProjects, fechByProjectId) {
   const grid = document.getElementById('dashToolsGrid');
   if(!grid) return;
   const ANO = 2026;
-  const hojeStr = new Date().toISOString().slice(0, 10);
+  const hojeStr = (typeof _payToday === 'function') ? _payToday() : new Date().toISOString().slice(0, 10);
   fechByProjectId = fechByProjectId || new Map();
 
   const [pays, orcs, cash, posts, tasks, contracts] = await Promise.all([
@@ -13300,20 +13423,19 @@ async function loadDashToolsPanorama(dbProjects, fechByProjectId) {
   cards.push(_dashToolCard({ icon: 'fa-clock', color: atrasados ? '#dc2626' : '#16a34a', title: 'PROJ. ATRASADOS', value: atrasados, sub: atrasados ? 'prazo vencido' : 'nenhum atrasado', subColor: atrasados ? '#dc2626' : '#16a34a' }));
   cards.push(_dashToolCard({ icon: 'fa-exclamation-triangle', color: conclSemFech ? '#d97706' : '#16a34a', title: 'SEM FECHAMENTO', value: conclSemFech, sub: 'concluídos sem fechamento', subColor: conclSemFech ? '#d97706' : '#16a34a' }));
 
-  /* ── Pagamentos ── */
-  const normP = s => { s = String(s || '').toLowerCase(); if(s.includes('pag')) return 'pago'; if(s.includes('atras')) return 'atrasado'; if(s.includes('cancel')) return 'cancelado'; return 'pendente'; };
+  /* ── Pagamentos (status efetivo por data — ignora "atrasado" stale no banco) ── */
   let pPend = 0, pPendN = 0, pAtras = 0, pAtrasN = 0, pPagoAno = 0;
   (pays || []).forEach(p => {
-    const st = normP(p.status);
+    const st = _payEffectiveStatus(p, hojeStr);
     const v = parseFloat(p.valor ?? p.amount ?? 0) || 0;
-    const venc = String(p.data_vencimento || '').slice(0, 10);
+    const venc = String(p.data_vencimento || p.due_date || p.vencimento || '').slice(0, 10);
     if(st === 'cancelado') return;
     if(st === 'pago') {
-      const dp = String(p.data_pagamento || p.paid_at || '').slice(0, 10);
+      const dp = String(p.data_pagamento || p.paid_at || p.paid_date || '').slice(0, 10);
       if(dp.startsWith(String(ANO)) || (!dp && venc.startsWith(String(ANO)))) pPagoAno += v;
     } else {
       pPend += v; pPendN++;
-      if(st === 'atrasado' || (venc && venc < hojeStr)) { pAtras += v; pAtrasN++; }
+      if(st === 'atrasado') { pAtras += v; pAtrasN++; }
     }
   });
   if((pays || []).length) {
@@ -13537,7 +13659,7 @@ async function loadDashboard() {
     const novosEl = document.getElementById('dNovos');
     if(novosEl) novosEl.textContent = nNovos+' novos clientes';
 
-    /* ── KPIs extras: média/mês, melhor mês, crescimento anual ── */
+    /* ── KPIs extras: média/mês, melhor mês, crescimento (conforme período) ── */
     // Média mensal: faturamento dividido pelos meses com receita no período
     const mesesComFat = Object.values((() => {
       const bm = {};
@@ -13568,20 +13690,78 @@ async function loadDashboard() {
     setEl('dBestMes', bestM>0 ? fmtBRL(bestV) : '—');
     setSub('dBestMesSub', bestM>0 ? MONTHS[bestM-1] + ' · pico de receita' : '');
 
-    // Crescimento anual vs ano anterior
-    const thisYear = 2026;
-    const prevH = HIST_SUMMARY[thisYear-1];
-    const prevFat = prevH ? prevH.fat : 0;
-    const growthPct = prevFat > 0 ? ((fat - prevFat) / prevFat * 100) : null;
+    // Crescimento: 1 mês → vs mês anterior (nunca vs ano cheio);
+    // trimestre/semestre → vs período anterior; anual → YoY
+    const thisYear = DASH_ANO || 2026;
+    const bmYear = (typeof _dashIntelMonthFatMap === 'function')
+      ? _dashIntelMonthFatMap(mappedAll)
+      : {};
+    const sumMeses = (arr) => (arr || []).reduce((s, m) => s + (bmYear[m] || 0), 0);
+    const periodNow = _dashPeriod;
+    const mesesNow = Array.isArray(mesesFiltro) ? mesesFiltro : _dashMesesFiltro();
+    let prevFat = null;
+    let growthLabel = 'CRESCIMENTO';
+    let growthSub = 'sem base comparativa';
+
+    if (periodNow === 'mensal' || (Array.isArray(mesesNow) && mesesNow.length === 1)) {
+      const mesRef = Array.isArray(mesesNow) && mesesNow.length === 1
+        ? mesesNow[0]
+        : (parseInt(document.getElementById('dashMesSelect')?.value, 10) || (new Date().getMonth() + 1));
+      growthLabel = 'CRESCIM. MENSAL';
+      if (mesRef > 1) {
+        prevFat = bmYear[mesRef - 1] ?? 0;
+        growthSub = prevFat > 0
+          ? 'vs ' + fmtBRL(prevFat) + ' em ' + MONTHS[mesRef - 2]
+          : 'mês anterior sem receita';
+      } else {
+        prevFat = null; /* Jan: não comparar com 2025 anual */
+        growthSub = 'sem mês anterior em ' + thisYear;
+      }
+    } else if (periodNow === 'trimestral' || (Array.isArray(mesesNow) && mesesNow.length === 3)) {
+      const ms = (Array.isArray(mesesNow) && mesesNow.length === 3) ? mesesNow : [1, 2, 3];
+      const minM = Math.min(...ms);
+      growthLabel = 'CRESCIM. TRIMESTRAL';
+      if (minM > 3) {
+        prevFat = sumMeses([minM - 3, minM - 2, minM - 1]);
+        growthSub = prevFat > 0
+          ? 'vs ' + fmtBRL(prevFat) + ' no trim. anterior'
+          : 'trimestre anterior sem receita';
+      } else {
+        prevFat = null;
+        growthSub = 'sem trimestre anterior em ' + thisYear;
+      }
+    } else if (periodNow === 'semestral' || (Array.isArray(mesesNow) && mesesNow.length === 6)) {
+      const ms = (Array.isArray(mesesNow) && mesesNow.length === 6) ? mesesNow : [1, 2, 3, 4, 5, 6];
+      const minM = Math.min(...ms);
+      growthLabel = 'CRESCIM. SEMESTRAL';
+      if (minM === 7) {
+        prevFat = sumMeses([1, 2, 3, 4, 5, 6]);
+        growthSub = prevFat > 0
+          ? 'vs ' + fmtBRL(prevFat) + ' no 1º sem.'
+          : '1º semestre sem receita';
+      } else {
+        prevFat = null;
+        growthSub = 'sem semestre anterior em ' + thisYear;
+      }
+    } else {
+      growthLabel = 'CRESCIM. ANUAL';
+      const prevH = HIST_SUMMARY[thisYear - 1];
+      prevFat = prevH ? prevH.fat : 0;
+      growthSub = prevFat > 0 ? 'vs ' + fmtBRL(prevFat) + ' em ' + (thisYear - 1) : 'sem base comparativa';
+    }
+
+    const growthPct = prevFat != null && prevFat > 0 ? ((fat - prevFat) / prevFat * 100) : null;
+    const growthLabelEl = document.getElementById('dGrowthLabel');
+    if (growthLabelEl) growthLabelEl.textContent = growthLabel;
     const growthEl = document.getElementById('dGrowth');
-    if(growthEl) {
-      if(growthPct === null) { growthEl.textContent = '—'; growthEl.style.color = '#aaa'; }
+    if (growthEl) {
+      if (growthPct === null) { growthEl.textContent = '—'; growthEl.style.color = '#aaa'; }
       else {
         growthEl.textContent = (growthPct >= 0 ? '▲ +' : '▼ ') + growthPct.toFixed(1) + '%';
         growthEl.style.color = growthPct >= 10 ? '#16a34a' : growthPct >= 0 ? '#d97706' : '#dc2626';
       }
     }
-    setSub('dGrowthSub', prevFat>0 ? 'vs '+fmtBRL(prevFat)+' em '+(thisYear-1) : 'sem base comparativa');
+    setSub('dGrowthSub', growthSub);
 
     /* Tabela de projetos no dashboard — usar dados filtrados */
     renderDashProjTable(filtered);
@@ -13693,6 +13873,9 @@ async function loadDashboard() {
       clientes: (supa2026?.clientes != null) ? supa2026.clientes : 0,
       supa2026,
       filtroDashboard: _dashPeriodLabel(),
+      dashPeriod: _dashPeriod,
+      mesesFiltro: mesesFiltro,
+      fatPeriodo: fat,
       companyName: currentUser?.company_name || '',
       rawProjects: dbProjects || [],
       fechByProjectId
@@ -13765,7 +13948,7 @@ function _deepIsOwnageCompany(kpis) {
 /** Snapshot cruzado de TODAS as abas Age Ops. */
 async function _deepFetchOpsSnapshot(rawProjects, fechByProjectId) {
   const ANO = 2026;
-  const hojeStr = new Date().toISOString().slice(0, 10);
+  const hojeStr = (typeof _payToday === 'function') ? _payToday() : new Date().toISOString().slice(0, 10);
   fechByProjectId = fechByProjectId instanceof Map ? fechByProjectId : new Map();
 
   if (typeof _relCache !== 'undefined' && (!_relCache || !_relCache.length) && typeof loadRelatorios === 'function') {
@@ -13836,27 +14019,26 @@ async function _deepFetchOpsSnapshot(rawProjects, fechByProjectId) {
     if (!cancelado && !(parseFloat(p.nps) > 0)) semNpsProj++;
   });
 
-  const normP = s => {
-    s = String(s || '').toLowerCase();
-    if (s.includes('pag')) return 'pago';
-    if (s.includes('atras')) return 'atrasado';
-    if (s.includes('cancel')) return 'cancelado';
-    return 'pendente';
-  };
   let pPend = 0, pPendN = 0, pAtras = 0, pAtrasN = 0, pPagoAno = 0;
+  const pAtrasLista = [];
   (pays || []).forEach(p => {
-    const st = normP(p.status);
+    const st = _payEffectiveStatus(p, hojeStr);
     const v = parseFloat(p.valor ?? p.amount ?? 0) || 0;
-    const venc = String(p.data_vencimento || '').slice(0, 10);
+    const venc = String(p.data_vencimento || p.due_date || p.vencimento || '').slice(0, 10);
     if (st === 'cancelado') return;
     if (st === 'pago') {
-      const dp = String(p.data_pagamento || p.paid_at || '').slice(0, 10);
+      const dp = String(p.data_pagamento || p.paid_at || p.paid_date || '').slice(0, 10);
       if (dp.startsWith(String(ANO)) || (!dp && venc.startsWith(String(ANO)))) pPagoAno += v;
     } else {
       pPend += v; pPendN++;
-      if (st === 'atrasado' || (venc && venc < hojeStr)) { pAtras += v; pAtrasN++; }
+      if (st === 'atrasado') {
+        pAtras += v; pAtrasN++;
+        const nome = String(p.nome_destinatario || p.destinatario || p.descricao || '—').trim();
+        pAtrasLista.push({ nome, valor: v, venc });
+      }
     }
   });
+  pAtrasLista.sort((a, b) => (a.venc || '').localeCompare(b.venc || '') || b.valor - a.valor);
 
   let cRec = 0, cCusto = 0, cFixo = 0, cVar = 0;
   (cash || []).forEach(c => {
@@ -14007,7 +14189,11 @@ async function _deepFetchOpsSnapshot(rawProjects, fechByProjectId) {
       conclSemFech, semCusto, semValor, recorrentes, semNps: semNpsProj, porStatus: statusCount,
       fechamentos: fechByProjectId.size
     },
-    pagamentos: { n: (pays || []).length, pendente: pPend, pendenteN: pPendN, atrasado: pAtras, atrasadoN: pAtrasN, pagoAno: pPagoAno },
+    pagamentos: {
+      n: (pays || []).length, pendente: pPend, pendenteN: pPendN,
+      atrasado: pAtras, atrasadoN: pAtrasN, pagoAno: pPagoAno,
+      atrasadoLista: pAtrasLista.slice(0, 8)
+    },
     caixa: { n: (cash || []).length, receitas: cRec, custos: cCusto, fixos: cFixo, variaveis: cVar, saldo: cRec - cCusto },
     orcamentos: {
       n: orcsReais.length, aprovados: oAprov, enviados: oEnv, rascunhos: oRasc, recusados: oRecusado,
@@ -14285,10 +14471,13 @@ function _deepPushOpsDiagnosticos(diagnosticos, ops, kpis) {
       acao: 'Lançar diárias/fornecedores pendentes com vencimento.'
     });
   } else if (Pay.atrasadoN > 0) {
+    const nomes = (Pay.atrasadoLista || []).map(x =>
+      `${escHtml(x.nome)} (${fmtBRL(x.valor)}${x.venc ? ' · venc. ' + escHtml(x.venc) : ''})`
+    ).join(' · ');
     _deepPush(diagnosticos, {
       nivel: Pay.atrasadoN >= 3 ? 'critico' : 'alerta', categoria: 'PAGAMENTOS', icone: 'fa-money-bill-wave',
       titulo: `${Pay.atrasadoN} pagamento(s) atrasado(s) · ${fmtBRL(Pay.atrasado)}`,
-      corpo: `A pagar: <b>${fmtBRL(Pay.pendente)}</b> (${Pay.pendenteN}) · Pago ${ops.ano}: <b>${fmtBRL(Pay.pagoAno)}</b>.`,
+      corpo: `A pagar: <b>${fmtBRL(Pay.pendente)}</b> (${Pay.pendenteN}) · Pago ${ops.ano}: <b>${fmtBRL(Pay.pagoAno)}</b>.${nomes ? `<br><span style="opacity:.85">Em atraso: ${nomes}</span>` : ''}`,
       pontosCego: ['Priorizar o que bloqueia gravação/edição.', 'Cruzar com diárias da semana.'],
       acao: 'Quitar atrasados e renegociar vencimentos.'
     });
@@ -14539,16 +14728,22 @@ async function renderDeepAnalysis(filtered2026, kpis) {
   const hN = years.map(y => (y === 2026 ? 0 : (useHist ? (HIST_SUMMARY[y]?.n || 0) : 0)));
   const hClts = years.map(y => (y === 2026 ? 0 : (useHist ? (HIST_SUMMARY[y]?.clientes || 0) : 0)));
   const idx2026 = years.indexOf(2026);
-  if (kpis.supa2026 && idx2026 >= 0) {
-    hFats[idx2026] = kpis.supa2026.fat ?? hFats[idx2026];
-    hCosts[idx2026] = kpis.supa2026.cost ?? hCosts[idx2026];
-    hN[idx2026] = kpis.supa2026.n ?? hN[idx2026];
-    hClts[idx2026] = kpis.supa2026.clientes ?? hClts[idx2026];
-  } else if (idx2026 >= 0) {
-    hFats[idx2026] = kpis.fat || 0;
-    hCosts[idx2026] = kpis.cost || 0;
-    hN[idx2026] = kpis.nTotal || projects.length;
-    hClts[idx2026] = kpis.clientes || 0;
+  /* Sempre ano cheio na série histórica — nunca o fat do filtro mensal/trimestral */
+  if (idx2026 >= 0) {
+    if (kpis.supa2026) {
+      hFats[idx2026] = kpis.supa2026.fat ?? hFats[idx2026];
+      hCosts[idx2026] = kpis.supa2026.cost ?? hCosts[idx2026];
+      hN[idx2026] = kpis.supa2026.n ?? hN[idx2026];
+      hClts[idx2026] = kpis.supa2026.clientes ?? hClts[idx2026];
+    } else {
+      const fatAno = projects.reduce((s, p) => s + (parseFloat(p.fat ?? p.total_value ?? 0) || 0), 0);
+      const costAno = projects.reduce((s, p) => s + (parseFloat(p.cost ?? p.custo_total ?? 0) || 0), 0);
+      const cliAno = new Set(projects.map(p => String(p.cliente || '').trim().toLowerCase()).filter(Boolean)).size;
+      hFats[idx2026] = fatAno;
+      hCosts[idx2026] = costAno;
+      hN[idx2026] = projects.length;
+      hClts[idx2026] = cliAno;
+    }
   }
   const hLucro = years.map((_, i) => (hFats[i] || 0) - (hCosts[i] || 0));
   const hMargem = years.map((_, i) => hFats[i] > 0 ? (hLucro[i] / hFats[i] * 100) : 0);
@@ -14617,9 +14812,47 @@ async function renderDeepAnalysis(filtered2026, kpis) {
 
   const mesAtualNum = new Date().getMonth() + 1;
   const idxPrev = years.indexOf(2025);
-  const yoy2026 = (useHist && idxPrev >= 0 && hFats[idxPrev] > 0)
-    ? (((kpis.fat || 0) - hFats[idxPrev]) / hFats[idxPrev] * 100)
-    : null;
+  const dashPeriod = kpis.dashPeriod || 'anual';
+  const mesesFiltroDeep = Array.isArray(kpis.mesesFiltro) ? kpis.mesesFiltro : null;
+  const isMensalDeep = dashPeriod === 'mensal' || (mesesFiltroDeep && mesesFiltroDeep.length === 1);
+  const isTrimDeep = dashPeriod === 'trimestral' || (mesesFiltroDeep && mesesFiltroDeep.length === 3);
+  const isSemDeep = dashPeriod === 'semestral' || (mesesFiltroDeep && mesesFiltroDeep.length === 6);
+
+  /* Comparativo contextual: mensal = MoM (nunca mês vs ano 2025) */
+  let compLabel = 'YoY vs 2025';
+  let compPct = null;
+  if (isMensalDeep) {
+    const mesRef = (mesesFiltroDeep && mesesFiltroDeep[0]) || mesAtualNum;
+    const fatMes = byMes[mesRef]?.fat || 0;
+    const fatAnt = mesRef > 1 ? (byMes[mesRef - 1]?.fat || 0) : 0;
+    compLabel = mesRef > 1
+      ? ('vs ' + ((typeof MONTHS !== 'undefined' ? MONTHS[mesRef - 2] : 'mês ant.')))
+      : 'vs mês anterior';
+    compPct = fatAnt > 0 ? ((fatMes - fatAnt) / fatAnt * 100) : null;
+  } else if (isTrimDeep && mesesFiltroDeep) {
+    const minM = Math.min(...mesesFiltroDeep);
+    const fatCur = mesesFiltroDeep.reduce((s, m) => s + (byMes[m]?.fat || 0), 0);
+    let fatAnt = 0;
+    if (minM > 3) {
+      for (let m = minM - 3; m < minM; m++) fatAnt += byMes[m]?.fat || 0;
+    }
+    compLabel = 'vs trim. anterior';
+    compPct = fatAnt > 0 ? ((fatCur - fatAnt) / fatAnt * 100) : null;
+  } else if (isSemDeep && mesesFiltroDeep) {
+    const minM = Math.min(...mesesFiltroDeep);
+    const fatCur = mesesFiltroDeep.reduce((s, m) => s + (byMes[m]?.fat || 0), 0);
+    let fatAnt = 0;
+    if (minM === 7) {
+      for (let m = 1; m <= 6; m++) fatAnt += byMes[m]?.fat || 0;
+    }
+    compLabel = 'vs 1º semestre';
+    compPct = fatAnt > 0 ? ((fatCur - fatAnt) / fatAnt * 100) : null;
+  } else {
+    const fatAno = (kpis.supa2026?.fat != null) ? kpis.supa2026.fat : (hFats[idx2026] || 0);
+    compPct = (useHist && idxPrev >= 0 && hFats[idxPrev] > 0)
+      ? ((fatAno - hFats[idxPrev]) / hFats[idxPrev] * 100)
+      : null;
+  }
   const faltaMeta = Math.max(metaAnual2026 - (kpis.fat || 0), 0);
   const mesesRest = Math.max(12 - mesAtualNum, 1);
   const mediaNec = faltaMeta / mesesRest;
@@ -14966,7 +15199,9 @@ async function renderDeepAnalysis(filtered2026, kpis) {
         <div style="display:flex;justify-content:space-between"><span>Maior fat.</span><b style="color:#2563eb">${melhorAnoFat?.ano || '—'} · ${fmtBRL(melhorAnoFat?.fat || 0)}</b></div>
         <div style="display:flex;justify-content:space-between"><span>Melhor margem</span><b style="color:#16a34a">${melhorAnoMgm?.ano || '—'} · ${(melhorAnoMgm?.margem || 0).toFixed(0)}%</b></div>
         <div style="display:flex;justify-content:space-between"><span>Pior margem</span><b style="color:#d97706">${piorAnoMgm?.ano || '—'} · ${(piorAnoMgm?.margem || 0).toFixed(0)}%</b></div>
-        ${yoy2026 != null ? `<div style="display:flex;justify-content:space-between"><span>YoY vs 2025</span><b style="color:${yoy2026 >= 0 ? '#16a34a' : '#dc2626'}">${yoy2026 >= 0 ? '+' : ''}${yoy2026.toFixed(0)}%</b></div>` : ''}
+        ${compPct != null
+          ? `<div style="display:flex;justify-content:space-between"><span>${escHtml(compLabel)}</span><b style="color:${compPct >= 0 ? '#16a34a' : '#dc2626'}">${compPct >= 0 ? '+' : ''}${compPct.toFixed(0)}%</b></div>`
+          : `<div style="display:flex;justify-content:space-between"><span>${escHtml(compLabel)}</span><b style="color:#94a3b8">—</b></div>`}
       </div>
     </div>
   </div>
@@ -18304,70 +18539,170 @@ async function saveFech() {
    HISTÓRICO
 ═══════════════════════════════════════════ */
 let _histYear = 2026;
+let _histLive2026 = null; /* cache da série 2026 ao vivo (Supabase) */
+let _histLive2026At = 0;
+
+async function _histBuildLive2026(force) {
+  const now = Date.now();
+  if (!force && _histLive2026 && (now - _histLive2026At) < 15000) return _histLive2026;
+
+  const [dbProjects, dbFechs] = await Promise.all([
+    fetchAgeProjectsScoped(2000).catch(() => []),
+    fetchAll('age_fechamento', 1000).catch(() => [])
+  ]);
+  const fechByProjectId = new Map();
+  (dbFechs || []).forEach(f => {
+    if (f && f.project_id != null) fechByProjectId.set(f.project_id, f);
+  });
+
+  const rows = (dbProjects || [])
+    .filter(p => _projRowNotDeleted(p) && !_projExcludedFromReceitaSum(p))
+    .map(p => _dashRowFromSupabase(p, fechByProjectId))
+    .filter(p => {
+      const ma = _dashResolveMesAno(p);
+      return ma && ma.ano === 2026;
+    })
+    .sort((a, b) => (a.mes || 0) - (b.mes || 0) || String(a.cliente || '').localeCompare(String(b.cliente || '')));
+
+  const fat = rows.reduce((s, p) => s + (parseFloat(p.fat) || 0), 0);
+  const cost = rows.reduce((s, p) => s + (parseFloat(p.cost) || 0), 0);
+  const lucro = fat - cost;
+  const cliSet = new Set(rows.map(p => String(p.cliente || '').trim().toLowerCase()).filter(Boolean));
+
+  _histLive2026 = {
+    summary: {
+      fat, cost, lucro, n: rows.length, clientes: cliSet.size, semCusto: false, live: true
+    },
+    projects: rows
+  };
+  _histLive2026At = now;
+  return _histLive2026;
+}
 
 function loadHistorico() {
   const tabs = document.getElementById('histYearTabs');
-  if(!tabs) return;
-  const years = [2021,2022,2023,2024,2025,2026];
-  tabs.innerHTML = years.map(y=>`<button class="year-tab${y===_histYear?' active':''}" onclick="selectHistYear(${y})">${y}${y===2026?' ◉':''}</button>`).join('');
-  renderHistYear(_histYear);
+  if (!tabs) return;
+  const years = [2021, 2022, 2023, 2024, 2025, 2026];
+  tabs.innerHTML = years.map(y =>
+    `<button type="button" class="year-tab${y === _histYear ? ' active' : ''}" onclick="selectHistYear(${y})">${y}${y === 2026 ? ' ◉' : ''}</button>`
+  ).join('');
+  renderHistYear(_histYear, true);
 }
 
 function selectHistYear(y) {
-  _histYear=y;
-  document.querySelectorAll('.year-tab').forEach(t=>{t.classList.toggle('active',parseInt(t.textContent)===y);});
-  renderHistYear(y);
+  _histYear = y;
+  document.querySelectorAll('#histYearTabs .year-tab').forEach(t => {
+    const yr = parseInt(String(t.textContent).replace(/[^\d]/g, ''), 10);
+    t.classList.toggle('active', yr === y);
+  });
+  renderHistYear(y, true);
 }
 
-function renderHistYear(year) {
+let _histRenderSeq = 0;
+
+async function renderHistYear(year, forceRefresh) {
   const el = document.getElementById('histContent');
-  if(!el) return;
-  const hs = HIST_SUMMARY[year];
-  if(!hs){ el.innerHTML='<p style="color:var(--textsub);font-family:var(--font-m)">Dados não disponíveis</p>'; return; }
-  const margin = hs.cost>0?(hs.lucro/hs.fat*100):null;
-  const prevY  = HIST_SUMMARY[year-1];
-  const growth = prevY ? ((hs.fat-prevY.fat)/prevY.fat*100) : null;
+  if (!el) return;
+  const seq = ++_histRenderSeq;
+
+  let hs = HIST_SUMMARY[year];
+  let liveProjects = null;
+  let isLive = false;
+
+  if (year === 2026 && typeof SUPABASE_IS_SOURCE_OF_TRUTH !== 'undefined' && SUPABASE_IS_SOURCE_OF_TRUTH) {
+    el.innerHTML = `<div style="padding:28px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:12px">
+      <i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Atualizando 2026 em tempo real…
+    </div>`;
+    try {
+      const live = await _histBuildLive2026(!!forceRefresh);
+      if (seq !== _histRenderSeq || _histYear !== year) return;
+      hs = live.summary;
+      liveProjects = live.projects;
+      isLive = true;
+    } catch (e) {
+      console.warn('[hist 2026 live]', e);
+      if (seq !== _histRenderSeq || _histYear !== year) return;
+      hs = HIST_SUMMARY[2026];
+    }
+  }
+
+  if (seq !== _histRenderSeq || _histYear !== year) return;
+
+  if (!hs) {
+    el.innerHTML = '<p style="color:var(--textsub);font-family:var(--font-m)">Dados não disponíveis</p>';
+    return;
+  }
+
+  const margin = hs.fat > 0 ? (hs.lucro / hs.fat * 100) : null;
+  let prevFat = null;
+  if (year === 2026 && isLive) {
+    prevFat = HIST_SUMMARY[2025]?.fat || null;
+  } else {
+    prevFat = HIST_SUMMARY[year - 1]?.fat || null;
+  }
+  const growth = prevFat > 0 ? ((hs.fat - prevFat) / prevFat * 100) : null;
 
   let projTable = '';
-  if(year===2026) {
+  if (year === 2026) {
+    const list = isLive && liveProjects
+      ? liveProjects
+      : (PROJ_2026_SHEET || []).map(p => ({ ...p }));
+    const srcLabel = isLive ? 'SUPABASE · TEMPO REAL' : 'PLANILHA EMBUTIDA (fallback)';
     projTable = `
       <div class="panel" style="margin-top:14px">
-        <div class="panel-title"><i class="fas fa-list"></i> PROJETOS ${year} — PLANILHA REAL</div>
+        <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <span><i class="fas fa-list"></i> PROJETOS ${year} — ${srcLabel}</span>
+          ${isLive ? `<button type="button" class="btn btn-ghost btn-sm" onclick="renderHistYear(2026,true)"><i class="fas fa-sync-alt"></i> Atualizar</button>` : ''}
+        </div>
         <div class="table-wrap">
           <table class="hud-table">
-            <thead><tr><th>MÊS</th><th>CLIENTE</th><th>PROJETO</th><th>SEGMENTO</th><th>FATURAMENTO</th><th>LUCRO%</th><th>NPS</th><th>NOVO?</th></tr></thead>
+            <thead><tr><th>MÊS</th><th>CLIENTE</th><th>PROJETO</th><th>SEGMENTO</th><th>FATURAMENTO</th><th>LUCRO%</th><th>NPS</th><th>${isLive ? 'STATUS' : 'NOVO?'}</th></tr></thead>
             <tbody>
-              ${[...PROJ_2026_SHEET].map(p=>`
-              <tr>
-                <td style="font-family:var(--font-m);font-size:10px;color:var(--textsub)">${MONTHS[(p.mes||1)-1]}</td>
-                <td><b>${escHtml(p.cliente)}</b></td>
-                <td style="color:var(--textsub)">${escHtml(p.projeto)}</td>
-                <td style="font-size:10px;color:var(--textsub)">${escHtml(p.seg)}</td>
-                <td><span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:rgba(255,255,255,.85)">${fmtBRL(p.fat)}</span></td>
-                <td><span style="font-family:var(--font-h);font-size:11px;color:${getMarginColor(p.margin)}">${p.margin>0?p.margin+'%':'—'}</span></td>
-                <td style="color:rgba(255,255,255,.5)">${p.nps>0?p.nps+'★':'—'}</td>
-                <td>${p.novo?'<span class="badge badge-novo">NOVO</span>':'—'}</td>
-              </tr>`).join('')}
+              ${list.length ? list.map(p => {
+                const mes = p.mes || (_dashResolveMesAno(p)?.mes) || 1;
+                const fat = parseFloat(p.fat ?? p.total_value) || 0;
+                const marginP = parseFloat(p.margin ?? p.profit_pct) || 0;
+                const nps = parseFloat(p.nps ?? p._nps) || 0;
+                const st = String(p.status || p._status || 'concluido').toLowerCase().replace(/\s+/g, '_');
+                const badgeCls = st === 'em_andamento' ? 'badge-andamento' : st === 'pendente' ? 'badge-pendente' : st === 'cancelado' ? 'badge-cancelado' : 'badge-concluido';
+                const right = isLive
+                  ? `<span class="badge ${badgeCls}">${escHtml(_dashStatusLabel(st))}</span>`
+                  : (p.novo ? '<span class="badge badge-novo">NOVO</span>' : '—');
+                return `<tr>
+                  <td style="font-family:var(--font-m);font-size:10px;color:var(--textsub)">${MONTHS[(mes || 1) - 1] || '—'}</td>
+                  <td><b>${escHtml(p.cliente || '—')}</b></td>
+                  <td style="color:var(--textsub)">${escHtml(p.projeto || '—')}</td>
+                  <td style="font-size:10px;color:var(--textsub)">${escHtml(p.seg || p.segment || '—')}</td>
+                  <td><span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:rgba(255,255,255,.85)">${fmtBRL(fat)}</span></td>
+                  <td><span style="font-family:var(--font-h);font-size:11px;color:${getMarginColor(marginP)}">${marginP > 0 ? marginP.toFixed(0) + '%' : '—'}</span></td>
+                  <td style="color:rgba(255,255,255,.5)">${nps > 0 ? nps + '★' : '—'}</td>
+                  <td>${right}</td>
+                </tr>`;
+              }).join('') : `<tr><td colspan="8" class="table-empty">Nenhum projeto 2026 encontrado no Supabase.</td></tr>`}
             </tbody>
           </table>
         </div>
       </div>`;
   }
 
+  const liveBadge = year === 2026 && isLive
+    ? '<span class="badge badge-andamento" style="font-size:9px">AO VIVO</span>'
+    : (year === 2026 ? '<span class="badge badge-andamento" style="font-size:9px">FALLBACK</span>' : '');
+
   el.innerHTML = `
     <div class="dash-year-header">
       <div>
         <div class="dash-year-title">${year}</div>
-        <div class="dash-year-sub">${hs.n} projetos · ${hs.clientes} clientes${hs.semCusto?' · s/custo':''}</div>
+        <div class="dash-year-sub">${hs.n} projetos · ${hs.clientes} clientes${hs.semCusto ? ' · s/custo' : ''}${isLive ? ' · sincronizado agora' : ''}</div>
       </div>
-      ${growth!==null?`<div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${growth>=0?'rgba(255,255,255,.85)':'rgba(255,255,255,.35)'}">${growth>=0?'+':''}${growth.toFixed(1)}%</div>`:''}
-      ${year===2026?'<span class="badge badge-andamento" style="font-size:9px">Q1 COMPLETO</span>':''}
+      ${growth !== null ? `<div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${growth >= 0 ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.35)'}">${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%</div>` : ''}
+      ${liveBadge}
     </div>
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">FATURAMENTO</div><div class="kpi-val">${fmtBRL(hs.fat)}</div></div>
-      <div class="kpi-card"><div class="kpi-label">CUSTO</div><div class="kpi-val orange">${hs.semCusto?'S/DADO':fmtBRL(hs.cost)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">CUSTO</div><div class="kpi-val orange">${hs.semCusto ? 'S/DADO' : fmtBRL(hs.cost)}</div></div>
       <div class="kpi-card"><div class="kpi-label">LUCRO</div><div class="kpi-val green">${fmtBRL(hs.lucro)}</div></div>
-      <div class="kpi-card"><div class="kpi-label">MARGEM</div><div class="kpi-val" style="color:${margin!==null?getMarginColor(margin):'var(--textsub)'}">${margin!==null?margin.toFixed(1)+'%':'N/D'}</div></div>
+      <div class="kpi-card"><div class="kpi-label">MARGEM</div><div class="kpi-val" style="color:${margin !== null ? getMarginColor(margin) : 'var(--textsub)'}">${margin !== null ? margin.toFixed(1) + '%' : 'N/D'}</div></div>
       <div class="kpi-card"><div class="kpi-label">PROJETOS</div><div class="kpi-val yellow">${hs.n}</div></div>
       <div class="kpi-card"><div class="kpi-label">CLIENTES</div><div class="kpi-val">${hs.clientes}</div></div>
     </div>
@@ -26964,7 +27299,7 @@ function csBoardClick(e) {
   e.preventDefault();
   e.stopPropagation();
   if(!_csKanbanCanEdit()) {
-    try { toast('Sem permissão para alterar conteúdos. Peça edição no módulo Pipeline ou Projetos.', 'warn'); } catch(_) {}
+    try { toast('Sem permissão para alterar conteúdos. Peça edição no módulo Conteúdos · Redes.', 'warn'); } catch(_) {}
     return;
   }
   if(action === 'edit' && id) csOpenEditar(id);
@@ -29077,7 +29412,11 @@ async function loadMyDay() {
   if(prodStrip && !isToday) prodStrip.style.display = 'none';
 
   const hdr = document.getElementById('mydayPageTitle');
-  if(hdr) hdr.innerHTML = `<i class="fas fa-crosshairs"></i> MEU DIA <span style="font-family:var(--font-m);font-size:10px;color:var(--textsub);font-weight:400;margin-left:6px">${dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>`;
+  const hubTitle = _userIsColaborador() ? 'MINHA ÁREA' : 'MEU DIA';
+  if(hdr) hdr.innerHTML = `<i class="fas fa-crosshairs"></i> ${hubTitle} <span style="font-family:var(--font-m);font-size:10px;color:var(--textsub);font-weight:400;margin-left:6px">${dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>`;
+
+  const hub = document.getElementById('mydayColabHub');
+  if (hub) hub.style.display = _userIsColaborador() ? '' : 'none';
 
   try {
     const tasks = await fetchOwn('age_tasks');
@@ -29167,6 +29506,7 @@ async function loadMyDay() {
         : `<span class="myday-empty-ic"><i class="fas fa-mug-hot"></i></span>Tudo limpo por aqui.<br>Que tal planejar o seu dia?<br><br><button class="btn btn-primary btn-sm" onclick="openDayTaskModal()"><i class="fas fa-plus"></i> Adicionar tarefa</button>`;
       el.innerHTML = pastBanner + `<div class="myday-empty">${emptyMsg}</div>`;
       if(isToday) _refreshMyDayProdStrip();
+      if (_userIsColaborador()) await _fillMyAssignedPaymentsInto('mydayMyPayments');
       return;
     }
 
@@ -29213,6 +29553,11 @@ async function loadMyDay() {
     _mydayRenderProgress(0, 0);
     const strip = document.getElementById('mydayProdStrip');
     if(strip) strip.style.display = 'none';
+  }
+
+  /* Colaborador: pagamentos designados no mesmo hub (sem aba Financeiro separada) */
+  if (_userIsColaborador()) {
+    await _fillMyAssignedPaymentsInto('mydayMyPayments');
   }
 }
 
@@ -29887,14 +30232,79 @@ async function getMyColaboradorId() {
 
 function _payStatusMeta(row) {
   if(!row || typeof row !== 'object') return { label:'—', emoji:'⚪', kind:'unknown' };
-  const today = new Date().toISOString().slice(0, 10);
-  const due = String(row.due_date || row.vencimento || '').slice(0, 10);
-  const st = String(row.status || '').toLowerCase();
-  const paidAt = row.paid_at;
-  const isPaid = st === 'pago' || paidAt;
-  if(isPaid) return { label: 'Pago', emoji: '🟢', kind: 'pago' };
-  if(due && due < today) return { label: 'Atrasado', emoji: '🔴', kind: 'atrasado' };
+  const kind = _payEffectiveStatus(row);
+  if(kind === 'pago') return { label: 'Pago', emoji: '🟢', kind: 'pago' };
+  if(kind === 'atrasado') return { label: 'Atrasado', emoji: '🔴', kind: 'atrasado' };
+  if(kind === 'cancelado') return { label: 'Cancelado', emoji: '⚪', kind: 'cancelado' };
   return { label: 'Pendente', emoji: '🟡', kind: 'pendente' };
+}
+
+async function _fetchMyAssignedPayments() {
+  const u = encodeURIComponent(String(currentUser?.username || ''));
+  if (!u) return [];
+  const myColId = await getMyColaboradorId();
+  const d1 = await apiGet('age_payments', `?colaborador_username=eq.${u}&limit=150`);
+  let pays = (Array.isArray(d1?.data) ? d1.data : []).filter(_sbIsRowVisible);
+  if (myColId) {
+    const d2 = await apiGet('age_payments', `?colaborador_id=eq.${encodeURIComponent(String(myColId))}&limit=150`);
+    const p2 = (Array.isArray(d2?.data) ? d2.data : []).filter(_sbIsRowVisible);
+    const seen = new Set(pays.map(x => x.id));
+    for (const r of p2) {
+      if (r?.id && !seen.has(r.id)) { pays.push(r); seen.add(r.id); }
+    }
+  }
+  return pays.map(_payRowNormalize).sort((a, b) =>
+    String(b.data_vencimento || b.due_date || '').localeCompare(String(a.data_vencimento || a.due_date || ''))
+  );
+}
+
+function _renderMyAssignedPaymentsHtml(pays) {
+  if (!pays || !pays.length) {
+    return `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:12px;text-align:center">Nenhum pagamento corporativo registrado para você.</div>`;
+  }
+  return `
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-family:var(--font-b);font-size:12px">
+      <thead>
+        <tr style="background:rgba(0,0,0,.04);font-family:var(--font-h);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b">
+          <th style="text-align:left;padding:8px 10px">Mês</th>
+          <th style="text-align:right;padding:8px 10px">Valor</th>
+          <th style="text-align:left;padding:8px 10px">Status</th>
+          <th style="text-align:left;padding:8px 10px">Vencimento</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${pays.map(p => {
+          const venc = p.data_vencimento || p.due_date;
+          const mesRaw = venc ? String(venc).slice(0, 10) : '';
+          const mesLab = mesRaw
+            ? new Date(mesRaw + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+            : '—';
+          const st = (typeof _payEffectiveStatus === 'function') ? _payEffectiveStatus(p) : _normStatus(p.status);
+          const stLabel = st === 'pago' ? 'Pago ✅' : st === 'atrasado' ? 'Atrasado' : st === 'cancelado' ? 'Cancelado' : 'Pendente';
+          const stColor = st === 'pago' ? '#16a34a' : st === 'pendente' ? '#d97706' : st === 'atrasado' ? '#dc2626' : '#64748b';
+          const amt = fmtBRL(p.valor ?? p.amount ?? 0);
+          return `<tr style="border-bottom:1px solid rgba(0,0,0,.06)">
+            <td style="padding:8px 10px;text-transform:capitalize">${escHtml(mesLab)}</td>
+            <td style="padding:8px 10px;text-align:right;font-family:var(--font-h);font-weight:800">${amt}</td>
+            <td style="padding:8px 10px;color:${stColor};font-weight:700">${escHtml(stLabel)}</td>
+            <td style="padding:8px 10px">${escHtml(venc ? fmtDate(venc) : '—')}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+async function _fillMyAssignedPaymentsInto(elId) {
+  const fmp = document.getElementById(elId);
+  if (!fmp) return;
+  try {
+    const pays = await _fetchMyAssignedPayments();
+    fmp.innerHTML = _renderMyAssignedPaymentsHtml(pays);
+  } catch (e2) {
+    fmp.innerHTML = `<div style="color:var(--textsub);font-size:11px">Não foi possível carregar pagamentos.</div>`;
+  }
 }
 
 async function loadFinance() {
@@ -29917,60 +30327,7 @@ async function loadFinance() {
         <button class="btn btn-danger btn-sm" onclick="deleteFinance('${i.id}')"><i class="fas fa-trash"></i></button>
       </div>`).join('')||`<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:20px;text-align:center">Nenhum lançamento.</div>`;
 
-    const fmp = document.getElementById('finMyPayments');
-    if(fmp) {
-      try {
-        const u = encodeURIComponent(currentUser.username);
-        const myColId = await getMyColaboradorId();
-        const d1 = await apiGet('age_payments', `?colaborador_username=eq.${u}&limit=150`);
-        let pays = (Array.isArray(d1?.data) ? d1.data : []).filter(_sbIsRowVisible);
-        if(myColId) {
-          const d2 = await apiGet('age_payments', `?colaborador_id=eq.${encodeURIComponent(String(myColId))}&limit=150`);
-          const p2 = (Array.isArray(d2?.data) ? d2.data : []).filter(_sbIsRowVisible);
-          const seen = new Set(pays.map(x => x.id));
-          for(const r of p2) {
-            if(r?.id && !seen.has(r.id)) { pays.push(r); seen.add(r.id); }
-          }
-        }
-        pays = pays.map(_payRowNormalize).sort((a,b)=>
-          String(b.data_vencimento||b.due_date||'').localeCompare(String(a.data_vencimento||a.due_date||''))
-        );
-        fmp.innerHTML = pays.length ? `
-          <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-family:var(--font-b);font-size:12px">
-            <thead>
-              <tr style="background:rgba(0,0,0,.04);font-family:var(--font-h);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b">
-                <th style="text-align:left;padding:8px 10px">Mês</th>
-                <th style="text-align:right;padding:8px 10px">Valor</th>
-                <th style="text-align:left;padding:8px 10px">Status</th>
-                <th style="text-align:left;padding:8px 10px">Vencimento</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${pays.map(p => {
-                const venc = p.data_vencimento || p.due_date;
-                const mesRaw = venc ? String(venc).slice(0, 10) : '';
-                const mesLab = mesRaw
-                  ? new Date(mesRaw + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                  : '—';
-                const st = _normStatus(p.status);
-                const stLabel = st === 'pago' ? 'Pago ✅' : st === 'atrasado' ? 'Atrasado' : st === 'cancelado' ? 'Cancelado' : 'Pendente';
-                const stColor = st === 'pago' ? '#16a34a' : st === 'pendente' ? '#d97706' : st === 'atrasado' ? '#dc2626' : '#64748b';
-                const amt = fmtBRL(p.valor ?? p.amount ?? 0);
-                return `<tr style="border-bottom:1px solid rgba(0,0,0,.06)">
-                  <td style="padding:8px 10px;text-transform:capitalize">${escHtml(mesLab)}</td>
-                  <td style="padding:8px 10px;text-align:right;font-family:var(--font-h);font-weight:800">${amt}</td>
-                  <td style="padding:8px 10px;color:${stColor};font-weight:700">${escHtml(stLabel)}</td>
-                  <td style="padding:8px 10px">${escHtml(venc ? fmtDate(venc) : '—')}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-          </div>` : `<div style="color:var(--textsub);font-family:var(--font-m);font-size:11px;padding:12px;text-align:center">Nenhum pagamento corporativo registrado para você.</div>`;
-      } catch(e2) {
-        fmp.innerHTML = `<div style="color:var(--textsub);font-size:11px">Não foi possível carregar pagamentos.</div>`;
-      }
-    }
+    await _fillMyAssignedPaymentsInto('finMyPayments');
   } catch(e){ console.error('loadFinance:',e); }
 }
 
@@ -30432,7 +30789,13 @@ let _payColabListCache = [];
 let _myColabIdCache;
 let _colabOpenDetailId = null;
 
-function _payToday() { return new Date().toISOString().slice(0,10); }
+function _payToday() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 function _ymFromDate(d) { const s = String(d||'').slice(0,10); return s ? s.slice(0,7) : ''; }
 function _normTipo(v) {
   const t = String(v||'').toLowerCase().trim();
@@ -30470,7 +30833,16 @@ function _payRowNormalize(p) {
   const valor = parseFloat(p.valor ?? p.amount ?? p.total ?? 0) || 0;
   const data_vencimento = String(p.data_vencimento || p.due_date || p.vencimento || '').slice(0,10) || '';
   const data_pagamento  = String(p.data_pagamento || p.paid_at || p.paid_date || '').slice(0,10) || '';
-  const status = _normStatus(p.status);
+  const statusDb = _normStatus(p.status);
+  const status = _payEffectiveStatus({
+    status: statusDb,
+    data_vencimento,
+    data_pagamento,
+    paid_at: p.paid_at,
+    paid_date: p.paid_date,
+    due_date: p.due_date,
+    vencimento: p.vencimento
+  });
   const tipo_destinatario = _normTipo(p.tipo_destinatario || (p.colaborador_username ? 'colaborador' : 'outros'));
   const nome_destinatario =
     (p.nome_destinatario && String(p.nome_destinatario).trim()) ||
@@ -30488,6 +30860,7 @@ function _payRowNormalize(p) {
     data_vencimento,
     data_pagamento,
     status,
+    status_db: statusDb,
     tipo_destinatario,
     nome_destinatario,
     colaborador_id,
@@ -30549,19 +30922,33 @@ async function loadPagamentos() {
   const rows = await fetchAll('age_payments', 800);
   const norm = (Array.isArray(rows) ? rows : []).map(_payRowNormalize);
 
-  // Auto-atraso: vencido + pendente => atrasado (UI e PATCH best-effort)
+  // Sincroniza status no banco com a realidade (vencimento / pagamento)
+  // - pendente vencido → atrasado
+  // - atrasado com vencimento futuro → pendente (status stale)
+  // - tem data de pagamento mas status ≠ pago → pago
   const today = _payToday();
-  const toPatch = [];
-  for(const p of norm) {
-    if(p.status === 'pendente' && p.data_vencimento && p.data_vencimento < today) {
-      p.status = 'atrasado';
-      if(p.id) toPatch.push(p.id);
+  const patches = [];
+  for (const p of norm) {
+    if (!p.id) continue;
+    const db = p.status_db || _normStatus(p.status);
+    const eff = p.status; /* já efetivo via _payRowNormalize */
+    if (db === eff || eff === 'cancelado') continue;
+    if (eff === 'atrasado' && db === 'pendente') patches.push({ id: p.id, status: 'atrasado' });
+    else if (eff === 'pendente' && db === 'atrasado') patches.push({ id: p.id, status: 'pendente' });
+    else if (eff === 'pago' && db !== 'pago') {
+      patches.push({
+        id: p.id,
+        status: 'pago',
+        data_pagamento: p.data_pagamento || today
+      });
     }
   }
-  // Evita tempestade de PATCH: limita por carregamento
-  const patchIds = toPatch.slice(0, 25);
-  if(patchIds.length) {
-    Promise.allSettled(patchIds.map(id => apiPatch('age_payments', id, { status:'atrasado' }))).catch(()=>{});
+  const batch = patches.slice(0, 25);
+  if (batch.length) {
+    Promise.allSettled(batch.map(x => {
+      const { id, ...body } = x;
+      return apiPatch('age_payments', id, body);
+    })).catch(() => {});
   }
   _pagamentosAll = norm;
   return _pagamentosAll;
