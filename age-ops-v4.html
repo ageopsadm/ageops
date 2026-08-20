@@ -7294,10 +7294,26 @@ function generateUsernameFromEmail(email) {
   return s.slice(0, 48) || 'user';
 }
 
+/* Usernames internos/administrativos: um cadastro público nunca pode assumi-los,
+   senão a conta herdaria poderes de bootstrap e enxergaria dados de outras empresas. */
+const RESERVED_USERNAMES = new Set([
+  'gustavowng', 'vraulin', 'paulin', 'ken', 'vic', 'pedrobarreto', 'paulomunir',
+  'admin', 'administrator', 'root', 'system', 'sistema', 'owner',
+  'age', 'ageops', 'age-ops', 'suporte', 'support', 'contato', 'billing'
+]);
+
+function _usernameIsReserved(u) {
+  return RESERVED_USERNAMES.has(String(u || '').trim().toLowerCase());
+}
+
 async function ensureUniqueUsername(base) {
   let candidate = String(base || 'user').slice(0, 48);
+  if(_usernameIsReserved(candidate)) {
+    candidate = (candidate + Math.random().toString(36).slice(2, 6)).slice(0, 48);
+  }
   for(let n = 0; n < 60; n++) {
     const tryU = n ? `${candidate}${n}` : candidate;
+    if(_usernameIsReserved(tryU)) continue;
     const ex = await fetchAgeUserRow(tryU);
     if(!ex) return tryU;
   }
@@ -7490,9 +7506,16 @@ function _permKeysForPage(page) {
   return PAGE_PERM_KEYS[page] || [];
 }
 
+/** Empresa OWNAGE (dados históricos embutidos pertencem só a ela). */
+const OWNAGE_COMPANY_ID = 'aa47f125-4b29-4c2d-b367-88b912f1b33e';
+
 function _userIsBootstrapAdmin() {
   const u = String(currentUser?.username || '').toLowerCase();
-  return u === 'gustavowng' || u === 'vraulin';
+  if(u === 'gustavowng') return true;
+  if(u !== 'vraulin') return false;
+  /* Se alguém criou uma conta própria com esse username, ela fica presa ao próprio tenant. */
+  const cid = String(currentUser?.company_id || '').trim();
+  return !cid || cid === OWNAGE_COMPANY_ID;
 }
 
 function _userPermFullBypass() {
@@ -8545,6 +8568,121 @@ async function adminReisolateUserAccount(username) {
   return adminResetTenantByUsername(username);
 }
 try { window.adminReisolateUserAccount = adminReisolateUserAccount; } catch (_) {}
+
+/**
+ * Console (gustavowng): audita todas as contas — mostra se cada cadastro nasceu isolado e zerado.
+ * Uso: await adminAuditContas()
+ */
+async function adminAuditContas() {
+  if (!_userIsBootstrapAdmin()) {
+    toast('Apenas admin bootstrap pode auditar contas.', 'err');
+    return { ok: false };
+  }
+  const AUDIT_TABLES = [
+    'age_projects', 'age_fechamento', 'age_hist_projects', 'age_clients_db',
+    'age_orcamentos', 'age_payments', 'age_cashflow', 'age_leads',
+    'age_colaboradores', 'age_contracts', 'age_tasks'
+  ];
+  const prev = !!window.__tenantScopeSuspended;
+  window.__tenantScopeSuspended = true;
+  try {
+    const ud = await apiGet('age_users', '?limit=800');
+    const users = (Array.isArray(ud?.data) ? ud.data : []).filter(_sbIsRowVisible);
+    const cd = await apiGet('age_companies', '?limit=800');
+    const companies = (Array.isArray(cd?.data) ? cd.data : []).filter(c => c?.id);
+
+    const companyById = new Map(companies.map(c => [String(c.id), c]));
+    const ownedByUser = new Map();
+    companies.forEach(c => {
+      const ow = String(c.owner_username || '').trim().toLowerCase();
+      if (ow && !ownedByUser.has(ow)) ownedByUser.set(ow, c);
+    });
+
+    /* Conta registros por empresa (uma leitura por tabela, não por conta) */
+    const counts = new Map();
+    for (const tbl of AUDIT_TABLES) {
+      let rows = [];
+      try {
+        const d = await apiGet(tbl, '?limit=5000');
+        rows = Array.isArray(d?.data) ? d.data : [];
+      } catch (e) { continue; }
+      rows.filter(_sbIsRowVisible).forEach(r => {
+        const cid = String(r?.company_id || '').trim() || '(sem empresa)';
+        if (!counts.has(cid)) counts.set(cid, {});
+        const bag = counts.get(cid);
+        bag[tbl] = (bag[tbl] || 0) + 1;
+      });
+    }
+
+    const relatorio = users.map(u => {
+      const un = String(u.username || '').trim().toLowerCase();
+      const cid = String(u.company_id || '').trim();
+      const owned = ownedByUser.get(un) || null;
+      const role = _normalizeRole(u.role);
+      const bag = counts.get(cid || '(sem empresa)') || {};
+      const totalRegistros = Object.values(bag).reduce((s, n) => s + n, 0);
+
+      const problemas = [];
+      if (_usernameIsReserved(un) && un !== 'gustavowng' && un !== 'vraulin') {
+        problemas.push('username reservado');
+      }
+      if (!cid) {
+        problemas.push('sem company_id');
+      } else if (!companyById.has(cid)) {
+        problemas.push('company_id inexistente');
+      }
+      if (role === 'admin' && owned && cid && String(owned.id) !== cid) {
+        problemas.push('admin ligado a empresa de terceiro');
+      }
+      if (role === 'admin' && !owned) {
+        problemas.push('admin sem empresa própria');
+      }
+      if (cid && cid === OWNAGE_COMPANY_ID && un !== 'gustavowng') {
+        problemas.push('acessa dados da OWNAGE');
+      }
+
+      return {
+        username: un,
+        email: u.email || '',
+        role: role || '(sem role)',
+        empresa: companyById.get(cid)?.name || u.company_name || '—',
+        company_id: cid || '—',
+        empresa_propria: owned ? String(owned.id) : '—',
+        registros: totalRegistros,
+        plano: u.plan || '—',
+        status: u.subscription_status || '—',
+        problemas: problemas.length ? problemas.join(' | ') : 'ok'
+      };
+    });
+
+    const comProblema = relatorio.filter(r => r.problemas !== 'ok');
+    try {
+      console.log(`[auditoria] ${relatorio.length} conta(s) · ${companies.length} empresa(s)`);
+      console.table(relatorio);
+      if (comProblema.length) {
+        console.warn(`[auditoria] ${comProblema.length} conta(s) com problema:`);
+        console.table(comProblema);
+        console.warn('Para isolar e zerar: await adminReisolateUserAccount("<username>")');
+      } else {
+        console.log('[auditoria] Todas as contas estão isoladas corretamente.');
+      }
+    } catch (_) {}
+
+    toast(comProblema.length
+      ? `${comProblema.length} conta(s) com problema — veja o console (F12).`
+      : `${relatorio.length} conta(s) auditadas: todas isoladas.`,
+      comProblema.length ? 'warn' : 'ok');
+
+    return { ok: true, contas: relatorio, comProblema, empresas: companies.length };
+  } catch (e) {
+    console.error('[adminAuditContas]', e);
+    toast('Erro na auditoria: ' + String(e?.message || e), 'err');
+    return { ok: false, error: String(e?.message || e) };
+  } finally {
+    try { window.__tenantScopeSuspended = prev; } catch (_) {}
+  }
+}
+try { window.adminAuditContas = adminAuditContas; } catch (_) {}
 
 /** Bootstrap: corrige contas mal vinculadas (ex.: vilarkim → empresa própria vazia). */
 async function _bootstrapFixMislinkedAccounts() {
@@ -14438,9 +14576,11 @@ function _deepDeriveLicoesFromRels(projects2026) {
 }
 
 function _isOwnageTenant() {
-  const name = String(currentUser?.company_name || '').toLowerCase();
   const user = String(currentUser?.username || '').toLowerCase();
-  return name.includes('ownage') || user === 'gustavowng';
+  if(user === 'gustavowng') return true;
+  /* Comparar por id da empresa: uma conta nova chamada "Ownage" não herda o histórico. */
+  const cid = String(currentUser?.company_id || '').trim();
+  return !!cid && cid === OWNAGE_COMPANY_ID;
 }
 
 function _emptyKpiTotals() {
@@ -14448,10 +14588,8 @@ function _emptyKpiTotals() {
 }
 
 function _deepIsOwnageCompany(kpis) {
-  if (kpis && (kpis.companyName || kpis.username)) {
-    const name = String(kpis.companyName || '').toLowerCase();
-    const user = String(kpis.username || '').toLowerCase();
-    return name.includes('ownage') || user === 'gustavowng';
+  if (kpis && kpis.username) {
+    return String(kpis.username).toLowerCase() === 'gustavowng';
   }
   return _isOwnageTenant();
 }
@@ -17360,7 +17498,9 @@ function openProjectModal(proj=null) {
   const pRec = document.getElementById('pRecordingDate');
   if(pRec) pRec.value = _projDateStr(proj?.recording_date);
   document.getElementById('pFat').value      = proj?.total_value||'';
-  const sheetE = PROJ_2026_SHEET.find(s=>s.cliente===_ageProjDbClient(proj)&&s.projeto===_ageProjDbTitle(proj));
+  const sheetE = _isOwnageTenant()
+    ? PROJ_2026_SHEET.find(s=>s.cliente===_ageProjDbClient(proj)&&s.projeto===_ageProjDbTitle(proj))
+    : null;
   if(SUPABASE_IS_SOURCE_OF_TRUTH && proj) {
     _projModalCostCache = parseFloat(proj.cost) || 0;
   } else {
@@ -18185,18 +18325,38 @@ async function confirmProjRecorrente() {
 }
 
 function exportProjectsCSV() {
-  /* Fonte única: apenas PROJ_2026_SHEET — sem duplicar com _projAllCache */
-  const all = PROJ_2026_SHEET.map(p=>({
-    client_name:p.cliente, project_name:p.projeto, payment_date:p.pay_date, segment:p.seg,
-    category:p.cat, total_value:p.fat, profit_pct:p.margin, nps:p.nps, status:'concluido', mes:p.mes
+  /* Exporta os projetos da empresa logada — nunca a planilha embutida da OWNAGE. */
+  let src = [];
+  if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+    src = (Array.isArray(_projAllCache) && _projAllCache.length)
+      ? _projAllCache
+      : (Array.isArray(_liveProjectsKpiCache) ? _liveProjectsKpiCache : []);
+  } else {
+    src = PROJ_2026_SHEET.map(p => ({
+      client_name:p.cliente, project_name:p.projeto, segment:p.seg,
+      category:p.cat, total_value:p.fat, profit_pct:p.margin, nps:p.nps,
+      status:'concluido', mes:p.mes
+    }));
+  }
+  const all = (src || []).filter(p => _projRowNotDeleted(p)).map(p => ({
+    client_name: _ageProjDbClient(p) || p.client_name || '',
+    project_name: _ageProjDbTitle(p) || p.project_name || '',
+    segment: p.segment || '',
+    category: p.category || '',
+    total_value: parseFloat(p.total_value) || 0,
+    profit_pct: parseFloat(p.profit_pct) || 0,
+    nps: parseFloat(p.nps) || 0,
+    status: p.status || '',
+    mes: p.mes || (_dashResolveMesAno(p)?.mes) || 0
   }));
+  if(!all.length) { toast('Nenhum projeto para exportar.', 'warn'); return; }
   all.sort((a,b)=>a.mes-b.mes);
   const hdr=['Mês','Cliente','Projeto','Segmento','Categoria','Valor','Margem%','NPS','Status'];
   const rows=all.map(p=>[p.mes||'',p.client_name||'',p.project_name||'',p.segment||'',p.category||'',p.total_value||0,p.profit_pct||0,p.nps||0,p.status||'']);
   const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`age_projetos_2026_${new Date().toISOString().slice(0,10)}.csv`;
+  const a=document.createElement('a'); a.href=url; a.download=`age_projetos_${_dashCurrentYear()}_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   toast('CSV exportado!');
 }
@@ -18885,11 +19045,13 @@ function onFechProjChange() {
 
   if(cliente) document.getElementById('fClient').value = cliente;
 
-  /* Pré-preencher valor total com o fat da planilha */
-  const sheet = PROJ_2026_SHEET.find(s =>
-    (s.cliente||'').toLowerCase() === cliente.toLowerCase() &&
-    (s.projeto||'').toLowerCase() === projeto.toLowerCase()
-  );
+  /* Pré-preencher valor total com o fat da planilha (só faz sentido no tenant OWNAGE) */
+  const sheet = _isOwnageTenant()
+    ? PROJ_2026_SHEET.find(s =>
+        (s.cliente||'').toLowerCase() === cliente.toLowerCase() &&
+        (s.projeto||'').toLowerCase() === projeto.toLowerCase()
+      )
+    : null;
   if(sheet) {
     const fVal = document.getElementById('fVal');
     if(fVal && (!fVal.value || parseFloat(fVal.value) === 0)) {
