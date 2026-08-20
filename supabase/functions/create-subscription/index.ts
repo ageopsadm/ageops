@@ -1,15 +1,24 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { AGE_JWT_CONFIGURED, isRealUser, requireSession } from '../_shared/auth.ts'
 
 const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY')!
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info, x-age-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+
+  /* Cria cobrança de verdade com a chave do Pagar.me: exige sessão. */
+  if (AGE_JWT_CONFIGURED && !isRealUser(await requireSession(req))) {
+    return new Response(JSON.stringify({ error: 'Faça login para assinar.' }), {
+      status: 401,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    })
+  }
 
   try {
     const body = await req.json()

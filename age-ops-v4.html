@@ -2902,7 +2902,7 @@ body:has(#login-screen.visible){
       <div class="invite-flow-group">
         <label class="invite-flow-label" for="invPass">Senha *</label>
         <div class="invite-pass-wrap">
-          <input class="invite-flow-input" id="invPass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          <input class="invite-flow-input" id="invPass" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
           <button type="button" class="invite-toggle-pass" onclick="toggleInvitePass('invPass', this)" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
         </div>
       </div>
@@ -3044,7 +3044,7 @@ body:has(#login-screen.visible){
           <div class="reg-field">
             <label class="reg-field-label"><i class="fas fa-lock"></i> Senha *</label>
             <div class="reg-input-wrap">
-              <input class="login-input" id="regPass" style="width:100%" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <input class="login-input" id="regPass" style="width:100%" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
               <button type="button" class="reg-toggle-pass" id="regTogglePass1" onclick="toggleRegPassword('regPass',this)" tabindex="-1" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
             </div>
             <div class="reg-inline-err" id="regErr-pass"></div>
@@ -7333,15 +7333,98 @@ async function ensureUniqueUsername(base) {
 const AUTH_FN_URL = String(SUPABASE_URL || '').replace(/\/+$/, '') + '/functions/v1/auth-login';
 let _authFnAvailable = null; /* null = ainda não testado */
 
+/* ───── Token de sessão ─────
+   Emitido pela Edge Function e assinado com o JWT Secret do projeto. É ele
+   que o RLS lê para saber a empresa do usuário: enquanto as chamadas forem
+   feitas com a chave anônima, o banco não distingue um tenant do outro. */
+const AGE_TOKEN_KEY = 'age_access_token';
+/* Lembra que este projeto já emitiu token: a partir daí, sessão sem token
+   volta para o login em vez de seguir como anônima. */
+const AGE_TOKEN_MODE_KEY = 'age_token_mode';
+let _ageToken = '';
+let _ageTokenExp = 0;
+
+function _ageTokenModeOn() {
+  try { return localStorage.getItem(AGE_TOKEN_MODE_KEY) === '1'; } catch(e) { return false; }
+}
+
+function _ageTokenValid() {
+  return !!_ageToken && _ageTokenExp > Date.now() + 5000;
+}
+
+function _ageSetSessionToken(token, expiresInSeconds) {
+  _ageToken = String(token || '');
+  _ageTokenExp = _ageToken ? Date.now() + (Number(expiresInSeconds) || 0) * 1000 : 0;
+  try {
+    if(_ageToken) {
+      localStorage.setItem(AGE_TOKEN_KEY, JSON.stringify({ t: _ageToken, e: _ageTokenExp }));
+      localStorage.setItem(AGE_TOKEN_MODE_KEY, '1');
+    } else {
+      localStorage.removeItem(AGE_TOKEN_KEY);
+    }
+  } catch(e) {}
+}
+
+function _ageClearSessionToken() {
+  _ageSetSessionToken('', 0);
+}
+
+function _ageLoadSessionToken() {
+  try {
+    const o = JSON.parse(localStorage.getItem(AGE_TOKEN_KEY) || 'null');
+    if(o && o.t && Number(o.e) > Date.now() + 5000) {
+      _ageToken = String(o.t);
+      _ageTokenExp = Number(o.e);
+      return true;
+    }
+  } catch(e) {}
+  _ageClearSessionToken();
+  return false;
+}
+
+/** Renova o token antes de expirar; sem sucesso, a sessão cai no login. */
+async function _ageRefreshSessionToken() {
+  const res = await _authFnCall({ action: 'refresh' });
+  if(res?.ok && res.data?.access_token) {
+    _ageSetSessionToken(res.data.access_token, res.data.expires_in);
+    return true;
+  }
+  if(res && (res.status === 401 || res.status === 403)) _ageClearSessionToken();
+  return false;
+}
+
+/** Cabeçalho para Edge Functions: anon identifica o projeto, x-age-token o usuário. */
+function _ageFnHeaders(extra) {
+  const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
+  const h = {
+    'Content-Type': 'application/json',
+    'apikey': anon,
+    'Authorization': 'Bearer ' + anon,
+    ...(extra || {})
+  };
+  if(_ageToken) h['x-age-token'] = _ageToken;
+  return h;
+}
+
+/* Renova a sessão de quem está com o app aberto, para o token de 12h não
+   expirar no meio do expediente. */
+setInterval(() => {
+  if(!_ageToken) return;
+  if(_ageTokenExp - Date.now() > 2 * 60 * 60 * 1000) return;
+  _ageRefreshSessionToken().catch(() => {});
+}, 30 * 60 * 1000);
+
 async function _authFnCall(payload) {
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+    };
+    if(_ageToken) headers['x-age-token'] = _ageToken;
     const r = await fetch(AUTH_FN_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: 'Bearer ' + SUPABASE_ANON_KEY
-      },
+      headers,
       body: JSON.stringify(payload)
     });
     if(r.status === 404) { _authFnAvailable = false; return null; }
@@ -7357,25 +7440,45 @@ async function _authFnCall(payload) {
 }
 
 /** Define/troca a senha pelo servidor. Retorna false se a função não existir. */
-async function _ageSetUserPassword(username, newPassword, currentPassword) {
+async function _ageSetUserPassword(username, newPassword, currentPassword, inviteToken) {
   const res = await _authFnCall({
     action: 'set_password',
     username: String(username || '').toLowerCase(),
     new_password: String(newPassword || ''),
-    current_password: String(currentPassword || '')
+    current_password: String(currentPassword || ''),
+    invite_token: String(inviteToken || '')
   });
   if(!res) return { ok: false, unavailable: true };
   if(!res.ok) return { ok: false, msg: res.data?.error || 'Não foi possível definir a senha.' };
   return { ok: true };
 }
 
+/** Aceita o convite pelo servidor. Retorna null se a função não existir. */
+async function _acceptInviteViaServer(token, user, colaborador, password) {
+  const res = await _authFnCall({ action: 'accept_invite', token, user, colaborador, password });
+  if(!res) return null;
+  if(!res.ok) throw new Error(res.data?.error || 'Não foi possível aceitar o convite.');
+  if(res.data?.access_token) _ageSetSessionToken(res.data.access_token, res.data.expires_in);
+  return res.data?.user || null;
+}
+
+/** Cria empresa + usuário pelo servidor. Retorna null se a função não existir. */
+async function _signupViaServer(user, company, password) {
+  const res = await _authFnCall({ action: 'signup', user, company, password });
+  if(!res) return null;
+  if(!res.ok) throw new Error(res.data?.error || 'Não foi possível criar a conta.');
+  if(res.data?.access_token) _ageSetSessionToken(res.data.access_token, res.data.expires_in);
+  return res.data?.user || null;
+}
+
 /** Grava a senha de uma conta recém-criada (cadastro ou convite).
     Sem a Edge Function publicada, usa o modo legado para não deixar a conta sem acesso. */
-async function _ageStoreSignupPassword(row, plainPassword) {
+async function _ageStoreSignupPassword(row, plainPassword, inviteToken) {
   const uname = String(row?.username || '').toLowerCase();
   const pass = String(plainPassword || '');
   if(!uname || !pass) return { ok: false };
-  const res = await _ageSetUserPassword(uname, pass).catch(() => ({ ok: false, unavailable: true }));
+  const res = await _ageSetUserPassword(uname, pass, '', inviteToken)
+    .catch(() => ({ ok: false, unavailable: true }));
   if(res.ok) return res;
   if(row?.id) {
     try {
@@ -7396,7 +7499,17 @@ async function authenticateDatabase(loginInput, password) {
   /* 1) Servidor: valida a senha contra age_user_secrets. */
   const res = await _authFnCall({ action: 'login', login: lower, password: pass });
   if(res) {
-    if(res.ok && res.data?.user) return { ok: true, row: res.data.user };
+    if(res.ok && res.data?.user) {
+      if(res.data.access_token) {
+        _ageSetSessionToken(res.data.access_token, res.data.expires_in);
+      } else {
+        _ageClearSessionToken();
+        if(res.data.token_disabled) {
+          console.warn('[auth] AGE_JWT_SECRET não configurado: as chamadas ao banco seguem com a chave anônima e o RLS não vai reconhecer o tenant.');
+        }
+      }
+      return { ok: true, row: res.data.user };
+    }
     if(res.status === 401 || res.status === 403) {
       return { ok: false, msg: res.data?.error || 'Usuário ou senha incorretos.' };
     }
@@ -9207,7 +9320,7 @@ function validateRegStep1() {
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { regSetFieldErr('email', 'Email inválido.'); ok = false; }
   const ph = _regDigits(phone);
   if(ph.length < 10 || ph.length > 11) { regSetFieldErr('phone', 'Telefone inválido (DDD + número).'); ok = false; }
-  if(p1.length < 6) { regSetFieldErr('pass', 'Senha mínimo 6 caracteres.'); ok = false; }
+  if(p1.length < 8) { regSetFieldErr('pass', 'Senha mínimo 8 caracteres.'); ok = false; }
   if(p1 !== p2) { regSetFieldErr('pass2', 'As senhas não conferem.'); ok = false; }
   if(!document.getElementById('regAcceptTerms')?.checked) {
     regSetFieldErr('terms', 'Você precisa aceitar os Termos de Uso e a Política de Privacidade.');
@@ -9349,10 +9462,11 @@ async function submitAdminRegister() {
       return;
     }
 
-    const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
     const trialEnds = _betaTrialEndFromNow();
+    const nowIso = new Date().toISOString();
+    const acceptMkt = !!document.getElementById('regAcceptMarketing')?.checked;
 
-    const companyFull = {
+    const companyData = {
       name: fantasy,
       legal_name: legalName || null,
       cnpj: cnpjDigits || null,
@@ -9366,107 +9480,105 @@ async function submitAdminRegister() {
       city,
       state: uf,
       zip: cepDigits,
-      owner_username: username,
       plan: 'agencia',
       trial_ends_at: trialEnds.toISOString()
     };
 
-    let companyRow;
-    try {
-      companyRow = await apiPost('age_companies', companyFull);
-    } catch(e1) {
-      try {
-        const medium = {
-          name: fantasy,
-          legal_name: legalName || undefined,
-          segment: segment || 'Outro',
-          phone: coPhone || undefined,
-          website: companyFull.website || undefined,
-          address_street: street,
-          number: num,
-          complement: comp || undefined,
-          neighborhood: bairro,
-          city,
-          state: uf,
-          zip: cepDigits,
-          owner_username: username,
-          plan: 'agencia',
-          trial_ends_at: trialEnds.toISOString()
-        };
-        Object.keys(medium).forEach(k => { if(medium[k] === undefined) delete medium[k]; });
-        companyRow = await apiPost('age_companies', medium);
-      } catch(e2) {
-        companyRow = await apiPost('age_companies', {
-          name: fantasy,
-          segment: segment || 'Outro',
-          plan: 'agencia',
-          owner_username: username
-        });
-      }
-    }
-
-    const companyId = companyRow?.id ?? companyRow?.[0]?.id;
-    if(!companyId) throw new Error('Empresa não retornou ID');
-
-    const nowIso = new Date().toISOString();
-    const acceptMkt = !!document.getElementById('regAcceptMarketing')?.checked;
-    const userFull = {
-      username,
+    const personData = {
       email,
       name: fullName,
       full_name: fullName,
       cpf: cpfDigits,
       birth_date: birth,
       phone: phoneDigits,
-      role: 'admin',
-      company_id: companyId,
-      company_name: fantasy,
       plan: 'agencia',
       plan_billing: 'monthly',
       subscription_status: 'trial',
       trial_ends_at: trialEnds.toISOString(),
       accepted_terms: true,
       accepted_terms_at: nowIso,
-      accepted_marketing: acceptMkt,
-      active: true,
-      deleted: false
+      accepted_marketing: acceptMkt
     };
 
-    try {
-      await apiPost('age_users', userFull);
-    } catch(eu) {
+    /* Caminho preferido: o servidor cria empresa e usuário e define username,
+       papel e company_id. Deixar isso no navegador permitiria a quem se
+       cadastra escolher o próprio papel ou entrar na empresa de outro. */
+    let row = await _signupViaServer(personData, companyData, p1);
+    let username = String(row?.username || '');
+
+    if(!row) {
+      /* Reserva enquanto a Edge Function não estiver publicada. */
+      username = await ensureUniqueUsername(generateUsernameFromEmail(email));
+      const companyFull = { ...companyData, owner_username: username };
+
+      let companyRow;
       try {
-        await apiPost('age_users', {
-          username,
-          email,
-          name: fullName,
-          role: 'admin',
-          company_id: companyId,
-          company_name: fantasy,
-          accepted_terms: true,
-          accepted_terms_at: nowIso,
-          accepted_marketing: acceptMkt,
-          active: true,
-          deleted: false
-        });
-      } catch(eu2) {
-        await apiPost('age_users', {
-          username,
-          email,
-          name: fullName,
-          role: 'admin',
-          company_id: companyId,
-          company_name: fantasy,
-          active: true,
-          deleted: false
-        });
+        companyRow = await apiPost('age_companies', companyFull);
+      } catch(e1) {
+        try {
+          const medium = { ...companyFull };
+          delete medium.cnpj;
+          Object.keys(medium).forEach(k => { if(medium[k] == null) delete medium[k]; });
+          companyRow = await apiPost('age_companies', medium);
+        } catch(e2) {
+          companyRow = await apiPost('age_companies', {
+            name: fantasy,
+            segment: segment || 'Outro',
+            plan: 'agencia',
+            owner_username: username
+          });
+        }
       }
+
+      const companyId = companyRow?.id ?? companyRow?.[0]?.id;
+      if(!companyId) throw new Error('Empresa não retornou ID');
+
+      const userFull = {
+        ...personData,
+        username,
+        role: 'admin',
+        company_id: companyId,
+        company_name: fantasy,
+        active: true,
+        deleted: false
+      };
+
+      try {
+        await apiPost('age_users', userFull);
+      } catch(eu) {
+        try {
+          await apiPost('age_users', {
+            username,
+            email,
+            name: fullName,
+            role: 'admin',
+            company_id: companyId,
+            company_name: fantasy,
+            accepted_terms: true,
+            accepted_terms_at: nowIso,
+            accepted_marketing: acceptMkt,
+            active: true,
+            deleted: false
+          });
+        } catch(eu2) {
+          await apiPost('age_users', {
+            username,
+            email,
+            name: fullName,
+            role: 'admin',
+            company_id: companyId,
+            company_name: fantasy,
+            active: true,
+            deleted: false
+          });
+        }
+      }
+
+      row = await fetchAgeUserRow(username);
+      if(!row || !row.id) throw new Error('Usuário criado mas não foi possível ler o registro.');
+
+      await _ageStoreSignupPassword(row, p1);
     }
-
-    const row = await fetchAgeUserRow(username);
-    if(!row || !row.id) throw new Error('Usuário criado mas não foi possível ler o registro.');
-
-    await _ageStoreSignupPassword(row, p1);
 
     let pendingRef = '';
     try { pendingRef = sessionStorage.getItem('age_pending_ref') || ''; } catch(e) {}
@@ -9850,15 +9962,33 @@ function _inviteFlowShowForm(show) {
   if(sub) sub.style.display = show ? '' : 'none';
 }
 
+/* O convite é aberto sem login. Com RLS a tabela fica fechada, então a
+   leitura passa por uma função que só responde ao token exato. */
+async function _fetchInviteByToken(token) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/age_invite_by_token`, {
+      method: 'POST',
+      headers: _sbHeaders(),
+      body: JSON.stringify({ p_token: String(token || '') })
+    });
+    if(r.ok) {
+      const rows = await r.json();
+      if(Array.isArray(rows)) return rows.filter(_sbIsRowVisible)[0] || null;
+    }
+  } catch(e) { console.warn('[convite rpc]', e); }
+
+  /* Reserva: função ainda não criada no banco. */
+  const d = await apiGet('age_invites', `?token=eq.${encodeURIComponent(token)}&limit=5`);
+  return (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible)[0] || null;
+}
+
 async function loadInviteByToken(token) {
   const errBox = document.getElementById('inviteFlowErr');
   const headline = document.getElementById('inviteFlowHeadline');
   document.getElementById('loginMainFlow').style.display = 'none';
   document.getElementById('loginInviteFlow').style.display = 'block';
   try {
-    const d = await apiGet('age_invites', `?token=eq.${encodeURIComponent(token)}&limit=5`);
-    const rows = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible);
-    const inv = rows[0];
+    const inv = await _fetchInviteByToken(token);
     if(!inv) {
       if(headline) headline.textContent = 'Convite';
       if(errBox) errBox.innerHTML = 'Link inválido ou expirado.<br>Solicite um novo link ao administrador.';
@@ -9963,7 +10093,7 @@ async function submitInviteAccept() {
   if(!validateCPFBr(cpfRaw)) { show('CPF inválido.'); return; }
   if(!birth) { show('Informe a data de nascimento.'); return; }
   if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('Informe um email válido.'); return; }
-  if(p1.length < 6) { show('Senha mínimo 6 caracteres.'); return; }
+  if(p1.length < 8) { show('Senha mínimo 8 caracteres.'); return; }
   if(p1 !== p2) { show('Senhas não conferem.'); return; }
 
   const formaRec = document.getElementById('colab-forma-recebimento')?.value || 'pix';
@@ -9987,20 +10117,15 @@ async function submitInviteAccept() {
     const dup = await fetchAgeUserByEmail(email);
     if(dup) { show('Este email já está cadastrado.'); return; }
 
-    const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
     const roleInv = _normalizeRole(inv.role) || 'colaborador';
-    const payload = {
-      username,
+    const cid = inv.company_id;
+
+    const person = {
       email,
       name: fullName,
       full_name: fullName,
       cpf: cpfDigits,
       birth_date: birth,
-      role: roleInv === 'gestor' ? 'gestor' : 'colaborador',
-      company_id: inv.company_id,
-      company_name: inv.company_name || '',
-      active: true,
-      deleted: false,
       /* Membro convidado: sem trial/cobrança própria */
       subscription_status: null,
       trial_ends_at: null,
@@ -10008,69 +10133,91 @@ async function submitInviteAccept() {
       pagarme_subscription_id: null
     };
 
-    window.__tenantScopeSuspended = true;
-    try {
-      await apiPost('age_users', payload);
-    } finally {
-      try { window.__tenantScopeSuspended = false; } catch(_) {}
-    }
+    const colabData = {
+      nome: fullName,
+      contato_email: email,
+      cpf: cpfDigits,
+      forma_recebimento: formaRec,
+      pix_tipo: formaRec === 'pix' ? pixTipo : null,
+      pix_chave: formaRec === 'pix' ? pixChave : null,
+      banco: formaRec === 'ted' ? banco : null,
+      agencia: formaRec === 'ted' ? agencia : null,
+      conta: formaRec === 'ted' ? conta : null,
+      tipo_conta: formaRec === 'ted' ? tipoConta : null
+    };
 
-    try {
-      const novo = await fetchAgeUserRow(username);
-      await _ageStoreSignupPassword(novo || payload, p1);
-    } catch(ep) { console.warn('[invite senha]', ep); }
+    /* Preferido: o servidor lê o convite e define empresa e papel a partir
+       dele. Vindo do formulário, daria para entrar em empresa alheia. */
+    const serverRow = await _acceptInviteViaServer(token, person, colabData, p1);
+    let username = String(serverRow?.username || '');
+    let payload = serverRow;
 
-    const cid = inv.company_id;
-    try {
-      const colabBody = {
-        nome: fullName,
-        contato_email: email,
-        cpf: cpfDigits,
+    if(!serverRow) {
+      username = await ensureUniqueUsername(generateUsernameFromEmail(email));
+      payload = {
+        ...person,
+        username,
+        role: roleInv === 'gestor' ? 'gestor' : 'colaborador',
         company_id: cid,
-        created_by: 'system',
-        status: 'ativo',
-        forma_recebimento: formaRec,
-        pix_tipo: formaRec === 'pix' ? pixTipo : null,
-        pix_chave: formaRec === 'pix' ? pixChave : null,
-        banco: formaRec === 'ted' ? banco : null,
-        agencia: formaRec === 'ted' ? agencia : null,
-        conta: formaRec === 'ted' ? conta : null,
-        tipo_conta: formaRec === 'ted' ? tipoConta : null,
-        usuario_username: username
+        company_name: inv.company_name || '',
+        active: true,
+        deleted: false
       };
+
       window.__tenantScopeSuspended = true;
       try {
-        await apiPost('age_colaboradores', colabBody);
-      } catch(ec) {
-        try {
-          const b2 = { ...colabBody };
-          delete b2.usuario_username;
-          await apiPost('age_colaboradores', b2);
-        } catch(ecB) {
-        try {
-          await apiPost('age_colaboradores', {
-            nome: fullName,
-            contato_email: email,
-            company_id: cid,
-            created_by: 'system',
-            status: 'ativo'
-          });
-        } catch(ec2) {
-          try {
-            await apiPost('age_colaboradores', { nome: fullName, contato_email: email, company_id: cid });
-          } catch(ec3) { console.warn('[invite colaboradores]', ec3); }
-        }
-        }
+        await apiPost('age_users', payload);
       } finally {
         try { window.__tenantScopeSuspended = false; } catch(_) {}
       }
-    } catch(ec0) { console.warn('[invite colaboradores]', ec0); }
+
+      try {
+        const novo = await fetchAgeUserRow(username);
+        await _ageStoreSignupPassword(novo || payload, p1, token);
+      } catch(ep) { console.warn('[invite senha]', ep); }
+
+      try {
+        const colabBody = {
+          ...colabData,
+          company_id: cid,
+          created_by: 'system',
+          status: 'ativo',
+          usuario_username: username
+        };
+        window.__tenantScopeSuspended = true;
+        try {
+          await apiPost('age_colaboradores', colabBody);
+        } catch(ec) {
+          try {
+            const b2 = { ...colabBody };
+            delete b2.usuario_username;
+            await apiPost('age_colaboradores', b2);
+          } catch(ecB) {
+            try {
+              await apiPost('age_colaboradores', {
+                nome: fullName,
+                contato_email: email,
+                company_id: cid,
+                created_by: 'system',
+                status: 'ativo'
+              });
+            } catch(ec2) {
+              try {
+                await apiPost('age_colaboradores', { nome: fullName, contato_email: email, company_id: cid });
+              } catch(ec3) { console.warn('[invite colaboradores]', ec3); }
+            }
+          }
+        } finally {
+          try { window.__tenantScopeSuspended = false; } catch(_) {}
+        }
+      } catch(ec0) { console.warn('[invite colaboradores]', ec0); }
+
+      await apiPatch('age_invites', inv.id, { used: true, used_at: new Date().toISOString() }).catch(() =>
+        apiPatch('age_invites', inv.id, { used: true })
+      );
+    }
 
     await seedInvitePermissionsForNewUser(username, cid);
-
-    await apiPatch('age_invites', inv.id, { used: true, used_at: new Date().toISOString() }).catch(() =>
-      apiPatch('age_invites', inv.id, { used: true })
-    );
 
     try {
       const admins = await _fetchCompanyAdminUsernames(inv.company_id);
@@ -10116,6 +10263,7 @@ function initInviteFromUrl() {
 
 async function tryRestoreSupabaseSession() {
   if(!supabase || !supabase.auth) return false;
+  _ageLoadSessionToken();
   const { data: { session }, error } = await supabase.auth.getSession();
   if(error || !session?.user) return false;
   const mail = String(session.user.email || '').trim().toLowerCase();
@@ -10137,6 +10285,15 @@ async function tryRestoreSupabaseSession() {
 async function tryRestoreLocalSession() {
   const sess = _ageReadLocalSession();
   if(!sess?.u) return false;
+  /* Sem token válido o banco não reconhece o tenant. Tenta renovar e, se o
+     projeto já usa token, manda para o login em vez de abrir o app cego. */
+  if(!_ageLoadSessionToken()) {
+    const renewed = await _ageRefreshSessionToken().catch(() => false);
+    if(!renewed && _ageTokenModeOn()) {
+      _ageClearLocalSession();
+      return false;
+    }
+  }
   /* Respeita opt-out do autologin do bootstrap admin. */
   try {
     if(sess.u === 'gustavowng' && localStorage.getItem('ageops_disable_autologin') === '1') {
@@ -10311,6 +10468,7 @@ function emergencyReset() {
 async function doLogout() {
   try { sessionStorage.setItem('age_skip_autologin_gustavo', '1'); } catch(e) {}
   try { _ageClearLocalSession(); } catch(e) {}
+  try { _ageClearSessionToken(); } catch(e) {}
   const remembered = localStorage.getItem('ageops_remember');
   stopNotificationsPolling();
   _notifCache = [];
@@ -10620,14 +10778,9 @@ async function aiProcessCommand() {
       colaboradores
     };
 
-    const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
     const response = await fetch(AI_EDGE_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anon}`,
-        'apikey': anon
-      },
+      headers: _ageFnHeaders(),
       body: JSON.stringify({ comando, contexto })
     });
 
@@ -11539,14 +11692,9 @@ async function tokenizarCartao(dadosCartao) {
 async function pagarmeCreateSubscriptionEdge(cardHash, planId, customer, username, companyId, trialDays) {
   const base = String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '');
   const url = `${base}/functions/v1/create-subscription`;
-  const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
   const resp = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${anon}`,
-      'apikey': anon
-    },
+    headers: _ageFnHeaders(),
     body: JSON.stringify({
       card_hash: cardHash,
       plan_id: planId,
@@ -12058,10 +12206,14 @@ function _tenantMergeWriteBody(table, method, body, cid) {
 
 function _sbHeaders(extra = {}, anonKey = null) {
   const key = String(anonKey || SUPABASE_ANON_KEY || '').trim();
+  /* apikey identifica o projeto; o Bearer identifica quem está chamando.
+     Com o token da sessão, o RLS enxerga company_id e filtra no banco —
+     sem ele, a requisição vale como anônima. */
+  const bearer = (!anonKey && _ageTokenValid()) ? _ageToken : key;
   return {
     'Content-Type': 'application/json',
     'apikey': key,
-    'Authorization': 'Bearer ' + key,
+    'Authorization': 'Bearer ' + bearer,
     ...extra
   };
 }
@@ -12079,12 +12231,7 @@ async function _fetchSaveAgePayment(payload) {
   });
   const res = await fetch(`${SUPABASE_URL}/rest/v1/age_payments`, {
     method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
+    headers: _sbHeaders({ 'Prefer': 'return=representation' }),
     body: JSON.stringify(payload)
   });
   if (!res.ok) {
@@ -12104,10 +12251,7 @@ async function reloadSupabaseSchema() {
     if(cid && _tenantShouldFilterTable('age_payments')) q.set('company_id', `eq.${cid}`);
     await fetch(`${sbUrl}/rest/v1/age_payments?${q.toString()}`, {
       method: 'GET',
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`
-      }
+      headers: _sbHeaders()
     });
   } catch(e) {}
 }
@@ -12955,7 +13099,7 @@ async function storageUploadContract(projectId, file) {
     method: 'POST',
     headers: {
       apikey: sbKey,
-      Authorization: 'Bearer ' + sbKey,
+      Authorization: 'Bearer ' + (_ageTokenValid() ? _ageToken : sbKey),
       'Content-Type': file.type || 'application/octet-stream'
     },
     body: file
@@ -13951,11 +14095,7 @@ async function runDashIntelOpenAI() {
 
     const res = await fetch(edgeUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + anon,
-        apikey: anon
-      },
+      headers: _ageFnHeaders(),
       body: JSON.stringify({
         comando,
         contexto: {
@@ -24088,10 +24228,9 @@ async function recrutSaveNotes(id) {
 async function recrutAnalyze(id) {
   try {
     toast('Disparando análise Claude...');
-    const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
     const res = await fetch(`${String(SUPABASE_URL).replace(/\/+$/, '')}/functions/v1/recruit-submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + anon, 'apikey': anon },
+      headers: _ageFnHeaders(),
       body: JSON.stringify({ action: 'analyze', candidate_id: id })
     });
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -24716,9 +24855,7 @@ async function sbFetch(endpoint, options = {}) {
   const res = await fetch(url, {
     ...restOptions,
     headers: {
-      'apikey': key,
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': 'application/json',
+      ..._sbHeaders(),
       'Prefer': 'return=representation',
       ...optHeaders
     }
@@ -30088,14 +30225,9 @@ ${s.bestDow != null ? `- Melhor dia da semana: ${s.weekdayNames[s.bestDow]} (${s
 Termine com 1 sugestão concreta para amanhã.`;
 
   try {
-    const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
     const response = await fetch(AI_EDGE_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anon}`,
-        'apikey': anon
-      },
+      headers: _ageFnHeaders(),
       body: JSON.stringify({
         comando,
         contexto: {
@@ -31463,8 +31595,8 @@ async function saveProfile() {
   const np = document.getElementById('profNewPass')?.value || '';
   const cp = document.getElementById('profCurrentPass')?.value || '';
   const payload = { name, email, job_title: job };
-  if(np.length && np.length < 6) {
-    toast('Nova senha deve ter ao menos 6 caracteres.', 'warn');
+  if(np.length && np.length < 8) {
+    toast('Nova senha deve ter ao menos 8 caracteres.', 'warn');
     return;
   }
   if(_profPhotoPending && _profPhotoPending.length < 450000) payload.avatar_url = _profPhotoPending;

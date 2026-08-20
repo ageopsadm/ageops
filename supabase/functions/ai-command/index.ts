@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { AGE_JWT_CONFIGURED, isRealUser, requireSession } from "../_shared/auth.ts";
 
 const CLAUDE_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 /* Haiku 4.5 — ID oficial Anthropic (maio/2026). Override: secret ANTHROPIC_MODEL */
@@ -12,7 +13,7 @@ const CLAUDE_MODEL_FALLBACKS = [
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-age-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json'
 };
@@ -197,6 +198,16 @@ serve(async (req) => {
 
   if (req.method !== 'POST') {
     return jsonResponse({ acao: 'erro', resposta: 'Método não permitido.' }, 405);
+  }
+
+  /* Sem sessão, qualquer um consome a cota da Anthropic com a URL da função.
+     Enquanto AGE_JWT_SECRET não estiver configurado, segue liberado para não
+     derrubar o assistente antes do deploy do login com token. */
+  if (AGE_JWT_CONFIGURED) {
+    const claims = await requireSession(req);
+    if (!isRealUser(claims)) {
+      return jsonResponse({ acao: 'erro', resposta: 'Faça login para usar o assistente.' }, 401);
+    }
   }
 
   if (!CLAUDE_API_KEY || !String(CLAUDE_API_KEY).trim()) {

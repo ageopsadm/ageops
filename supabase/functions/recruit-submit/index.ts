@@ -9,6 +9,7 @@
 // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY são injetados automaticamente.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { AGE_JWT_CONFIGURED, isRealUser, requireSession } from "../_shared/auth.ts";
 
 const SB_URL = Deno.env.get('SUPABASE_URL') || '';
 const SB_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -22,7 +23,7 @@ const CLAUDE_MODEL_FALLBACKS = [
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-age-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json'
 };
@@ -471,11 +472,22 @@ serve(async (req) => {
 
   /* ── Ação admin: re-disparar análise ── */
   if (payload.action === 'analyze') {
+    /* Ao contrário do envio de currículo, esta ação é interna: lê candidato
+       e gasta cota da Anthropic. Exige sessão e confina à própria empresa. */
+    const claims = AGE_JWT_CONFIGURED ? await requireSession(req) : null;
+    if (AGE_JWT_CONFIGURED && !isRealUser(claims)) {
+      return jsonRes(401, { error: 'Sessão necessária', code: 'unauthorized' });
+    }
+
     const cid = String(payload.candidate_id || '').trim();
     if (!cid) return jsonRes(400, { error: 'candidate_id obrigatório', code: 'validation_error' });
     // deno-lint-ignore no-explicit-any
     const rows = await db('GET', `age_candidates?id=eq.${cid}&limit=1`) as any[];
     if (!rows || !rows.length) return jsonRes(404, { error: 'Candidato não encontrado', code: 'not_found' });
+
+    if (claims && String(rows[0]?.company_id ?? '') !== String(claims.company_id ?? '')) {
+      return jsonRes(404, { error: 'Candidato não encontrado', code: 'not_found' });
+    }
     // deno-lint-ignore no-explicit-any
     const matches = await db('GET', `age_match_results?candidate_id=eq.${cid}&order=created_at.desc&limit=1`) as any[];
     const m = matches?.[0] || {};

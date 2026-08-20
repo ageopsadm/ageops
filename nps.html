@@ -618,19 +618,33 @@ async function sbGet(table, query) {
   return r.json();
 }
 
+/* return=minimal: com RLS, quem responde tem permissão de gravar mas não de
+   ler — pedir a linha de volta faria o envio falhar. */
 async function sbPost(table, body) {
   const url = `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/${table}`;
   const r = await fetch(url, {
     method: 'POST',
-    headers: sbHeaders({ Prefer: 'return=representation' }),
+    headers: sbHeaders({ Prefer: 'return=minimal' }),
     body: JSON.stringify(body)
   });
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
     throw new Error(err.message || `HTTP ${r.status}`);
   }
-  const data = await r.json();
-  return Array.isArray(data) ? data[0] : data;
+  return true;
+}
+
+/* As tabelas ficam fechadas para o público; a leitura por token passa por
+   funções que só respondem ao token exato. */
+async function sbRpc(fn, args) {
+  const url = `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/rpc/${fn}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: sbHeaders({ Accept: 'application/json' }),
+    body: JSON.stringify(args || {})
+  });
+  if (!r.ok) return null;
+  return r.json().catch(() => null);
 }
 
 /* ── Lê token da URL ── */
@@ -663,10 +677,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!token) { show('stateError'); return; }
   try {
     const enc = encodeURIComponent(token);
-    const rows = await sbGet(
-      'age_nps_campanhas',
-      `token=eq.${enc}&select=token,etapa,ativo,data_expiracao&limit=1`
-    );
+    let rows = await sbRpc('age_nps_campaign_by_token', { p_token: token });
+    if (!Array.isArray(rows)) {
+      rows = await sbGet(
+        'age_nps_campanhas',
+        `token=eq.${enc}&select=token,etapa,ativo,data_expiracao&limit=1`
+      );
+    }
     const campanha = Array.isArray(rows) ? rows[0] : null;
     if (!campanha) { show('stateError'); return; }
     if (campanha.ativo === false) { show('stateExpired'); return; }
@@ -674,11 +691,12 @@ window.addEventListener('DOMContentLoaded', async () => {
       show('stateExpired'); return;
     }
 
-    const prev = await sbGet(
-      'age_nps_respostas',
-      `token=eq.${enc}&select=id&limit=1`
-    );
-    if (Array.isArray(prev) && prev.length) {
+    let already = await sbRpc('age_nps_answered', { p_token: token });
+    if (already === null) {
+      const prev = await sbGet('age_nps_respostas', `token=eq.${enc}&select=id&limit=1`);
+      already = Array.isArray(prev) && prev.length > 0;
+    }
+    if (already === true) {
       jaRespondeu = true;
       document.getElementById('successMsg').innerHTML =
         '<div>Este link já recebeu uma avaliação. Obrigado!</div>';
