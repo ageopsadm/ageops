@@ -4,15 +4,16 @@
 
 const AUTH_KEY = 'ageops_session';
 
-/* Built-in users — stored locally for demo, with API sync */
+/* Perfis para exibição (nome, avatar, cor). Sem senhas: a autenticação é
+   feita pela API — credenciais nunca ficam em arquivo público. */
 const BUILTIN_USERS = [
-  { username:'gustavowng',   password:'15Darth@123', name:'GUSTAVO',      role:'admin',    avatar:'GUS', color:'#ff1a1a' },
-  { username:'vraulin',      password:'12345678',    name:'VRAULIN',      role:'admin',    avatar:'VRA', color:'#00aaff' },
-  { username:'pedrobarreto', password:'12345678',    name:'PEDRO BARRETO',role:'equipe',   avatar:'PED', color:'#cc44ff' },
-  { username:'paulin',       password:'paulin123',   name:'PAULIN',       role:'operador', avatar:'PAU', color:'#00ccff' },
-  { username:'vic',          password:'vic123',      name:'VIC',          role:'equipe',   avatar:'VIC', color:'#aa44ff' },
-  { username:'amarante',     password:'amarante123', name:'AMARANTE',     role:'equipe',   avatar:'AMA', color:'#ffcc00' },
-  { username:'ken',          password:'ken123',      name:'KEN',          role:'operador', avatar:'KEN', color:'#ff6600' }
+  { username:'gustavowng',   name:'GUSTAVO',      role:'admin',    avatar:'GUS', color:'#ff1a1a' },
+  { username:'vraulin',      name:'VRAULIN',      role:'admin',    avatar:'VRA', color:'#00aaff' },
+  { username:'pedrobarreto', name:'PEDRO BARRETO',role:'equipe',   avatar:'PED', color:'#cc44ff' },
+  { username:'paulin',       name:'PAULIN',       role:'operador', avatar:'PAU', color:'#00ccff' },
+  { username:'vic',          name:'VIC',          role:'equipe',   avatar:'VIC', color:'#aa44ff' },
+  { username:'amarante',     name:'AMARANTE',     role:'equipe',   avatar:'AMA', color:'#ffcc00' },
+  { username:'ken',          name:'KEN',          role:'operador', avatar:'KEN', color:'#ff6600' }
 ];
 
 let currentUser = null;
@@ -78,13 +79,7 @@ async function doLogin() {
     }
   } catch(e) { /* fallback to builtin */ }
 
-  // Fallback: builtin users
-  if (!user) {
-    const found = BUILTIN_USERS.find(u => u.username === uInput && u.password === pInput);
-    if (found) {
-      user = { ...found, fromApi: false };
-    }
-  }
+  /* Sem fallback local: a senha só é validada pela API. */
 
   btn.disabled = false;
   btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ACESSAR SISTEMA';

@@ -5182,7 +5182,11 @@ body:has(#login-screen.visible){
                 <label class="form-label">Cargo / função</label>
                 <input id="profJob" type="text" placeholder="Ex.: Editor" style="width:100%">
               </div>
-              <div class="form-group" style="grid-column:1/-1">
+              <div class="form-group">
+                <label class="form-label">Senha atual <span style="opacity:.6">(só para trocar a senha)</span></label>
+                <input id="profCurrentPass" type="password" placeholder="Sua senha de hoje" style="width:100%" autocomplete="current-password">
+              </div>
+              <div class="form-group">
                 <label class="form-label">Nova senha <span style="opacity:.6">(opcional)</span></label>
                 <input id="profNewPass" type="password" placeholder="Deixe em branco para não alterar" style="width:100%" autocomplete="new-password">
               </div>
@@ -7206,14 +7210,16 @@ async function purgeProjectsNotInSheet(opts = {}) {
 /* ═══════════════════════════════════════════
    AUTH — Supabase age_users + convites + empresas
 ═══════════════════════════════════════════ */
+/* Somente nomes de exibição. Senhas ficam em age_user_secrets e são validadas
+   pela Edge Function auth-login — nunca no navegador. */
 const USERS = {
-  gustavowng:   { pass:'15Darth@123', name:'Gustavo' },
-  vraulin:      { pass:'ownage2026', name:'Admin' },
-  paulin:       { pass:'ownage2026', name:'Paulin' },
-  ken:          { pass:'ownage2026', name:'Ken' },
-  vic:          { pass:'ownage2026', name:'Vic' },
-  pedrobarreto:{ pass:'ownage2026', name:'Pedro' },
-  paulomunir:   { pass:'ownage2026', name:'Paulo' },
+  gustavowng:   { name:'Gustavo' },
+  vraulin:      { name:'Admin' },
+  paulin:       { name:'Paulin' },
+  ken:          { name:'Ken' },
+  vic:          { name:'Vic' },
+  pedrobarreto:{ name:'Pedro' },
+  paulomunir:   { name:'Paulo' },
 };
 let currentUser = null;
 let _ageUsersCache = [];
@@ -7320,66 +7326,103 @@ async function ensureUniqueUsername(base) {
   return candidate + Date.now();
 }
 
+/* ───── Autenticação no servidor (Edge Function auth-login) ─────
+   A senha nunca é comparada no navegador nem trafega em query string.
+   Enquanto a função não estiver publicada, o login antigo (comparação
+   direta contra age_users) segue valendo para não derrubar ninguém. */
+const AUTH_FN_URL = String(SUPABASE_URL || '').replace(/\/+$/, '') + '/functions/v1/auth-login';
+let _authFnAvailable = null; /* null = ainda não testado */
+
+async function _authFnCall(payload) {
+  try {
+    const r = await fetch(AUTH_FN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+    if(r.status === 404) { _authFnAvailable = false; return null; }
+    _authFnAvailable = true;
+    let data = {};
+    try { data = await r.json(); } catch(_) { data = {}; }
+    return { ok: r.ok, status: r.status, data };
+  } catch(e) {
+    console.warn('[auth] função indisponível, usando modo legado:', e?.message || e);
+    _authFnAvailable = false;
+    return null;
+  }
+}
+
+/** Define/troca a senha pelo servidor. Retorna false se a função não existir. */
+async function _ageSetUserPassword(username, newPassword, currentPassword) {
+  const res = await _authFnCall({
+    action: 'set_password',
+    username: String(username || '').toLowerCase(),
+    new_password: String(newPassword || ''),
+    current_password: String(currentPassword || '')
+  });
+  if(!res) return { ok: false, unavailable: true };
+  if(!res.ok) return { ok: false, msg: res.data?.error || 'Não foi possível definir a senha.' };
+  return { ok: true };
+}
+
+/** Grava a senha de uma conta recém-criada (cadastro ou convite).
+    Sem a Edge Function publicada, usa o modo legado para não deixar a conta sem acesso. */
+async function _ageStoreSignupPassword(row, plainPassword) {
+  const uname = String(row?.username || '').toLowerCase();
+  const pass = String(plainPassword || '');
+  if(!uname || !pass) return { ok: false };
+  const res = await _ageSetUserPassword(uname, pass).catch(() => ({ ok: false, unavailable: true }));
+  if(res.ok) return res;
+  if(row?.id) {
+    try {
+      await apiPatch('age_users', row.id, { password_hash: pass });
+      return { ok: true, legacy: true };
+    } catch(e) {
+      console.error('[senha] falha ao gravar senha da conta nova', e);
+    }
+  }
+  return { ok: false };
+}
+
 async function authenticateDatabase(loginInput, password) {
   const raw = String(loginInput || '').trim();
   const lower = raw.toLowerCase();
   const pass = String(password || '');
-  /* Login: GET age_users só por email OU username (nunca filtrar senha na URL). Senha validada abaixo com === na linha retornada. */
+
+  /* 1) Servidor: valida a senha contra age_user_secrets. */
+  const res = await _authFnCall({ action: 'login', login: lower, password: pass });
+  if(res) {
+    if(res.ok && res.data?.user) return { ok: true, row: res.data.user };
+    if(res.status === 401 || res.status === 403) {
+      return { ok: false, msg: res.data?.error || 'Usuário ou senha incorretos.' };
+    }
+    if(res.status === 423) {
+      return { ok: false, msg: res.data?.error || 'Usuário inativo. Contate o administrador.' };
+    }
+    console.warn('[auth] função respondeu', res.status, '— tentando modo legado.');
+  }
+
+  /* 2) Legado (função ainda não publicada): comparação direta em age_users. */
   let rows = [];
   try {
-    if(raw.includes('@')) {
-      const d = await apiGet('age_users', `?email=eq.${encodeURIComponent(lower)}&limit=15`);
-      rows = Array.isArray(d?.data) ? d.data : [];
-    } else {
-      const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(lower)}&limit=15`);
-      rows = Array.isArray(d?.data) ? d.data : [];
-    }
+    const col = raw.includes('@') ? 'email' : 'username';
+    const d = await apiGet('age_users', `?${col}=eq.${encodeURIComponent(lower)}&limit=15`);
+    rows = Array.isArray(d?.data) ? d.data : [];
   } catch(e) { console.warn('[auth]', e); }
   rows = rows.filter(_sbIsRowVisible);
   const row = rows[0];
-  if(row) {
-    try {
-      const safe = { ...row };
-      if('password_hash' in safe) safe.password_hash = safe.password_hash != null && safe.password_hash !== '' ? '[presente]' : safe.password_hash;
-      if('password' in safe) safe.password = safe.password != null && safe.password !== '' ? '[presente]' : safe.password;
-      console.log('[login] usuário encontrado (age_users):', safe);
-    } catch(_) {}
-    const ph = row.password_hash ?? row.password ?? row.pass;
-    /* Comparação direta: password_hash (ou password/pass) === senha digitada */
-    if(String(ph || '') !== pass) {
-      /* Única exceção documentada: admin bootstrap em USERS quando o BD ficou dessincronizado */
-      if(USERS[lower] && USERS[lower].pass === pass && (lower === 'gustavowng' || lower === 'vraulin')) {
-        console.log('[login] hash no BD ≠ digitada; aceitando senha bootstrap USERS para', lower);
-      } else {
-        console.log('[login] senha não confere com a linha retornada pelo Supabase.');
-        return { ok: false, msg: 'Usuário ou senha incorretos.' };
-      }
-    }
-    if(row.active === false || row.active === 'false') return { ok: false, msg: 'Usuário inativo. Contate o administrador.' };
-    return { ok: true, row };
+  if(!row) return { ok: false, msg: 'Usuário ou senha incorretos.' };
+
+  const ph = row.password_hash ?? row.password ?? row.pass;
+  if(String(ph || '') !== pass) return { ok: false, msg: 'Usuário ou senha incorretos.' };
+  if(row.active === false || row.active === 'false') {
+    return { ok: false, msg: 'Usuário inativo. Contate o administrador.' };
   }
-  console.log('[login] nenhuma linha em age_users para este login; tentando credenciais bootstrap em USERS.');
-  if(USERS[lower] && USERS[lower].pass === pass) {
-    const dbRow = await fetchAgeUserRow(lower);
-    if(dbRow && _sbIsRowVisible(dbRow)) {
-      /* Senha já validada contra USERS; não revalidar hash do BD (evita bloquear bootstrap quando BD divergiu). */
-      try {
-        const safe = { ...dbRow };
-        if('password_hash' in safe) safe.password_hash = safe.password_hash != null && safe.password_hash !== '' ? '[presente]' : safe.password_hash;
-        console.log('[login] bootstrap: usando linha age_users:', safe);
-      } catch(_) {}
-      return { ok: true, row: dbRow };
-    }
-    return {
-      ok: true,
-      row: {
-        username: lower,
-        name: USERS[lower].name,
-        role: lower === 'gustavowng' || lower === 'vraulin' ? 'admin' : 'colaborador'
-      }
-    };
-  }
-  return { ok: false, msg: 'Usuário ou senha incorretos.' };
+  return { ok: true, row };
 }
 
 function _normalizeRole(r) {
@@ -8715,12 +8758,14 @@ async function persistBootstrapAccountIfNeeded(row, plainPassword) {
         email: row.email || `${u}@bootstrap.ageops.local`,
         name: row.name || USERS[u].name,
         role: u === 'gustavowng' || u === 'vraulin' ? 'admin' : 'colaborador',
-        password_hash: plainPassword,
         active: true,
         deleted: false
       };
       await apiPost('age_users', payload);
       ex = await fetchAgeUserRow(u);
+      if(plainPassword && ex?.username) {
+        await _ageSetUserPassword(ex.username, plainPassword).catch(() => ({ ok: false }));
+      }
       return ex || row;
     } catch(e) {
       console.warn('[persistBootstrapAccountIfNeeded]', e);
@@ -9376,7 +9421,6 @@ async function submitAdminRegister() {
       role: 'admin',
       company_id: companyId,
       company_name: fantasy,
-      password_hash: p1,
       plan: 'agencia',
       plan_billing: 'monthly',
       subscription_status: 'trial',
@@ -9399,7 +9443,6 @@ async function submitAdminRegister() {
           role: 'admin',
           company_id: companyId,
           company_name: fantasy,
-          password_hash: p1,
           accepted_terms: true,
           accepted_terms_at: nowIso,
           accepted_marketing: acceptMkt,
@@ -9414,7 +9457,6 @@ async function submitAdminRegister() {
           role: 'admin',
           company_id: companyId,
           company_name: fantasy,
-          password_hash: p1,
           active: true,
           deleted: false
         });
@@ -9423,6 +9465,8 @@ async function submitAdminRegister() {
 
     const row = await fetchAgeUserRow(username);
     if(!row || !row.id) throw new Error('Usuário criado mas não foi possível ler o registro.');
+
+    await _ageStoreSignupPassword(row, p1);
 
     let pendingRef = '';
     try { pendingRef = sessionStorage.getItem('age_pending_ref') || ''; } catch(e) {}
@@ -9955,7 +9999,6 @@ async function submitInviteAccept() {
       role: roleInv === 'gestor' ? 'gestor' : 'colaborador',
       company_id: inv.company_id,
       company_name: inv.company_name || '',
-      password_hash: p1,
       active: true,
       deleted: false,
       /* Membro convidado: sem trial/cobrança própria */
@@ -9971,6 +10014,11 @@ async function submitInviteAccept() {
     } finally {
       try { window.__tenantScopeSuspended = false; } catch(_) {}
     }
+
+    try {
+      const novo = await fetchAgeUserRow(username);
+      await _ageStoreSignupPassword(novo || payload, p1);
+    } catch(ep) { console.warn('[invite senha]', ep); }
 
     const cid = inv.company_id;
     try {
@@ -10162,44 +10210,10 @@ async function initApp() {
   try { _initDashboardLiveSync(); } catch (_) {}
 }
 
-/** Auto-login gustavowng: localhost, file:// ou opt-in localStorage ageops_autologin_gustavo=1. Desligar: ageops_disable_autologin=1 ou logout nesta aba. */
-function _ageAllowAutologinGustavo() {
-  try {
-    if(localStorage.getItem('ageops_disable_autologin') === '1') return false;
-    if(sessionStorage.getItem('age_skip_autologin_gustavo') === '1') return false;
-    const h = (location.hostname || '').toLowerCase();
-    if(h === 'localhost' || h === '127.0.0.1') return true;
-    if(String(location.protocol || '') === 'file:') return true;
-    if(localStorage.getItem('ageops_autologin_gustavo') === '1') return true;
-    return false;
-  } catch(e) {
-    return false;
-  }
-}
-
+/* Autologin por senha embutida foi removido: nenhuma credencial vive no código.
+   A sessão é restaurada por tryRestoreLocalSession / tryRestoreSupabaseSession. */
 async function tryAutoLoginGustavowng() {
-  if(!_ageAllowAutologinGustavo()) return false;
-  const userKey = 'gustavowng';
-  const pass = USERS[userKey]?.pass;
-  if(!pass) return false;
-  try {
-    const auth = await authenticateDatabase(userKey, pass);
-    if(!auth.ok) return false;
-    let sessionRow = auth.row;
-    try {
-      sessionRow = await persistBootstrapAccountIfNeeded(sessionRow, pass);
-    } catch(e) {
-      console.warn('[autologin bootstrap]', e);
-    }
-    const res = await applyLoginSessionFromRow(sessionRow);
-    if(!res.ok) return false;
-    try { await initApp(); } catch(_) {}
-    try { sessionStorage.removeItem('age_skip_autologin_gustavo'); } catch(_) {}
-    return true;
-  } catch(e) {
-    console.warn('[autologin gustavo]', e);
-    return false;
-  }
+  return false;
 }
 
 async function handleLogin() {
@@ -31348,6 +31362,8 @@ async function loadProfile() {
   document.getElementById('profEmail').value = src.email || '';
   document.getElementById('profJob').value = src.job_title || src.cargo || currentUser.job_title || '';
   document.getElementById('profNewPass').value = '';
+  const curPassEl = document.getElementById('profCurrentPass');
+  if(curPassEl) curPassEl.value = '';
 
   const admPanel = document.getElementById('profCompanyAdminPanel');
   const colStrip = document.getElementById('profCompanyColabStrip');
@@ -31445,15 +31461,29 @@ async function saveProfile() {
   const email = document.getElementById('profEmail')?.value?.trim() || '';
   const job = document.getElementById('profJob')?.value?.trim() || '';
   const np = document.getElementById('profNewPass')?.value || '';
+  const cp = document.getElementById('profCurrentPass')?.value || '';
   const payload = { name, email, job_title: job };
   if(np.length && np.length < 6) {
     toast('Nova senha deve ter ao menos 6 caracteres.', 'warn');
     return;
   }
-  if(np.length) payload.password_hash = np;
   if(_profPhotoPending && _profPhotoPending.length < 450000) payload.avatar_url = _profPhotoPending;
 
   try {
+    if(np.length) {
+      const r = await _ageSetUserPassword(currentUser.username, np, cp);
+      if(!r.ok && r.unavailable) {
+        payload.password_hash = np; /* função ainda não publicada */
+      } else if(!r.ok) {
+        toast(r.msg || 'Não foi possível trocar a senha.', 'err');
+        return;
+      } else {
+        const el = document.getElementById('profNewPass');
+        if(el) el.value = '';
+        const el2 = document.getElementById('profCurrentPass');
+        if(el2) el2.value = '';
+      }
+    }
     await apiPatch('age_users', currentUser.id, payload);
     currentUser.name = name;
     currentUser.email = email;
