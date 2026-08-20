@@ -42,8 +42,8 @@ serve(async (req) => {
       })
     }
 
-    // Assinatura: trial de 23 dias após cadastro do cartão (7 dias grátis sem cartão vêm antes, no app)
-    const trialDays = Math.min(365, Math.max(1, parseInt(String(trialDaysRaw ?? 23), 10) || 23))
+    // Assinatura: trial de 30 dias na beta (sem cartão obrigatório no cadastro)
+    const trialDays = Math.min(365, Math.max(1, parseInt(String(trialDaysRaw ?? 30), 10) || 30))
     const subResp = await fetch('https://api.pagar.me/1/subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -2338,25 +2338,38 @@ select.login-input{cursor:pointer}
 @media (max-width: 1200px){ .pay2-summary{grid-template-columns:repeat(3,minmax(160px,1fr));} }
 @media (max-width: 720px){ .pay2-summary{grid-template-columns:repeat(2,minmax(140px,1fr));} }
 @media (max-width: 420px){ .pay2-summary{grid-template-columns:1fr;} }
+/* Cards claros (o tema global força background branco em *-card) — labels sempre legíveis */
 .pay2-card{
-  background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
-  box-shadow:0 18px 50px rgba(0,0,0,.18);
+  background:#ffffff !important;
+  border:1px solid #e5e7eb !important;
+  border-radius:12px;
+  padding:12px 14px;
+  box-shadow:none;
+  border-left-width:3px !important;
 }
-.pay2-card .lbl{
-  font-family:var(--font-h);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62);
+.pay2-card.red{border-left-color:#dc2626 !important}
+.pay2-card.green{border-left-color:#16a34a !important}
+.pay2-card.orange{border-left-color:#d97706 !important}
+.pay2-card.blue{border-left-color:#2563eb !important}
+.pay2-card.purple{border-left-color:#7c3aed !important}
+.pay2-card.teal{border-left-color:#0d9488 !important}
+.pay2-card .pay2-lbl{
+  font-family:var(--font-h);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:#64748b;margin-bottom:4px;
 }
-.pay2-card .val{
-  font-family:var(--font-h);font-size:18px;font-weight:900;margin-top:6px;color:#fff;
+.pay2-card .pay2-val{
+  font-family:var(--font-h);font-size:18px;font-weight:900;margin-top:4px;color:#0f172a;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.pay2-card .sub{
-  font-family:var(--font-m);font-size:10px;color:rgba(255,255,255,.45);margin-top:4px;
+.pay2-card .pay2-sub{
+  font-family:var(--font-m);font-size:10px;color:#94a3b8;margin-top:4px;line-height:1.3;
 }
-.pay2-card.red  .val{color:#f87171}
-.pay2-card.green .val{color:#86efac}
-.pay2-card.orange .val{color:#fdba74}
-.pay2-card.blue .val{color:#93c5fd}
-.pay2-card.purple .val{color:#c4b5fd}
-.pay2-card.teal .val{color:#5eead4}
+.pay2-card.red  .pay2-val{color:#dc2626}
+.pay2-card.green .pay2-val{color:#16a34a}
+.pay2-card.orange .pay2-val{color:#d97706}
+.pay2-card.blue .pay2-val{color:#2563eb}
+.pay2-card.purple .pay2-val{color:#7c3aed}
+.pay2-card.teal .pay2-val{color:#0d9488}
 
 .pay2-alerts{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
 .pay2-alert{
@@ -3165,9 +3178,9 @@ body:has(#login-screen.visible){
         <h2 class="reg-step-title">Conta criada com sucesso! 🎉</h2>
         <p class="reg-step-sub">Suas informações foram registradas com segurança.</p>
         <div class="reg-summary" id="regSummaryBox"></div>
-        <div class="reg-trial-note"><strong>7 dias grátis</strong> para usar tudo, <strong>sem cartão</strong>. Depois, cadastre o cartão e ganhe <strong>+23 dias</strong> de teste antes da primeira cobrança.</div>
+        <div class="reg-trial-note"><strong>30 dias grátis</strong> na beta — <strong>sem cartão</strong>, com acesso a <strong>todas as ferramentas</strong>. Sua conta e dados ficam isolados só para você.</div>
         <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="enterAppFreeTrialNoCard()">Entrar no Age Ops <i class="fas fa-arrow-right"></i></button>
-        <button type="button" onclick="showPostSignupPlans()" style="display:block;width:100%;margin-top:12px;background:none;border:none;color:#64748b;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">Ver planos e escolher agora</button>
+        <button type="button" onclick="showPostSignupPlans()" style="display:block;width:100%;margin-top:12px;background:none;border:none;color:#64748b;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">Ver planos (opcional — cartão não é obrigatório)</button>
       </div>
     </div>
 
@@ -3178,7 +3191,7 @@ body:has(#login-screen.visible){
       <div class="plans-overlay-inner">
         <div class="plans-header">
           <h1 id="plansWelcomeTitle">Bem-vindo</h1>
-          <p>7 dias grátis sem cartão. Cadastre o cartão depois e ganhe +23 dias de teste.</p>
+          <p>30 dias grátis na beta — sem cartão, todas as ferramentas liberadas.</p>
           <div class="plans-toggle" role="tablist">
             <button type="button" id="planBillMonthly" class="active" onclick="setPlanBillingToggle('monthly')">Mensal</button>
             <button type="button" id="planBillYearly" onclick="setPlanBillingToggle('yearly')">Anual</button>
@@ -3194,12 +3207,12 @@ body:has(#login-screen.visible){
           </button>
         </div>
         <div class="plans-footer">
-          <span>7 dias sem cartão</span>
-          <span>+23 dias com cartão</span>
-          <span>Cancele quando quiser</span>
+          <span>30 dias grátis na beta</span>
+          <span>Todas as ferramentas</span>
+          <span>Sem cartão obrigatório</span>
         </div>
         <div style="text-align:center;margin-top:20px">
-          <button type="button" onclick="enterAppFreeTrialNoCard()" style="background:none;border:none;color:#111;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;margin-bottom:10px;display:block;width:100%">Continuar sem cartão (7 dias grátis)</button>
+          <button type="button" onclick="enterAppFreeTrialNoCard()" style="background:none;border:none;color:#111;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;margin-bottom:10px;display:block;width:100%">Continuar grátis (30 dias na beta)</button>
           <button type="button" onclick="closePlansOverlay()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit">Entrar com plano padrão</button>
         </div>
       </div>
@@ -3212,7 +3225,7 @@ body:has(#login-screen.visible){
   <div class="plans-overlay-inner">
     <div class="plans-header">
       <h1>Planos</h1>
-      <p>Atualize seu plano. 7 dias grátis sem cartão; +23 dias ao cadastrar cartão.</p>
+      <p>Atualize seu plano. Beta: 30 dias grátis com todas as ferramentas — cartão opcional.</p>
       <div class="plans-toggle" role="tablist">
         <button type="button" id="planBillMonthlyG" class="active" onclick="setPlanBillingToggleGlobal('monthly')">Mensal</button>
         <button type="button" id="planBillYearlyG" onclick="setPlanBillingToggleGlobal('yearly')">Anual</button>
@@ -3226,8 +3239,8 @@ body:has(#login-screen.visible){
       </button>
     </div>
     <div class="plans-footer">
-      <span>7 dias sem cartão</span>
-      <span>+23 dias com cartão</span>
+      <span>30 dias grátis na beta</span>
+      <span>Todas as ferramentas</span>
       <span>Pagamento seguro</span>
     </div>
     <div style="text-align:center;margin-top:20px">
@@ -3242,7 +3255,7 @@ body:has(#login-screen.visible){
     <div class="modal-body">
       <button type="button" class="modal-close" onclick="closeModal('modalPagarmePlan')" style="float:right;background:none;border:none;color:#888;font-size:18px;cursor:pointer">&times;</button>
       <h2 style="font-size:15px;font-weight:700;margin:0 0 6px;letter-spacing:.06em;text-transform:uppercase">Adicionar cartão</h2>
-      <p style="font-size:12px;color:#666;margin:0 0 18px;line-height:1.5">Sem cobrança agora. Após cadastrar o cartão, você ganha <strong>+23 dias</strong> de teste antes da primeira cobrança (ideal após os 7 dias grátis iniciais).</p>
+      <p style="font-size:12px;color:#666;margin:0 0 18px;line-height:1.5">Sem cobrança agora. Você tem <strong>30 dias grátis</strong> na beta antes da primeira cobrança. Cartão opcional — use o app sem cadastrar cartão.</p>
       <div class="pg-field">
         <label>Número do cartão</label>
         <input class="login-input" id="pgCardNum" type="text" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" oninput="maskPgCardNum(this)">
@@ -5291,34 +5304,34 @@ body:has(#login-screen.visible){
 
         <div class="pay2-summary">
           <div class="pay2-card red">
-            <div class="lbl">Pendente</div>
-            <div class="val" id="paySumPendente">—</div>
-            <div class="sub" id="paySumPendenteN"></div>
+            <div class="pay2-lbl">Pendente a pagar</div>
+            <div class="pay2-val" id="paySumPendente">—</div>
+            <div class="pay2-sub" id="paySumPendenteN"></div>
           </div>
           <div class="pay2-card orange">
-            <div class="lbl">Atrasado</div>
-            <div class="val" id="paySumAtrasado">—</div>
-            <div class="sub" id="paySumAtrasadoN"></div>
+            <div class="pay2-lbl">Atrasado</div>
+            <div class="pay2-val" id="paySumAtrasado">—</div>
+            <div class="pay2-sub" id="paySumAtrasadoN"></div>
           </div>
           <div class="pay2-card green">
-            <div class="lbl">Pago no mês</div>
-            <div class="val" id="paySumPagoMes">—</div>
-            <div class="sub" id="paySumPagoMesN"></div>
+            <div class="pay2-lbl">Pago no mês</div>
+            <div class="pay2-val" id="paySumPagoMes">—</div>
+            <div class="pay2-sub" id="paySumPagoMesN"></div>
           </div>
           <div class="pay2-card blue">
-            <div class="lbl">Total do mês</div>
-            <div class="val" id="paySumTotalMes">—</div>
-            <div class="sub" id="paySumTotalMesN"></div>
+            <div class="pay2-lbl">Total do mês (venc.)</div>
+            <div class="pay2-val" id="paySumTotalMes">—</div>
+            <div class="pay2-sub" id="paySumTotalMesN"></div>
           </div>
           <div class="pay2-card purple">
-            <div class="lbl">Vence em 7 dias</div>
-            <div class="val" id="paySumProx7">—</div>
-            <div class="sub" id="paySumProx7N"></div>
+            <div class="pay2-lbl">Vence em 7 dias</div>
+            <div class="pay2-val" id="paySumProx7">—</div>
+            <div class="pay2-sub" id="paySumProx7N"></div>
           </div>
           <div class="pay2-card teal">
-            <div class="lbl">Ticket médio</div>
-            <div class="val" id="paySumTicket">—</div>
-            <div class="sub" id="paySumTicketN"></div>
+            <div class="pay2-lbl">Ticket médio</div>
+            <div class="pay2-val" id="paySumTicket">—</div>
+            <div class="pay2-sub" id="paySumTicketN"></div>
           </div>
         </div>
 
@@ -8939,8 +8952,7 @@ async function submitAdminRegister() {
     }
 
     const username = await ensureUniqueUsername(generateUsernameFromEmail(email));
-    const trialEnds = new Date();
-    trialEnds.setDate(trialEnds.getDate() + TRIAL_DAYS_NO_CARD);
+    const trialEnds = _betaTrialEndFromNow();
 
     const companyFull = {
       name: fantasy,
@@ -8957,7 +8969,7 @@ async function submitAdminRegister() {
       state: uf,
       zip: cepDigits,
       owner_username: username,
-      plan: 'trial',
+      plan: 'agencia',
       trial_ends_at: trialEnds.toISOString()
     };
 
@@ -8980,7 +8992,7 @@ async function submitAdminRegister() {
           state: uf,
           zip: cepDigits,
           owner_username: username,
-          plan: 'trial',
+          plan: 'agencia',
           trial_ends_at: trialEnds.toISOString()
         };
         Object.keys(medium).forEach(k => { if(medium[k] === undefined) delete medium[k]; });
@@ -8989,7 +9001,7 @@ async function submitAdminRegister() {
         companyRow = await apiPost('age_companies', {
           name: fantasy,
           segment: segment || 'Outro',
-          plan: 'trial',
+          plan: 'agencia',
           owner_username: username
         });
       }
@@ -9012,6 +9024,10 @@ async function submitAdminRegister() {
       company_id: companyId,
       company_name: fantasy,
       password_hash: p1,
+      plan: 'agencia',
+      plan_billing: 'monthly',
+      subscription_status: 'trial',
+      trial_ends_at: trialEnds.toISOString(),
       accepted_terms: true,
       accepted_terms_at: nowIso,
       accepted_marketing: acceptMkt,
@@ -10699,6 +10715,12 @@ function _planAllowsPage(page) {
   if (_userIsBootstrapAdmin()) return true;
   /* Colaborador convidado herda o plano da empresa — nunca bloqueia por trial/cartão */
   if (_userIsBillingExempt()) return true;
+  /* Beta: trial ativo = todas as ferramentas liberadas */
+  const st = String(currentUser?.subscription_status || '').toLowerCase();
+  if (st === 'trial' || st === 'trialing') {
+    const ends = currentUser?.trial_ends_at ? new Date(currentUser.trial_ends_at) : null;
+    if (ends && !isNaN(ends.getTime()) && ends > new Date()) return true;
+  }
   if (page === 'equipe-permissoes' && (_userPermFullBypass() || _userGestorUnrestricted())) return true;
   const pl = _effectiveUserPlan();
   if (pl === 'enterprise' || pl === 'agencia') return true;
@@ -10736,9 +10758,23 @@ function _fmtMoney(n) {
   }
 }
 
-/** Programa beta: 7 dias grátis sem cartão + 23 dias extras após cadastrar cartão. */
-const TRIAL_DAYS_NO_CARD = 7;
-const TRIAL_DAYS_AFTER_CARD = 23;
+/** Programa beta: 30 dias grátis, sem cartão, todas as ferramentas. */
+const BETA_TRIAL_DAYS = 30;
+const TRIAL_DAYS_NO_CARD = BETA_TRIAL_DAYS;
+const TRIAL_DAYS_AFTER_CARD = BETA_TRIAL_DAYS;
+
+function _betaTrialEndFromNow() {
+  const d = new Date();
+  d.setDate(d.getDate() + BETA_TRIAL_DAYS);
+  return d;
+}
+
+function _pagarmeTrialDaysForUser(userRow) {
+  const endsMs = userRow?.trial_ends_at ? new Date(userRow.trial_ends_at).getTime() : 0;
+  const now = Date.now();
+  if (endsMs > now) return Math.max(1, Math.ceil((endsMs - now) / 86400000));
+  return BETA_TRIAL_DAYS;
+}
 
 /** Valores exibidos — Programa Beta Usuário Desenvolvedor (checkout Pagar.me: alinhar plan IDs depois). */
 const planos = {
@@ -10780,9 +10816,9 @@ function buildPlanCardsHtml(ctx) {
   const strikeSolo = `${soloR.valorDisplay}/mês`;
   const strikeProd = `${prodR.valorDisplay}/mês`;
   const strikeAg = `${agR.valorDisplay}/mês`;
-  const depSolo = `${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias ao cadastrar cartão · depois ${soloR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
-  const depProd = `${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias ao cadastrar cartão · depois ${prodR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
-  const depAg = `${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias ao cadastrar cartão · depois ${agR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depSolo = `${BETA_TRIAL_DAYS} dias grátis na beta · sem cartão · todas as ferramentas · depois ${soloR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depProd = `${BETA_TRIAL_DAYS} dias grátis na beta · sem cartão · todas as ferramentas · depois ${prodR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depAg = `${BETA_TRIAL_DAYS} dias grátis na beta · sem cartão · todas as ferramentas · depois ${agR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
 
   const soloFeat = [
     'Dashboard, projetos, orçamentos, pipeline, clientes',
@@ -10925,7 +10961,7 @@ function selectPlanOffer(key) {
   if (sum) {
     sum.innerHTML =
       `<strong>Plano ${planNames[key]} (${ciclo})</strong><br>${row.valorDisplay} hoje · depois <strong>${row.valorDisplay}/${m ? 'ano' : 'mês'}</strong>` +
-      `<div style="margin-top:10px;color:#666;line-height:1.5">${TRIAL_DAYS_NO_CARD} dias grátis sem cartão · +${TRIAL_DAYS_AFTER_CARD} dias extras ao cadastrar cartão após o 7º dia.</div>`;
+      `<div style="margin-top:10px;color:#666;line-height:1.5">${BETA_TRIAL_DAYS} dias grátis na beta · cartão opcional · sem cobrança até o fim do período grátis.</div>`;
   }
   try {
     const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '');
@@ -10961,11 +10997,8 @@ function closePlansOverlay() {
 function _calcTrialEndAfterCard(userRow) {
   const now = Date.now();
   const freeEndMs = userRow?.trial_ends_at ? new Date(userRow.trial_ends_at).getTime() : 0;
-  const stillInFreePhase = !userRow?.pagarme_subscription_id && freeEndMs > now;
-  if (stillInFreePhase) {
-    return new Date(freeEndMs + TRIAL_DAYS_AFTER_CARD * 86400000);
-  }
-  return new Date(now + TRIAL_DAYS_AFTER_CARD * 86400000);
+  if (freeEndMs > now) return new Date(freeEndMs);
+  return _betaTrialEndFromNow();
 }
 
 async function enterAppFreeTrialNoCard(planKey) {
@@ -10973,18 +11006,25 @@ async function enterAppFreeTrialNoCard(planKey) {
     toast('Sessão expirada. Faça login.', 'warn');
     return;
   }
-  const m = String(planKey || window._planSelecionado || '').match(/^(solo|produtora|agencia)/i);
-  const pk = m ? m[1].toLowerCase() : (_pendingPlanKey || 'produtora');
-  const bill = _planBillSignup === 'yearly' ? 'annual' : 'monthly';
-  const trialEnd = new Date();
-  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS_NO_CARD);
+  const existingEnd = _regPendingSessionRow.trial_ends_at
+    ? new Date(_regPendingSessionRow.trial_ends_at)
+    : null;
+  const trialEnd = (existingEnd && !isNaN(existingEnd.getTime()) && existingEnd > new Date())
+    ? existingEnd
+    : _betaTrialEndFromNow();
   try {
     await apiPatch('age_users', _regPendingSessionRow.id, {
-      plan: pk,
-      plan_billing: bill,
+      plan: 'agencia',
+      plan_billing: 'monthly',
       subscription_status: 'trial',
       trial_ends_at: trialEnd.toISOString()
     });
+    if (_regPendingSessionRow.company_id) {
+      await apiPatch('age_companies', _regPendingSessionRow.company_id, {
+        plan: 'agencia',
+        trial_ends_at: trialEnd.toISOString()
+      }).catch(() => {});
+    }
   } catch (e) { console.warn(e); }
   const uname = _regPendingSessionRow.username;
   document.getElementById('plansPostSignupLayer')?.classList.remove('open');
@@ -10992,7 +11032,7 @@ async function enterAppFreeTrialNoCard(planKey) {
   const row = await fetchAgeUserRow(uname);
   await applyLoginSessionFromRow(row);
   navigate('dashboard');
-  toast(`${TRIAL_DAYS_NO_CARD} dias grátis ativados — sem cartão.`, 'ok');
+  toast(`${BETA_TRIAL_DAYS} dias grátis na beta — todas as ferramentas liberadas.`, 'ok');
   try { updateTrialBanner(); } catch (_) {}
 }
 
@@ -11129,7 +11169,7 @@ async function tokenizarCartao(dadosCartao) {
   });
 }
 
-async function pagarmeCreateSubscriptionEdge(cardHash, planId, customer, username, companyId) {
+async function pagarmeCreateSubscriptionEdge(cardHash, planId, customer, username, companyId, trialDays) {
   const base = String(typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').replace(/\/+$/, '');
   const url = `${base}/functions/v1/create-subscription`;
   const anon = String(typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '').trim();
@@ -11146,7 +11186,7 @@ async function pagarmeCreateSubscriptionEdge(cardHash, planId, customer, usernam
       customer,
       username,
       company_id: companyId ?? null,
-      trial_days: TRIAL_DAYS_AFTER_CARD
+      trial_days: trialDays ?? BETA_TRIAL_DAYS
     })
   });
   let data = {};
@@ -11266,7 +11306,7 @@ async function confirmPagarmeTrial() {
         name: rowUser?.full_name || rowUser?.name || currentUser?.full_name || currentUser?.name || uname,
         email: rowUser?.email || currentUser?.email || '',
         document: String(rowUser?.cpf || currentUser?.cpf || '').replace(/\D/g, ''),
-      }, uname, rowUser?.company_id ?? currentUser?.company_id ?? null);
+      }, uname, rowUser?.company_id ?? currentUser?.company_id ?? null, _pagarmeTrialDaysForUser(rowUser));
 
       const sid = data.subscription_id;
       if (sid == null || sid === '') {
@@ -11288,7 +11328,7 @@ async function confirmPagarmeTrial() {
       const row = await fetchAgeUserRow(pendingUser);
       await applyLoginSessionFromRow(row);
       navigate('dashboard');
-      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : `Cartão cadastrado. +${TRIAL_DAYS_AFTER_CARD} dias de teste antes da cobrança.`, 'ok');
+      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : `Cartão cadastrado. ${BETA_TRIAL_DAYS} dias grátis na beta antes da cobrança.`, 'ok');
     } else if (currentUser?.id) {
       await apiPatch('age_users', currentUser.id, payload);
       Object.assign(currentUser, payload);
@@ -11299,7 +11339,7 @@ async function confirmPagarmeTrial() {
       closeModal('modalPagarmePlan');
       closePlansOverlayGlobal();
       navigate('dashboard');
-      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : `Cartão cadastrado. +${TRIAL_DAYS_AFTER_CARD} dias de teste antes da cobrança.`, 'ok');
+      toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : `Cartão cadastrado. ${BETA_TRIAL_DAYS} dias grátis na beta antes da cobrança.`, 'ok');
       updateTrialBanner();
     } else {
       setPgModalError('Sessão inválida. Entre na conta ou refaça o cadastro para concluir o plano.');
@@ -11345,28 +11385,28 @@ function updateTrialBanner() {
   const planSlug = ['solo', 'produtora', 'agencia'].includes(pl) ? pl : 'produtora';
   const afterRow = _planPrecoRow(planSlug, false);
   const hasCard = !!(currentUser?.pagarme_subscription_id);
-  const escolher = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Escolher plano</button>`;
-  const addCard = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Cadastrar cartão</button>`;
+  const escolher = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Ver planos</button>`;
+  const addCard = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Cadastrar cartão (opcional)</button>`;
   if(days > 3) {
     bar.className = '';
     if (!hasCard) {
-      bar.innerHTML = `Trial grátis · <strong>${days}</strong> dia(s) sem cartão · após o 7º dia, cadastre o cartão e ganhe +${TRIAL_DAYS_AFTER_CARD} dias · ${addCard}`;
+      bar.innerHTML = `Beta grátis · <strong>${days}</strong> dia(s) restantes · todas as ferramentas · sem cartão · ${addCard}`;
     } else {
-      bar.innerHTML = `Trial · <strong>${days}</strong> dias até a primeira cobrança · ${escolher}`;
+      bar.innerHTML = `Beta · <strong>${days}</strong> dias até a primeira cobrança · ${escolher}`;
     }
   } else if(days > 0) {
     bar.classList.add('warn');
     if (!hasCard) {
-      bar.innerHTML = `Trial · ${days} dia(s) sem cartão · cadastre o cartão e ganhe +${TRIAL_DAYS_AFTER_CARD} dias extras · ${addCard}`;
+      bar.innerHTML = `Beta · ${days} dia(s) restantes · todas as ferramentas liberadas · ${addCard}`;
     } else {
-      bar.innerHTML = `Trial · ${days} dia(s) restantes · cobrança ${afterRow.valorDisplay} após ${ends.toLocaleDateString('pt-BR')} · ${escolher}`;
+      bar.innerHTML = `Beta · ${days} dia(s) restantes · cobrança ${afterRow.valorDisplay} após ${ends.toLocaleDateString('pt-BR')} · ${escolher}`;
     }
   } else {
     bar.classList.add('danger');
     if (!hasCard) {
-      bar.innerHTML = `Período grátis encerrado · cadastre o cartão para +${TRIAL_DAYS_AFTER_CARD} dias de teste · ${addCard}`;
+      bar.innerHTML = `Período grátis encerrado · assine um plano para continuar · ${escolher}`;
     } else {
-      bar.innerHTML = `Trial encerrado · cobrança conforme plano · ${escolher}`;
+      bar.innerHTML = `Beta encerrada · cobrança conforme plano · ${escolher}`;
     }
   }
 }
@@ -21698,7 +21738,7 @@ function buildPlanosParceriaPdfHtml(yearlyOpt) {
     </div>`;
   };
 
-  const featS = ['Operação individual (freelancer / solo)','Projetos, pipeline, clientes e orçamentos','Cronograma e financeiro pessoal','Trial de 7 dias'];
+  const featS = ['Operação individual (freelancer / solo)','Projetos, pipeline, clientes e orçamentos','Cronograma e financeiro pessoal',`${BETA_TRIAL_DAYS} dias grátis na beta`];
   const featP = ['Equipe maior (até 8 usuários)','Contratos, pagamentos de equipe e fechamento','Tarefas atribuídas e visão corporativa','Suporte via WhatsApp'];
   const featA = ['Suite completa para agência','Permissões por módulo e relatórios','Histórico e NPS','Suporte prioritário'];
   const triS = s.valor * 3;
@@ -21769,7 +21809,7 @@ function buildPlanosParceriaPdfHtml(yearlyOpt) {
         </tr></thead>
         <tbody>${tableBody}</tbody>
       </table>
-      <p style="font-size:10px;color:#737373;margin-top:14px;line-height:1.5">Valores conforme tela de planos (${yearly ? 'cobrança anual' : 'mensal'}). Trial de 7 dias. Documento informativo — condições finais nos termos e no checkout.</p>
+      <p style="font-size:10px;color:#737373;margin-top:14px;line-height:1.5">Valores conforme tela de planos (${yearly ? 'cobrança anual' : 'mensal'}). ${BETA_TRIAL_DAYS} dias grátis na beta. Documento informativo — condições finais nos termos e no checkout.</p>
     </div>
   `;
 }
@@ -31107,17 +31147,17 @@ function calcularResumosPagamentos() {
   }
 
   set('paySumPendente', fmtBRL(pend));
-  set('paySumPendenteN', pendN ? pendN + ' lançamento(s)' : 'em dia');
+  set('paySumPendenteN', pendN ? pendN + ' ainda não pagos (não vencidos)' : 'nada pendente');
   set('paySumAtrasado', fmtBRL(atras));
-  set('paySumAtrasadoN', atrasN ? atrasN + ' em atraso' : 'nenhum');
+  set('paySumAtrasadoN', atrasN ? atrasN + ' com vencimento passado' : 'nenhum atraso');
   set('paySumPagoMes', fmtBRL(pagMes));
-  set('paySumPagoMesN', pagMesN ? pagMesN + ' quitado(s)' : 'sem pagamentos');
+  set('paySumPagoMesN', pagMesN ? pagMesN + ' quitados neste mês' : 'nenhum pago no mês');
   set('paySumTotalMes', fmtBRL(totMes));
-  set('paySumTotalMesN', totMesN ? totMesN + ' no mês filtrado' : 'sem vencimentos');
+  set('paySumTotalMesN', totMesN ? totMesN + ' com vencimento no mês' : 'sem vencimentos no mês');
   set('paySumProx7', fmtBRL(prox7));
-  set('paySumProx7N', prox7N ? prox7N + ' a vencer' : 'janela limpa');
+  set('paySumProx7N', prox7N ? prox7N + ' a vencer até ' + (typeof fmtDate === 'function' ? fmtDate(in7) : in7) : 'nenhum nos próximos 7 dias');
   set('paySumTicket', ticketN ? fmtBRL(ticketBase / ticketN) : '—');
-  set('paySumTicketN', ticketN ? 'média dos filtrados' : 'sem base');
+  set('paySumTicketN', ticketN ? 'valor médio por lançamento' : 'sem lançamentos');
 }
 
 function renderPayInsights() {
@@ -31275,22 +31315,28 @@ function renderPayCharts() {
   const tipoLabels = Object.keys(tipoMap);
   const tipoVals = tipoLabels.map(k => tipoMap[k]);
   const tipoColors = ['#2563eb', '#7c3aed', '#16a34a', '#0e7490', '#ea580c', '#64748b'];
+  const tipoLegend = tipoLabels.map((t, i) =>
+    (t.charAt(0).toUpperCase() + t.slice(1)) + ' · ' + fmtBRL(tipoVals[i] || 0)
+  );
   _destroyChart('payTipo');
   const ctxT = document.getElementById('payChartTipo');
   if (ctxT) {
     _charts.payTipo = new Chart(ctxT, {
       type: 'doughnut',
       data: {
-        labels: tipoLabels.map(t => t.charAt(0).toUpperCase() + t.slice(1)),
+        labels: tipoLegend,
         datasets: [{ data: tipoVals, backgroundColor: tipoLabels.map((_, i) => tipoColors[i % tipoColors.length]), borderWidth: 0 }]
       },
       options: {
         ...base,
-        cutout: '62%',
+        cutout: '58%',
         plugins: {
           ...base.plugins,
-          legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 9 }, boxWidth: 8 } },
-          tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmtBRL(c.raw) } }
+          legend: {
+            position: 'bottom',
+            labels: { color: '#334155', font: { size: 10, family: 'Rajdhani,sans-serif' }, boxWidth: 10, padding: 8 }
+          },
+          tooltip: { callbacks: { label: c => ' ' + c.label } }
         }
       }
     });
@@ -31299,22 +31345,26 @@ function renderPayCharts() {
   const stLabels = ['Pendente', 'Atrasado', 'Pago', 'Cancelado'];
   const stVals = [stMap.pendente, stMap.atrasado, stMap.pago, stMap.cancelado];
   const stColors = ['#f59e0b', '#dc2626', '#16a34a', '#94a3b8'];
+  const stLegend = stLabels.map((t, i) => t + ' · ' + fmtBRL(stVals[i] || 0));
   _destroyChart('payStatus');
   const ctxS = document.getElementById('payChartStatus');
   if (ctxS) {
     _charts.payStatus = new Chart(ctxS, {
       type: 'doughnut',
       data: {
-        labels: stLabels,
+        labels: stLegend,
         datasets: [{ data: stVals, backgroundColor: stColors, borderWidth: 0 }]
       },
       options: {
         ...base,
-        cutout: '62%',
+        cutout: '58%',
         plugins: {
           ...base.plugins,
-          legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 9 }, boxWidth: 8 } },
-          tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmtBRL(c.raw) } }
+          legend: {
+            position: 'bottom',
+            labels: { color: '#334155', font: { size: 10, family: 'Rajdhani,sans-serif' }, boxWidth: 10, padding: 8 }
+          },
+          tooltip: { callbacks: { label: c => ' ' + c.label } }
         }
       }
     });

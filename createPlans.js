@@ -23,7 +23,7 @@ if (API_KEY.startsWith('pk_')) {
   process.exit(1);
 }
 
-/** Preços beta (centavos). Trial no plano: 23 dias após cartão (7 dias sem cartão ficam no app). */
+/** Preços beta (centavos). Trial no plano: 30 dias na beta (sem cartão obrigatório no cadastro). */
 const planos = [
   { key: 'solo_mensal',      name: 'Age Ops Freelancer Beta Mensal',  amount: 4990,  days: 30,  trial_days: 23 },
   { key: 'solo_anual',       name: 'Age Ops Freelancer Beta Anual',   amount: 49900, days: 365, trial_days: 23 },
