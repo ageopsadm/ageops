@@ -197,6 +197,39 @@ create policy age_users_admin_insert on public.age_users
 revoke all on public.age_users from anon;
 grant select, insert, update on public.age_users to authenticated;
 
+-- Uma política WITH CHECK só enxerga a linha nova, então ela não consegue
+-- barrar "mudei minha própria empresa": o valor novo é coerente com o token
+-- que o usuário passaria a ter. Sem este gatilho, qualquer um se transfere
+-- para a empresa alheia com um PATCH no próprio cadastro.
+create or replace function public.age_users_guard()
+returns trigger
+language plpgsql
+as $$
+begin
+  -- service_role (Edge Functions) e o dono do banco seguem livres.
+  if current_user <> 'authenticated' then
+    return new;
+  end if;
+
+  if new.company_id is distinct from old.company_id then
+    raise exception 'Troca de empresa só pelo servidor.';
+  end if;
+
+  if new.role is distinct from old.role then
+    if public.age_user_role() not in ('admin', 'gestor')
+       or old.id::text = public.age_user_id() then
+      raise exception 'Alteração de papel não permitida.';
+    end if;
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists age_users_guard_trg on public.age_users;
+create trigger age_users_guard_trg
+  before update on public.age_users
+  for each row execute function public.age_users_guard();
+
 alter table public.age_companies enable row level security;
 
 drop policy if exists age_companies_own on public.age_companies;
@@ -217,6 +250,14 @@ create policy age_companies_admin_update on public.age_companies
 
 revoke all on public.age_companies from anon;
 grant select, update on public.age_companies to authenticated;
+
+
+-- Tabela de senhas: só a service role encosta. Repetido aqui de propósito —
+-- se age_user_secrets.sql não tiver sido aplicado, o hash das senhas ficaria
+-- legível pela chave anônima.
+alter table if exists public.age_user_secrets enable row level security;
+revoke all on public.age_user_secrets from anon;
+revoke all on public.age_user_secrets from authenticated;
 
 
 -- ────────────────────────────────────────────────────────────────────────

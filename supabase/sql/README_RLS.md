@@ -28,6 +28,22 @@ funciona igual. O passo 6 é o irreversível na prática — por isso, staging.
 
 ---
 
+## Parte 0 — Validação local (mais rápida)
+
+Antes do staging, `supabase/sql/tests/` roda as políticas num Postgres local
+com duas empresas de mentira. Pega erro de sintaxe e furo de política em
+segundos, sem projeto na nuvem. Veja o README de lá.
+
+Não substitui o staging: falta o PostgREST e a Edge Function, ou seja,
+justamente a validação do token. Mas elimina os erros mais bobos antes.
+
+Um resultado dessa rodada muda um passo do roteiro: **usuário logado não
+consegue mais alterar o próprio `company_id`** (gatilho `age_users_guard`).
+O `repairUserTenantCompanyOnLogin` do front, que remendava vínculo de empresa
+no login, vai passar a falhar — ele engole o erro, então não quebra o login,
+mas deixou de funcionar. Por isso o backfill do passo 0 do SQL não é
+opcional: contas com `company_id` nulo não se consertam mais sozinhas.
+
 ## Parte 1 — Montar o staging
 
 Um projeto Supabase novo, separado do de produção.
