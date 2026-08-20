@@ -3727,7 +3727,7 @@ body:has(#login-screen.visible){
             <!-- Seletor de mês (visível só no mensal) -->
             <select id="dashMesSelect" onchange="loadDashboard()" style="display:none;height:28px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);border-radius:5px;padding:0 8px;font-size:10px;font-family:var(--font-m)">
               <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-              <option value="3">Março</option><option value="4" selected>Abril</option>
+              <option value="3">Março</option><option value="4">Abril</option>
               <option value="5">Maio</option><option value="6">Junho</option>
               <option value="7">Julho</option><option value="8">Agosto</option>
               <option value="9">Setembro</option><option value="10">Outubro</option>
@@ -8537,6 +8537,7 @@ async function applyLoginSessionFromRow(row) {
     }).catch(() => {});
   }
   navigate(_postLoginLandingPage());
+  try { _dashInitPeriodSelectors(); } catch (_) {}
   startClock();
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
   setTimeout(()=>{ try { updateTrialBanner(); } catch(e) {} }, 0);
@@ -12849,6 +12850,9 @@ const SYNC = {
 
   async onProjectSaved(proj) {
     if(!proj) return;
+    if(SUPABASE_IS_SOURCE_OF_TRUTH) {
+      try { await refreshLiveProjectsKpiCache(); } catch(_) {}
+    }
     // Atualiza dashboard imediatamente
     this.emit('project:saved', proj);
     // Recarrega projetos se ativo
@@ -12974,21 +12978,57 @@ function _dashMesesFiltro() {
   return null;
 }
 
+function _dashCurrentYear() {
+  return new Date().getFullYear();
+}
+
+function _dashParseDate(raw) {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const d = new Date(s.slice(0, 10) + 'T12:00:00');
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function _dashDateFieldsRaw(p) {
+  if (!p) return [];
+  return [
+    p.payment_date, p.project_date, p.pay_date, p.sale_date,
+    p.start_date, p.due_date, p.delivery_date, p.recording_date,
+    p.created_at, p.updated_at
+  ].filter(v => v != null && String(v).trim() !== '');
+}
+
+function _dashInitPeriodSelectors() {
+  const m = new Date().getMonth() + 1;
+  const mesEl = document.getElementById('dashMesSelect');
+  if (mesEl) mesEl.value = String(m);
+  const trimEl = document.getElementById('dashTrimSelect');
+  if (trimEl) trimEl.value = String(m <= 3 ? 1 : m <= 6 ? 2 : m <= 9 ? 3 : 4);
+  const semEl = document.getElementById('dashSemSelect');
+  if (semEl) semEl.value = m <= 6 ? '1' : '2';
+}
+
 function _dashPeriodLabel() {
-  if(_dashPeriod==='anual') return 'Anual 2026';
+  const yr = _dashCurrentYear();
+  if(_dashPeriod==='anual') return 'Anual ' + yr;
   if(_dashPeriod==='mensal') {
     const m = parseInt(document.getElementById('dashMesSelect')?.value)|| (new Date().getMonth() + 1);
-    return MONTHS[m-1]+' 2026';
+    return MONTHS[m-1]+' '+yr;
   }
   if(_dashPeriod==='trimestral') {
     const t = parseInt(document.getElementById('dashTrimSelect')?.value)||1;
-    return ['T1 (Jan–Mar)','T2 (Abr–Jun)','T3 (Jul–Set)','T4 (Out–Dez)'][t-1]+' 2026';
+    return ['T1 (Jan–Mar)','T2 (Abr–Jun)','T3 (Jul–Set)','T4 (Out–Dez)'][t-1]+' '+yr;
   }
   if(_dashPeriod==='semestral') {
     const s = parseInt(document.getElementById('dashSemSelect')?.value)||1;
-    return (s===1?'1º Sem (Jan–Jun)':'2º Sem (Jul–Dez)')+' 2026';
+    return (s===1?'1º Sem (Jan–Jun)':'2º Sem (Jul–Dez)')+' '+yr;
   }
-  return '2026';
+  return String(yr);
 }
 
 /** KPIs do dashboard: estado de carregamento (não altera IDs) */
@@ -13003,27 +13043,27 @@ function _dashSetKpisLoading(loading) {
 }
 
 /**
- * Mês/ano para filtros e KPIs: planilha (mes) ou datas negócio → Supabase.
+ * Mês/ano para filtros e KPIs: datas do projeto (incl. project_date) ou mês/ano atual.
  */
 function _dashResolveMesAno(p) {
-  const pm = parseInt(p.mes, 10);
+  const pm = parseInt(p?.mes, 10);
   if(pm >= 1 && pm <= 12) {
-    let ano = parseInt(p.ano, 10);
+    let ano = parseInt(p?.ano, 10);
     if(!(ano >= 1990 && ano <= 2100)) {
-      const rawA = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.due_date || p.created_at || p.updated_at;
-      if(rawA) {
-        const dx = new Date(rawA);
-        if(!isNaN(dx.getTime())) ano = dx.getFullYear();
+      for (const raw of _dashDateFieldsRaw(p)) {
+        const dx = _dashParseDate(raw);
+        if (dx) { ano = dx.getFullYear(); break; }
       }
     }
-    if(!(ano >= 1990 && ano <= 2100)) ano = 2026;
+    if(!(ano >= 1990 && ano <= 2100)) ano = _dashCurrentYear();
     return { mes: pm, ano };
   }
-  const raw = p.sale_date || p.pay_date || p.payment_date || p.start_date || p.due_date || p.created_at || p.updated_at;
-  if(!raw) return null;
-  const d = new Date(raw);
-  if(isNaN(d.getTime())) return null;
-  return { mes: d.getMonth() + 1, ano: d.getFullYear() };
+  for (const raw of _dashDateFieldsRaw(p)) {
+    const d = _dashParseDate(raw);
+    if (d) return { mes: d.getMonth() + 1, ano: d.getFullYear() };
+  }
+  const now = new Date();
+  return { mes: now.getMonth() + 1, ano: now.getFullYear() };
 }
 
 /** age_projects: colunas reais — total_value, cost, project_name, status, deleted */
@@ -13201,43 +13241,35 @@ function _dashRowFromSupabase(p, fechByProjectId) {
     novo,
     status, _status: status,
     pay_date: p.pay_date || p.payment_date || null,
-    sale_date: p.sale_date || null,
+    sale_date: p.sale_date || p.project_date || null,
+    project_date: p.project_date || null,
     start_date: p.start_date || null,
     due_date: p.due_date || null,
     payment_date: p.payment_date || null,
+    delivery_date: p.delivery_date || null,
+    recording_date: p.recording_date || null,
     created_at: p.created_at || null,
     updated_at: p.updated_at || null,
     id: p.id,
     total_value: p.total_value
   };
-  const ma = _dashResolveMesAno({ ...row, mes: p.mes, ano: p.ano });
+  const ma = _dashResolveMesAno({ ...row, mes: p.mes, ano: p.ano, project_date: p.project_date });
   if(ma) {
     row.mes = ma.mes;
     row.ano = ma.ano;
   } else {
-    const fb = p.created_at || p.updated_at;
-    if(fb) {
-      const d = new Date(fb);
-      if(!isNaN(d.getTime())) {
-        row.mes = d.getMonth() + 1;
-        row.ano = d.getFullYear();
-      } else {
-        row.mes = 1;
-        row.ano = new Date().getFullYear();
-      }
-    } else {
-      row.mes = 1;
-      row.ano = new Date().getFullYear();
-    }
+    const now = new Date();
+    row.mes = now.getMonth() + 1;
+    row.ano = now.getFullYear();
   }
   return row;
 }
 
 function _projRawInDashboardPeriod(p, fechByProjectId, mesesFiltro, anoAlvo) {
-  const ano = anoAlvo != null ? anoAlvo : 2026;
+  const ano = anoAlvo != null ? anoAlvo : _dashCurrentYear();
   const row = _dashRowFromSupabase(p, fechByProjectId);
   const ma = _dashResolveMesAno(row);
-  if(!ma || ma.ano !== ano) return false;
+  if(ma.ano !== ano) return false;
   if(!mesesFiltro) return true;
   return mesesFiltro.includes(ma.mes);
 }
@@ -13775,12 +13807,14 @@ async function loadDashboard() {
     ]);
     maybeNotifyProjectDeadlines(dbProjects).catch(()=>{});
 
+    _liveProjectsKpiCache = Array.isArray(dbProjects) ? dbProjects : [];
+
     const fechByProjectId = new Map();
     (dbFechs || []).forEach(f => {
       if(f && f.project_id != null) fechByProjectId.set(f.project_id, f);
     });
 
-    const DASH_ANO = 2026;
+    const DASH_ANO = _dashCurrentYear();
 
     const allProjects = SUPABASE_IS_SOURCE_OF_TRUTH
       ? (dbProjects || []).map(p => _dashRowFromSupabase(p, fechByProjectId))
@@ -13812,7 +13846,7 @@ async function loadDashboard() {
     const mappedAll = allProjects.filter(p => {
       if(_projExcludedFromReceitaSum(p)) return false;
       const ma = _dashResolveMesAno(p);
-      return ma && ma.ano === DASH_ANO;
+      return ma.ano === DASH_ANO;
     });
 
     /* Filtrar pelo período selecionado */
@@ -17600,6 +17634,11 @@ async function saveProject() {
     if(document.getElementById('page-fechamento')?.classList.contains('active')) loadFechamento();
     if(SUPABASE_IS_SOURCE_OF_TRUTH) await refreshLiveProjectsKpiCache().catch(()=>{});
     if(SYNC?.onProjectSaved) await SYNC.onProjectSaved(saved);
+    try {
+      if(document.getElementById('page-dashboard')?.classList.contains('active')) {
+        await loadDashboard();
+      }
+    } catch (_) {}
     if(window._csSelectProjectAfterSave && savedId) {
       const norm = _csNormalizeProjectRow(srow, payload);
       await _csRefreshConteudosProjectSelects(String(savedId), norm).catch(() => {});
@@ -18844,7 +18883,7 @@ async function _histBuildLive2026(force) {
     .map(p => _dashRowFromSupabase(p, fechByProjectId))
     .filter(p => {
       const ma = _dashResolveMesAno(p);
-      return ma && ma.ano === 2026;
+      return ma.ano === _dashCurrentYear();
     })
     .sort((a, b) => (a.mes || 0) - (b.mes || 0) || String(a.cliente || '').localeCompare(String(b.cliente || '')));
 
@@ -33618,6 +33657,7 @@ function _ageInit() {
   });
   initInviteFromUrl();
   initRefFromUrl();
+  try { _dashInitPeriodSelectors(); } catch (_) {}
   try { initSensitiveToggle(); } catch (_) {}
 }
 
