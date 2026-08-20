@@ -333,6 +333,7 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
   color:rgba(255,255,255,.55);font-size:12px;transition:all .12s;
 }
 .btn-icon-top:hover{color:#ffffff;border-color:rgba(255,255,255,.35)}
+.btn-icon-top.is-active{color:#ffffff;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.08)}
 
 /* ── Notificações (header + dropdown) ── */
 .notif-bell-root{position:relative;margin-left:auto;margin-right:4px}
@@ -3592,6 +3593,9 @@ body:has(#login-screen.visible){
         <span style="background:#e5e5e5; color:#888; padding:2px 7px;
                      border-radius:4px; font-size:10px;
                      font-family:'Inter',sans-serif;">⌘K</span>
+      </button>
+      <button type="button" class="btn-icon-top" id="sensitiveToggleBtn" onclick="toggleSensitiveValues()" title="Ocultar valores sensíveis" aria-pressed="false" aria-label="Ocultar ou mostrar valores financeiros">
+        <i class="fas fa-eye" id="sensitiveToggleIcon"></i>
       </button>
       <div class="notif-bell-root" id="notifBellRoot">
         <button type="button" class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown(event)" title="Notificações" aria-expanded="false" aria-haspopup="true">
@@ -8351,6 +8355,82 @@ async function migrateOwnageTenantForBootstrapAdmin() {
   }
 }
 
+/**
+ * Admin bootstrap: zera dados operacionais de uma conta (por username).
+ * Console: adminResetTenantByUsername('vilarkim')
+ */
+async function adminResetTenantByUsername(username) {
+  if (!_userIsBootstrapAdmin()) {
+    toast('Apenas admin bootstrap pode resetar contas.', 'err');
+    return { ok: false };
+  }
+  const un = String(username || '').trim().toLowerCase();
+  if (!un) {
+    toast('Informe o username.', 'warn');
+    return { ok: false };
+  }
+  if (!confirm(`Zerar TODOS os dados operacionais da conta "${un}"? Isso não pode ser desfeito.`)) {
+    return { ok: false, cancelled: true };
+  }
+
+  const prev = !!window.__tenantScopeSuspended;
+  window.__tenantScopeSuspended = true;
+  let deleted = 0;
+  try {
+    const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(un)}&limit=1`);
+    const row = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible)[0];
+    if (!row?.company_id) throw new Error(`Usuário "${un}" sem company_id no Supabase.`);
+
+    const cid = String(row.company_id);
+    const tables = [...TENANT_SCOPED_TABLES];
+
+    for (const tbl of tables) {
+      let rows = [];
+      try {
+        const rd = await apiGet(tbl, `?company_id=eq.${encodeURIComponent(cid)}&limit=5000`);
+        rows = Array.isArray(rd?.data) ? rd.data : [];
+      } catch (e) {
+        console.warn('[adminReset]', tbl, e?.message || e);
+        continue;
+      }
+      for (const r of rows) {
+        if (!r?.id) continue;
+        try {
+          await apiDel(tbl, r.id);
+          deleted++;
+        } catch (e) {
+          console.warn('[adminReset del]', tbl, r.id, e?.message || e);
+        }
+      }
+    }
+
+    /* Projetos legados sem company_id criados por este usuário */
+    try {
+      const pd = await apiGet('age_projects',
+        `?created_by=eq.${encodeURIComponent(un)}&company_id=is.null&limit=5000`);
+      const prows = Array.isArray(pd?.data) ? pd.data : [];
+      for (const p of prows) {
+        if (!p?.id) continue;
+        try {
+          await apiDel('age_projects', p.id);
+          deleted++;
+        } catch (e) {}
+      }
+    } catch (e) {}
+
+    toast(`Conta "${un}" resetada — ${deleted} registro(s) removido(s).`, 'ok');
+    console.log(`[adminResetTenantByUsername] ${un} company_id=${cid} deleted=${deleted}`);
+    return { ok: true, username: un, company_id: cid, deleted };
+  } catch (e) {
+    console.error('[adminResetTenantByUsername]', e);
+    toast(String(e?.message || e || 'Erro ao resetar conta.'), 'err');
+    return { ok: false, error: String(e?.message || e) };
+  } finally {
+    try { window.__tenantScopeSuspended = prev; } catch (_) {}
+  }
+}
+try { window.adminResetTenantByUsername = adminResetTenantByUsername; } catch (_) {}
+
 async function persistBootstrapAccountIfNeeded(row, plainPassword) {
   try {
     if(!row || !row.username) return row;
@@ -8461,6 +8541,7 @@ async function applyLoginSessionFromRow(row) {
   setTimeout(()=>{ _checkSupabaseOnLogin().catch(()=>{}); }, 0);
   setTimeout(()=>{ try { updateTrialBanner(); } catch(e) {} }, 0);
   setTimeout(()=>{ try { bootstrapNotificationsUi(); } catch(e) {} }, 0);
+  try { initSensitiveToggle(); } catch (_) {}
   /* Persiste a sessão local para sobreviver a refresh/F5. */
   try { _ageSaveLocalSession(currentUser.username); } catch(_) {}
   return { ok: true };
@@ -12394,14 +12475,13 @@ async function fetchAgeProjectsScoped(limit = 1000) {
       console.warn('[fetchAgeProjectsScoped]', qtry, e?.message || e);
     }
   }
+  if (SUPABASE_IS_SOURCE_OF_TRUTH) return [];
   try {
     return await fetchAll('age_projects', limit);
   } catch(e2) {
     return [];
   }
 }
-
-/* Busca registros pessoais do usuário logado — filtra por owner no servidor */
 async function fetchOwn(table, limit=300) {
   const u = currentUser?.username || '';
   /* Tenta buscar via search=owner:username; se a API não suportar, faz fetchAll e filtra */
@@ -12435,18 +12515,76 @@ function _ownGuard(record) {
 /* ═══════════════════════════════════════════
    FORMATTERS
 ═══════════════════════════════════════════ */
+const AGE_SENSITIVE_KEY = 'ageops_hide_sensitive';
+
+function ageSensitiveHidden() {
+  try { return localStorage.getItem(AGE_SENSITIVE_KEY) === '1'; } catch (e) { return false; }
+}
+
+function ageMaskMoney() { return 'R$ ••••••'; }
+function ageMaskPct() { return '•••%'; }
+function ageMaskGeneric() { return '••••'; }
+
+function toggleSensitiveValues() {
+  const next = !ageSensitiveHidden();
+  try { localStorage.setItem(AGE_SENSITIVE_KEY, next ? '1' : '0'); } catch (e) {}
+  _syncSensitiveToggleUi();
+  _refreshSensitiveCurrentView();
+  toast(next ? 'Valores sensíveis ocultos' : 'Valores sensíveis visíveis', 'ok');
+}
+
+function _syncSensitiveToggleUi() {
+  const hidden = ageSensitiveHidden();
+  const btn = document.getElementById('sensitiveToggleBtn');
+  const icon = document.getElementById('sensitiveToggleIcon');
+  document.body.classList.toggle('age-hide-sensitive', hidden);
+  if (icon) icon.className = hidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+  if (btn) {
+    btn.title = hidden ? 'Mostrar valores sensíveis' : 'Ocultar valores sensíveis';
+    btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+    btn.classList.toggle('is-active', hidden);
+  }
+}
+
+function initSensitiveToggle() {
+  _syncSensitiveToggleUi();
+}
+
+function _refreshSensitiveCurrentView() {
+  const active = document.querySelector('#content .page.active');
+  if (!active?.id) return;
+  const page = active.id.replace(/^page-/, '');
+  if (page && typeof navigate === 'function') navigate(page);
+}
+
 function fmtBRL(v) {
+  if (ageSensitiveHidden()) return ageMaskMoney();
   return 'R$ ' + (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 function formatBRL(valor) {
+  if (ageSensitiveHidden()) return ageMaskMoney();
   return 'R$ ' + Number(valor || 0).toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
 }
 function fmtBRLk(v) {
+  if (ageSensitiveHidden()) return ageMaskMoney();
   const n=parseFloat(v)||0;
   return n>=1000?'R$'+(n/1000).toFixed(1)+'k':'R$'+n.toFixed(0);
+}
+function fmtPct(v, decimals = 1, opts = {}) {
+  if (ageSensitiveHidden()) return ageMaskPct();
+  const n = parseFloat(v);
+  if (isNaN(n)) return opts.fallback != null ? opts.fallback : '—';
+  const sign = opts.signed ? (n >= 0 ? '+' : '') : '';
+  return sign + n.toFixed(decimals) + '%';
+}
+function fmtGrowthPct(v) {
+  if (ageSensitiveHidden()) return ageMaskPct();
+  const n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  return (n >= 0 ? '▲ +' : '▼ ') + Math.abs(n).toFixed(1) + '%';
 }
 function fmtDate(s) {
   if(!s) return '—';
@@ -13761,16 +13899,16 @@ async function loadDashboard() {
     set('dLucro', fmtBRL(lucro));
     const lucroEl = document.getElementById('dLucro');
     if(lucroEl){ lucroEl.className='kpi-val '+(lucro>=0?'green':'red'); lucroEl.title=fmtBRL(lucro); }
-    setSub('dLucroSub', (lucro>=0?'↑':'↓')+' vs custo R$'+Math.round(custoTotal/1000)+'k');
+    setSub('dLucroSub', (lucro>=0?'↑':'↓')+' vs custo '+fmtBRLk(custoTotal));
 
     const margemEl = document.getElementById('dMargem');
-    if(margemEl){ margemEl.textContent=margem.toFixed(1)+'%'; margemEl.style.color=margem>=55?'#16a34a':margem>=30?'#d97706':'#dc2626'; }
+    if(margemEl){ margemEl.textContent=fmtPct(margem, 1); margemEl.style.color=margem>=55?'#16a34a':margem>=30?'#d97706':'#dc2626'; }
     setSub('dMargemSub', margem>=55?'Saudável':margem>=30?'Regular':'Baixa');
 
     set('dCusto', fmtBRL(custoTotal));
     const custoEl = document.getElementById('dCusto');
     if(custoEl) custoEl.title = fmtBRL(custoTotal);
-    setSub('dCustoSub', custoTotal>0?Math.round(custoTotal/fat*100)+'% do fat.':'sem custo');
+    setSub('dCustoSub', custoTotal>0 ? fmtPct(custoTotal/fat*100, 0)+' do fat.' : 'sem custo');
 
     set('dProj',  nProjKpi);
     setSub('dProjSub', nNovos+' novos clientes');
@@ -13868,8 +14006,12 @@ async function loadDashboard() {
       }
     } else {
       growthLabel = 'CRESCIM. ANUAL';
-      const prevH = HIST_SUMMARY[thisYear - 1];
-      prevFat = prevH ? prevH.fat : 0;
+      if (_isOwnageTenant()) {
+        const prevH = HIST_SUMMARY[thisYear - 1];
+        prevFat = prevH ? prevH.fat : 0;
+      } else {
+        prevFat = null;
+      }
       growthSub = prevFat > 0 ? 'vs ' + fmtBRL(prevFat) + ' em ' + (thisYear - 1) : 'sem base comparativa';
     }
 
@@ -13880,7 +14022,7 @@ async function loadDashboard() {
     if (growthEl) {
       if (growthPct === null) { growthEl.textContent = '—'; growthEl.style.color = '#aaa'; }
       else {
-        growthEl.textContent = (growthPct >= 0 ? '▲ +' : '▼ ') + growthPct.toFixed(1) + '%';
+        growthEl.textContent = fmtGrowthPct(growthPct);
         growthEl.style.color = growthPct >= 10 ? '#16a34a' : growthPct >= 0 ? '#d97706' : '#dc2626';
       }
     }
@@ -14062,10 +14204,23 @@ function _deepDeriveLicoesFromRels(projects2026) {
   return Object.values(bag).sort((a, b) => b.freq - a.freq);
 }
 
-function _deepIsOwnageCompany(kpis) {
-  const name = String(kpis?.companyName || (typeof currentUser !== 'undefined' && currentUser?.company_name) || '').toLowerCase();
-  const user = String((typeof currentUser !== 'undefined' && currentUser?.username) || '').toLowerCase();
+function _isOwnageTenant() {
+  const name = String(currentUser?.company_name || '').toLowerCase();
+  const user = String(currentUser?.username || '').toLowerCase();
   return name.includes('ownage') || user === 'gustavowng';
+}
+
+function _emptyKpiTotals() {
+  return { fat: 0, cost: 0, lucro: 0, n: 0, novos: 0, clientes: 0, nps: 0, byMonth: {} };
+}
+
+function _deepIsOwnageCompany(kpis) {
+  if (kpis && (kpis.companyName || kpis.username)) {
+    const name = String(kpis.companyName || '').toLowerCase();
+    const user = String(kpis.username || '').toLowerCase();
+    return name.includes('ownage') || user === 'gustavowng';
+  }
+  return _isOwnageTenant();
 }
 
 /** Snapshot cruzado de TODAS as abas Age Ops. */
@@ -15493,12 +15648,17 @@ function renderDashClientRank(filtered) {
 function renderDashHealth(margem, avgNps, novos, total, fat, custoTotal) {
   const el = document.getElementById('dashHealth');
   if(!el) return;
-  custoTotal = custoTotal ?? PLAN_2026.cost ?? 0;
-  fat = fat || PLAN_2026.fat || 1;
-  const pctCusto = Math.min(Math.round(custoTotal/fat*100),100);
+  if (SUPABASE_IS_SOURCE_OF_TRUTH) {
+    custoTotal = custoTotal ?? 0;
+    fat = fat ?? 0;
+  } else {
+    custoTotal = custoTotal ?? PLAN_2026.cost ?? 0;
+    fat = fat || PLAN_2026.fat || 1;
+  }
+  const pctCusto = fat > 0 ? Math.min(Math.round(custoTotal / fat * 100), 100) : 0;
 
   const metrics = [
-    { label:'MARGEM LÍQUIDA',   val:margem.toFixed(1)+'%',        pct:margem,             good:55, mid:30,
+    { label:'MARGEM LÍQUIDA',   val:fmtPct(margem, 1),        pct:margem,             good:55, mid:30,
       colGood:'#16a34a', colMid:'#d97706', colBad:'#dc2626' },
     { label:'NPS MÉDIO',        val:avgNps>0?avgNps.toFixed(1)+' ★':'N/D', pct:avgNps*10,  good:80, mid:60,
       colGood:'#2563eb', colMid:'#f59e0b', colBad:'#dc2626' },
@@ -16244,8 +16404,8 @@ function renderProjCard(p) { return renderProjRow(p, 1); }
 
 function renderProjKpis(rows) {
   let fat, lucro, margin, nTotal, ticket, avgNps, novos;
-  if(SUPABASE_IS_SOURCE_OF_TRUTH && Array.isArray(rows) && rows.length) {
-    const active = rows.filter(p => _projRowNotDeleted(p));
+  if (SUPABASE_IS_SOURCE_OF_TRUTH) {
+    const active = (Array.isArray(rows) ? rows : []).filter(p => _projRowNotDeleted(p));
     fat = calcularReceitaProjetos(active);
     lucro = calcularLucroProjetos(active, null);
     margin = fat > 0 ? (lucro / fat * 100) : 0;
@@ -16269,7 +16429,7 @@ function renderProjKpis(rows) {
   const set=(id,v,col)=>{ const el=document.getElementById(id); if(!el)return; el.textContent=v; if(col)el.style.color=col; };
   set('pkFat',   fmtBRL(fat));
   set('pkLucro', fmtBRL(lucro), lucro>=0?'var(--green)':'var(--red)');
-  set('pkMargem',margin.toFixed(1)+'%', getMarginColor(margin));
+  set('pkMargem', fmtPct(margin, 1), getMarginColor(margin));
   set('pkN',     nTotal, 'var(--yellow)');
   set('pkNps',   avgNps>0?avgNps.toFixed(1)+' ★':'—', 'var(--yellow)');
   set('pkNovos', novos, 'var(--acc2)');
@@ -16289,15 +16449,16 @@ function renderProjMonthBars(rows) {
   if(!barEl||!lblEl) return;
 
   let vals;
-  if(SUPABASE_IS_SOURCE_OF_TRUTH && Array.isArray(rows) && rows.length) {
+  if (SUPABASE_IS_SOURCE_OF_TRUTH) {
+    const list = Array.isArray(rows) ? rows : [];
     vals = Array.from({ length: 12 }, (_, i) => {
       const m = i + 1;
       let sum = 0;
-      rows.forEach(p => {
+      list.forEach(p => {
         const raw = p.payment_date || p.project_date || '';
         const d = String(raw).slice(0, 10);
         const mes = d.length >= 7 ? parseInt(d.substring(5, 7), 10) : (parseInt(p._sheetMes, 10) || 1);
-        if(mes === m) sum += parseFloat(p.total_value) || 0;
+        if (mes === m) sum += parseFloat(p.total_value) || 0;
       });
       return sum;
     });
@@ -18723,12 +18884,35 @@ function selectHistYear(y) {
 
 let _histRenderSeq = 0;
 
+async function _histSummaryFromDb(year) {
+  const hist = await fetchAll('age_hist_projects', 2000).catch(() => []);
+  const rows = (hist || []).filter(p => parseInt(p.year, 10) === year);
+  if (!rows.length) return null;
+  let fat = 0;
+  let cost = 0;
+  const clients = new Set();
+  rows.forEach(p => {
+    fat += parseFloat(p.value) || 0;
+    cost += parseFloat(p.cost) || 0;
+    const k = String(p.client_name || '').trim().toLowerCase();
+    if (k) clients.add(k);
+  });
+  return {
+    fat,
+    cost,
+    lucro: fat - cost,
+    n: rows.length,
+    clientes: clients.size,
+    semCusto: cost === 0
+  };
+}
+
 async function renderHistYear(year, forceRefresh) {
   const el = document.getElementById('histContent');
   if (!el) return;
   const seq = ++_histRenderSeq;
 
-  let hs = HIST_SUMMARY[year];
+  let hs = null;
   let liveProjects = null;
   let isLive = false;
 
@@ -18745,22 +18929,34 @@ async function renderHistYear(year, forceRefresh) {
     } catch (e) {
       console.warn('[hist 2026 live]', e);
       if (seq !== _histRenderSeq || _histYear !== year) return;
-      hs = HIST_SUMMARY[2026];
+      hs = _isOwnageTenant() ? HIST_SUMMARY[2026] : _emptyKpiTotals();
+    }
+  } else if (year >= 2021 && year <= 2025) {
+    if (_isOwnageTenant()) {
+      hs = HIST_SUMMARY[year] || null;
+    } else {
+      el.innerHTML = `<div style="padding:28px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:12px">
+        <i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Carregando histórico ${year}…
+      </div>`;
+      hs = await _histSummaryFromDb(year);
+      if (seq !== _histRenderSeq || _histYear !== year) return;
     }
   }
 
   if (seq !== _histRenderSeq || _histYear !== year) return;
 
   if (!hs) {
-    el.innerHTML = '<p style="color:var(--textsub);font-family:var(--font-m)">Dados não disponíveis</p>';
+    el.innerHTML = `<div class="panel" style="padding:28px;text-align:center;color:var(--textsub);font-family:var(--font-m);font-size:12px">
+      <i class="fas fa-inbox" style="margin-right:8px;opacity:.5"></i>Nenhum dado histórico para ${year}. Cadastre projetos para começar.
+    </div>`;
     return;
   }
 
   const margin = hs.fat > 0 ? (hs.lucro / hs.fat * 100) : null;
   let prevFat = null;
   if (year === 2026 && isLive) {
-    prevFat = HIST_SUMMARY[2025]?.fat || null;
-  } else {
+    prevFat = _isOwnageTenant() ? (HIST_SUMMARY[2025]?.fat || null) : null;
+  } else if (_isOwnageTenant()) {
     prevFat = HIST_SUMMARY[year - 1]?.fat || null;
   }
   const growth = prevFat > 0 ? ((hs.fat - prevFat) / prevFat * 100) : null;
@@ -18769,8 +18965,8 @@ async function renderHistYear(year, forceRefresh) {
   if (year === 2026) {
     const list = isLive && liveProjects
       ? liveProjects
-      : (PROJ_2026_SHEET || []).map(p => ({ ...p }));
-    const srcLabel = isLive ? 'SUPABASE · TEMPO REAL' : 'PLANILHA EMBUTIDA (fallback)';
+      : (_isOwnageTenant() ? (PROJ_2026_SHEET || []).map(p => ({ ...p })) : []);
+    const srcLabel = isLive ? 'SUPABASE · TEMPO REAL' : (_isOwnageTenant() ? 'PLANILHA EMBUTIDA (fallback)' : 'SUPABASE');
     projTable = `
       <div class="panel" style="margin-top:14px">
         <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
@@ -33422,6 +33618,7 @@ function _ageInit() {
   });
   initInviteFromUrl();
   initRefFromUrl();
+  try { initSensitiveToggle(); } catch (_) {}
 }
 
 async function _ageBootstrap() {
