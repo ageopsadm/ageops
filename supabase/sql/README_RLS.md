@@ -88,14 +88,42 @@ vinculada — corrija antes de seguir, senão ele não enxergará nada.
 
 ## Parte 4 — Rodar o RLS
 
-Rode `rls_multitenant.sql` **passo a passo**, não de uma vez.
+### Onde rodar
 
-O passo 0 é só diagnóstico e não altera nada: ele lista linhas com
-`company_id` nulo. Toda linha nessa lista fica invisível depois. Faça o
-backfill antes de continuar.
+**SQL Editor do Supabase** (Dashboard → SQL Editor → New query) é o caminho
+mais simples e não depende de CLI. Cole **um passo por vez** e execute.
 
-Entre um passo e outro, use o app. É mais rápido descobrir o que quebrou em
-seis etapas do que em uma.
+Ou, se preferir terminal:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/sql/rls_multitenant.sql
+```
+
+A string de conexão está em Settings → Database → Connection string (URI).
+Ela contém a senha, então exporte numa variável em vez de deixá-la no
+histórico do shell.
+
+### Uma limitação do SQL Editor
+
+Ele mostra resultados de consulta, mas **descarta as mensagens de aviso**. Os
+passos 2 e 4 anunciam cada tabela tratada via `RAISE NOTICE`, e você não vai
+ver nada — parecerá que não fizeram nada. Fizeram; a confirmação vem no passo
+6, que devolve o estado de cada tabela em forma de tabela.
+
+Por isso o passo 0 foi escrito como consulta, e não como aviso: ele precisa
+ser visível.
+
+### Ordem
+
+Rode **passo a passo**, não o arquivo inteiro de uma vez. É mais rápido
+descobrir o que quebrou em seis etapas do que em uma.
+
+O passo 0 não altera nada: lista as linhas com `company_id` nulo, que ficam
+invisíveis depois do RLS. Se a coluna `situacao` disser `BACKFILL ANTES` em
+alguma tabela, resolva antes de continuar — e lembre que essas contas não se
+consertam mais sozinhas no login.
+
+Entre um passo e outro, use o app.
 
 ## Parte 5 — Testes que precisam passar
 

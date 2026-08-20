@@ -19,36 +19,39 @@
 -- Linhas com company_id nulo ficam invisíveis depois do RLS. Se aparecer
 -- qualquer contagem acima de zero, faça o backfill antes de seguir.
 -- ────────────────────────────────────────────────────────────────────────
-do $$
-declare
-  r record;
-  n bigint;
-  total bigint := 0;
-begin
-  for r in
-    select c.table_name
-    from information_schema.columns c
-    join information_schema.tables t
-      on t.table_schema = c.table_schema and t.table_name = c.table_name
-    where c.table_schema = 'public'
-      and c.column_name = 'company_id'
-      and t.table_type = 'BASE TABLE'
-      and c.table_name like 'age\_%'
-    order by 1
-  loop
-    execute format('select count(*) from public.%I where company_id is null', r.table_name) into n;
-    if n > 0 then
-      raise notice 'ORFAS  %  ->  % linha(s) sem company_id', rpad(r.table_name, 28), n;
-      total := total + n;
-    end if;
-  end loop;
-  raise notice '---';
-  if total = 0 then
-    raise notice 'OK: nenhuma linha orfa. Pode seguir para o passo 1.';
-  else
-    raise notice 'ATENCAO: % linha(s) ficariam invisiveis. Faca o backfill antes.', total;
-  end if;
-end $$;
+-- Devolve tabela em vez de RAISE NOTICE: o SQL Editor do Supabase mostra
+-- resultados, mas descarta notices.
+with alvo as (
+  select c.table_name
+  from information_schema.columns c
+  join information_schema.tables t
+    on t.table_schema = c.table_schema and t.table_name = c.table_name
+  where c.table_schema = 'public'
+    and c.column_name = 'company_id'
+    and t.table_type = 'BASE TABLE'
+    and c.table_name like 'age\_%'
+),
+contagem as (
+  select
+    a.table_name,
+    (xpath(
+      '/row/cnt/text()',
+      query_to_xml(
+        format('select count(*) as cnt from public.%I where company_id is null', a.table_name),
+        false, true, ''
+      )
+    ))[1]::text::bigint as orfas
+  from alvo a
+)
+select
+  table_name as tabela,
+  orfas      as linhas_sem_company_id,
+  case when orfas = 0
+       then 'ok'
+       else 'BACKFILL ANTES — estas linhas somem depois do RLS'
+  end as situacao
+from contagem
+order by orfas desc, table_name;
 
 
 -- ────────────────────────────────────────────────────────────────────────
