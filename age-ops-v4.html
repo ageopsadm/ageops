@@ -8196,6 +8196,90 @@ async function _resolveIsCompanyOwnerFlag() {
  * Admin (ou bootstrap admin): se company_id está vazio, associa automaticamente à empresa em
  * age_companies onde owner_username = usuário atual (sem ação manual).
  */
+function _tenantFilterRows(rows, table) {
+  const list = (Array.isArray(rows) ? rows : []).filter(_sbIsRowVisible);
+  if (!_tenantShouldFilterTable(table)) return list;
+  const cid = _tenantCidForScope();
+  if (!cid) {
+    if (window.__tenantScopeSuspended || _userIsBootstrapAdmin()) return list;
+    return [];
+  }
+  const un = String(currentUser?.username || '').trim().toLowerCase();
+  return list.filter(r => {
+    const rc = r?.company_id;
+    if (rc == null || String(rc).trim() === '') {
+      return un && String(r.created_by || '').trim().toLowerCase() === un;
+    }
+    return String(rc) === String(cid);
+  });
+}
+
+/**
+ * Corrige vínculo errado (ex.: conta nova apontando para empresa do gustavowng).
+ * Admin comum só enxerga age_companies onde owner_username = ele mesmo.
+ */
+async function repairUserTenantCompanyOnLogin() {
+  if (!currentUser?.username || _userIsBootstrapAdmin()) return { repaired: false };
+  const un = String(currentUser.username).trim().toLowerCase();
+  if (!currentUser.id) {
+    const row = await fetchAgeUserRow(un);
+    if (row?.id) currentUser.id = row.id;
+  }
+  if (!currentUser.id) return { repaired: false };
+
+  const prev = !!window.__tenantScopeSuspended;
+  window.__tenantScopeSuspended = true;
+  try {
+    const cd = await apiGet('age_companies', `?owner_username=eq.${encodeURIComponent(un)}&limit=10`);
+    let ownedList = (Array.isArray(cd?.data) ? cd.data : []).filter(c => c?.id);
+    let owned = ownedList[0] || null;
+    let ownedId = owned?.id ? String(owned.id) : null;
+    const curId = currentUser.company_id != null ? String(currentUser.company_id).trim() : '';
+    const isAdmin = _normalizeRole(currentUser.role) === 'admin';
+
+    /* Conta admin sem empresa própria mas vinculada a outra → criar tenant isolado */
+    if (!ownedId && curId && isAdmin) {
+      try {
+        const cr = await apiPost('age_companies', {
+          name: currentUser.company_name || 'Minha Empresa',
+          owner_username: un,
+          plan: currentUser.plan || 'agencia',
+          segment: 'Outro'
+        });
+        ownedId = String(cr?.id ?? cr?.[0]?.id ?? '');
+        owned = ownedId ? { id: ownedId, name: currentUser.company_name || 'Minha Empresa' } : null;
+        if (ownedId) console.warn('[tenant] empresa isolada criada para', un, ownedId);
+      } catch (e) {
+        console.warn('[tenant] falha ao criar empresa isolada', un, e);
+      }
+    }
+
+    if (ownedId && curId !== ownedId) {
+      await apiPatch('age_users', currentUser.id, {
+        company_id: ownedId,
+        company_name: owned.name || currentUser.company_name || ''
+      });
+      currentUser.company_id = ownedId;
+      currentUser.company_name = owned.name || '';
+      console.warn('[tenant] company_id corrigido para empresa própria:', un, ownedId);
+      return { repaired: true, company_id: ownedId };
+    }
+
+    if (!ownedId && curId && isAdmin) {
+      await apiPatch('age_users', currentUser.id, { company_id: null, company_name: null });
+      currentUser.company_id = null;
+      currentUser.company_name = null;
+      console.warn('[tenant] company_id estrangeiro removido de', un);
+      return { repaired: true, company_id: null };
+    }
+  } catch (e) {
+    console.warn('[repairUserTenantCompanyOnLogin]', e);
+  } finally {
+    try { window.__tenantScopeSuspended = prev; } catch (_) {}
+  }
+  return { repaired: false };
+}
+
 async function linkAdminCompanyFromOwnerRow() {
   if(!currentUser) return;
   if(currentUser.company_id) return;
@@ -8359,7 +8443,7 @@ async function migrateOwnageTenantForBootstrapAdmin() {
  * Admin bootstrap: zera dados operacionais de uma conta (por username).
  * Console: adminResetTenantByUsername('vilarkim')
  */
-async function adminResetTenantByUsername(username) {
+async function adminResetTenantByUsername(username, opts = {}) {
   if (!_userIsBootstrapAdmin()) {
     toast('Apenas admin bootstrap pode resetar contas.', 'err');
     return { ok: false };
@@ -8369,7 +8453,7 @@ async function adminResetTenantByUsername(username) {
     toast('Informe o username.', 'warn');
     return { ok: false };
   }
-  if (!confirm(`Zerar TODOS os dados operacionais da conta "${un}"? Isso não pode ser desfeito.`)) {
+  if (!opts.silent && !confirm(`Zerar TODOS os dados operacionais da conta "${un}"? Isso não pode ser desfeito.`)) {
     return { ok: false, cancelled: true };
   }
 
@@ -8379,9 +8463,32 @@ async function adminResetTenantByUsername(username) {
   try {
     const d = await apiGet('age_users', `?username=eq.${encodeURIComponent(un)}&limit=1`);
     const row = (Array.isArray(d?.data) ? d.data : []).filter(_sbIsRowVisible)[0];
-    if (!row?.company_id) throw new Error(`Usuário "${un}" sem company_id no Supabase.`);
+    if (!row?.id) throw new Error(`Usuário "${un}" não encontrado.`);
 
-    const cid = String(row.company_id);
+    let ownedId = null;
+    let ownedName = '';
+    const od = await apiGet('age_companies', `?owner_username=eq.${encodeURIComponent(un)}&limit=10`);
+    const owned = (Array.isArray(od?.data) ? od.data : []).find(c => c?.id);
+    if (owned?.id) {
+      ownedId = String(owned.id);
+      ownedName = owned.name || '';
+    } else {
+      const cr = await apiPost('age_companies', {
+        name: row.company_name || 'Minha Empresa',
+        owner_username: un,
+        plan: 'agencia',
+        segment: 'Outro'
+      });
+      ownedId = String(cr?.id ?? cr?.[0]?.id ?? '');
+      ownedName = row.company_name || 'Minha Empresa';
+      if (!ownedId) throw new Error('Não foi possível criar empresa isolada.');
+    }
+
+    if (String(row.company_id || '') !== ownedId) {
+      await apiPatch('age_users', row.id, { company_id: ownedId, company_name: ownedName });
+    }
+
+    const cid = ownedId;
     const tables = [...TENANT_SCOPED_TABLES];
 
     for (const tbl of tables) {
@@ -8418,7 +8525,7 @@ async function adminResetTenantByUsername(username) {
       }
     } catch (e) {}
 
-    toast(`Conta "${un}" resetada — ${deleted} registro(s) removido(s).`, 'ok');
+    toast(`Conta "${un}" isolada e zerada — ${deleted} registro(s) removido(s).`, 'ok');
     console.log(`[adminResetTenantByUsername] ${un} company_id=${cid} deleted=${deleted}`);
     return { ok: true, username: un, company_id: cid, deleted };
   } catch (e) {
@@ -8430,6 +8537,29 @@ async function adminResetTenantByUsername(username) {
   }
 }
 try { window.adminResetTenantByUsername = adminResetTenantByUsername; } catch (_) {}
+
+/** Console (gustavowng): isola e zera conta — ex. adminReisolateUserAccount('vilarkim') */
+async function adminReisolateUserAccount(username) {
+  return adminResetTenantByUsername(username);
+}
+try { window.adminReisolateUserAccount = adminReisolateUserAccount; } catch (_) {}
+
+/** Bootstrap: corrige contas mal vinculadas (ex.: vilarkim → empresa própria vazia). */
+async function _bootstrapFixMislinkedAccounts() {
+  if (!_userIsBootstrapAdmin()) return;
+  try {
+    if (localStorage.getItem('age_fix_mislinked_v1')) return;
+  } catch (e) {}
+  try {
+    const r = await adminResetTenantByUsername('vilarkim', { silent: true });
+    if (r?.ok) {
+      try { localStorage.setItem('age_fix_mislinked_v1', '1'); } catch (e) {}
+      console.log('[bootstrap] vilarkim isolada:', r);
+    }
+  } catch (e) {
+    console.warn('[bootstrapFixMislinked]', e);
+  }
+}
 
 async function persistBootstrapAccountIfNeeded(row, plainPassword) {
   try {
@@ -8497,10 +8627,12 @@ async function applyLoginSessionFromRow(row) {
   };
   try { _myColabIdCache = undefined; } catch(e) {}
   await mergeCurrentUserFromSupabase();
+  await repairUserTenantCompanyOnLogin();
   await linkAdminCompanyFromOwnerRow();
   await ensureDefaultCompanyForPrivilegedUser();
   if(String(currentUser.username || '').toLowerCase() === 'gustavowng') {
     await migrateOwnageTenantForBootstrapAdmin().catch(()=>{});
+    await _bootstrapFixMislinkedAccounts().catch(()=>{});
   }
   try {
     await applyFreshUserRowFromSupabase();
@@ -11745,7 +11877,8 @@ const TENANT_SCOPED_TABLES = new Set([
   'age_orcamentos','age_colaboradores','age_nps_campanhas','age_nps_respostas',
   'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
   'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow','age_social_posts',
-  'age_support_tickets','age_project_deliveries','age_project_diarias','age_client_users','age_client_invites'
+  'age_support_tickets','age_project_deliveries','age_project_diarias','age_client_users','age_client_invites',
+  'age_clients_db','age_candidates'
 ]);
 
 function _tenantCidForScope() {
@@ -11906,6 +12039,16 @@ async function api(method, table, id='', body=null) {
   /* ── Multi-tenant: filtro company_id em GET/PATCH/DELETE nas tabelas escopadas ── */
   const _tcid = _tenantCidForScope();
   const _qHasId = q.has('id');
+  const _tenantBlocked =
+    !window.__tenantScopeSuspended &&
+    !_userIsBootstrapAdmin() &&
+    _tenantShouldFilterTable(table) &&
+    method === 'GET' &&
+    !_tcid &&
+    !wantSingleObject;
+  if (_tenantBlocked) {
+    return { data: [] };
+  }
   if(_tcid && _tenantShouldFilterTable(table)) {
     if((method === 'GET' || method === 'PATCH' || method === 'DELETE') && !q.has('company_id')) {
       /* age_nps_respostas não tem company_id — escopo via token da campanha no loadNps() */
@@ -12439,10 +12582,14 @@ async function bootstrapNotificationsUi() {
 }
 
 async function fetchAll(table, limit=500) {
+  const cid = _tenantCidForScope();
+  if (_tenantShouldFilterTable(table) && !cid && !window.__tenantScopeSuspended && !_userIsBootstrapAdmin()) {
+    return [];
+  }
   try {
     const d = await apiGet(table, `?limit=${limit}`);
     const rows = Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []);
-    return rows.filter(_sbIsRowVisible);
+    return _tenantFilterRows(rows, table);
   } catch(e) {
     console.warn('[fetchAll]', table, e?.message || e);
     return [];
@@ -12457,6 +12604,7 @@ async function fetchAll(table, limit=500) {
 async function fetchAgeProjectsScoped(limit = 1000) {
   const cid = _tenantCidForScope();
   const uname = String(currentUser?.username || '').trim();
+  if (!cid && !window.__tenantScopeSuspended && !_userIsBootstrapAdmin()) return [];
   let qs = `?limit=${encodeURIComponent(limit)}`;
   if(cid && uname) {
     const encCid = encodeURIComponent(String(cid));
@@ -12470,15 +12618,16 @@ async function fetchAgeProjectsScoped(limit = 1000) {
     try {
       const d = await apiGet('age_projects', qtry);
       const rows = Array.isArray(d?.data) ? d.data : [];
-      return rows.filter(_sbIsRowVisible);
+      return _tenantFilterRows(rows, 'age_projects');
     } catch(e) {
       if(String(e?.message||e).includes('deleted')) continue;
       console.warn('[fetchAgeProjectsScoped]', qtry, e?.message || e);
     }
   }
   if (SUPABASE_IS_SOURCE_OF_TRUTH) return [];
+  if (!cid && !_userIsBootstrapAdmin()) return [];
   try {
-    return await fetchAll('age_projects', limit);
+    return _tenantFilterRows(await fetchAll('age_projects', limit), 'age_projects');
   } catch(e2) {
     return [];
   }
@@ -17236,7 +17385,9 @@ async function _populateProjectClientSelect(selectedName) {
 
   (_clientsCache || []).forEach(c => add(c.name));
   (_projAllCache || []).forEach(p => add(_ageProjDbClient(p)));
-  (PROJ_2026_SHEET || []).forEach(s => add(s.cliente));
+  if (_isOwnageTenant()) {
+    (PROJ_2026_SHEET || []).forEach(s => add(s.cliente));
+  }
 
   try {
     const dbClients = await fetchAll('age_clients_db', 500).catch(() => []);
