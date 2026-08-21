@@ -258,9 +258,19 @@ grant select, update on public.age_companies to authenticated;
 -- Tabela de senhas: só a service role encosta. Repetido aqui de propósito —
 -- se age_user_secrets.sql não tiver sido aplicado, o hash das senhas ficaria
 -- legível pela chave anônima.
-alter table if exists public.age_user_secrets enable row level security;
-revoke all on public.age_user_secrets from anon;
-revoke all on public.age_user_secrets from authenticated;
+-- REVOKE não aceita IF EXISTS, então a checagem tem que ser explícita:
+-- em projetos onde age_user_secrets.sql ainda não rodou, a tabela não existe
+-- e o script inteiro morreria aqui, no meio.
+do $$
+begin
+  if to_regclass('public.age_user_secrets') is null then
+    raise warning 'age_user_secrets nao existe — rode age_user_secrets.sql antes de publicar a Edge Function.';
+    return;
+  end if;
+  execute 'alter table public.age_user_secrets enable row level security';
+  execute 'revoke all on public.age_user_secrets from anon';
+  execute 'revoke all on public.age_user_secrets from authenticated';
+end $$;
 
 
 -- ────────────────────────────────────────────────────────────────────────
