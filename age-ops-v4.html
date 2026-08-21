@@ -7431,6 +7431,10 @@ async function _authFnCall(payload) {
     _authFnAvailable = true;
     let data = {};
     try { data = await r.json(); } catch(_) { data = {}; }
+    /* Versão antiga da função publicada: ela não conhece as ações novas.
+       Tratar como indisponível deixa o chamador cair no caminho legado, em
+       vez de derrubar cadastro e convite durante a janela de deploy. */
+    if(r.status === 400 && /desconhecida/i.test(String(data?.error || ''))) return null;
     return { ok: r.ok, status: r.status, data };
   } catch(e) {
     console.warn('[auth] função indisponível, usando modo legado:', e?.message || e);

@@ -17,14 +17,22 @@ que o navegador não consegue forjar.
 ## Ordem de aplicação
 
 1. `age_user_secrets.sql` (se ainda não rodou)
-2. Configurar `AGE_JWT_SECRET` na Edge Function
-3. Publicar a Edge Function `auth-login`
-4. Publicar o front atualizado (`age-ops-v4.html` **e** `nps.html`)
+2. Publicar o front atualizado (`age-ops-v4.html` **e** `nps.html`)
+3. Publicar as Edge Functions
+4. **Só então** configurar `AGE_JWT_SECRET`
 5. Conferir que o login está emitindo token
 6. `rls_multitenant.sql`
 
-Os passos 2 a 4 são retrocompatíveis: enquanto o RLS não for ligado, o app
-funciona igual. O passo 6 é o irreversível na prática — por isso, staging.
+O segredo vem **depois** das funções, e as funções depois do front. A razão:
+`ai-command`, `create-subscription` e `recruit-submit` passam a exigir sessão
+no instante em que `AGE_JWT_SECRET` existe. Se o segredo estiver configurado
+antes de o front novo estar no ar, o front antigo não manda `x-age-token` e
+essas funções param de responder.
+
+Publicar o front antes é seguro: sem token, ele opera exatamente como hoje.
+
+Os passos 2 a 5 são retrocompatíveis: enquanto o RLS não for ligado, o app
+funciona igual. O passo 6 é o irreversível na prática.
 
 ---
 
