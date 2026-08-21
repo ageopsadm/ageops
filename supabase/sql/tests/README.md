@@ -12,10 +12,16 @@ export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 pg_ctl -D /opt/homebrew/var/postgresql@17 -l /tmp/pg.log start
 
 psql -d postgres -q -f supabase/sql/tests/00_fixture.sql
+psql -d age_test -v ON_ERROR_STOP=1 -f supabase/sql/multitenant_tabelas_faltantes.sql
 psql -d age_test -v ON_ERROR_STOP=1 -f supabase/sql/rls_multitenant.sql
 psql -d age_test -f supabase/sql/tests/01_isolamento.sql
 psql -d age_test -f supabase/sql/tests/02_escalada.sql
+psql -d age_test -f supabase/sql/tests/03_recrutamento.sql
 ```
+
+A migração entra antes do RLS porque é ela que cria o `company_id` nas
+tabelas de recrutamento — sem a coluna, o passo 4 do RLS fecharia essas
+tabelas por completo em vez de escopá-las por empresa.
 
 O fixture recria o banco do zero, então dá para repetir à vontade.
 
@@ -58,3 +64,14 @@ Duas falhas reais na primeira execução:
 
 A segunda vale registrar porque é o tipo de furo que passa despercebido numa
 leitura do SQL: cada política, isolada, parece correta.
+
+Uma terceira, achada depois, na aba Recrutamento:
+
+3. **View furando o RLS.** `v_age_candidates_admin` era uma view comum, e view
+   comum roda com o privilégio de quem a criou — não de quem consulta. Com o
+   RLS ligado na tabela, a view continuava devolvendo candidato de todas as
+   empresas. O `03_recrutamento.sql` cobre isso; o efeito é fácil de reproduzir
+   criando duas views idênticas sobre a mesma tabela protegida, uma com
+   `security_invoker = true` e outra sem: a primeira devolve 1 linha, a segunda
+   devolve todas. `age_candidates` também não tinha `company_id` nenhum, então
+   nem o filtro do front tinha em que se apoiar.

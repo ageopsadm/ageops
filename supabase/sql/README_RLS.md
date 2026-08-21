@@ -17,11 +17,18 @@ que o navegador não consegue forjar.
 ## Ordem de aplicação
 
 1. `age_user_secrets.sql` (se ainda não rodou)
-2. Publicar o front atualizado (`age-ops-v4.html` **e** `nps.html`)
-3. Publicar as Edge Functions
-4. **Só então** configurar `AGE_JWT_SECRET`
-5. Conferir que o login está emitindo token
-6. `rls_multitenant.sql`
+2. `multitenant_tabelas_faltantes.sql` — **antes do front**, ver abaixo
+3. Publicar o front atualizado (`age-ops-v4.html` **e** `nps.html`)
+4. Publicar as Edge Functions
+5. **Só então** configurar `AGE_JWT_SECRET`
+6. Conferir que o login está emitindo token
+7. `rls_multitenant.sql`
+
+O passo 2 cria `company_id` em tabelas que ficaram de fora do multi-tenant
+(recrutamento, gastos de projeto, catálogo de funções de orçamento) e recria
+`v_age_candidates_admin` com `security_invoker`. Ele vem **antes** do front
+porque o front novo passa a mandar `company_id=eq.…` nessas tabelas; se a
+coluna ainda não existir, o PostgREST responde 400 e as abas quebram.
 
 O segredo vem **depois** das funções, e as funções depois do front. A razão:
 `ai-command`, `create-subscription` e `recruit-submit` passam a exigir sessão
@@ -232,6 +239,34 @@ configurar o secret junto com o resto.
 
 Teste depois do deploy: um POST sem assinatura no webhook precisa responder
 401, e o app logado precisa continuar usando o assistente normalmente.
+
+## Cuidado permanente: views e tabelas novas
+
+Duas armadilhas já morderam o projeto e vão voltar se ninguém checar:
+
+**Views não herdam o RLS.** Uma view roda com o privilégio de quem a criou,
+não de quem consulta. Foi assim que `v_age_candidates_admin` mostrou os
+candidatos da OWNAGE para outra conta mesmo com a tabela protegida. Toda view
+nova precisa de `WITH (security_invoker = true)`.
+
+**Tabela nova precisa entrar em dois lugares:** ganhar a coluna `company_id`
+(o `rls_multitenant.sql` cobre sozinho quem tem a coluna) e entrar em
+`TENANT_SCOPED_TABLES` no `age-ops-v4.html`.
+
+Para achar o que escapou, compare o que o front lê com o que está escopado:
+
+```bash
+rg -o "(?:apiGet|fetchAll)\('(age_[a-z_]+|v_age_[a-z_]+)'" age-ops-v4.html -r '$1' | sort -u
+```
+
+E no banco, listar views sem `security_invoker`:
+
+```sql
+SELECT c.relname, c.reloptions
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE c.relkind = 'v' AND n.nspname = 'public'
+   AND (c.reloptions IS NULL OR NOT ('security_invoker=true' = ANY(c.reloptions)));
+```
 
 ## O que este roteiro não cobre
 

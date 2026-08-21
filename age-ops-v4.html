@@ -7002,7 +7002,7 @@ async function refreshLiveProjectsKpiCache() {
    Atualizado em 27/04/2026. Referência histórica / fallback offline / base para módulo Histórico.
    Com SUPABASE_IS_SOURCE_OF_TRUTH=true, dados operacionais vêm de age_projects (Supabase), não deste array.
 ═══════════════════════════════════════════════════════════ */
-const PROJ_2026_SHEET = [
+const _OWNAGE_PROJ_SHEET = [
   /* ── JANEIRO ─────────────────────────────────────────────── */
   { cliente:"Yuri Guillen",          projeto:"Muito Longe",              sale_date:"2026-01-07", pay_date:"2026-01-08", mes:1, novo:false, fat:10000, cost:2879, lucro:7121, margin:71, cat:"Vídeo",       seg:"Moda",        nps:10 },
   /* ── FEVEREIRO ───────────────────────────────────────────── */
@@ -7023,11 +7023,11 @@ const PROJ_2026_SHEET = [
   { cliente:"MC Bill",               projeto:"Content Day",              sale_date:"2026-03-12", pay_date:"2026-04-05", mes:4, novo:false, fat:1500,  cost:1000, lucro:500,  margin:33, cat:"Vídeo",        seg:"Videoclipe",  nps:8  }
 ];
 
-/* Totais calculados 100% a partir de PROJ_2026_SHEET — nunca manuais */
-const PLAN_2026 = (function(){
+/* Totais calculados 100% a partir de _OWNAGE_PROJ_SHEET — nunca manuais */
+const _OWNAGE_PLAN_2026 = (function(){
   let fat=0, cost=0, lucro=0, n=0, novos=0, npsSum=0, npsN=0;
   const bm={}, clientSet=new Set();
-  PROJ_2026_SHEET.forEach(p=>{
+  _OWNAGE_PROJ_SHEET.forEach(p=>{
     fat   += p.fat;
     cost  += p.cost;
     lucro += p.lucro;
@@ -7051,14 +7051,36 @@ const PLAN_2026 = (function(){
 /* ═══════════════════════════════════════════
    DADOS HISTÓRICOS 2021-2025 (planilhas anteriores)
 ═══════════════════════════════════════════ */
-const HIST_SUMMARY = {
+const _OWNAGE_HIST_SUMMARY = {
   2021:{ fat:67415,  cost:0,     lucro:67415,  n:12, clientes:9,  semCusto:true  },
   2022:{ fat:109042, cost:58835, lucro:50207,  n:25, clientes:22, semCusto:false },
   2023:{ fat:210591, cost:97431, lucro:113160, n:28, clientes:18, semCusto:false },
   2024:{ fat:162440, cost:77538, lucro:84902,  n:22, clientes:17, semCusto:false },
   2025:{ fat:110190, cost:0,     lucro:110190, n:23, clientes:18, semCusto:true  },
-  2026: PLAN_2026 /* referência direta — sempre sincronizado */
+  2026: _OWNAGE_PLAN_2026 /* referência direta — sempre sincronizado */
 };
+
+/* ═══════════════════════════════════════════════════════════
+   PORTÃO DE TENANT DOS DADOS EMBUTIDOS
+
+   Estes conjuntos são histórico real da OWNAGE escrito no código, e não
+   passam pelo banco — logo o RLS não os alcança. Em vez de lembrar de
+   filtrar em cada um dos ~50 pontos de leitura (foi assim que o histórico
+   da OWNAGE vazou para a aba de Relatórios de outra conta), o portão fica
+   aqui: quem não é o tenant dono lê sempre uma estrutura vazia.
+
+   Ler o nome global continua funcionando igual no código todo; só o
+   conteúdo muda conforme o usuário logado.
+═══════════════════════════════════════════════════════════ */
+function _defineOwnageOnlyGlobal(name, ownageValue, emptyValue) {
+  Object.defineProperty(window, name, {
+    configurable: true,
+    get() { return _isOwnageTenant() ? ownageValue() : emptyValue(); }
+  });
+}
+_defineOwnageOnlyGlobal('PROJ_2026_SHEET', () => _OWNAGE_PROJ_SHEET, () => []);
+_defineOwnageOnlyGlobal('PLAN_2026',       () => _OWNAGE_PLAN_2026,  () => _emptyKpiTotals());
+_defineOwnageOnlyGlobal('HIST_SUMMARY',    () => _OWNAGE_HIST_SUMMARY, () => ({}));
 
 /* ═══════════════════════════════════════════
    LIMPEZA / SYNC LEGADO — planilha JS → Supabase
@@ -8390,9 +8412,12 @@ function _tenantFilterRows(rows, table) {
     return [];
   }
   const un = String(currentUser?.username || '').trim().toLowerCase();
+  const ownage = _isOwnageTenant();
   return list.filter(r => {
     const rc = r?.company_id;
     if (rc == null || String(rc).trim() === '') {
+      /* Legado sem dono = histórico da OWNAGE. Outra conta só vê o que ela mesma criou. */
+      if (ownage) return true;
       return un && String(r.created_by || '').trim().toLowerCase() === un;
     }
     return String(rc) === String(cid);
@@ -12183,7 +12208,11 @@ const TENANT_SCOPED_TABLES = new Set([
   'age_assigned_tasks','age_team_calendar','age_tasks','age_finance','age_payments',
   'age_relatorios','age_leads','age_permissions','age_notifications','age_cashflow','age_social_posts',
   'age_support_tickets','age_project_deliveries','age_project_diarias','age_client_users','age_client_invites',
-  'age_clients_db','age_candidates'
+  'age_clients_db','age_candidates',
+  /* Recrutamento: a view também entra, senão a aba lista candidato de todas as empresas.
+     Exige o company_id criado por supabase/sql/multitenant_tabelas_faltantes.sql. */
+  'v_age_candidates_admin','age_match_results','age_ai_analysis','age_recruit_links',
+  'age_gastos','age_orc_funcoes'
 ]);
 
 function _tenantCidForScope() {
@@ -12888,12 +12917,35 @@ async function fetchAll(table, limit=500) {
     return [];
   }
   try {
-    const d = await apiGet(table, `?limit=${limit}`);
-    const rows = Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []);
-    return _tenantFilterRows(rows, table);
+    return await _fetchTenantThenClientFilter(table, `?limit=${limit}`, table);
   } catch(e) {
     console.warn('[fetchAll]', table, e?.message || e);
     return [];
+  }
+}
+
+/**
+ * Lê a tabela com filtro de empresa no servidor. Se a coluna company_id ainda
+ * não existir (400), busca sem o filtro e descarta no cliente — outra conta
+ * nunca vê linha da OWNAGE nem legado sem dono.
+ */
+async function _fetchTenantThenClientFilter(table, qs, filterTable) {
+  const asRows = (d) => Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []);
+  const scope = filterTable || table;
+  try {
+    return _tenantFilterRows(asRows(await apiGet(table, qs)), scope);
+  } catch (e) {
+    const msg = String(e?.message || e || '');
+    const missingCol = /company_id|PGRST204|could not find/i.test(msg);
+    if (!missingCol) throw e;
+    const prev = window.__tenantScopeSuspended;
+    window.__tenantScopeSuspended = true;
+    try {
+      const d = await apiGet(table, qs);
+      return _tenantFilterRows(asRows(d), scope);
+    } finally {
+      window.__tenantScopeSuspended = prev;
+    }
   }
 }
 
@@ -23957,8 +24009,8 @@ async function loadRecrutamento() {
   const list = document.getElementById('recrutList');
   if(list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--textsub);font-size:12px"><i class="fas fa-circle-notch fa-spin"></i> Carregando candidatos...</div>';
   try {
-    const d = await apiGet('v_age_candidates_admin', '?limit=1000&order=created_at.desc');
-    _recrutRows = Array.isArray(d?.data) ? d.data : [];
+    const raw = await _fetchTenantThenClientFilter('v_age_candidates_admin', '?limit=1000&order=created_at.desc', 'age_candidates');
+    _recrutRows = raw;
   } catch(e) {
     console.error('[recrutamento]', e);
     _recrutRows = [];
@@ -24258,7 +24310,7 @@ async function recrutRenderLinks() {
   if(list) list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--textsub);font-size:12px"><i class="fas fa-circle-notch fa-spin"></i></div>';
   let rows = [];
   try {
-    const d = await apiGet('age_recruit_links', '?order=created_at.desc&limit=200');
+    const d = { data: await _fetchTenantThenClientFilter('age_recruit_links', '?order=created_at.desc&limit=200', 'age_recruit_links') };
     rows = Array.isArray(d?.data) ? d.data : [];
   } catch(e) { console.error(e); }
   if(!list) return;
@@ -32749,114 +32801,8 @@ window.addEventListener('resize', setupResponsive);
    RELATÓRIOS DE PROJETOS
 ═══════════════════════════════════════════════════════════════ */
 
-/* ─── DADOS FIXOS DOS RELATÓRIOS ─── */
-const REL_FIXOS = [
-  {
-    id:'rel-fix-001', cliente:'Yuri Guillen', projeto:'Muito Longe', mes:1,
-    fat:10000, cost:2879, nps:10, status:'concluido', resp:'Gustavo',
-    positivo:'Projeto fluiu muito bem. Primeiro projeto do cliente na casa — "Muito Longe". Cliente retornou no Content Day, o que mostra satisfação e fidelização.',
-    problemas:'Problema de alinhamento de budget no início. Comunicação sobre escopo financeiro precisou ser ajustada durante o projeto.',
-    licoes:'Alinhamento de budget deve acontecer ANTES do início das gravações, com briefing financeiro documentado. Contrato claro evita retrabalho de expectativa.',
-    obs:'Cliente fidelizado — retornou para Content Day. Caso de sucesso de conversão.'
-  },
-  {
-    id:'rel-fix-002', cliente:'Yuri Guillen', projeto:'Content Day', mes:4,
-    fat:1500, cost:1000, nps:7, status:'concluido', resp:'Gustavo',
-    positivo:'Gravações fluíram bem. Cliente ficou satisfeito com o resultado final.',
-    problemas:'Cliente ficou ansioso com prazo de entrega. Problema de prazo presente em praticamente todos os Content Days — gargalo sistêmico de edição.',
-    licoes:'Implementar editor real-time nos próximos Content Days para eliminar a ansiedade de prazo. Comunicar cronograma de entrega ANTES da gravação com datas fixas.',
-    obs:'Mesmo com ansiedade, cliente saiu satisfeito. Retornou ao projeto, demonstrando confiança na equipe.'
-  },
-  {
-    id:'rel-fix-003', cliente:'Marcella', projeto:'Miss Brasil', mes:2,
-    fat:3600, cost:1000, nps:0, status:'problema', resp:'Gustavo',
-    positivo:'Projeto entregue. Gerou giro de caixa no período.',
-    problemas:'Alta demanda de diárias que comprometeu nosso budget. Sacrificamos margem para executar 4 diárias. Budget não comportava a operação completa. Projeto não valeu financeiramente a pena.',
-    licoes:'Aprender a dizer NÃO quando o budget não cobre a operação. Antes de aceitar, calcular margem mínima de 40%. Se não bater, negociar ou recusar. Giro de caixa ruim é pior que não ter o projeto.',
-    obs:'Aprendizado importante: projetos com margem abaixo de 30% devem ser recusados ou reestruturados antes de assinar.'
-  },
-  {
-    id:'rel-fix-004', cliente:'Viezes', projeto:'Leilão', mes:2,
-    fat:2600, cost:700, nps:0, status:'concluido', resp:'Gustavo',
-    positivo:'Projeto entregue. Material bom captado. Margem saudável.',
-    problemas:'Edição real-time não foi viável dentro do budget. Decepcionamos levemente o cliente por não entregar o que foi prometido inicialmente.',
-    licoes:'Não prometer edição real-time se o budget não cobre. Deixar claro no contrato o que está e o que não está incluído. Honestidade no briefing evita decepção na entrega.',
-    obs:'Mesmo com decepção pontual, entregamos material bom. Avaliar se cliente tem potencial de recorrência.'
-  },
-  {
-    id:'rel-fix-005', cliente:'Thadeu Meneghini', projeto:'Ao Vivo', mes:3,
-    fat:5000, cost:2500, nps:10, status:'problema', resp:'Gustavo',
-    positivo:'Cliente deu NPS 10. Relação com o cliente excelente.',
-    problemas:'Operadores de câmera não entregaram material adequado para aftermovie. Edição ficou muito difícil, sobrecarregou toda a equipe. Tivemos custo extra com editor adicional para finalizar no prazo. Acúmulo de demandas simultâneas na produtora.',
-    licoes:'Briefing técnico obrigatório com operadores ANTES de qualquer ao vivo. Definir shots obrigatórios com referência visual. Criar checklist de captação para aftermovie. Nunca contratar operador sem ver portfólio de aftermovie.',
-    obs:'Apesar dos problemas operacionais, cliente ficou satisfeito. O risco foi absorvido internamente — isso não pode se repetir.'
-  },
-  {
-    id:'rel-fix-006', cliente:'Talita Perosa Nutri', projeto:'Ao Vivo', mes:3,
-    fat:5200, cost:4100, nps:0, status:'concluido', resp:'Gustavo',
-    positivo:'Testamos edição real-time com sucesso — algo inédito para a produtora. Cliente sem insatisfação. Entrega realizada.',
-    problemas:'Logística para ir ao Rio muito cara em relação ao volume do projeto (1 diária). Margem muito baixa (21%) por causa do custo de deslocamento.',
-    licoes:'Para clientes no Rio: contratar equipe local para gravar e editar internamente em SP. Modelo híbrido reduz custo logístico em ~60%. Nunca ir presencialmente para 1 diária fora de SP sem recalcular a margem.',
-    obs:'A edição real-time provou ser viável e eficiente. Replicar esse modelo nos próximos projetos ao vivo.'
-  },
-  {
-    id:'rel-fix-007', cliente:'Cobertec e Solutec', projeto:'Publicidade', mes:3,
-    fat:3000, cost:500, nps:0, status:'em_andamento', resp:'Gustavo',
-    positivo:'Margem excelente (83%). Cliente satisfeito e com recorrência. Ajudando a estruturar o lado agência da produtora.',
-    problemas:'Cliente em Cuiabá — baixa consciência de investimento em conteúdo. Demanda alta. As imagens acabam denunciando a desorganização interna da empresa do cliente.',
-    licoes:'Conversar com o cliente sobre organização de ambiente antes das gravações. Criar checklist de pré-produção para o cliente preparar o espaço. Sugerir consultoria de imagem como serviço adicional.',
-    obs:'Serviço de recorrência — priorizar manter o cliente. Ticket pode crescer com upsell de consultoria.'
-  },
-  {
-    id:'rel-fix-008', cliente:'Escola de Planejados', projeto:'Master Family e Revolução', mes:3,
-    fat:9400, cost:4000, nps:7, status:'concluido', resp:'Gustavo / Amarante',
-    positivo:'Primeira experiência com eventos de imersão. Jonas (cliente — também responsável pela Casa 46) gostou muito da entrega. Cliente conquistado apesar dos problemas estruturais.',
-    problemas:'Colaborador Amarante não entregou seu máximo — acumulou trabalho que recaiu sobre o Gustavo. Amarante foi caro para a operação vs. entrega. Budget não era ideal para tudo que a operação exigia. Faltou produtora e membro da equipe no dia das fotos — ficamos sobrecarregados.',
-    licoes:'Avaliar colaboradores com projeto-piloto de baixo risco antes de grandes eventos. Ter redundância na equipe para dias críticos. Budget de evento de imersão precisa de buffer de 20% para imprevistos. Criar checklist de presença da equipe para dias de gravação.',
-    obs:'Amarante não deve ser recontratado para operações críticas. Apesar dos erros, conquistamos o cliente — demonstra resiliência da equipe.'
-  },
-  {
-    id:'rel-fix-009', cliente:'Thiago Sub', projeto:'Content Day', mes:4,
-    fat:1500, cost:1000, nps:10, status:'concluido', resp:'Gustavo',
-    positivo:'Gravações fluíram bem. Cliente saiu satisfeito. NPS 10.',
-    problemas:'Prazo de entrega — problema sistêmico de todos os Content Days. Acúmulo de conteúdos atrasando entregas.',
-    licoes:'Editor real-time para Content Days. Cronograma de entrega comunicado antes da gravação.',
-    obs:'Cliente satisfeito. Avaliar recorrência.'
-  },
-  {
-    id:'rel-fix-010', cliente:'Irmãs Lira', projeto:'Content Day', mes:4,
-    fat:2250, cost:1000, nps:10, status:'concluido', resp:'Gustavo',
-    positivo:'Segundo dia de gravações fluiu muito bem. Todas saíram muito satisfeitas com o resultado.',
-    problemas:'Demora nas entregas por acúmulo de conteúdo de múltiplos Content Days simultâneos.',
-    licoes:'Espaçar Content Days no calendário. Máximo de 2 por semana para não sobrecarregar edição.',
-    obs:'NPS 10 — cliente com alto potencial de indicação. Pedir depoimento e indicação ativa.'
-  },
-  {
-    id:'rel-fix-011', cliente:'MC Bill', projeto:'Content Day', mes:4,
-    fat:1500, cost:1000, nps:8, status:'concluido', resp:'Gustavo',
-    positivo:'Gravações concluídas. Cliente satisfeito.',
-    problemas:'Prazo de entrega — mesmo problema sistêmico.',
-    licoes:'Resolver o gargalo de edição é prioridade estratégica para escalar Content Days.',
-    obs:'Esforço contínuo para entregas. Equipe comprometida com qualidade.'
-  },
-  {
-    id:'rel-fix-012', cliente:'Ecologyk', projeto:'Clipe', mes:4,
-    fat:1000, cost:1000, nps:7, status:'em_andamento', resp:'Equipe',
-    positivo:'Projeto em andamento.',
-    problemas:'Baixa prioridade de entrega — risco de insatisfação do cliente por perceber que não é prioridade.',
-    licoes:'Todo projeto com contrato assinado deve ter data de entrega definida, independente do valor. Reputação não tem preço mínimo.',
-    obs:'Definir prazo e comunicar ao cliente. Margem zero — não repetir esse modelo de precificação.'
-  },
-  {
-    id:'rel-fix-013', cliente:'Casa 46', projeto:'Visita Benjamin Back', mes:4,
-    fat:6300, cost:1000, nps:0, status:'concluido', resp:'Gustavo',
-    positivo:'Gravação fluiu muito bem. Margem excelente (84%). Cliente relevou o erro de produção.',
-    problemas:'Esquecemos de dar os termos de uso de imagem para assinar no dia da gravação — cliente pontuou como vacilo. Não fizemos pré-produção de locação para definir a lente ideal — ambiente ficou fechado para a lente usada.',
-    licoes:'Checklist de produção OBRIGATÓRIO com: termos de uso de imagem, visita técnica de locação, especificação de lentes por ambiente. Nunca chegar na locação sem ter pesquisado o espaço antes.',
-    obs:'Apesar dos erros, cliente ficou satisfeito. Erros documentados para nunca repetir. Potencial de recorrência alto pelo ticket e margem.'
-  }
-];
-
+/* Relatórios vêm só do banco (age_relatorios), já filtrados por empresa.
+   O array fixo da OWNAGE foi removido daqui para não ir no HTML de outras contas. */
 let _relCache = [];
 let _relProjOptions = [];
 
@@ -33004,23 +32950,16 @@ async function _relPopulateProjectSelect(existingReport) {
 
 /* ─── LOAD ─── */
 async function loadRelatorios() {
-  // Carrega imediatamente os dados fixos para evitar tela em branco
-  _relCache = [...REL_FIXOS].sort((a, b) => (b.mes||0) - (a.mes||0));
+  _relCache = [];
   renderRelList();
-  // Depois tenta mesclar com o banco de dados
   try {
     const dbRels = await fetchAll('age_relatorios', 300).catch(() => []);
-    if(dbRels && dbRels.length >= 0) {
-      const fixosNovos = REL_FIXOS.filter(f => !dbRels.some(d =>
-        d.cliente?.toLowerCase() === f.cliente?.toLowerCase() &&
-        d.projeto?.toLowerCase() === f.projeto?.toLowerCase()
-      ));
-      _relCache = [...dbRels, ...fixosNovos].sort((a, b) => (b.mes||0) - (a.mes||0));
-      renderRelList();
-    }
+    _relCache = (dbRels || []).slice().sort((a, b) => (b.mes||0) - (a.mes||0));
+    renderRelList();
   } catch(e) {
-    console.warn('loadRelatorios: usando apenas dados locais.', e);
-    // Mantém os dados fixos já carregados acima
+    console.warn('loadRelatorios: banco indisponível.', e);
+    _relCache = [];
+    renderRelList();
   }
 }
 

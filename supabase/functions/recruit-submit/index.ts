@@ -28,6 +28,11 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json'
 };
 
+/* Empresa dona da página pública de carreiras. Candidatura que chega sem
+   ?ref= válido não tem como declarar a empresa, então cai aqui. */
+const DEFAULT_COMPANY_ID = Deno.env.get('AGE_DEFAULT_COMPANY_ID')
+  || 'aa47f125-4b29-4c2d-b367-88b912f1b33e';
+
 /* ══════════════════════════════════════════════════════════
    ROLES + MATCHING — port 1:1 do roles.js / matching.js do handoff.
    NÃO alterar pesos sem alinhamento (algoritmo calibrado).
@@ -396,6 +401,9 @@ async function callClaude(userPrompt: string) {
 
 // deno-lint-ignore no-explicit-any
 async function runAnalysis(candidateId: string, candidate: any, match: any) {
+  /* A análise herda a empresa do candidato — é o que mantém o parecer
+     restrito a quem é dono da candidatura. */
+  const companyId = String(candidate?.company_id || '') || DEFAULT_COMPANY_ID;
   // Reaproveita registro pending existente ou cria um
   let analysisId: string | null = null;
   try {
@@ -409,7 +417,7 @@ async function runAnalysis(candidateId: string, candidate: any, match: any) {
       await db('PATCH', `age_ai_analysis?id=eq.${analysisId}`, { status: 'processing', error_message: null });
     } else {
       // deno-lint-ignore no-explicit-any
-      const created = await db('POST', 'age_ai_analysis', { candidate_id: candidateId, status: 'processing' }) as any[];
+      const created = await db('POST', 'age_ai_analysis', { company_id: companyId, candidate_id: candidateId, status: 'processing' }) as any[];
       analysisId = created?.[0]?.id || null;
     }
 
@@ -446,7 +454,7 @@ async function runAnalysis(candidateId: string, candidate: any, match: any) {
       if (analysisId) {
         await db('PATCH', `age_ai_analysis?id=eq.${analysisId}`, { status: 'failed', error_message: msg });
       } else {
-        await db('POST', 'age_ai_analysis', { candidate_id: candidateId, status: 'failed', error_message: msg });
+        await db('POST', 'age_ai_analysis', { company_id: companyId, candidate_id: candidateId, status: 'failed', error_message: msg });
       }
     } catch (_) { /* último recurso: só loga */ }
     console.error('[recruit-analysis]', msg);
@@ -459,6 +467,23 @@ async function runAnalysis(candidateId: string, candidate: any, match: any) {
 
 function jsonRes(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: CORS_HEADERS });
+}
+
+/* O ?ref= do link de divulgação é o que diz a qual empresa a candidatura
+   pertence. Sem esse vínculo o candidato ficaria visível para todo mundo. */
+async function companyForRef(ref: string | null): Promise<string> {
+  const slug = String(ref || '').trim();
+  if (!slug) return DEFAULT_COMPANY_ID;
+  try {
+    const rows = await db(
+      'GET',
+      `age_recruit_links?slug=eq.${encodeURIComponent(slug)}&select=company_id&limit=1`
+    ) as Array<{ company_id?: string }>;
+    return String(rows?.[0]?.company_id || '') || DEFAULT_COMPANY_ID;
+  } catch (e) {
+    console.error('[recruit-submit] companyForRef', e);
+    return DEFAULT_COMPANY_ID;
+  }
 }
 
 serve(async (req) => {
@@ -548,7 +573,10 @@ serve(async (req) => {
   const clampTxt = (v: unknown, max: number) => v == null ? null : String(v).slice(0, max);
   const strArrIn = (v: unknown, max: number) => Array.isArray(v) ? v.map(x => String(x).slice(0, 80)).slice(0, max) : [];
 
+  const companyId = await companyForRef(payload.ref_source as string | null);
+
   const candidateRow = {
+    company_id: companyId,
     name: name.slice(0, 160),
     email,
     city: clampTxt(payload.city, 120),
@@ -605,6 +633,7 @@ serve(async (req) => {
   });
 
   const matchRow = {
+    company_id: companyId,
     candidate_id: candidateId,
     top_role_id: match.top_role.id,
     top_role_name: match.top_role.name,
