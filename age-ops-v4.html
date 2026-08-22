@@ -8407,17 +8407,17 @@ function _tenantFilterRows(rows, table) {
   const list = (Array.isArray(rows) ? rows : []).filter(_sbIsRowVisible);
   if (!_tenantShouldFilterTable(table)) return list;
   const cid = _tenantCidForScope();
+  /* Sem empresa na sessão: nada. Admin bootstrap também — senão a gustavowng
+     enxerga projeto de conta nova que nasceu sem company_id. */
   if (!cid) {
-    if (window.__tenantScopeSuspended || _userIsBootstrapAdmin()) return list;
+    if (window.__tenantScopeSuspended) return list;
     return [];
   }
   const un = String(currentUser?.username || '').trim().toLowerCase();
-  const ownage = _isOwnageTenant();
   return list.filter(r => {
     const rc = r?.company_id;
     if (rc == null || String(rc).trim() === '') {
-      /* Legado sem dono = histórico da OWNAGE. Outra conta só vê o que ela mesma criou. */
-      if (ownage) return true;
+      /* Órfão só para quem criou. Nunca empurrar legado sem dono para a OWNAGE. */
       return un && String(r.created_by || '').trim().toLowerCase() === un;
     }
     return String(rc) === String(cid);
@@ -12371,7 +12371,6 @@ async function api(method, table, id='', body=null) {
   const _qHasId = q.has('id');
   const _tenantBlocked =
     !window.__tenantScopeSuspended &&
-    !_userIsBootstrapAdmin() &&
     _tenantShouldFilterTable(table) &&
     method === 'GET' &&
     !_tcid &&
@@ -12385,12 +12384,7 @@ async function api(method, table, id='', body=null) {
       const skipCompanyCol = table === 'age_nps_respostas';
       const skipAutoCompany =
         skipCompanyCol ||
-        (method === 'GET' && q.has('or')) ||
-        (_qHasId && (
-          method === 'PATCH' ||
-          method === 'DELETE' ||
-          (method === 'GET' && wantSingleObject)
-        ));
+        (_qHasId && (method === 'PATCH' || method === 'DELETE'));
       if(!skipAutoCompany) q.set('company_id', `eq.${_tcid}`);
     }
   }
@@ -12913,7 +12907,7 @@ async function bootstrapNotificationsUi() {
 
 async function fetchAll(table, limit=500) {
   const cid = _tenantCidForScope();
-  if (_tenantShouldFilterTable(table) && !cid && !window.__tenantScopeSuspended && !_userIsBootstrapAdmin()) {
+  if (_tenantShouldFilterTable(table) && !cid && !window.__tenantScopeSuspended) {
     return [];
   }
   try {
@@ -12936,7 +12930,7 @@ async function _fetchTenantThenClientFilter(table, qs, filterTable) {
     return _tenantFilterRows(asRows(await apiGet(table, qs)), scope);
   } catch (e) {
     const msg = String(e?.message || e || '');
-    const missingCol = /company_id|PGRST204|could not find/i.test(msg);
+    const missingCol = /Could not find the 'company_id' column|PGRST204/i.test(msg);
     if (!missingCol) throw e;
     const prev = window.__tenantScopeSuspended;
     window.__tenantScopeSuspended = true;
@@ -12956,16 +12950,9 @@ async function _fetchTenantThenClientFilter(table, qs, filterTable) {
  */
 async function fetchAgeProjectsScoped(limit = 1000) {
   const cid = _tenantCidForScope();
-  const uname = String(currentUser?.username || '').trim();
-  if (!cid && !window.__tenantScopeSuspended && !_userIsBootstrapAdmin()) return [];
+  if (!cid && !window.__tenantScopeSuspended) return [];
   let qs = `?limit=${encodeURIComponent(limit)}`;
-  if(cid && uname) {
-    const encCid = encodeURIComponent(String(cid));
-    const encU = encodeURIComponent(uname);
-    qs += `&or=(company_id.eq.${encCid},and(company_id.is.null,created_by.eq.${encU}))`;
-  } else if(cid) {
-    qs += `&company_id=eq.${encodeURIComponent(String(cid))}`;
-  }
+  if (cid) qs += `&company_id=eq.${encodeURIComponent(String(cid))}`;
   const attempts = [`${qs}&deleted=neq.true`, qs];
   for(const qtry of attempts) {
     try {
@@ -12978,7 +12965,7 @@ async function fetchAgeProjectsScoped(limit = 1000) {
     }
   }
   if (SUPABASE_IS_SOURCE_OF_TRUTH) return [];
-  if (!cid && !_userIsBootstrapAdmin()) return [];
+  if (!cid) return [];
   try {
     return _tenantFilterRows(await fetchAll('age_projects', limit), 'age_projects');
   } catch(e2) {
