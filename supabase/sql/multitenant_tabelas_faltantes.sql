@@ -105,42 +105,97 @@ END $$;
 --     devolve candidato de todo mundo, mesmo com RLS ativo.
 --   · expõe company_id         → o front consegue filtrar por empresa
 --     enquanto o RLS não está ligado.
+--
+-- Colunas opcionais (tech_level etc.) só entram se existirem — o
+-- age_candidates_perfil_extra.sql pode não ter sido rodado neste projeto.
 -- ============================================================
-DROP VIEW IF EXISTS v_age_candidates_admin;
+DROP VIEW IF EXISTS v_age_candidates_admin CASCADE;
 
-CREATE VIEW v_age_candidates_admin
-WITH (security_invoker = true) AS
-SELECT
-  c.id,
-  c.company_id,
-  c.created_at,
-  c.name,
-  c.email,
-  c.city,
-  c.experience_years,
-  c.status,
-  c.ref_source,
-  c.tech_level,
-  c.day_rate_range,
-  c.fixed_salary_range,
+DO $$
+DECLARE
+  sel text := 'c.id, c.company_id';
+  col text;
+  sql text;
+  cand_cols text[] := ARRAY[
+    'created_at','name','email','city','experience_years','status','ref_source',
+    'tech_level','day_rate_range','fixed_salary_range'
+  ];
+  match_cols text[] := ARRAY[
+    'top_role_name','top_role_id','top_match_pct',
+    'score_overall','score_cultural','score_technical','seniority'
+  ];
+  anal_cols text[] := ARRAY[
+    'parecer_geral','adequacao_cultural','resumo_perfil'
+  ];
+BEGIN
+  IF to_regclass('public.age_candidates') IS NULL THEN
+    RAISE NOTICE 'age_candidates ausente — view pulada';
+    RETURN;
+  END IF;
 
-  m.top_role_name,
-  m.top_role_id,
-  m.top_match_pct,
-  m.score_overall,
-  m.score_cultural,
-  m.score_technical,
-  m.seniority,
+  FOREACH col IN ARRAY cand_cols LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'age_candidates' AND column_name = col
+    ) THEN
+      sel := sel || format(', c.%I', col);
+    ELSE
+      sel := sel || format(', NULL AS %I', col);
+    END IF;
+  END LOOP;
 
-  a.parecer_geral,
-  a.status AS analysis_status,
-  a.adequacao_cultural,
-  a.resumo_perfil
+  FOREACH col IN ARRAY match_cols LOOP
+    IF to_regclass('public.age_match_results') IS NOT NULL AND EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'age_match_results' AND column_name = col
+    ) THEN
+      sel := sel || format(', m.%I', col);
+    ELSE
+      sel := sel || format(', NULL AS %I', col);
+    END IF;
+  END LOOP;
 
-FROM age_candidates c
-LEFT JOIN age_match_results m ON m.candidate_id = c.id
-LEFT JOIN age_ai_analysis  a ON a.candidate_id = c.id
-ORDER BY c.created_at DESC;
+  IF to_regclass('public.age_ai_analysis') IS NOT NULL AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'age_ai_analysis' AND column_name = 'status'
+  ) THEN
+    sel := sel || ', a.status AS analysis_status';
+  ELSE
+    sel := sel || ', NULL AS analysis_status';
+  END IF;
+
+  FOREACH col IN ARRAY anal_cols LOOP
+    IF to_regclass('public.age_ai_analysis') IS NOT NULL AND EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'age_ai_analysis' AND column_name = col
+    ) THEN
+      sel := sel || format(', a.%I', col);
+    ELSE
+      sel := sel || format(', NULL AS %I', col);
+    END IF;
+  END LOOP;
+
+  sql := 'CREATE VIEW public.v_age_candidates_admin WITH (security_invoker = true) AS SELECT '
+      || sel
+      || ' FROM public.age_candidates c';
+
+  IF to_regclass('public.age_match_results') IS NOT NULL THEN
+    sql := sql || ' LEFT JOIN public.age_match_results m ON m.candidate_id = c.id';
+  END IF;
+  IF to_regclass('public.age_ai_analysis') IS NOT NULL THEN
+    sql := sql || ' LEFT JOIN public.age_ai_analysis a ON a.candidate_id = c.id';
+  END IF;
+
+  sql := sql || CASE
+    WHEN EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'age_candidates' AND column_name = 'created_at'
+    ) THEN ' ORDER BY c.created_at DESC'
+    ELSE ' ORDER BY c.id'
+  END;
+  EXECUTE sql;
+  RAISE NOTICE 'v_age_candidates_admin recriada';
+END $$;
 
 GRANT SELECT ON v_age_candidates_admin TO anon, authenticated;
 

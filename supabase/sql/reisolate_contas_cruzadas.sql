@@ -27,24 +27,25 @@ SELECT u.username, u.email, u.role, u.company_id, u.company_name,
  ORDER BY u.username;
 
 -- Projetos na OWNAGE criados por outra conta
-SELECT p.id, p.created_by, p.company_id,
-       coalesce(p.client_name, p.client) AS cliente,
-       coalesce(p.project_name, p.title, p.name) AS projeto,
-       p.created_at
+SELECT p.id,
+       to_jsonb(p)->>'created_by' AS created_by,
+       p.company_id,
+       coalesce(to_jsonb(p)->>'client_name', to_jsonb(p)->>'client') AS cliente,
+       coalesce(to_jsonb(p)->>'project_name', to_jsonb(p)->>'title', to_jsonb(p)->>'name') AS projeto
   FROM public.age_projects p
  WHERE p.company_id::text = 'aa47f125-4b29-4c2d-b367-88b912f1b33e'
-   AND lower(coalesce(p.created_by, '')) NOT IN (
+   AND lower(coalesce(to_jsonb(p)->>'created_by', '')) NOT IN (
      'gustavowng','vraulin','paulin','ken','vic','pedrobarreto','paulomunir','system','unknown',''
-   )
- ORDER BY p.created_at DESC;
+   );
 
 -- Projetos sem empresa (qualquer um)
-SELECT p.id, p.created_by, p.company_id,
-       coalesce(p.client_name, p.client) AS cliente,
-       coalesce(p.project_name, p.title, p.name) AS projeto
+SELECT p.id,
+       to_jsonb(p)->>'created_by' AS created_by,
+       p.company_id,
+       coalesce(to_jsonb(p)->>'client_name', to_jsonb(p)->>'client') AS cliente,
+       coalesce(to_jsonb(p)->>'project_name', to_jsonb(p)->>'title', to_jsonb(p)->>'name') AS projeto
   FROM public.age_projects p
- WHERE p.company_id IS NULL
- ORDER BY p.created_at DESC NULLS LAST;
+ WHERE p.company_id IS NULL;
 
 
 -- ───────── REPARO ─────────
@@ -61,23 +62,26 @@ UPDATE public.age_users u
      'gustavowng','vraulin','paulin','ken','vic','pedrobarreto','paulomunir'
    );
 
--- 2) Projetos na OWNAGE cujo created_by é de outra empresa
---    → vão para a empresa atual desse usuário.
-UPDATE public.age_projects p
-   SET company_id = u.company_id
-  FROM public.age_users u
- WHERE lower(coalesce(p.created_by, '')) = lower(u.username)
-   AND p.company_id::text = 'aa47f125-4b29-4c2d-b367-88b912f1b33e'
-   AND u.company_id IS NOT NULL
-   AND u.company_id::text <> 'aa47f125-4b29-4c2d-b367-88b912f1b33e';
+-- 2 e 3) Projetos: saem da OWNAGE / deixam de ser órfãos se created_by existir
+DO $$
+BEGIN
+  UPDATE public.age_projects p
+     SET company_id = u.company_id
+    FROM public.age_users u
+   WHERE lower(coalesce(p.created_by, '')) = lower(u.username)
+     AND p.company_id::text = 'aa47f125-4b29-4c2d-b367-88b912f1b33e'
+     AND u.company_id IS NOT NULL
+     AND u.company_id::text <> 'aa47f125-4b29-4c2d-b367-88b912f1b33e';
 
--- 3) Projetos órfãos: herdam a empresa de quem criou.
-UPDATE public.age_projects p
-   SET company_id = u.company_id
-  FROM public.age_users u
- WHERE p.company_id IS NULL
-   AND lower(coalesce(p.created_by, '')) = lower(u.username)
-   AND u.company_id IS NOT NULL;
+  UPDATE public.age_projects p
+     SET company_id = u.company_id
+    FROM public.age_users u
+   WHERE p.company_id IS NULL
+     AND lower(coalesce(p.created_by, '')) = lower(u.username)
+     AND u.company_id IS NOT NULL;
+EXCEPTION WHEN undefined_column THEN
+  RAISE NOTICE 'age_projects sem created_by — reparo de projeto pulado';
+END $$;
 
 -- 4) Fechamentos / pagamentos / relatórios que apontam para projeto
 --    já movido: acompanham o company_id do projeto.
@@ -123,7 +127,7 @@ UNION ALL
 SELECT 'projetos_ownage_de_outro_created_by', count(*)
   FROM public.age_projects p
  WHERE p.company_id::text = 'aa47f125-4b29-4c2d-b367-88b912f1b33e'
-   AND lower(coalesce(p.created_by, '')) NOT IN (
+   AND lower(coalesce(to_jsonb(p)->>'created_by', '')) NOT IN (
      'gustavowng','vraulin','paulin','ken','vic','pedrobarreto','paulomunir','system','unknown',''
    )
 UNION ALL
