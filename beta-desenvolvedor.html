@@ -1,7 +1,18 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('ageops-theme');
+    if (t !== 'light' && t !== 'dark') t = 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGE OPS — Programa Beta · Usuário Desenvolvedor</title>
 <meta name="description" content="Entre na beta do Age Ops, ajude a lapidar as ferramentas e garanta preços especiais de usuário desenvolvedor: a partir de R$49,90/mês.">
@@ -20,9 +31,15 @@
     --font-h: 'Space Grotesk', sans-serif; --font-b: 'Inter', sans-serif;
     --font-label: 'Space Mono', ui-monospace, monospace;
   }
+  html[data-theme="light"] {
+    --black: #f6f6f4; --white: #111111; --gray-light: #ffffff; --gray-mid: #ffffff;
+    --gray-text: #666666; --gray-border: rgba(0,0,0,0.08);
+    --accent-2: #0e7490;
+  }
   html { scroll-behavior: smooth; color-scheme: dark; }
+  html[data-theme="light"] { color-scheme: light; }
   @keyframes ageOrbPulse { 0%,100%{opacity:.55;transform:scale(1)} 50%{opacity:.95;transform:scale(1.08)} }
-  body { font-family: var(--font-b); background: #080808; color: var(--white); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body { font-family: var(--font-b); background: var(--black); color: var(--white); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
   body::before {
     content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
     background-image: linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
@@ -43,6 +60,7 @@
     border-bottom: 1px solid var(--gray-border);
     padding: 14px 40px; display: flex; align-items: center; justify-content: space-between;
   }
+  html[data-theme="light"] .topbar { background: rgba(255,255,255,.92); }
   .topbar-logo { font-family: var(--font-h); font-size: 16px; font-weight: 700; letter-spacing: -0.02em; color: var(--white); }
   .topbar-nav { display: flex; gap: 24px; align-items: center; }
   .topbar-nav a { font-family: var(--font-label); font-size: 10px; font-weight: 400; letter-spacing: 0.08em; color: var(--gray-text); text-transform: uppercase; }
@@ -142,8 +160,24 @@
   .cta-sub { font-size: 18px; color: var(--gray-text); max-width: 520px; margin: 0 auto 40px; line-height: 1.6; }
 
   .footer { background: transparent; color: #444; padding: 36px 80px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-top: 1px solid var(--gray-border); position: relative; z-index: 1; }
-  .footer-logo { font-family: var(--font-h); font-size: 13px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+  .footer-logo { font-family: var(--font-h); font-size: 13px; font-weight: 700; letter-spacing: -0.02em; color: var(--white); }
   .footer a { font-family: var(--font-label); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-text); }
+
+  .theme-switch{
+    display:inline-flex;align-items:center;border:1px solid var(--gray-border);border-radius:8px;overflow:hidden;
+  }
+  .theme-switch button{
+    font-family:var(--font-label);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    padding:8px 12px;border:none;background:transparent;color:var(--gray-text);cursor:pointer;
+  }
+  .theme-switch button[aria-pressed="true"]{background:var(--accent);color:#fff}
+  html[data-theme="light"] .section-dark { color: var(--white); }
+  html[data-theme="light"] .section-light,
+  html[data-theme="light"] .section-gray { background: rgba(255,255,255,.78); }
+  html[data-theme="light"] .step-card,
+  html[data-theme="light"] .plan-card,
+  html[data-theme="light"] .notice-box { background: #fff; }
+  html[data-theme="light"] .btn-cta-ghost { color: var(--white); }
 
   @media (max-width: 900px) {
     .topbar, .footer { padding-left: 18px; padding-right: 18px; }
@@ -164,7 +198,13 @@
     <a href="#como-funciona">Como funciona</a>
     <a href="#planos-beta">Planos beta</a>
   </div>
-  <a href="age-ops-v4.html" class="btn-auth">Entrar<span class="lbl-full"> na conta</span></a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="theme-switch" role="group" aria-label="Tema">
+      <button type="button" data-theme-set="light" onclick="applyAgeTheme('light')" title="Tema diurno">Dia</button>
+      <button type="button" data-theme-set="dark" onclick="applyAgeTheme('dark')" title="Tema noturno">Noite</button>
+    </div>
+    <a href="age-ops-v4.html" class="btn-auth">Entrar<span class="lbl-full"> na conta</span></a>
+  </div>
 </nav>
 
 <section class="section section-dark hero">
@@ -329,6 +369,27 @@
     <small style="font-family:var(--font-h);font-size:9px;letter-spacing:2px;text-transform:uppercase">© 2026 AGE OPS · Beta</small>
   </div>
 </footer>
-
+<script>
+(function(){
+  var KEY = 'ageops-theme';
+  function currentTheme(){
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+  function syncThemeButtons(theme){
+    document.querySelectorAll('[data-theme-set]').forEach(function(btn){
+      btn.setAttribute('aria-pressed', btn.getAttribute('data-theme-set') === theme ? 'true' : 'false');
+    });
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#f6f6f4' : '#080808');
+  }
+  window.applyAgeTheme = function(theme){
+    theme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem(KEY, theme); } catch (e) {}
+    syncThemeButtons(theme);
+  };
+  syncThemeButtons(currentTheme());
+})();
+</script>
 </body>
 </html>

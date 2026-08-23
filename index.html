@@ -1,7 +1,18 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('ageops-theme');
+    if (t !== 'light' && t !== 'dark') t = 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGE OPS — Sistema Operacional para Produtoras e Agências</title>
 <meta name="description" content="O Age Ops substitui planilhas, Notion, contratos e fechamento manual por uma única plataforma com inteligência de dados, feita para o mercado audiovisual brasileiro.">
@@ -38,8 +49,28 @@
     --font-label: 'Space Mono', ui-monospace, monospace;
     --text: #f0f0f0;
   }
+  html[data-theme="light"] {
+    --bg-primary: #f6f6f4;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --accent-secondary: #0e7490;
+    --accent-glow: rgba(26,111,255,0.12);
+    --text-primary: #111111;
+    --text-secondary: #666666;
+    --text-muted: #9a9a9a;
+    --border: rgba(0,0,0,0.08);
+    --grid-line: rgba(0,0,0,0.05);
+    --black: #f6f6f4;
+    --white: #111111;
+    --gray-light: #ffffff;
+    --gray-mid: #ffffff;
+    --gray-text: #666666;
+    --gray-border: rgba(0,0,0,0.08);
+    --text: #111111;
+  }
 
   html { scroll-behavior: smooth; color-scheme: dark; }
+  html[data-theme="light"] { color-scheme: light; }
   @keyframes ageOrbPulse {
     0%,100% { opacity: .55; transform: scale(1); }
     50% { opacity: .95; transform: scale(1.08); }
@@ -51,7 +82,7 @@
 
   body {
     font-family: var(--font-b);
-    background: #080808;
+    background: var(--bg-primary);
     color: var(--text-primary);
     font-size: 16px;
     line-height: 1.6;
@@ -74,6 +105,11 @@
       radial-gradient(ellipse 55% 42% at 12% 0%, rgba(26,111,255,.16), transparent 58%),
       radial-gradient(ellipse 42% 36% at 92% 8%, rgba(15,240,252,.07), transparent 52%);
     animation: ageOrbPulse 14s ease-in-out infinite;
+  }
+  html[data-theme="light"] body::after {
+    background:
+      radial-gradient(ellipse 55% 42% at 12% 0%, rgba(26,111,255,.08), transparent 58%),
+      radial-gradient(ellipse 42% 36% at 92% 8%, rgba(14,116,144,.06), transparent 52%);
   }
 
   a { text-decoration: none; color: inherit; }
@@ -389,6 +425,31 @@
   .footer-logo { font-family: var(--font-h); font-size: 13px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); }
   .footer small { font-family: var(--font-label); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
 
+  .theme-switch{
+    display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;
+    background:rgba(255,255,255,0.03);
+  }
+  .theme-switch button{
+    font-family:var(--font-label);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    padding:8px 12px;border:none;background:transparent;color:var(--text-secondary);cursor:pointer;
+  }
+  .theme-switch button[aria-pressed="true"]{background:var(--accent-primary);color:#fff}
+  .theme-switch button:hover:not([aria-pressed="true"]){color:var(--text-primary)}
+
+  html[data-theme="light"] .section-light,
+  html[data-theme="light"] .section-gray { background: rgba(255,255,255,.78); }
+  html[data-theme="light"] .topbar { background: rgba(255,255,255,.92); }
+  html[data-theme="light"] .beta-strip { background: rgba(255,255,255,.92); color: var(--text-secondary); }
+  html[data-theme="light"] .card,
+  html[data-theme="light"] .card-dark,
+  html[data-theme="light"] .plan-card,
+  html[data-theme="light"] .faq-card,
+  html[data-theme="light"] .ref-step,
+  html[data-theme="light"] .module-chip,
+  html[data-theme="light"] .quote-box { background: #fff; }
+  html[data-theme="light"] .btn-cta-ghost { color: var(--text-primary); }
+  html[data-theme="light"] .final-cta .big-number { color: rgba(0,0,0,.04); }
+
   @media (max-width: 900px) {
     .topbar { padding: 12px 18px; }
     .topbar-nav { display: none; }
@@ -416,6 +477,10 @@
     <a href="beta-desenvolvedor.html">Beta</a>
   </div>
   <div class="topbar-actions">
+    <div class="theme-switch" role="group" aria-label="Tema">
+      <button type="button" data-theme-set="light" onclick="applyAgeTheme('light')" title="Tema diurno">Dia</button>
+      <button type="button" data-theme-set="dark" onclick="applyAgeTheme('dark')" title="Tema noturno">Noite</button>
+    </div>
     <a href="age-ops-v4.html" class="btn-auth btn-signup">Entrar<span class="lbl-full"> na sua conta</span></a>
   </div>
 </nav>
@@ -697,12 +762,34 @@
 <footer class="footer">
   <div class="footer-logo">AGE OPS</div>
   <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
-    <a href="beta-desenvolvedor.html" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Beta</a>
-    <a href="age-ops-v4.html" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Entrar</a>
-    <a href="age-ops-v4.html?signup=1" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6)">Criar conta</a>
+    <a href="beta-desenvolvedor.html" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-secondary)">Beta</a>
+    <a href="age-ops-v4.html" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-secondary)">Entrar</a>
+    <a href="age-ops-v4.html?signup=1" style="font-family:var(--font-h);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-secondary)">Criar conta</a>
     <small>© 2026 AGE OPS · Sistema Operacional</small>
   </div>
 </footer>
-
+<script>
+(function(){
+  var KEY = 'ageops-theme';
+  function currentTheme(){
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+  function syncThemeButtons(theme){
+    document.querySelectorAll('[data-theme-set]').forEach(function(btn){
+      btn.setAttribute('aria-pressed', btn.getAttribute('data-theme-set') === theme ? 'true' : 'false');
+    });
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#f6f6f4' : '#080808');
+    document.documentElement.style.colorScheme = theme;
+  }
+  window.applyAgeTheme = function(theme){
+    theme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem(KEY, theme); } catch (e) {}
+    syncThemeButtons(theme);
+  };
+  syncThemeButtons(currentTheme());
+})();
+</script>
 </body>
 </html>
