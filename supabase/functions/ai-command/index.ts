@@ -32,6 +32,7 @@ AÇÕES DISPONÍVEIS:
 - criar_orcamento
 - criar_evento     (compromisso/evento no calendário; pode ser atribuído a um colaborador)
 - criar_gasto
+- criar_pagamento  (conta a pagar / pagamento de equipe ou fornecedor)
 - criar_tarefa     (uma única tarefa)
 - criar_tarefas    (várias tarefas pessoais de uma vez; use quando o usuário listar itens separados por vírgula)
 - atribuir_tarefa  (atribuir uma tarefa diretamente a um colaborador)
@@ -109,6 +110,22 @@ Para criar_gasto:
   }
 }
 
+Para criar_pagamento:
+{
+  "acao": "criar_pagamento",
+  "confirmacao": "Registrar pagamento de [valor] para [nome]?",
+  "dados": {
+    "nome_destinatario": "string",
+    "valor": number,
+    "projeto_nome": "string ou null",
+    "tipo_destinatario": "fornecedor|colaborador|cliente|outro",
+    "data_vencimento": "YYYY-MM-DD ou null",
+    "status": "pendente|pago",
+    "forma_pagamento": "pix|ted|dinheiro|boleto|outro",
+    "descricao": "string ou null"
+  }
+}
+
 Para criar_tarefa (apenas UMA tarefa):
 {
   "acao": "criar_tarefa",
@@ -157,7 +174,7 @@ Para consultar:
 Para desconhecido:
 {
   "acao": "desconhecido",
-  "resposta": "Não entendi. Tente: 'Novo projeto Nike R$50k prazo junho'"
+  "resposta": "Não entendi. Tente: 'Novo projeto Nike R$50k prazo junho' ou 'Pagamento 2500 pro João'"
 }
 
 REGRAS:

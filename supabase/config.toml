@@ -1,0 +1,8 @@
+# Webhooks da Meta / Evolution / Pagar.me não mandam o JWT do usuário.
+# A função valida a assinatura (ou o secret) por conta própria.
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.pagarme-webhook]
+verify_jwt = false
