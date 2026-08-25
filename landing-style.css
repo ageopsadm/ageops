@@ -1,36 +1,36 @@
 /* ══════════════════════════════════════════════
    AGE OPS — Landing Page CSS
-   Paleta: preto profundo + branco + dourado/âmbar
+   Paleta: fundo claro + texto escuro + dourado/âmbar
 ══════════════════════════════════════════════ */
 
 :root {
-  --bg:        #0a0a0a;
-  --bg2:       #111111;
-  --bg3:       #161616;
-  --surface:   #1a1a1a;
-  --border:    rgba(255,255,255,.08);
-  --border-h:  rgba(255,255,255,.15);
-  --acc:       #f59e0b;
-  --acc2:      #fbbf24;
-  --acc-dim:   rgba(245,158,11,.15);
-  --acc-glow:  rgba(245,158,11,.4);
-  --text:      #f1f1f1;
-  --text-sub:  #a1a1aa;
-  --text-dim:  #52525b;
-  --green:     #10b981;
-  --blue:      #6366f1;
-  --red:       #ef4444;
+  --bg:        #f5f6f8;
+  --bg2:       #ffffff;
+  --bg3:       #eef0f4;
+  --surface:   #ffffff;
+  --border:    rgba(15,23,42,.08);
+  --border-h:  rgba(15,23,42,.14);
+  --acc:       #d97706;
+  --acc2:      #f59e0b;
+  --acc-dim:   rgba(217,119,6,.12);
+  --acc-glow:  rgba(217,119,6,.28);
+  --text:      #111111;
+  --text-sub:  #52525b;
+  --text-dim:  #71717a;
+  --green:     #059669;
+  --blue:      #4f46e5;
+  --red:       #dc2626;
   --font-h:    'Rajdhani', sans-serif;
   --font-b:    'Inter', sans-serif;
   --radius:    12px;
   --radius-lg: 20px;
-  --shadow:    0 20px 60px rgba(0,0,0,.4);
+  --shadow:    0 16px 40px rgba(15,23,42,.08);
   --transition: all .3s cubic-bezier(.4,0,.2,1);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; font-size: 16px; }
+html { scroll-behavior: smooth; font-size: 16px; color-scheme: light; }
 
 body {
   background: var(--bg);
@@ -157,10 +157,10 @@ body {
   transition: var(--transition);
 }
 .navbar.scrolled {
-  background: rgba(10,10,10,.95);
+  background: rgba(255,255,255,.95);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 4px 30px rgba(0,0,0,.3);
+  box-shadow: 0 4px 30px rgba(15,23,42,.06);
 }
 
 .nav-container {
@@ -238,8 +238,8 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    linear-gradient(rgba(15,23,42,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,.06) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse 80% 80% at 50% 20%, black 40%, transparent 100%);
 }
@@ -368,7 +368,7 @@ body {
   border: 1px solid var(--border-h);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+  box-shadow: 0 24px 60px rgba(15,23,42,.12), 0 0 0 1px var(--border);
   transform: perspective(1000px) rotateY(-8deg) rotateX(3deg);
   transition: transform .5s ease;
 }
@@ -437,7 +437,7 @@ body {
 }
 .mock-nav-item:hover, .mock-nav-item.active {
   color: var(--text);
-  background: rgba(255,255,255,.05);
+  background: rgba(15,23,42,.04);
 }
 .mock-nav-item.active { border-left: 2px solid var(--acc); color: var(--acc); }
 .mock-nav-item i { font-size: 10px; width: 12px; }
@@ -479,7 +479,7 @@ body {
 .mock-bars { display: flex; align-items: flex-end; gap: 8px; height: 100px; }
 .mock-bar {
   flex: 1;
-  background: rgba(255,255,255,.07);
+  background: rgba(15,23,42,.08);
   border-radius: 4px 4px 0 0;
   height: var(--h);
   display: flex;
@@ -847,7 +847,7 @@ body {
   transition: var(--transition);
 }
 .compare-row:last-child { border-bottom: none; }
-.compare-row:hover { background: rgba(255,255,255,.02); }
+.compare-row:hover { background: rgba(15,23,42,.03); }
 
 .compare-col {
   padding: 18px 24px;
