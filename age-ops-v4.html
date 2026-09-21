@@ -24210,6 +24210,61 @@ function _recrutDropForeignTenant(rows, table) {
   return scoped.filter(r => String(r?.company_id || '') !== OWNAGE_COMPANY_ID);
 }
 
+/* Em produção o RLS de age_candidates tem SELECT/UPDATE, mas o DELETE
+   devolve 200 sem apagar a linha. Marcamos a exclusão no UPDATE e
+   escondemos na lista. */
+const RECRUT_DELETED_PREFIX = 'AGEDEL:';
+
+function recrutIsTombstone(row) {
+  return String(row?.admin_notes || '').startsWith(RECRUT_DELETED_PREFIX);
+}
+
+async function recrutDeletedIdSet() {
+  const ids = new Set();
+  try {
+    const d = await apiGet('age_candidates', '?select=id&admin_notes=like.' + RECRUT_DELETED_PREFIX + '*&limit=1000');
+    for (const r of (Array.isArray(d?.data) ? d.data : [])) {
+      if (r?.id) ids.add(String(r.id));
+    }
+  } catch (e) {
+    console.warn('[recrut deleted]', e);
+  }
+  return ids;
+}
+
+async function recrutTryDelete(table, idOrQuery) {
+  try {
+    return await api('DELETE', table, idOrQuery);
+  } catch (e) {
+    const msg = String(e?.message || e || '');
+    if (!/Could not find the 'company_id' column|PGRST204/i.test(msg)) throw e;
+    const prev = window.__tenantScopeSuspended;
+    window.__tenantScopeSuspended = true;
+    try { return await api('DELETE', table, idOrQuery); }
+    finally { window.__tenantScopeSuspended = prev; }
+  }
+}
+
+async function recrutRowStillVisible(id) {
+  try {
+    const d = await apiGet('age_candidates', `?id=eq.${encodeURIComponent(id)}&select=id,admin_notes&limit=1`);
+    const row = (Array.isArray(d?.data) ? d.data : [])[0];
+    return !!(row && !recrutIsTombstone(row));
+  } catch (e) {
+    return true;
+  }
+}
+
+async function recrutTombstone(id) {
+  let notes = '';
+  try {
+    const d = await apiGet('age_candidates', `?id=eq.${encodeURIComponent(id)}&select=admin_notes&limit=1`);
+    notes = String((Array.isArray(d?.data) ? d.data : [])[0]?.admin_notes || '');
+  } catch (_) {}
+  if (!notes.startsWith(RECRUT_DELETED_PREFIX)) notes = RECRUT_DELETED_PREFIX + notes;
+  await apiPatch('age_candidates', id, { admin_notes: notes });
+}
+
 function _recrutScoreColor(score) {
   const s = parseInt(score, 10);
   if(!Number.isFinite(s)) return '#94a3b8';
@@ -24230,7 +24285,9 @@ async function loadRecrutamento() {
   if(list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--textsub);font-size:12px"><i class="fas fa-circle-notch fa-spin"></i> Carregando candidatos...</div>';
   try {
     const raw = await _fetchTenantThenClientFilter('v_age_candidates_admin', '?limit=1000&order=created_at.desc', 'age_candidates');
-    _recrutRows = _recrutDropForeignTenant(raw, 'age_candidates');
+    const scoped = _recrutDropForeignTenant(raw, 'age_candidates');
+    const deleted = await recrutDeletedIdSet();
+    _recrutRows = scoped.filter(r => !deleted.has(String(r.id)) && !recrutIsTombstone(r));
   } catch(e) {
     console.error('[recrutamento]', e);
     _recrutRows = [];
@@ -24534,9 +24591,15 @@ async function recrutDeleteCandidate(id, name) {
     return;
   }
   try {
-    try { await api('DELETE', 'age_ai_analysis', `?candidate_id=eq.${encodeURIComponent(id)}`); } catch (_) {}
-    try { await api('DELETE', 'age_match_results', `?candidate_id=eq.${encodeURIComponent(id)}`); } catch (_) {}
-    await apiDel('age_candidates', id);
+    try { await recrutTryDelete('age_ai_analysis', `?candidate_id=eq.${encodeURIComponent(id)}`); } catch (_) {}
+    try { await recrutTryDelete('age_match_results', `?candidate_id=eq.${encodeURIComponent(id)}`); } catch (_) {}
+    try { await recrutTryDelete('age_candidates', id); } catch (e) {
+      console.warn('[recrut delete rest]', e);
+    }
+    if (await recrutRowStillVisible(id)) {
+      await recrutTombstone(id);
+      if (await recrutRowStillVisible(id)) throw new Error('still_visible');
+    }
     try { closeModal('modalRecrutDetail'); } catch (_) {}
     _recrutRows = _recrutRows.filter(r => r.id !== id);
     renderRecrutList();
