@@ -14,7 +14,7 @@ const TOOL_OPTIONS = [
 
 const TOTAL_STEPS = 16;
 
-function FormOverlay({ onClose, onFinish, withLGPD }) {
+function FormOverlay({ onClose, onFinish, withLGPD, submitting }) {
   const totalSteps = TOTAL_STEPS;
   const [step, setStep] = uS(() => {
     const saved = localStorage.getItem('age_step');
@@ -54,7 +54,7 @@ function FormOverlay({ onClose, onFinish, withLGPD }) {
   });
 
   const next = () => {
-    if (!canProceed) return;
+    if (!canProceed || submitting) return;
     if (step < totalSteps - 1) setStep(s => s + 1);
     else {
       const result = window.calculateMatch(answers);
@@ -115,12 +115,12 @@ function FormOverlay({ onClose, onFinish, withLGPD }) {
       </div>
 
       <div className="form-footer">
-        <button className="form-btn ghost" onClick={prev} disabled={step === 0}>← Voltar</button>
+        <button className="form-btn ghost" onClick={prev} disabled={step === 0 || submitting}>← Voltar</button>
         <div className="form-footer-hint">
           {step === totalSteps - 1 ? 'Última pergunta' : 'Enter ou clique em continuar'}
         </div>
-        <button className="form-btn primary" onClick={next} disabled={!canProceed}>
-          {step === totalSteps - 1 ? 'Ver meu resultado →' : 'Continuar →'}
+        <button className="form-btn primary" onClick={next} disabled={!canProceed || submitting}>
+          {submitting ? 'Enviando...' : (step === totalSteps - 1 ? 'Ver meu resultado →' : 'Continuar →')}
         </button>
       </div>
     </div>

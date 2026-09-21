@@ -6,3 +6,7 @@ verify_jwt = false
 
 [functions.pagarme-webhook]
 verify_jwt = false
+
+# Formulário público de recrutamento (anon JWT).
+[functions.recruit-submit]
+verify_jwt = false

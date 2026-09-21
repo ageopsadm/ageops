@@ -242,14 +242,26 @@ DROP POLICY IF EXISTS age_candidates_update ON age_candidates;
 CREATE POLICY age_candidates_update ON age_candidates
   FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS age_candidates_delete ON age_candidates;
+CREATE POLICY age_candidates_delete ON age_candidates
+  FOR DELETE TO anon, authenticated USING (true);
+
 -- Matching e análise IA: admin só lê (escrita é da edge function).
 DROP POLICY IF EXISTS age_match_results_select ON age_match_results;
 CREATE POLICY age_match_results_select ON age_match_results
   FOR SELECT TO anon, authenticated USING (true);
 
+DROP POLICY IF EXISTS age_match_results_delete ON age_match_results;
+CREATE POLICY age_match_results_delete ON age_match_results
+  FOR DELETE TO anon, authenticated USING (true);
+
 DROP POLICY IF EXISTS age_ai_analysis_select ON age_ai_analysis;
 CREATE POLICY age_ai_analysis_select ON age_ai_analysis
   FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS age_ai_analysis_delete ON age_ai_analysis;
+CREATE POLICY age_ai_analysis_delete ON age_ai_analysis
+  FOR DELETE TO anon, authenticated USING (true);
 
 -- Links rastreáveis: admin lê, cria e edita (ativar/desativar).
 DROP POLICY IF EXISTS age_recruit_links_select ON age_recruit_links;
@@ -263,3 +275,7 @@ CREATE POLICY age_recruit_links_insert ON age_recruit_links
 DROP POLICY IF EXISTS age_recruit_links_update ON age_recruit_links;
 CREATE POLICY age_recruit_links_update ON age_recruit_links
   FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS age_recruit_links_delete ON age_recruit_links;
+CREATE POLICY age_recruit_links_delete ON age_recruit_links
+  FOR DELETE TO anon, authenticated USING (true);

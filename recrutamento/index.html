@@ -66,8 +66,10 @@
   window.AGE_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaWV3dWNzemRiYmN4eml2bnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODE4OTEsImV4cCI6MjA5MzE1Nzg5MX0.wCT1RpA-mlXavF2ZUH67BHAunrYLUDvb6KggoLvO-20';
   window.AGE_API_URL = window.AGE_SUPABASE_URL + '/functions/v1/recruit-submit';
 
-  // Extrai ?ref= da URL para rastreio de canal
-  window.AGE_REF_SOURCE = new URLSearchParams(location.search).get('ref') || null;
+  // ?ref= diz a qual empresa a candidatura pertence. Sem query, esta
+  // página pública é a da AGE (OWNAGE). Outras empresas usam o link com ?ref=.
+  window.AGE_OWNAGE_REF = 'c_aa47f125-4b29-4c2d-b367-88b912f1b33e';
+  window.AGE_REF_SOURCE = new URLSearchParams(location.search).get('ref') || window.AGE_OWNAGE_REF;
 </script>
 
 <script src="roles.js"></script>
@@ -111,8 +113,10 @@
         },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false, error: data.error || ('HTTP ' + res.status), code: data.code };
+      }
       return { ok: true, data };
     } catch (err) {
       console.error('Submit failed:', err);
@@ -141,30 +145,33 @@ function App() {
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), type === 'error' ? 8000 : 4000);
   };
 
   const openForm = () => { setView('form'); window.scrollTo(0, 0); };
   const closeForm = () => { setView('landing'); window.scrollTo(0, 0); };
 
   const finishForm = async (localResult, answers) => {
-    setResult(localResult);
-    setView('result');
-    window.scrollTo(0, 0);
+    if (submitting) return;
     setSubmitting(true);
 
-    // Envia pra API em background — não bloqueia a exibição do resultado
     const submitted = await window.submitToAPI(answers, localResult);
     setSubmitting(false);
 
     if (submitted.ok) {
-      showToast('Candidatura enviada com sucesso ao time da AGE.');
+      setResult(localResult);
+      setView('result');
+      window.scrollTo(0, 0);
       if (submitted.data?.candidate_id) {
         localStorage.setItem('age_candidate_id', submitted.data.candidate_id);
       }
-    } else {
-      showToast('Não conseguimos salvar sua candidatura. Tente novamente em instantes.', 'error');
+      return;
     }
+
+    const msg = submitted.code === 'unknown_tenant'
+      ? 'Link de recrutamento inválido. Peça o endereço da empresa.'
+      : 'Não conseguimos salvar sua candidatura. Tente novamente em instantes.';
+    showToast(msg, 'error');
   };
 
   const restart = () => {
@@ -192,7 +199,7 @@ function App() {
       )}
 
       {view === 'form' && (
-        <FormOverlay onClose={closeForm} onFinish={finishForm} withLGPD />
+        <FormOverlay onClose={closeForm} onFinish={finishForm} withLGPD submitting={submitting} />
       )}
 
       {view === 'result' && result && (

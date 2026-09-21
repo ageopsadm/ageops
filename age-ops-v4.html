@@ -1,7 +1,18 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="UTF-8">
+<script>
+(function(){
+  var KEY = 'ageops-theme';
+  var t = 'light';
+  try {
+    var s = localStorage.getItem(KEY);
+    if (s === 'dark' || s === 'light') t = s;
+  } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
 <script src="https://assets.pagar.me/pagarme-js/4.18/pagarme.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGE OPS — Sistema Operacional</title>
@@ -352,9 +363,45 @@ nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
 }
 .btn-icon-top:hover{color:#ffffff;border-color:rgba(255,255,255,.35)}
 .btn-icon-top.is-active{color:#ffffff;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.08)}
+.topbar-trailing{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.topbar-toggles{display:flex;align-items:center;gap:6px;flex-shrink:0}
+#themeToggleBtn{width:34px;height:34px;font-size:15px;color:#fff;border-color:rgba(255,255,255,.45)}
+.theme-fab{
+  position:fixed;top:16px;right:16px;z-index:10050;
+  width:40px;height:40px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);
+  color:#fff;font-size:18px;cursor:pointer;
+}
+#loginPage.hidden + .theme-fab{display:none !important}
+html[data-theme="light"] #sidebar,
+html[data-theme="light"] aside#sidebar,
+html[data-theme="light"] .sidebar{
+  background:#ffffff !important;color:#111 !important;border-right:1px solid #eee !important;
+}
+html[data-theme="light"] #topbar,
+html[data-theme="light"] header#topbar{
+  background:#ffffff !important;color:#111 !important;border-bottom:1px solid #eee !important;
+}
+html[data-theme="light"] .logo-text{color:#111 !important}
+html[data-theme="light"] .logo-sub,
+html[data-theme="light"] .nav-group-label{color:#888 !important}
+html[data-theme="light"] #sidebar-logo{border-bottom-color:#eee !important}
+html[data-theme="light"] .nav-item{color:#555 !important}
+html[data-theme="light"] .nav-item:hover{color:#111 !important;background:rgba(0,0,0,.04) !important}
+html[data-theme="light"] .nav-item.active{color:#111 !important;background:rgba(0,0,0,.06) !important;border-left-color:#111 !important}
+html[data-theme="light"] .btn-icon-top{color:#333 !important;border-color:rgba(0,0,0,.16) !important}
+html[data-theme="light"] #themeToggleBtn{color:#111 !important;border-color:rgba(0,0,0,.22) !important}
+html[data-theme="light"] #topbarTitle,
+html[data-theme="light"] .topbar-clock{color:#666 !important}
+html[data-theme="light"] .sidebar-footer{border-top-color:#eee !important}
+html[data-theme="light"] .user-avatar{color:#111 !important;background:#f3f3f3 !important;border-color:#ddd !important}
+html[data-theme="light"] #collapseBtn{color:#888 !important}
+html[data-theme="light"] .notif-bell-btn{color:#333 !important;border-color:rgba(0,0,0,.16) !important}
+html[data-theme="light"] .theme-fab{background:#fff;border-color:rgba(0,0,0,.16);color:#111}
 
 /* ── Notificações (header + dropdown) ── */
-.notif-bell-root{position:relative;margin-left:auto;margin-right:4px}
+.notif-bell-root{position:relative;margin-right:0}
 .notif-bell-btn{
   width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:1px solid rgba(255,255,255,.15);font-size:18px;line-height:1;
@@ -1335,6 +1382,12 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   border-radius:12px;padding:12px 16px;cursor:pointer;transition:box-shadow .15s,border-color .15s;
 }
 .recrut-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);border-color:rgba(0,0,0,.16)}
+.recrut-del-btn{
+  flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid rgba(225,29,72,.25);
+  background:transparent;color:#e11d48;display:flex;align-items:center;justify-content:center;
+  font-size:12px;cursor:pointer;
+}
+.recrut-del-btn:hover{background:#fff1f2;border-color:#e11d48}
 .recrut-score{
   flex-shrink:0;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-family:var(--font-h);font-size:15px;font-weight:800;border:2.5px solid;
@@ -3239,6 +3292,9 @@ body:has(#login-screen.visible){
     </div>
   </div>
 </div>
+<button type="button" class="theme-fab" id="themeToggleFab" onclick="toggleAgeTheme()" title="Mudar para tema claro" aria-label="Mudar para tema claro">
+  <i class="fas fa-moon"></i>
+</button>
 
 <!-- Overlay planos (upgrade no app — mesmo markup via clone ou reuse) -->
 <div id="plansOverlayGlobal" class="plans-overlay" aria-hidden="true">
@@ -3617,6 +3673,9 @@ body:has(#login-screen.visible){
       <div class="topbar-toggles">
       <button type="button" class="btn-icon-top" id="sensitiveToggleBtn" onclick="toggleSensitiveValues()" title="Ocultar valores sensíveis" aria-pressed="false" aria-label="Ocultar ou mostrar valores financeiros">
         <i class="fas fa-eye" id="sensitiveToggleIcon"></i>
+      </button>
+      <button type="button" class="btn-icon-top" id="themeToggleBtn" onclick="toggleAgeTheme()" title="Mudar para tema claro" aria-label="Mudar para tema claro">
+        <i class="fas fa-moon"></i>
       </button>
       </div>
       <div class="notif-bell-root" id="notifBellRoot">
@@ -9042,6 +9101,7 @@ async function applyLoginSessionFromRow(row) {
   setTimeout(()=>{ try { updateTrialBanner(); } catch(e) {} }, 0);
   setTimeout(()=>{ try { bootstrapNotificationsUi(); } catch(e) {} }, 0);
   try { initSensitiveToggle(); } catch (_) {}
+  try { initAgeTheme(); } catch (_) {}
   /* Persiste a sessão local para sobreviver a refresh/F5. */
   try { _ageSaveLocalSession(currentUser.username); } catch(_) {}
   return { ok: true };
@@ -12440,7 +12500,6 @@ async function api(method, table, id='', body=null) {
 
   /* ── Multi-tenant: filtro company_id em GET/PATCH/DELETE nas tabelas escopadas ── */
   const _tcid = _tenantCidForScope();
-  const _qHasId = q.has('id');
   const _tenantBlocked =
     !window.__tenantScopeSuspended &&
     _tenantShouldFilterTable(table) &&
@@ -12454,10 +12513,9 @@ async function api(method, table, id='', body=null) {
     if((method === 'GET' || method === 'PATCH' || method === 'DELETE') && !q.has('company_id')) {
       /* age_nps_respostas não tem company_id — escopo via token da campanha no loadNps() */
       const skipCompanyCol = table === 'age_nps_respostas';
-      const skipAutoCompany =
-        skipCompanyCol ||
-        (_qHasId && (method === 'PATCH' || method === 'DELETE'));
-      if(!skipAutoCompany) q.set('company_id', `eq.${_tcid}`);
+      /* PATCH/DELETE por id também leva company_id: sem isso outra conta
+         apagava ou editava linha da OWNAGE só conhecendo o UUID. */
+      if(!skipCompanyCol) q.set('company_id', `eq.${_tcid}`);
     }
   }
   if(method === 'GET' && table === 'age_companies' && _tcid && !q.has('company_id')) {
@@ -13004,6 +13062,16 @@ async function _fetchTenantThenClientFilter(table, qs, filterTable) {
     const msg = String(e?.message || e || '');
     const missingCol = /Could not find the 'company_id' column|PGRST204/i.test(msg);
     if (!missingCol) throw e;
+    const neverUnscope = new Set([
+      'age_candidates','v_age_candidates_admin','age_match_results',
+      'age_ai_analysis','age_recruit_links'
+    ]);
+    /* Recrutamento sem coluna de empresa: lista vazia. Nunca baixar
+       todas as candidaturas (aí vazava a conta gustavowng/OWNAGE). */
+    if (neverUnscope.has(table) || neverUnscope.has(scope)) {
+      console.warn('[tenant] recusou leitura sem company_id em', table);
+      return [];
+    }
     const prev = window.__tenantScopeSuspended;
     window.__tenantScopeSuspended = true;
     try {
@@ -13110,6 +13178,45 @@ function _syncSensitiveToggleUi() {
 
 function initSensitiveToggle() {
   _syncSensitiveToggleUi();
+}
+
+const AGE_THEME_KEY = 'ageops-theme';
+
+function ageThemeCurrent() {
+  try {
+    const s = localStorage.getItem(AGE_THEME_KEY);
+    if (s === 'dark' || s === 'light') return s;
+  } catch (e) {}
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+
+function applyAgeTheme(theme) {
+  const t = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem(AGE_THEME_KEY, t); } catch (e) {}
+  _syncThemeToggleUi();
+}
+
+function toggleAgeTheme() {
+  applyAgeTheme(ageThemeCurrent() === 'dark' ? 'light' : 'dark');
+}
+
+function _syncThemeToggleUi() {
+  const dark = ageThemeCurrent() === 'dark';
+  const icon = dark ? 'fas fa-moon' : 'fas fa-sun';
+  const title = dark ? 'Mudar para tema claro' : 'Mudar para tema escuro';
+  ['themeToggleBtn', 'themeToggleFab'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    const i = btn.querySelector('i');
+    if (i) i.className = icon;
+  });
+}
+
+function initAgeTheme() {
+  applyAgeTheme(ageThemeCurrent());
 }
 
 function _refreshSensitiveCurrentView() {
@@ -24082,10 +24189,25 @@ const RECRUT_VALUE_LABELS = {
 
 let _recrutRows = [];
 
-function recrutPublicUrl() {
+function recrutTenantRefSlug() {
+  const cid = String(currentUser?.company_id || '').trim();
+  if (cid) return 'c_' + cid;
+  return String(currentUser?.username || '').trim().toLowerCase();
+}
+
+function recrutPublicUrl(refSlug) {
   const origin = String(location.origin || '');
-  if(/^https?:/.test(origin)) return origin + '/recrutamento/';
-  return 'https://age-socials.com/recrutamento/';
+  const base = /^https?:/.test(origin) ? origin + '/recrutamento/' : 'https://age-socials.com/recrutamento/';
+  const slug = refSlug === false ? '' : (typeof refSlug === 'string' && refSlug ? refSlug : recrutTenantRefSlug());
+  return slug ? base + '?ref=' + encodeURIComponent(slug) : base;
+}
+
+function _recrutDropForeignTenant(rows, table) {
+  const scoped = _tenantFilterRows(Array.isArray(rows) ? rows : [], table);
+  const myCid = _tenantCidForScope();
+  if (!myCid || myCid === OWNAGE_COMPANY_ID) return scoped;
+  /* Cinto extra: outra conta nunca lista linha da OWNAGE/gustavowng. */
+  return scoped.filter(r => String(r?.company_id || '') !== OWNAGE_COMPANY_ID);
 }
 
 function _recrutScoreColor(score) {
@@ -24108,7 +24230,7 @@ async function loadRecrutamento() {
   if(list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--textsub);font-size:12px"><i class="fas fa-circle-notch fa-spin"></i> Carregando candidatos...</div>';
   try {
     const raw = await _fetchTenantThenClientFilter('v_age_candidates_admin', '?limit=1000&order=created_at.desc', 'age_candidates');
-    _recrutRows = raw;
+    _recrutRows = _recrutDropForeignTenant(raw, 'age_candidates');
   } catch(e) {
     console.error('[recrutamento]', e);
     _recrutRows = [];
@@ -24188,6 +24310,10 @@ function renderRecrutList() {
         </div>
         <div class="recrut-meta">${_recrutFmtDate(r.created_at)}</div>
       </div>
+      <button type="button" class="recrut-del-btn perm-guard-edit" title="Excluir candidatura" aria-label="Excluir candidatura"
+        onclick="event.stopPropagation(); recrutDeleteCandidate('${escHtml(r.id)}', '${escHtml(r.name || '').replace(/'/g, '&#39;')}')">
+        <i class="fas fa-trash"></i>
+      </button>
     </div>`;
   }).join('');
 }
@@ -24205,9 +24331,9 @@ async function openRecrutDetail(id) {
       apiGet('age_match_results', `?candidate_id=eq.${encodeURIComponent(id)}&order=created_at.desc&limit=1`),
       apiGet('age_ai_analysis', `?candidate_id=eq.${encodeURIComponent(id)}&order=created_at.desc&limit=1`)
     ]);
-    c = (Array.isArray(dc?.data) ? dc.data : [])[0] || null;
-    m = (Array.isArray(dm?.data) ? dm.data : [])[0] || null;
-    a = (Array.isArray(da?.data) ? da.data : [])[0] || null;
+    c = _recrutDropForeignTenant(Array.isArray(dc?.data) ? dc.data : [], 'age_candidates')[0] || null;
+    m = _recrutDropForeignTenant(Array.isArray(dm?.data) ? dm.data : [], 'age_match_results')[0] || null;
+    a = _recrutDropForeignTenant(Array.isArray(da?.data) ? da.data : [], 'age_ai_analysis')[0] || null;
   } catch(e) { console.error('[recrut detail]', e); }
 
   if(!c) {
@@ -24341,6 +24467,7 @@ function _recrutDetailHtml(c, m, a) {
       <select id="recrutDetailStatus" class="cf-select">${statusOpts}</select>
       <button class="btn btn-primary btn-sm perm-guard-edit" onclick="recrutSaveStatus('${escHtml(c.id)}')"><i class="fas fa-save"></i> Salvar status</button>
       <button class="btn btn-secondary btn-sm perm-guard-edit" onclick="recrutAnalyze('${escHtml(c.id)}')" title="Re-rodar análise Claude"><i class="fas fa-robot"></i> Re-analisar</button>
+      <button class="btn btn-danger btn-sm perm-guard-edit" onclick="recrutDeleteCandidate('${escHtml(c.id)}', '${escHtml(c.name || '').replace(/'/g, '&#39;')}')"><i class="fas fa-trash"></i> Excluir formulário</button>
     </div>
     <textarea id="recrutDetailNotes" rows="3" placeholder="Notas internas do admin..." style="width:100%;font-size:12px;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.12);background:var(--bg2);color:var(--text);resize:vertical">${escHtml(c.admin_notes || '')}</textarea>
     <button class="btn btn-secondary btn-sm perm-guard-edit" style="margin-top:6px" onclick="recrutSaveNotes('${escHtml(c.id)}')"><i class="fas fa-sticky-note"></i> Salvar notas</button>
@@ -24398,6 +24525,46 @@ function recrutCopyPublicLink() {
   catch(e) { window.open(url, '_blank'); }
 }
 
+async function recrutDeleteCandidate(id, name) {
+  if (!id) return;
+  const label = String(name || 'este candidato');
+  if (!confirm(`Excluir a candidatura de "${label}"? Esta ação não pode ser desfeita.`)) return;
+  if (!_tenantCidForScope()) {
+    toast('Sessão sem empresa — exclusão bloqueada.', 'err');
+    return;
+  }
+  try {
+    try { await api('DELETE', 'age_ai_analysis', `?candidate_id=eq.${encodeURIComponent(id)}`); } catch (_) {}
+    try { await api('DELETE', 'age_match_results', `?candidate_id=eq.${encodeURIComponent(id)}`); } catch (_) {}
+    await apiDel('age_candidates', id);
+    try { closeModal('modalRecrutDetail'); } catch (_) {}
+    _recrutRows = _recrutRows.filter(r => r.id !== id);
+    renderRecrutList();
+    toast('Candidatura excluída.');
+    loadRecrutamento();
+  } catch (e) {
+    console.error('[recrut delete]', e);
+    toast('Erro ao excluir candidatura.', 'err');
+  }
+}
+
+async function recrutDeleteLink(id, slug) {
+  if (!id) return;
+  if (!confirm(`Excluir o link "${slug || ''}"? Candidaturas já recebidas não são apagadas.`)) return;
+  if (!_tenantCidForScope()) {
+    toast('Sessão sem empresa — exclusão bloqueada.', 'err');
+    return;
+  }
+  try {
+    await apiDel('age_recruit_links', id);
+    toast('Link excluído.');
+    recrutRenderLinks();
+  } catch (e) {
+    console.error('[recrut link delete]', e);
+    toast('Erro ao excluir link.', 'err');
+  }
+}
+
 async function openRecrutLinksModal() {
   openModal('modalRecrutLinks');
   await recrutRenderLinks();
@@ -24409,7 +24576,7 @@ async function recrutRenderLinks() {
   let rows = [];
   try {
     const d = { data: await _fetchTenantThenClientFilter('age_recruit_links', '?order=created_at.desc&limit=200', 'age_recruit_links') };
-    rows = Array.isArray(d?.data) ? d.data : [];
+    rows = _recrutDropForeignTenant(Array.isArray(d?.data) ? d.data : [], 'age_recruit_links');
   } catch(e) { console.error(e); }
   if(!list) return;
   if(!rows.length) {
@@ -24417,7 +24584,7 @@ async function recrutRenderLinks() {
     return;
   }
   list.innerHTML = rows.map(l => {
-    const url = recrutPublicUrl() + '?ref=' + encodeURIComponent(l.slug);
+    const url = recrutPublicUrl(l.slug);
     return `<div style="display:flex;align-items:center;gap:10px;border:1px solid rgba(0,0,0,.09);border-radius:10px;padding:10px 12px;background:var(--bg2);${l.active ? '' : 'opacity:.5'}">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:700">${escHtml(l.slug)}</div>
@@ -24428,6 +24595,9 @@ async function recrutRenderLinks() {
       <button class="btn btn-secondary btn-sm" title="Copiar link" onclick="navigator.clipboard.writeText('${escHtml(url)}').then(()=>toast('Link copiado.'))"><i class="fas fa-copy"></i></button>
       <button class="btn btn-secondary btn-sm perm-guard-edit" title="${l.active ? 'Desativar' : 'Reativar'}" onclick="recrutToggleLink('${escHtml(l.id)}', ${l.active ? 'false' : 'true'})">
         <i class="fas fa-${l.active ? 'pause' : 'play'}"></i>
+      </button>
+      <button class="btn btn-danger btn-sm perm-guard-edit" title="Excluir link" onclick="recrutDeleteLink('${escHtml(l.id)}', '${escHtml(l.slug || '')}')">
+        <i class="fas fa-trash"></i>
       </button>
     </div>`;
   }).join('');
@@ -24445,7 +24615,7 @@ async function recrutCreateLink() {
       created_by: String(currentUser?.username || '') || null
     });
     ['recrutLinkSlug', 'recrutLinkChannel', 'recrutLinkCampaign'].forEach(i => { const el = document.getElementById(i); if(el) el.value = ''; });
-    toast('Link criado: ' + recrutPublicUrl() + '?ref=' + slug);
+    toast('Link criado: ' + recrutPublicUrl(slug));
     recrutRenderLinks();
   } catch(e) {
     console.error(e);
@@ -34329,6 +34499,7 @@ function _ageInit() {
   try { _dashInitPeriodSelectors(); } catch (_) {}
   try { _initDashboardLiveSync(); } catch (_) {}
   try { initSensitiveToggle(); } catch (_) {}
+  try { initAgeTheme(); } catch (_) {}
 }
 
 async function _ageBootstrap() {

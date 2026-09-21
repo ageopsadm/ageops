@@ -28,10 +28,12 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json'
 };
 
-/* Empresa dona da página pública de carreiras. Candidatura que chega sem
-   ?ref= válido não tem como declarar a empresa, então cai aqui. */
+/* Página pública /recrutamento sem ?ref= é a da AGE. Outras empresas
+   entram pelo link com ?ref= (c_<uuid>, username ou slug do convite).
+   Ref explícito inválido não cai aqui — senão vaza currículo alheio. */
 const DEFAULT_COMPANY_ID = Deno.env.get('AGE_DEFAULT_COMPANY_ID')
   || 'aa47f125-4b29-4c2d-b367-88b912f1b33e';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /* ══════════════════════════════════════════════════════════
    ROLES + MATCHING — port 1:1 do roles.js / matching.js do handoff.
@@ -257,6 +259,33 @@ async function db(method: string, path: string, body?: unknown) {
   return json;
 }
 
+/* PostgREST recusa o POST inteiro se o payload tiver coluna que ainda
+   não existe no schema (PGRST204). O form manda tech_level / culture_values
+   etc. e o SQL extra pode não ter rodado — a candidatura some da aba.
+   Tira a coluna citada e tenta de novo. */
+function unknownColumnName(err: unknown): string | null {
+  const m = String(err || '').match(/Could not find the '([^']+)' column/i);
+  return m ? m[1] : null;
+}
+
+async function dbPostCompatible(table: string, row: Record<string, unknown>) {
+  const body: Record<string, unknown> = { ...row };
+  for (let i = 0; i < 16; i++) {
+    try {
+      return await db('POST', table, body);
+    } catch (e) {
+      const col = unknownColumnName(e);
+      if (col && Object.prototype.hasOwnProperty.call(body, col)) {
+        console.warn(`[recruit-submit] coluna ausente em ${table}: ${col} — insert sem ela`);
+        delete body[col];
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error(`DB POST ${table} → retries exhausted`);
+}
+
 /* ══════════════════════════════════════════════════════════
    Análise Claude (background)
 ══════════════════════════════════════════════════════════ */
@@ -403,7 +432,11 @@ async function callClaude(userPrompt: string) {
 async function runAnalysis(candidateId: string, candidate: any, match: any) {
   /* A análise herda a empresa do candidato — é o que mantém o parecer
      restrito a quem é dono da candidatura. */
-  const companyId = String(candidate?.company_id || '') || DEFAULT_COMPANY_ID;
+  const companyId = String(candidate?.company_id || '');
+  if (!companyId) {
+    console.error('[recruit-analysis] candidato sem company_id — aborta');
+    return;
+  }
   // Reaproveita registro pending existente ou cria um
   let analysisId: string | null = null;
   try {
@@ -470,20 +503,57 @@ function jsonRes(status: number, body: unknown) {
 }
 
 /* O ?ref= do link de divulgação é o que diz a qual empresa a candidatura
-   pertence. Sem esse vínculo o candidato ficaria visível para todo mundo. */
-async function companyForRef(ref: string | null): Promise<string> {
+   pertence. Sem ?ref= assume a página pública da AGE. */
+async function companyForRef(ref: string | null): Promise<string | null> {
   const slug = String(ref || '').trim();
   if (!slug) return DEFAULT_COMPANY_ID;
+
+  const prefixed = slug.match(/^c_(.+)$/i);
+  if (prefixed && UUID_RE.test(prefixed[1])) {
+    try {
+      const cos = await db(
+        'GET',
+        `age_companies?id=eq.${encodeURIComponent(prefixed[1])}&select=id&limit=1`
+      ) as Array<{ id?: string }>;
+      if (cos?.[0]?.id) return String(cos[0].id);
+    } catch (e) {
+      console.error('[recruit-submit] companyForRef c_', e);
+    }
+    return null;
+  }
+
+  try {
+    const owned = await db(
+      'GET',
+      `age_companies?owner_username=eq.${encodeURIComponent(slug)}&select=id&limit=1`
+    ) as Array<{ id?: string }>;
+    if (owned?.[0]?.id) return String(owned[0].id);
+  } catch (e) {
+    console.error('[recruit-submit] companyForRef owner', e);
+  }
+
+  try {
+    const users = await db(
+      'GET',
+      `age_users?username=eq.${encodeURIComponent(slug)}&select=company_id&limit=1`
+    ) as Array<{ company_id?: string }>;
+    if (users?.[0]?.company_id) return String(users[0].company_id);
+  } catch (e) {
+    console.error('[recruit-submit] companyForRef user', e);
+  }
+
   try {
     const rows = await db(
       'GET',
-      `age_recruit_links?slug=eq.${encodeURIComponent(slug)}&select=company_id&limit=1`
-    ) as Array<{ company_id?: string }>;
-    return String(rows?.[0]?.company_id || '') || DEFAULT_COMPANY_ID;
+      `age_recruit_links?slug=eq.${encodeURIComponent(slug)}&select=company_id,active&limit=1`
+    ) as Array<{ company_id?: string; active?: boolean }>;
+    const row = rows?.[0];
+    if (row && row.active !== false && row.company_id) return String(row.company_id);
   } catch (e) {
-    console.error('[recruit-submit] companyForRef', e);
-    return DEFAULT_COMPANY_ID;
+    console.error('[recruit-submit] companyForRef link', e);
   }
+
+  return null;
 }
 
 serve(async (req) => {
@@ -533,12 +603,23 @@ serve(async (req) => {
   const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || null;
   const ua = (req.headers.get('user-agent') || '').slice(0, 400) || null;
 
+  const clampTxt = (v: unknown, max: number) => v == null ? null : String(v).slice(0, max);
+  const strArrIn = (v: unknown, max: number) => Array.isArray(v) ? v.map(x => String(x).slice(0, 80)).slice(0, max) : [];
+
+  const companyId = await companyForRef(payload.ref_source as string | null);
+  if (!companyId) {
+    return jsonRes(400, {
+      error: 'Link de recrutamento inválido. Use o endereço da empresa (?ref=).',
+      code: 'unknown_tenant'
+    });
+  }
+
   const cutIso = (min: number) => new Date(Date.now() - min * 60000).toISOString();
 
-  // Idempotência: mesmo email em <5min → retorna o existente
+  // Idempotência: mesmo email na MESMA empresa em <5min → retorna o existente
   try {
     const dup = await db('GET',
-      `age_candidates?email=eq.${encodeURIComponent(email)}&created_at=gte.${encodeURIComponent(cutIso(5))}&select=id&limit=1`
+      `age_candidates?email=eq.${encodeURIComponent(email)}&company_id=eq.${encodeURIComponent(companyId)}&created_at=gte.${encodeURIComponent(cutIso(5))}&select=id&limit=1`
       // deno-lint-ignore no-explicit-any
     ) as any[];
     if (dup && dup.length) {
@@ -569,11 +650,6 @@ serve(async (req) => {
       }
     } catch (_) { /* rate limit é best effort */ }
   }
-
-  const clampTxt = (v: unknown, max: number) => v == null ? null : String(v).slice(0, max);
-  const strArrIn = (v: unknown, max: number) => Array.isArray(v) ? v.map(x => String(x).slice(0, 80)).slice(0, max) : [];
-
-  const companyId = await companyForRef(payload.ref_source as string | null);
 
   const candidateRow = {
     company_id: companyId,
@@ -608,7 +684,7 @@ serve(async (req) => {
   let candidateId: string;
   try {
     // deno-lint-ignore no-explicit-any
-    const inserted = await db('POST', 'age_candidates', candidateRow) as any[];
+    const inserted = await dbPostCompatible('age_candidates', candidateRow) as any[];
     candidateId = inserted?.[0]?.id;
     if (!candidateId) throw new Error('Insert sem id');
   } catch (e) {
@@ -645,7 +721,7 @@ serve(async (req) => {
     seniority: match.seniority,
     algo_version: ALGO_VERSION
   };
-  try { await db('POST', 'age_match_results', matchRow); }
+  try { await dbPostCompatible('age_match_results', matchRow); }
   catch (e) { console.error('[recruit-submit] match insert', e); }
 
   // Análise Claude em background — nunca bloqueia o response

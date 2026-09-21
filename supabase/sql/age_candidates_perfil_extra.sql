@@ -18,10 +18,13 @@ COMMENT ON COLUMN age_candidates.mistake_style      IS 'Como assume/lida com os 
 COMMENT ON COLUMN age_candidates.day_rate_range     IS 'Faixa cobrada por diária (freela)';
 COMMENT ON COLUMN age_candidates.fixed_salary_range IS 'Faixa de salário mensal pretendido em trabalho fixo';
 
--- Expor faixas de remuneração e nível técnico também na lista admin
-CREATE OR REPLACE VIEW v_age_candidates_admin AS
+-- Expor faixas de remuneração e nível técnico também na lista admin.
+-- Recria com security_invoker + company_id para não furar o isolamento.
+DROP VIEW IF EXISTS v_age_candidates_admin CASCADE;
+CREATE VIEW v_age_candidates_admin WITH (security_invoker = true) AS
 SELECT
   c.id,
+  c.company_id,
   c.created_at,
   c.name,
   c.email,
@@ -50,3 +53,5 @@ FROM age_candidates c
 LEFT JOIN age_match_results m ON m.candidate_id = c.id
 LEFT JOIN age_ai_analysis  a ON a.candidate_id = c.id
 ORDER BY c.created_at DESC;
+
+GRANT SELECT ON v_age_candidates_admin TO anon, authenticated;
