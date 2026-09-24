@@ -356,7 +356,8 @@ serve(async (req) => {
 
       if (!email.includes('@')) return json({ error: 'Email inválido.' }, 400)
       if (password.length < 8) return json({ error: 'A senha precisa de ao menos 8 caracteres.' }, 400)
-      if (!String(companyIn.name || '').trim()) return json({ error: 'Informe o nome da empresa.' }, 400)
+      const companyName = String(companyIn.name || '').trim()
+        || ('Minha empresa')
 
       const existing = await loadUser(email)
       if (existing) return json({ error: 'Este email já está cadastrado.' }, 409)
@@ -365,7 +366,7 @@ serve(async (req) => {
 
       const company = await insertTolerant('age_companies', {
         ...companyIn,
-        name: String(companyIn.name).trim(),
+        name: companyName,
         owner_username: username,
       })
       const companyId = company?.id
@@ -379,7 +380,7 @@ serve(async (req) => {
         email,
         role: 'admin',
         company_id: companyId,
-        company_name: String(companyIn.name).trim(),
+        company_name: companyName,
         active: true,
         deleted: false,
       })

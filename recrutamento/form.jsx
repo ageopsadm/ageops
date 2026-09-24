@@ -57,11 +57,16 @@ function FormOverlay({ onClose, onFinish, withLGPD, submitting }) {
     if (!canProceed || submitting) return;
     if (step < totalSteps - 1) setStep(s => s + 1);
     else {
-      const result = window.calculateMatch(answers);
-      localStorage.setItem('age_result', JSON.stringify(result));
-      localStorage.setItem('age_candidate_name', answers.name || 'candidato');
-      // v2: passa answers para o parent (necessário pro submit API na produção)
-      onFinish(result, answers);
+      try {
+        const result = window.calculateMatch(answers);
+        if (!result || !result.topRole) throw new Error('match vazio');
+        localStorage.setItem('age_result', JSON.stringify(result));
+        localStorage.setItem('age_candidate_name', answers.name || 'candidato');
+        onFinish(result, answers);
+      } catch (e) {
+        console.error('calculateMatch', e);
+        alert('Não deu pra calcular o resultado. Recarrega a página e tenta de novo.');
+      }
     }
   };
   const prev = () => setStep(s => Math.max(0, s - 1));
@@ -87,7 +92,23 @@ function FormOverlay({ onClose, onFinish, withLGPD, submitting }) {
       case 15: return withLGPD ? !!answers.consentLGPD : true;
       default: return true;
     }
-  }, [step, answers]);
+  }, [step, answers, withLGPD]);
+
+  let blockedHint = '';
+  if (!canProceed && !submitting) {
+    if (step === 0) blockedHint = 'Preenche nome, cidade e um email válido.';
+    else if (step === 2) blockedHint = answers.experienceYears === '' ? 'Diz quantos anos de experiência.' : 'Conta um pouco mais da tua experiência (mín. 20 caracteres).';
+    else if (step === 3) blockedHint = 'Marca pelo menos uma área.';
+    else if (step === 4) blockedHint = 'Marca pelo menos uma ferramenta.';
+    else if (step === 5) blockedHint = 'Escolhe teu nível técnico.';
+    else if (step === 7) blockedHint = 'Marca pelo menos um valor.';
+    else if (step === 8 || step === 10 || step === 11) blockedHint = 'Escreve um pouco mais (mín. 20 caracteres).';
+    else if (step === 9) blockedHint = 'Responde as duas perguntas desta etapa.';
+    else if (step === 12) blockedHint = 'Escolhe uma rotina.';
+    else if (step === 13) blockedHint = 'Escolhe um tipo de entrega.';
+    else if (step === 14) blockedHint = 'Escolhe as duas faixas de grana.';
+    else if (step === 15) blockedHint = 'Marca o aceite no final da página pra ver o resultado.';
+  }
 
   const progressPct = ((step + 1) / totalSteps) * 100;
 
@@ -117,7 +138,7 @@ function FormOverlay({ onClose, onFinish, withLGPD, submitting }) {
       <div className="form-footer">
         <button className="form-btn ghost" onClick={prev} disabled={step === 0 || submitting}>← Voltar</button>
         <div className="form-footer-hint">
-          {step === totalSteps - 1 ? 'Última pergunta' : 'Enter ou clique em continuar'}
+          {blockedHint || (step === totalSteps - 1 ? 'Última pergunta' : 'Enter ou clique em continuar')}
         </div>
         <button className="form-btn primary" onClick={next} disabled={!canProceed || submitting}>
           {submitting ? 'Enviando...' : (step === totalSteps - 1 ? 'Ver meu resultado →' : 'Continuar →')}

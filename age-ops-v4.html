@@ -1945,6 +1945,13 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   font-family:var(--font-m);font-size:11px;color:#15803d;text-align:center;margin:12px 0 20px;padding:12px;
   background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;
 }
+.reg-plan-pick{display:flex;flex-direction:column;gap:8px;margin:8px 0 16px}
+.reg-plan-opt{
+  display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid rgba(0,0,0,.12);
+  border-radius:10px;cursor:pointer;font-family:var(--font-m);font-size:13px;color:#111;line-height:1.4;
+}
+.reg-plan-opt:has(input:checked){border-color:#22c55e;background:#f0fdf4}
+.reg-plan-opt input{margin-top:3px;accent-color:#22c55e}
 .login-input:focus{
   outline:none;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);
 }
@@ -3074,39 +3081,28 @@ body:has(#login-screen.visible){
         <button type="button" onclick="setLoginTab('login')" style="background:none;border:none;cursor:pointer;font-family:var(--font-m);font-size:10px;color:#64748b;text-decoration:underline">← Voltar ao login</button>
       </div>
       <div id="regWizardProgressWrap">
-        <div class="reg-progress-label" id="regProgressLabel">Etapa 1 de 3 — Seus dados</div>
+        <div class="reg-progress-label" id="regProgressLabel">Etapa 1 de 2 — Seus dados</div>
         <div class="reg-progress" id="regProgressBar">
           <div class="reg-progress-step" data-i="0"></div>
           <div class="reg-progress-step" data-i="1"></div>
-          <div class="reg-progress-step" data-i="2"></div>
         </div>
       </div>
 
       <form id="registerForm" autocomplete="off" onsubmit="return false">
         <!-- ETAPA 1 -->
         <div id="regStep1" class="reg-step-panel active">
-          <h2 class="reg-step-title">Seus dados pessoais</h2>
-          <p class="reg-step-sub">Preencha seus dados para criar sua conta de administrador.</p>
+          <h2 class="reg-step-title">Criar sua conta</h2>
+          <p class="reg-step-sub">Só o essencial. Dados da empresa você completa depois, dentro do app.</p>
 
           <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-user"></i> Nome completo *</label>
-            <input class="login-input" id="regFullName" type="text" placeholder="João Silva" autocomplete="name">
-            <div class="reg-inline-err" id="regErr-fullName"></div>
+            <label class="reg-field-label"><i class="fas fa-envelope"></i> Email *</label>
+            <input class="login-input" id="regEmail" type="email" placeholder="voce@email.com" autocomplete="email">
+            <div class="reg-inline-err" id="regErr-email"></div>
           </div>
           <div class="reg-field">
             <label class="reg-field-label"><i class="fas fa-id-card"></i> CPF *</label>
             <input class="login-input" id="regCpf" type="text" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off">
             <div class="reg-inline-err" id="regErr-cpf"></div>
-          </div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-birthday-cake"></i> Data de nascimento *</label>
-            <input class="login-input" id="regBirth" type="date" autocomplete="bday">
-            <div class="reg-inline-err" id="regErr-birth"></div>
-          </div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-envelope"></i> Email *</label>
-            <input class="login-input" id="regEmail" type="email" placeholder="joao@empresa.com" autocomplete="email">
-            <div class="reg-inline-err" id="regErr-email"></div>
           </div>
           <div class="reg-field">
             <label class="reg-field-label"><i class="fab fa-whatsapp"></i> Telefone / WhatsApp *</label>
@@ -3147,97 +3143,17 @@ body:has(#login-screen.visible){
           <button type="button" class="btn btn-reg-green login-btn" id="regBtnNext1" onclick="regWizardNextFromStep1()"><span id="regBtnNext1Text">Próximo</span> <i class="fas fa-arrow-right"></i></button>
         </div>
 
-        <!-- ETAPA 2 -->
+        <!-- ETAPA 2 — plano (R$ 0 na fase de desenvolvimento) -->
         <div id="regStep2" class="reg-step-panel">
-          <h2 class="reg-step-title">Dados da sua empresa</h2>
-          <p class="reg-step-sub">Informações da empresa e endereço para o cadastro.</p>
-
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-store"></i> Nome fantasia *</label>
-            <input class="login-input" id="regFantasy" type="text" placeholder="OWNAGE Films">
-            <div class="reg-inline-err" id="regErr-fantasy"></div>
+          <h2 class="reg-step-title">Escolha o plano</h2>
+          <p class="reg-step-sub">Os planos existem para você já saber o tamanho da conta. <strong>Por enquanto está R$&nbsp;0</strong> — fase de desenvolvimento, sem cobrança.</p>
+          <div class="reg-trial-note" style="margin-bottom:14px">Sua conta nasce isolada: projetos, clientes e equipe ficam só na sua empresa. Depois, no app, você completa o cadastro do negócio.</div>
+          <div id="regPlanPick" class="reg-plan-pick">
+            <label class="reg-plan-opt"><input type="radio" name="regPlan" value="solo"> <span><b>Solo</b> — quem opera sozinho</span></label>
+            <label class="reg-plan-opt"><input type="radio" name="regPlan" value="produtora" checked> <span><b>Produtora</b> — time pequeno</span></label>
+            <label class="reg-plan-opt"><input type="radio" name="regPlan" value="agencia"> <span><b>Agência</b> — operação completa</span></label>
           </div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-file-invoice"></i> Razão social</label>
-            <input class="login-input" id="regLegalName" type="text" placeholder="OWNAGE Films LTDA">
-            <div class="reg-inline-err" id="regErr-legal"></div>
-          </div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-building"></i> CNPJ <span style="opacity:.6">(opcional)</span></label>
-            <input class="login-input" id="regCnpj" type="text" placeholder="00.000.000/0000-00" maxlength="18" inputmode="numeric" autocomplete="off">
-            <div class="reg-inline-err" id="regErr-cnpj"></div>
-          </div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-tags"></i> Segmento *</label>
-            <select class="login-input" id="regSegment" style="width:100%">
-              <option value="">Selecione…</option>
-              <option value="Produtora de Vídeo">Produtora de Vídeo</option>
-              <option value="Agência de Conteúdo">Agência de Conteúdo</option>
-              <option value="Agência de Marketing">Agência de Marketing</option>
-              <option value="Fotografia">Fotografia</option>
-              <option value="Eventos">Eventos</option>
-              <option value="Podcast">Podcast</option>
-              <option value="Streaming">Streaming</option>
-              <option value="Outro">Outro</option>
-            </select>
-            <div class="reg-inline-err" id="regErr-segment"></div>
-          </div>
-          <div class="reg-grid-2">
-            <div class="reg-field">
-              <label class="reg-field-label"><i class="fas fa-phone-alt"></i> Telefone comercial</label>
-              <input class="login-input" id="regCoPhone" type="text" placeholder="(11) 3333-3333" maxlength="15" inputmode="numeric">
-              <div class="reg-inline-err" id="regErr-cophone"></div>
-            </div>
-            <div class="reg-field">
-              <label class="reg-field-label"><i class="fas fa-globe"></i> Site</label>
-              <input class="login-input" id="regSite" type="text" placeholder="www.suaempresa.com.br">
-              <div class="reg-inline-err" id="regErr-site"></div>
-            </div>
-          </div>
-
-          <div class="reg-address-title"><i class="fas fa-map-marker-alt" style="color:#22c55e"></i> ENDEREÇO</div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-mail-bulk"></i> CEP *</label>
-            <input class="login-input" id="regCep" type="text" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code">
-            <div class="reg-inline-err" id="regErr-cep"></div>
-          </div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-road"></i> Rua / Avenida *</label>
-            <input class="login-input" id="regStreet" type="text" placeholder="Preenchido pelo CEP">
-            <div class="reg-inline-err" id="regErr-street"></div>
-          </div>
-          <div class="reg-grid-2">
-            <div class="reg-field">
-              <label class="reg-field-label"><i class="fas fa-hashtag"></i> Número *</label>
-              <input class="login-input" id="regNum" type="text" placeholder="Nº" inputmode="numeric">
-              <div class="reg-inline-err" id="regErr-num"></div>
-            </div>
-            <div class="reg-field">
-              <label class="reg-field-label"><i class="fas fa-door-open"></i> Complemento</label>
-              <input class="login-input" id="regComp" type="text" placeholder="Sala 42, Apto 3...">
-            </div>
-          </div>
-          <div class="reg-field">
-            <label class="reg-field-label"><i class="fas fa-map"></i> Bairro *</label>
-            <input class="login-input" id="regBairro" type="text" placeholder="Bairro">
-            <div class="reg-inline-err" id="regErr-bairro"></div>
-          </div>
-          <div class="reg-grid-2">
-            <div class="reg-field">
-              <label class="reg-field-label"><i class="fas fa-city"></i> Cidade *</label>
-              <input class="login-input" id="regCity" type="text" placeholder="Cidade">
-              <div class="reg-inline-err" id="regErr-city"></div>
-            </div>
-            <div class="reg-field">
-              <label class="reg-field-label"><i class="fas fa-flag"></i> Estado *</label>
-              <select class="login-input" id="regUf" style="width:100%">
-                <option value="">UF</option>
-                <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-              </select>
-              <div class="reg-inline-err" id="regErr-uf"></div>
-            </div>
-          </div>
-
+          <div class="reg-inline-err" id="regErr-plan"></div>
           <div class="reg-btn-row">
             <button type="button" class="btn btn-secondary login-btn" id="regBtnBack2" onclick="regWizardGoStep(1)"><i class="fas fa-arrow-left"></i> Voltar</button>
             <button type="button" class="btn btn-reg-green login-btn" id="regBtnSubmit" onclick="submitAdminRegister()"><i class="fas fa-rocket" id="regBtnIcon"></i> <span id="regBtnText">Criar minha conta</span></button>
@@ -3251,7 +3167,7 @@ body:has(#login-screen.visible){
         <h2 class="reg-step-title">Conta criada com sucesso! 🎉</h2>
         <p class="reg-step-sub">Suas informações foram registradas com segurança.</p>
         <div class="reg-summary" id="regSummaryBox"></div>
-        <div class="reg-trial-note"><strong>30 dias grátis</strong> na beta — <strong>sem cartão</strong>, com acesso a <strong>todas as ferramentas</strong>. Sua conta e dados ficam isolados só para você.</div>
+        <div class="reg-trial-note"><strong>R$ 0</strong> na fase de desenvolvimento — <strong>sem cartão</strong>. Sua conta e os dados da sua empresa ficam só para você, sem vínculo com outras contas.</div>
         <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="enterAppFreeTrialNoCard()">Entrar no Age Ops <i class="fas fa-arrow-right"></i></button>
         <button type="button" onclick="showPostSignupPlans()" style="display:block;width:100%;margin-top:12px;background:none;border:none;color:#64748b;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">Ver planos (opcional — cartão não é obrigatório)</button>
       </div>
@@ -3264,12 +3180,12 @@ body:has(#login-screen.visible){
       <div class="plans-overlay-inner">
         <div class="plans-header">
           <h1 id="plansWelcomeTitle">Bem-vindo</h1>
-          <p>30 dias grátis na beta — sem cartão, todas as ferramentas liberadas.</p>
+          <p>Fase de desenvolvimento: planos a <strong>R$ 0</strong> por enquanto. Sem cartão.</p>
           <div class="plans-toggle" role="tablist">
             <button type="button" id="planBillMonthly" class="active" onclick="setPlanBillingToggle('monthly')">Mensal</button>
             <button type="button" id="planBillYearly" onclick="setPlanBillingToggle('yearly')">Anual</button>
           </div>
-          <p class="plans-economy-hint" id="plansEconomyHintSignup">Preços de teste: R$0,01 — mensal e anual (pagamento real).</p>
+          <p class="plans-economy-hint" id="plansEconomyHintSignup">Fase de desenvolvimento: R$ 0 por enquanto. Sem cobrança.</p>
         </div>
         <div class="plans-grid" id="plansCardsGrid">
           <!-- preenchido por refreshPlanCardsPricing() -->
@@ -3280,7 +3196,7 @@ body:has(#login-screen.visible){
           </button>
         </div>
         <div class="plans-footer">
-          <span>30 dias grátis na beta</span>
+          <span>R$ 0 na fase de desenvolvimento</span>
           <span>Todas as ferramentas</span>
           <span>Sem cartão obrigatório</span>
         </div>
@@ -3306,7 +3222,7 @@ body:has(#login-screen.visible){
         <button type="button" id="planBillMonthlyG" class="active" onclick="setPlanBillingToggleGlobal('monthly')">Mensal</button>
         <button type="button" id="planBillYearlyG" onclick="setPlanBillingToggleGlobal('yearly')">Anual</button>
       </div>
-      <p class="plans-economy-hint" id="plansEconomyHintGlobal">Preços de teste: R$0,01 — mensal e anual (pagamento real).</p>
+      <p class="plans-economy-hint" id="plansEconomyHintGlobal">Fase de desenvolvimento: R$ 0 por enquanto. Sem cobrança.</p>
     </div>
     <div class="plans-grid" id="plansCardsGridGlobal"></div>
     <div style="text-align:center;margin:16px 0 8px">
@@ -3315,7 +3231,7 @@ body:has(#login-screen.visible){
       </button>
     </div>
     <div class="plans-footer">
-      <span>30 dias grátis na beta</span>
+      <span>R$ 0 na fase de desenvolvimento</span>
       <span>Todas as ferramentas</span>
       <span>Pagamento seguro</span>
     </div>
@@ -9260,6 +9176,7 @@ function _projPickDateIso(p, keys, allowEmpty) {
 }
 
 let _regWizardStep = 1;
+let _regSelectedPlan = 'produtora';
 let _regPendingSessionRow = null;
 
 function _regDigits(s) { return String(s || '').replace(/\D/g, ''); }
@@ -9363,11 +9280,10 @@ function updateRegProgressVisual(step) {
   const label = document.getElementById('regProgressLabel');
   const bars = document.querySelectorAll('#regProgressBar .reg-progress-step');
   const texts = [
-    'Etapa 1 de 3 — Seus dados pessoais',
-    'Etapa 2 de 3 — Dados da empresa',
-    'Etapa 3 de 3 — Confirmação'
+    'Etapa 1 de 2 — Seus dados',
+    'Etapa 2 de 2 — Plano'
   ];
-  if(label) label.textContent = texts[Math.min(step - 1, 2)] || '';
+  if(label) label.textContent = texts[Math.min(step - 1, 1)] || '';
   bars.forEach((b, i) => {
     b.classList.remove('done', 'active');
     if(step >= 3) b.classList.add('done');
@@ -9436,20 +9352,16 @@ function initRegisterWizardMasksOnce() {
 function validateRegStep1() {
   regClearInlineErrors();
   let ok = true;
-  const fullName = document.getElementById('regFullName')?.value?.trim() || '';
   const cpf = document.getElementById('regCpf')?.value || '';
-  const birth = document.getElementById('regBirth')?.value || '';
   const email = document.getElementById('regEmail')?.value?.trim().toLowerCase() || '';
   const phone = document.getElementById('regPhone')?.value || '';
   const p1 = document.getElementById('regPass')?.value || '';
   const p2 = document.getElementById('regPass2')?.value || '';
 
-  if(!fullName || fullName.length < 3) { regSetFieldErr('fullName', 'Informe o nome completo.'); ok = false; }
-  if(!validateCPFBr(cpf)) { regSetFieldErr('cpf', 'CPF inválido.'); ok = false; }
-  if(!birth) { regSetFieldErr('birth', 'Informe a data de nascimento.'); ok = false; }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { regSetFieldErr('email', 'Email inválido.'); ok = false; }
+  if(!validateCPFBr(cpf)) { regSetFieldErr('cpf', 'CPF inválido.'); ok = false; }
   const ph = _regDigits(phone);
-  if(ph.length < 10 || ph.length > 11) { regSetFieldErr('phone', 'Telefone inválido (DDD + número).'); ok = false; }
+  if(ph.length < 10 || ph.length > 11) { regSetFieldErr('phone', 'Celular inválido (DDD + número).'); ok = false; }
   if(p1.length < 8) { regSetFieldErr('pass', 'Senha mínimo 8 caracteres.'); ok = false; }
   if(p1 !== p2) { regSetFieldErr('pass2', 'As senhas não conferem.'); ok = false; }
   if(!document.getElementById('regAcceptTerms')?.checked) {
@@ -9461,29 +9373,20 @@ function validateRegStep1() {
 
 function validateRegStep2() {
   regClearInlineErrors();
-  let ok = true;
-  const fantasy = document.getElementById('regFantasy')?.value?.trim() || '';
-  const cnpj = document.getElementById('regCnpj')?.value || '';
-  const segment = document.getElementById('regSegment')?.value || '';
-  const cep = _regDigits(document.getElementById('regCep')?.value || '');
-  const street = document.getElementById('regStreet')?.value?.trim() || '';
-  const num = document.getElementById('regNum')?.value?.trim() || '';
-  const bairro = document.getElementById('regBairro')?.value?.trim() || '';
-  const city = document.getElementById('regCity')?.value?.trim() || '';
-  const uf = document.getElementById('regUf')?.value || '';
+  const picked = document.querySelector('#regPlanPick input[name="regPlan"]:checked');
+  const key = String(picked?.value || '').trim();
+  if(!['solo', 'produtora', 'agencia'].includes(key)) {
+    regSetFieldErr('plan', 'Escolha um plano para continuar.');
+    return false;
+  }
+  _regSelectedPlan = key;
+  return true;
+}
 
-  if(!fantasy) { regSetFieldErr('fantasy', 'Informe o nome fantasia.'); ok = false; }
-  const cnpjD = _regDigits(cnpj);
-  if(cnpjD.length > 0 && cnpjD.length !== 14) { regSetFieldErr('cnpj', 'CNPJ incompleto.'); ok = false; }
-  if(cnpjD.length === 14 && !validateCNPJBr(cnpj)) { regSetFieldErr('cnpj', 'CNPJ inválido.'); ok = false; }
-  if(!segment) { regSetFieldErr('segment', 'Selecione o segmento.'); ok = false; }
-  if(cep.length !== 8) { regSetFieldErr('cep', 'CEP inválido (8 dígitos).'); ok = false; }
-  if(!street) { regSetFieldErr('street', 'Informe a rua ou busque pelo CEP.'); ok = false; }
-  if(!num) { regSetFieldErr('num', 'Informe o número.'); ok = false; }
-  if(!bairro) { regSetFieldErr('bairro', 'Informe o bairro.'); ok = false; }
-  if(!city) { regSetFieldErr('city', 'Informe a cidade.'); ok = false; }
-  if(!uf || uf.length !== 2) { regSetFieldErr('uf', 'Selecione o estado.'); ok = false; }
-  return ok;
+function _regDisplayNameFromEmail(email) {
+  const local = String(email || '').split('@')[0].replace(/[._-]+/g, ' ').trim();
+  if(!local) return 'Administrador';
+  return local.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 80);
 }
 
 function regWizardNextFromStep1() {
@@ -9550,30 +9453,31 @@ async function submitAdminRegister() {
     return;
   }
 
-  const fullName = document.getElementById('regFullName')?.value?.trim() || '';
-  const cpfDigits = _regDigits(document.getElementById('regCpf')?.value || '');
-  const birth = document.getElementById('regBirth')?.value || '';
   const email = document.getElementById('regEmail')?.value?.trim().toLowerCase() || '';
+  const fullName = _regDisplayNameFromEmail(email);
+  const cpfDigits = _regDigits(document.getElementById('regCpf')?.value || '');
+  const birth = '';
   const phoneDigits = _regDigits(document.getElementById('regPhone')?.value || '');
   const p1 = document.getElementById('regPass')?.value || '';
+  const planKey = _regSelectedPlan || 'produtora';
 
-  const fantasy = document.getElementById('regFantasy')?.value?.trim() || '';
-  const legalName = document.getElementById('regLegalName')?.value?.trim() || '';
-  const cnpjDigits = _regDigits(document.getElementById('regCnpj')?.value || '');
-  const segment = document.getElementById('regSegment')?.value || '';
-  const coPhone = _regDigits(document.getElementById('regCoPhone')?.value || '');
-  const siteRaw = document.getElementById('regSite')?.value?.trim() || '';
-  const cepDigits = _regDigits(document.getElementById('regCep')?.value || '');
-  const street = document.getElementById('regStreet')?.value?.trim() || '';
-  const num = document.getElementById('regNum')?.value?.trim() || '';
-  const comp = document.getElementById('regComp')?.value?.trim() || '';
-  const bairro = document.getElementById('regBairro')?.value?.trim() || '';
-  const city = document.getElementById('regCity')?.value?.trim() || '';
-  const uf = document.getElementById('regUf')?.value || '';
+  const fantasy = 'Minha empresa';
+  const legalName = '';
+  const cnpjDigits = '';
+  const segment = 'Outro';
+  const coPhone = '';
+  const siteRaw = '';
+  const cepDigits = '';
+  const street = '';
+  const num = '';
+  const comp = '';
+  const bairro = '';
+  const city = '';
+  const uf = '';
 
   if(!validateRegStep1()) {
     regWizardGoStep(1);
-    showGlobal('Corrija os dados pessoais na etapa 1.', false);
+    showGlobal('Corrija os dados da primeira etapa.', false);
     return;
   }
 
@@ -9601,7 +9505,7 @@ async function submitAdminRegister() {
       legal_name: legalName || null,
       cnpj: cnpjDigits || null,
       segment: segment || 'Outro',
-      phone: coPhone || null,
+      phone: phoneDigits || null,
       website: normalizeRegWebsite(siteRaw) || null,
       address_street: street,
       number: num,
@@ -9610,7 +9514,7 @@ async function submitAdminRegister() {
       city,
       state: uf,
       zip: cepDigits,
-      plan: 'agencia',
+      plan: planKey,
       trial_ends_at: trialEnds.toISOString()
     };
 
@@ -9619,9 +9523,9 @@ async function submitAdminRegister() {
       name: fullName,
       full_name: fullName,
       cpf: cpfDigits,
-      birth_date: birth,
+      birth_date: birth || null,
       phone: phoneDigits,
-      plan: 'agencia',
+      plan: planKey,
       plan_billing: 'monthly',
       subscription_status: 'trial',
       trial_ends_at: trialEnds.toISOString(),
@@ -9654,7 +9558,7 @@ async function submitAdminRegister() {
           companyRow = await apiPost('age_companies', {
             name: fantasy,
             segment: segment || 'Outro',
-            plan: 'agencia',
+            plan: planKey,
             owner_username: username
           });
         }
@@ -9722,22 +9626,16 @@ async function submitAdminRegister() {
     const cpfFmt = cpfDigits.length === 11
       ? cpfDigits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
       : cpfDigits;
-    const cepFmt = cepDigits.replace(/^(\d{5})(\d{3})$/, '$1-$2');
-
+    const planLabels = { solo: 'Solo', produtora: 'Produtora', agencia: 'Agência' };
     const sum = document.getElementById('regSummaryBox');
     if(sum) {
       sum.innerHTML =
-        '<strong>Pessoal</strong><br>' +
-        escHtml(fullName) + '<br>CPF: ' + escHtml(cpfFmt) +
-        '<br>' + escHtml(email) + '<br>Tel: ' + escHtml(phoneDigits) +
-        '<br><br><strong>Empresa</strong><br>' +
-        escHtml(fantasy) +
-        (legalName ? '<br>Razão social: ' + escHtml(legalName) : '') +
-        '<br>' + escHtml(segment) +
-        '<br>' + escHtml(street) + ', ' + escHtml(num) +
-        (comp ? ' — ' + escHtml(comp) : '') +
-        '<br>' + escHtml(bairro) + ' — ' + escHtml(city) + '/' + escHtml(uf) +
-        '<br>CEP ' + escHtml(cepFmt);
+        '<strong>Conta</strong><br>' +
+        escHtml(email) + '<br>CPF: ' + escHtml(cpfFmt) +
+        '<br>Cel: ' + escHtml(phoneDigits) +
+        '<br><br><strong>Plano</strong><br>' +
+        escHtml(planLabels[planKey] || planKey) + ' · R$ 0 na fase de desenvolvimento' +
+        '<br><br>Complete os dados da empresa depois, no perfil do app.';
     }
 
     regWizardGoStep(3);
@@ -11497,9 +11395,9 @@ function buildPlanCardsHtml(ctx) {
   const strikeSolo = `${soloR.valorDisplay}/mês`;
   const strikeProd = `${prodR.valorDisplay}/mês`;
   const strikeAg = `${agR.valorDisplay}/mês`;
-  const depSolo = `${BETA_TRIAL_DAYS} dias grátis na beta · sem cartão · todas as ferramentas · depois ${soloR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
-  const depProd = `${BETA_TRIAL_DAYS} dias grátis na beta · sem cartão · todas as ferramentas · depois ${prodR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
-  const depAg = `${BETA_TRIAL_DAYS} dias grátis na beta · sem cartão · todas as ferramentas · depois ${agR.valorDisplay}/${m ? 'mês (anual)' : 'mês'}`;
+  const depSolo = `Fase de desenvolvimento · R$ 0 agora · depois ${soloR.valorDisplay}/${m ? 'ano' : 'mês'}`;
+  const depProd = `Fase de desenvolvimento · R$ 0 agora · depois ${prodR.valorDisplay}/${m ? 'ano' : 'mês'}`;
+  const depAg = `Fase de desenvolvimento · R$ 0 agora · depois ${agR.valorDisplay}/${m ? 'ano' : 'mês'}`;
 
   const soloFeat = [
     'Dashboard, projetos, orçamentos, pipeline, clientes',
@@ -11533,7 +11431,7 @@ function buildPlanCardsHtml(ctx) {
   return `
     <div class="plan-card plan-card--solo">
       <div class="plan-card-title">Solo</div>
-      ${_planPriceBlock(strikeSolo, soloR.valorDisplay, depSolo)}
+      ${_planPriceBlock(strikeSolo, 'R$ 0', depSolo)}
       <ul class="plan-features">${featList(soloFeat, 3)}</ul>
       <div class="plan-support-note">Suporte por e-mail</div>
       <button type="button" class="plan-cta" onclick="escolherPlano('solo_${suf}')">Escolher</button>
@@ -11541,14 +11439,14 @@ function buildPlanCardsHtml(ctx) {
     <div class="plan-card plan-card--featured">
       <span class="plan-badge-min">Mais popular</span>
       <div class="plan-card-title">Produtora</div>
-      ${_planPriceBlock(strikeProd, prodR.valorDisplay, depProd)}
+      ${_planPriceBlock(strikeProd, 'R$ 0', depProd)}
       <ul class="plan-features">${featList(prodFeat, 3)}</ul>
       <div class="plan-support-note">Suporte WhatsApp</div>
       <button type="button" class="plan-cta" onclick="escolherPlano('produtora_${suf}')">Escolher</button>
     </div>
     <div class="plan-card plan-card--ag">
       <div class="plan-card-title">Agência</div>
-      ${_planPriceBlock(strikeAg, agR.valorDisplay, depAg)}
+      ${_planPriceBlock(strikeAg, 'R$ 0', depAg)}
       <ul class="plan-features">${featList(agFeat, 99)}</ul>
       <div class="plan-support-note">Suporte prioritário</div>
       <button type="button" class="plan-cta" onclick="escolherPlano('agencia_${suf}')">Escolher</button>
@@ -11641,8 +11539,8 @@ function selectPlanOffer(key) {
   const sum = document.getElementById('pgPlanSummary');
   if (sum) {
     sum.innerHTML =
-      `<strong>Plano ${planNames[key]} (${ciclo})</strong><br>${row.valorDisplay} hoje · depois <strong>${row.valorDisplay}/${m ? 'ano' : 'mês'}</strong>` +
-      `<div style="margin-top:10px;color:#666;line-height:1.5">${BETA_TRIAL_DAYS} dias grátis na beta · cartão opcional · sem cobrança até o fim do período grátis.</div>`;
+      `<strong>Plano ${planNames[key]} (${ciclo})</strong><br><strong>R$ 0</strong> na fase de desenvolvimento · depois ${row.valorDisplay}/${m ? 'ano' : 'mês'}` +
+      `<div style="margin-top:10px;color:#666;line-height:1.5">Sem cobrança por enquanto. Cartão opcional.</div>`;
   }
   try {
     const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '');
@@ -11693,16 +11591,19 @@ async function enterAppFreeTrialNoCard(planKey) {
   const trialEnd = (existingEnd && !isNaN(existingEnd.getTime()) && existingEnd > new Date())
     ? existingEnd
     : _betaTrialEndFromNow();
+  const keepPlan = ['solo', 'produtora', 'agencia'].includes(String(planKey || ''))
+    ? planKey
+    : (_regPendingSessionRow.plan || _regSelectedPlan || 'produtora');
   try {
     await apiPatch('age_users', _regPendingSessionRow.id, {
-      plan: 'agencia',
+      plan: keepPlan,
       plan_billing: 'monthly',
       subscription_status: 'trial',
       trial_ends_at: trialEnd.toISOString()
     });
     if (_regPendingSessionRow.company_id) {
       await apiPatch('age_companies', _regPendingSessionRow.company_id, {
-        plan: 'agencia',
+        plan: keepPlan,
         trial_ends_at: trialEnd.toISOString()
       }).catch(() => {});
     }

@@ -1,6 +1,8 @@
 // AGE SOCIALS — Result screen
-function ResultScreen({ result, candidateName, submitting, onRestart, onBackHome }) {
-  const { topRole, top3, scores, seniority, message } = result;
+function ResultScreen({ result, candidateName, submitting, saveError, onRetrySave, onRestart, onBackHome }) {
+  const { topRole, top3, scores, seniority, message } = result || {};
+  const safeTop3 = Array.isArray(top3) ? top3 : [];
+  const safeScores = scores || { overall: 0, cultural: 0, technical: 0 };
 
   return (
     <div style={{minHeight:'100vh', background:'var(--paper)'}} data-screen-label="Resultado">
@@ -28,26 +30,26 @@ function ResultScreen({ result, candidateName, submitting, onRestart, onBackHome
           </div>
           <div className="result-meta-block">
             <div className="lbl">Sobre a função</div>
-            <div className="val" style={{fontSize: 22, lineHeight: 1.3}}>{topRole.description}</div>
+            <div className="val" style={{fontSize: 22, lineHeight: 1.3}}>{topRole?.description || '—'}</div>
           </div>
         </div>
 
         <div className="scores">
-          <ScoreBlock label="Score Geral" value={scores.overall} />
-          <ScoreBlock label="Score Cultural" value={scores.cultural} />
-          <ScoreBlock label="Score Técnico" value={scores.technical} />
+          <ScoreBlock label="Score Geral" value={safeScores.overall} />
+          <ScoreBlock label="Score Cultural" value={safeScores.cultural} />
+          <ScoreBlock label="Score Técnico" value={safeScores.technical} />
         </div>
 
         <div className="top3-section">
           <h3>Suas top 3 funções recomendadas</h3>
           <div className="top3-list">
-            {top3.map((item, i) => (
-              <div key={item.role.id} className="top3-item">
+            {safeTop3.map((item, i) => (
+              <div key={(item.role && item.role.id) || i} className="top3-item">
                 <div className="top3-rank">{String(i + 1).padStart(2, '0')} / 03</div>
                 <div>
-                  <div className="top3-name">{item.role.name}</div>
+                  <div className="top3-name">{(item.role && item.role.name) || '—'}</div>
                 </div>
-                <div className="top3-desc" style={{maxWidth: 300}}>{item.role.tagline}</div>
+                <div className="top3-desc" style={{maxWidth: 300}}>{(item.role && item.role.tagline) || ''}</div>
                 <div className="top3-match">{item.match}%</div>
               </div>
             ))}
@@ -58,9 +60,21 @@ function ResultScreen({ result, candidateName, submitting, onRestart, onBackHome
           <div className="result-cta-text">
             Pronto pra virar <span className="italic">AGE?</span> A gente cuida do resto.
           </div>
+          {saveError && (
+            <div style={{marginBottom: 16, color: '#d64545', fontSize: 14, lineHeight: 1.4}}>
+              {saveError}
+            </div>
+          )}
           <div className="result-actions">
-            <button className="primary" disabled={submitting} onClick={() => alert(submitting ? 'Enviando ainda...' : 'Sua candidatura já foi salva. Você recebe retorno em até 10 dias úteis no email cadastrado.')}>
-              {submitting ? 'Enviando...' : 'Candidatura enviada ✓'}
+            <button
+              className="primary"
+              disabled={submitting}
+              onClick={() => {
+                if (saveError && onRetrySave) { onRetrySave(); return; }
+                alert(submitting ? 'Enviando ainda...' : 'Sua candidatura já foi salva. Você recebe retorno em até 10 dias úteis no email cadastrado.');
+              }}
+            >
+              {submitting ? 'Enviando...' : (saveError ? 'Tentar salvar de novo' : 'Candidatura enviada ✓')}
             </button>
             <button className="ghost" onClick={onRestart}>Refazer</button>
           </div>

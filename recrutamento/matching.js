@@ -3,6 +3,9 @@
 
 window.calculateMatch = function(answers) {
   const roles = window.AGE_ROLES;
+  if (!Array.isArray(roles) || !roles.length) {
+    throw new Error('roles ausentes');
+  }
   const scores = {};
 
   // Inicializa scores
