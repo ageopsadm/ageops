@@ -154,7 +154,7 @@ table th{
 }
 #sidebar .nav-sector{margin-top:10px}
 #sidebar .nav-sector-label{
-  opacity:.55;
+  opacity:.85;
   margin-top:2px;
   text-transform:uppercase;
 }
@@ -183,7 +183,6 @@ button[class*="ghost"]{
   font-weight:500;
 }
 .sidebar,
-[class*="sidebar"],
 aside#sidebar{
   background:#111111;
   color:#ffffff;
@@ -191,12 +190,13 @@ aside#sidebar{
 #topbar,
 .topbar,
 .app-header,
-[class*="topbar"]:not(.topbar-clock),
 header#topbar{
   background:#111111;
   border-bottom:1px solid #1e1e1e;
   color:#ffffff;
 }
+/* wrappers internos nunca pintam fundo próprio (herdam do sidebar/topbar) */
+.sidebar-footer,.topbar-trailing,.topbar-toggles,#userBadge{background:transparent}
 #content,
 .app-content,
 .main-content,
@@ -390,15 +390,41 @@ html[data-theme="light"] #sidebar-logo{border-bottom-color:#eee !important}
 html[data-theme="light"] .nav-item{color:#555 !important}
 html[data-theme="light"] .nav-item:hover{color:#111 !important;background:rgba(0,0,0,.04) !important}
 html[data-theme="light"] .nav-item.active{color:#111 !important;background:rgba(0,0,0,.06) !important;border-left-color:#111 !important}
-html[data-theme="light"] .btn-icon-top{color:#333 !important;border-color:rgba(0,0,0,.16) !important}
+html[data-theme="light"] .nav-item i{opacity:.75}
+html[data-theme="light"] #sidebar .nav-sector-label{opacity:.9}
+html[data-theme="light"] .btn-icon-top{color:#333 !important;border-color:rgba(0,0,0,.16) !important;background:transparent !important}
+html[data-theme="light"] .btn-icon-top:hover{color:#111 !important;border-color:rgba(0,0,0,.35) !important;background:rgba(0,0,0,.04) !important}
+html[data-theme="light"] .btn-icon-top.is-active{color:#111 !important;border-color:rgba(0,0,0,.45) !important;background:rgba(0,0,0,.06) !important}
 html[data-theme="light"] #themeToggleBtn{color:#111 !important;border-color:rgba(0,0,0,.22) !important}
 html[data-theme="light"] #topbarTitle,
-html[data-theme="light"] .topbar-clock{color:#666 !important}
-html[data-theme="light"] .sidebar-footer{border-top-color:#eee !important}
+html[data-theme="light"] .topbar-clock,
+html[data-theme="light"] #topbarUser{color:#666 !important}
+html[data-theme="light"] .sidebar-footer{border-top-color:#eee !important;color:#111 !important}
+html[data-theme="light"] #userBadge,
+html[data-theme="light"] #userNameLabel{color:#111 !important}
+html[data-theme="light"] #userRoleLabel{color:#666 !important}
 html[data-theme="light"] .user-avatar{color:#111 !important;background:#f3f3f3 !important;border-color:#ddd !important}
 html[data-theme="light"] #collapseBtn{color:#888 !important}
-html[data-theme="light"] .notif-bell-btn{color:#333 !important;border-color:rgba(0,0,0,.16) !important}
+html[data-theme="light"] #collapseBtn:hover{color:#111 !important}
+html[data-theme="light"] .notif-bell-btn{color:#333 !important;border-color:rgba(0,0,0,.16) !important;background:transparent !important}
+html[data-theme="light"] .notif-bell-btn:hover{color:#111 !important;border-color:rgba(0,0,0,.35) !important;background:rgba(0,0,0,.04) !important}
+html[data-theme="light"] .notif-badge{border-color:#fff}
 html[data-theme="light"] .theme-fab{background:#fff;border-color:rgba(0,0,0,.16);color:#111}
+/* modo noturno (sidebar/topbar escuros): garante contraste dos ícones e rótulos */
+html[data-theme="dark"] .btn-icon-top{color:rgba(255,255,255,.78);border-color:rgba(255,255,255,.22)}
+html[data-theme="dark"] .notif-bell-btn{color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.22)}
+html[data-theme="dark"] .nav-item{color:rgba(255,255,255,.62)}
+html[data-theme="dark"] .nav-item i{opacity:.8}
+html[data-theme="dark"] .nav-group-label{color:rgba(255,255,255,.4)}
+html[data-theme="dark"] #sidebar .nav-sector-label{opacity:.9}
+html[data-theme="dark"] #collapseBtn{color:rgba(255,255,255,.55)}
+html[data-theme="dark"] .sidebar-footer,
+html[data-theme="dark"] #userBadge,
+html[data-theme="dark"] #userNameLabel{color:#fff}
+html[data-theme="dark"] #userRoleLabel{color:rgba(255,255,255,.75)}
+html[data-theme="dark"] #topbarTitle{color:rgba(255,255,255,.7)}
+html[data-theme="dark"] .topbar-clock,
+html[data-theme="dark"] #topbarUser{color:rgba(255,255,255,.6)}
 
 /* ── Notificações (header + dropdown) ── */
 .notif-bell-root{position:relative;margin-right:0}
@@ -633,7 +659,7 @@ button.perm-disabled,.btn.perm-disabled{
 }
 .kpi-label{
   font-family:var(--font-m);font-size:8px;
-  color:#aaaaaa;letter-spacing:.16em;
+  color:#8a8a8a;letter-spacing:.16em;
   margin-bottom:8px;text-transform:uppercase;
 }
 .kpi-val{
@@ -662,7 +688,7 @@ button.perm-disabled,.btn.perm-disabled{
   margin-bottom:14px;display:flex;align-items:center;gap:8px;
   text-transform:uppercase;
 }
-.panel-title i{font-size:11px;opacity:.6}
+.panel-title i{font-size:11px;opacity:.85}
 
 /* ── TABLE ── */
 .table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #eeeeee}
@@ -917,7 +943,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .form-grid.full{grid-template-columns:1fr}
 .form-group{display:flex;flex-direction:column;gap:5px}
 .form-label{
-  font-family:var(--font-m);font-size:8px;color:#aaaaaa;
+  font-family:var(--font-m);font-size:8px;color:#777777;
   letter-spacing:.14em;text-transform:uppercase;
 }
 .form-group input,.form-group select,.form-group textarea{width:100%}
@@ -1070,7 +1096,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 
 /* ── Dashboard período filter ── */
 .dash-period-btn{transition:background .15s,color .15s}
-.dash-period-btn.active-period{background:rgba(37,99,235,.18)!important;color:#60a5fa!important;font-weight:700}
+.dash-period-btn.active-period{background:rgba(37,99,235,.14)!important;color:var(--acc)!important;font-weight:700}
 
 /* ══════════════════════════════════════════
    ORÇAMENTOS — AGE OPS Style
@@ -1151,7 +1177,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .kb-card-meta{display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap}
 .kb-badge{font-family:var(--font-m);font-size:7px;padding:1px 6px;border-radius:3px;font-weight:700;letter-spacing:.06em}
 .kb-card-val{font-family:var(--font-h);font-size:11px;font-weight:700;margin-top:5px;color:#374151}
-.kb-empty{text-align:center;padding:20px 8px;font-family:var(--font-m);font-size:10px;color:#bbb;border:1.5px dashed rgba(0,0,0,.1);border-radius:6px;margin-top:4px}
+.kb-empty{text-align:center;padding:20px 8px;font-family:var(--font-m);font-size:10px;color:#8a8a8a;border:1.5px dashed rgba(0,0,0,.12);border-radius:6px;margin-top:4px}
 
 /* ── MEU DIA / TASKS ── */
 .task-item{
@@ -1432,7 +1458,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .nt-side-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;border-radius:8px;padding:7px 9px;font-family:var(--font-b);font-size:12px;color:var(--text);cursor:pointer}
 .nt-side-item:hover{background:rgba(0,0,0,.04)}
 .nt-side-item.active{background:#111;color:#fff}
-.nt-side-item i{width:14px;text-align:center;opacity:.6;font-size:11px}
+.nt-side-item i{width:14px;text-align:center;opacity:.9;font-size:11px}
 .nt-side-item .nt-cnt{margin-left:auto;font-family:var(--font-m);font-size:9px;opacity:.6}
 .nt-tag-chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-m);font-size:9px;padding:3px 8px;border-radius:999px;border:1px solid var(--bd);background:transparent;color:var(--text);cursor:pointer;margin:2px}
 .nt-tag-chip.active{background:#111;color:#fff;border-color:#111}
@@ -1483,8 +1509,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .nt-rich .nt-acao{color:#334155;font-style:italic}
 .nt-rich .nt-dir{color:#7c3aed;font-size:12px}
 .nt-ed-foot{display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--bd);font-family:var(--font-m);font-size:10px;color:#94a3b8;flex-wrap:wrap}
-.nt-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#aaa;font-family:var(--font-m);font-size:11px;letter-spacing:.06em;text-align:center;padding:40px;gap:12px;min-height:360px}
-.nt-empty i{font-size:34px;opacity:.25}
+.nt-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#888;font-family:var(--font-m);font-size:11px;letter-spacing:.06em;text-align:center;padding:40px;gap:12px;min-height:360px}
+.nt-empty i{font-size:34px;opacity:.85}
 .nt-ck-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--bd)}
 .nt-ck-item input[type=checkbox]{width:16px;height:16px;accent-color:#16a34a;flex-shrink:0}
 .nt-ck-item input[type=text]{flex:1;border:none!important;background:transparent!important;font-size:13px;padding:4px 2px!important;box-shadow:none!important}
@@ -1511,6 +1537,22 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .nt-menu button.danger{color:#b91c1c}
 .nt-menu small{display:block;font-family:var(--font-m);font-size:9px;color:#94a3b8;font-weight:400}
 .nt-menu hr{border:none;border-top:1px solid var(--bd);margin:4px 0}
+.nt-spell{text-decoration:underline wavy #dc2626;text-underline-offset:3px;cursor:pointer;background:rgba(220,38,38,.07);border-radius:2px}
+.nt-spell-pop{position:fixed;z-index:10060;background:#fff;border:1px solid var(--bd);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:10px 12px;min-width:220px;max-width:340px;font-family:var(--font-b)}
+.nt-spell-pop .nt-sp-word{font-weight:800;font-size:13px;color:#b91c1c;margin-bottom:4px}
+.nt-spell-pop .nt-sp-msg{font-size:11px;color:#64748b;line-height:1.45;margin-bottom:8px}
+.nt-spell-pop .nt-sp-sug{display:flex;flex-wrap:wrap;gap:6px}
+.nt-spell-pop .nt-sp-sug button{border:1px solid var(--bd);background:#f8fafc;border-radius:6px;padding:4px 9px;font-size:12px;cursor:pointer;color:#111}
+.nt-spell-pop .nt-sp-sug button:hover{background:#111;color:#fff;border-color:#111}
+.nt-spell-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 12px;font-family:var(--font-m);font-size:10px;color:#64748b;border-bottom:1px solid var(--bd);background:#fffbeb}
+.nt-spell-bar[hidden]{display:none!important}
+.nt-spell-bar b{color:#b91c1c}
+.nt-ai-dock{border-top:1px solid var(--bd);background:#f8fafc}
+.nt-ai-dock[hidden]{display:none!important}
+.nt-ai-dock-hd{display:flex;align-items:center;gap:8px;padding:8px 14px;font-family:var(--font-m);font-size:11px;font-weight:700;color:#111}
+.nt-ai-dock-bd{padding:0 14px 10px;font-size:13px;line-height:1.55;color:var(--text);white-space:pre-wrap}
+.nt-ai-actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 12px}
+.nt-mm-node text{pointer-events:auto}
 .nt-due-badge{font-family:var(--font-m);font-size:9px;padding:2px 6px;border-radius:4px;background:#eff6ff;color:#1d4ed8;white-space:nowrap}
 .nt-due-badge.late{background:#fef2f2;color:#b91c1c}
 .nt-due-badge.soon{background:#fffbeb;color:#b45309}
@@ -1689,7 +1731,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   border-radius:5px;padding:8px;min-height:100px;
 }
 .sched-day-header{
-  font-family:var(--font-m);font-size:8px;color:#aaaaaa;
+  font-family:var(--font-m);font-size:8px;color:#888888;
   letter-spacing:.1em;margin-bottom:7px;text-align:center;text-transform:uppercase;
 }
 .sched-day.today{
@@ -1751,7 +1793,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   color: #111;
   margin-bottom: 4px;
 }
-.cal-day.other-month .cal-day-num { color: #ccc; }
+.cal-day.other-month .cal-day-num { color: #aaa; }
 .cal-post-card:hover { filter: brightness(0.96); }
 .cal-post-card:active { cursor: grabbing; }
 .cal-post-card--dragging { opacity: .45; cursor: grabbing; }
@@ -3636,8 +3678,8 @@ body:has(#login-screen.visible){
       <div id="userBadge">
         <div class="user-avatar" id="userAvatar">?</div>
         <div>
-          <div style="font-size:10px;color:var(--text)" id="userNameLabel">—</div>
-          <div style="font-size:8px;color:var(--textsub)" id="userRoleLabel">—</div>
+          <div style="font-size:10px;color:inherit" id="userNameLabel">—</div>
+          <div style="font-size:8px;opacity:.7" id="userRoleLabel">—</div>
         </div>
       </div>
     </div>
@@ -3654,7 +3696,7 @@ body:has(#login-screen.visible){
         style="display:flex; align-items:center; gap:8px;
                background:#f5f5f5; border:none; padding:8px 16px;
                border-radius:8px; cursor:pointer; transition:background 0.15s;">
-        <span style="font-size:14px;">✦</span>
+        <span style="font-size:14px;color:#333;">✦</span>
         <span style="font-family:'Inter',sans-serif;
                      font-size:12px; color:#555; font-weight:500;">
           Assistente
@@ -3783,14 +3825,14 @@ body:has(#login-screen.visible){
           <div class="page-title"><i class="fas fa-chart-line"></i> DASHBOARD</div>
           <div class="page-actions" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <!-- Filtro de período -->
-            <div style="display:flex;gap:2px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:2px">
+            <div style="display:flex;gap:2px;background:rgba(0,0,0,.03);border:1px solid var(--bd);border-radius:6px;padding:2px">
               <button id="dashPeriodBtn-anual"     onclick="setDashPeriod('anual')"     class="btn btn-ghost btn-sm dash-period-btn active-period" style="font-size:9px;padding:4px 10px;border-radius:4px">ANUAL</button>
               <button id="dashPeriodBtn-semestral" onclick="setDashPeriod('semestral')" class="btn btn-ghost btn-sm dash-period-btn" style="font-size:9px;padding:4px 10px;border-radius:4px">SEMESTRAL</button>
               <button id="dashPeriodBtn-trimestral"onclick="setDashPeriod('trimestral')"class="btn btn-ghost btn-sm dash-period-btn" style="font-size:9px;padding:4px 10px;border-radius:4px">TRIMESTRAL</button>
               <button id="dashPeriodBtn-mensal"    onclick="setDashPeriod('mensal')"    class="btn btn-ghost btn-sm dash-period-btn" style="font-size:9px;padding:4px 10px;border-radius:4px">MENSAL</button>
             </div>
             <!-- Seletor de mês (visível só no mensal) -->
-            <select id="dashMesSelect" onchange="loadDashboard()" style="display:none;height:28px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);border-radius:5px;padding:0 8px;font-size:10px;font-family:var(--font-m)">
+            <select id="dashMesSelect" onchange="loadDashboard()" style="display:none;height:28px;border:1px solid var(--bdm);background:var(--bg2);color:var(--text);border-radius:5px;padding:0 8px;font-size:10px;font-family:var(--font-m)">
               <option value="1">Janeiro</option><option value="2">Fevereiro</option>
               <option value="3">Março</option><option value="4">Abril</option>
               <option value="5">Maio</option><option value="6">Junho</option>
@@ -3799,14 +3841,14 @@ body:has(#login-screen.visible){
               <option value="11">Novembro</option><option value="12">Dezembro</option>
             </select>
             <!-- Seletor de trimestre (visível só no trimestral) -->
-            <select id="dashTrimSelect" onchange="loadDashboard()" style="display:none;height:28px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);border-radius:5px;padding:0 8px;font-size:10px;font-family:var(--font-m)">
+            <select id="dashTrimSelect" onchange="loadDashboard()" style="display:none;height:28px;border:1px solid var(--bdm);background:var(--bg2);color:var(--text);border-radius:5px;padding:0 8px;font-size:10px;font-family:var(--font-m)">
               <option value="1">T1 — Jan/Fev/Mar</option>
               <option value="2" selected>T2 — Abr/Mai/Jun</option>
               <option value="3">T3 — Jul/Ago/Set</option>
               <option value="4">T4 — Out/Nov/Dez</option>
             </select>
             <!-- Seletor de semestre (visível só no semestral) -->
-            <select id="dashSemSelect" onchange="loadDashboard()" style="display:none;height:28px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);border-radius:5px;padding:0 8px;font-size:10px;font-family:var(--font-m)">
+            <select id="dashSemSelect" onchange="loadDashboard()" style="display:none;height:28px;border:1px solid var(--bdm);background:var(--bg2);color:var(--text);border-radius:5px;padding:0 8px;font-size:10px;font-family:var(--font-m)">
               <option value="1" selected>1º Semestre — Jan a Jun</option>
               <option value="2">2º Semestre — Jul a Dez</option>
             </select>
@@ -4231,10 +4273,10 @@ body:has(#login-screen.visible){
         <div class="page-header">
           <div class="page-title"><i class="fas fa-archive"></i> HISTÓRICO AGE OPS</div>
         </div>
-        <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);padding:6px 8px;margin-bottom:8px;background:rgba(255,255,255,.03);border-radius:5px;border:1px solid var(--bd)">
-          <i class="fas fa-info-circle" style="color:rgba(255,255,255,.3)"></i>
-          &nbsp;<b style="color:rgba(255,255,255,.7)">2026</b> — projetos ao vivo (Supabase) quando fonte da verdade &nbsp;|&nbsp;
-          <b style="color:rgba(255,255,255,.7)">2021–2025</b> — histórico OWNAGE (HIST_SUMMARY), se aplicável &nbsp;|&nbsp;
+        <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);padding:6px 8px;margin-bottom:8px;background:var(--bg2);border-radius:5px;border:1px solid var(--bd)">
+          <i class="fas fa-info-circle" style="color:var(--textsub)"></i>
+          &nbsp;<b style="color:var(--text)">2026</b> — projetos ao vivo (Supabase) quando fonte da verdade &nbsp;|&nbsp;
+          <b style="color:var(--text)">2021–2025</b> — histórico OWNAGE (HIST_SUMMARY), se aplicável &nbsp;|&nbsp;
           Nenhuma fonte é usada duas vezes.
         </div>
         <div class="year-tabs" id="histYearTabs"></div>
@@ -4248,7 +4290,7 @@ body:has(#login-screen.visible){
         <div class="page-header">
           <div class="page-title"><i class="fas fa-users"></i> BANCO DE CLIENTES</div>
           <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m)">
-            <i class="fas fa-info-circle" style="color:rgba(255,255,255,.3)"></i>
+            <i class="fas fa-info-circle" style="color:var(--textsub)"></i>
             &nbsp;2026: planilha &nbsp;|&nbsp; 2021–2025: banco histórico (deduplicado)
           </div>
           <div class="page-actions">
@@ -6243,7 +6285,7 @@ body:has(#login-screen.visible){
     </div>
 
     <!-- Itens de custo -->
-    <div style="margin-top:14px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:6px">
+    <div style="margin-top:14px;padding:10px;background:rgba(0,0,0,.02);border:1px solid var(--bd);border-radius:6px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-family:var(--font-m);font-size:9px;letter-spacing:.1em;color:var(--textsub)">ITENS DE CUSTO</span>
         <button type="button" class="btn btn-ghost btn-sm" onclick="addFechCustoItem()" style="font-size:10px;padding:3px 8px"><i class="fas fa-plus"></i> Adicionar</button>
@@ -14587,7 +14629,7 @@ async function loadDashboard() {
     /* Título do dashboard + última atualização */
     const titleEl = document.querySelector('#page-dashboard .page-title');
     if(titleEl) {
-      titleEl.innerHTML = `<i class="fas fa-chart-line"></i> DASHBOARD — <span style="color:rgba(255,255,255,.5);font-size:11px">${periodLabel}</span> <span style="color:rgba(255,255,255,.35);font-size:10px;font-weight:500">· Atualizado às ${updatedClock}</span>`;
+      titleEl.innerHTML = `<i class="fas fa-chart-line"></i> DASHBOARD — <span style="color:var(--textsub);font-size:11px">${periodLabel}</span> <span style="color:var(--textsub);opacity:.8;font-size:10px;font-weight:500">· Atualizado às ${updatedClock}</span>`;
     }
 
     set('dFat',   fmtBRL(fat));
@@ -16723,7 +16765,7 @@ function updateProjSortIcons() {
   const siVal = document.getElementById('siVal');
   const siDate = document.getElementById('siDate');
   const acc = 'var(--acc)';
-  const dim = 'rgba(255,255,255,.25)';
+  const dim = 'rgba(0,0,0,.28)';
   if(siDate) {
     const on = v === 'date_asc' || v === 'date_desc';
     siDate.className = 'fas fa-sort' + (on ? ' fa-sort-amount-' + (v === 'date_desc' ? 'down' : 'up') : '');
@@ -17206,8 +17248,8 @@ function renderProjMonthBars(rows) {
   const maxV = Math.max(...vals, 1);
   const maxI = vals.indexOf(Math.max(...vals));
 
-  barEl.innerHTML = vals.map((v,i)=>`<div class="month-bar" style="background:${i===maxI?'rgba(255,255,255,.7)':v>0?'rgba(255,255,255,.2)':'rgba(255,255,255,.04)'};height:${Math.max(v/maxV*100,2)}%" data-tip="${MONTHS[i]}: ${fmtBRL(v)}"></div>`).join('');
-  lblEl.innerHTML = MONTHS.map((m,i)=>`<div class="month-label" style="color:${vals[i]>0?'var(--textsub)':'rgba(255,255,255,.12)'}">${m}</div>`).join('');
+  barEl.innerHTML = vals.map((v,i)=>`<div class="month-bar" style="background:${i===maxI?'var(--acc)':v>0?'rgba(37,99,235,.35)':'rgba(0,0,0,.08)'};height:${Math.max(v/maxV*100,2)}%" data-tip="${MONTHS[i]}: ${fmtBRL(v)}"></div>`).join('');
+  lblEl.innerHTML = MONTHS.map((m,i)=>`<div class="month-label" style="color:${vals[i]>0?'var(--text)':'var(--textsub)'}">${m}</div>`).join('');
 }
 
 /* ── Inline Edit ── */
@@ -19759,9 +19801,9 @@ async function renderHistYear(year, forceRefresh) {
                   <td><b>${escHtml(p.cliente || '—')}</b></td>
                   <td style="color:var(--textsub)">${escHtml(p.projeto || '—')}</td>
                   <td style="font-size:10px;color:var(--textsub)">${escHtml(p.seg || p.segment || '—')}</td>
-                  <td><span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:rgba(255,255,255,.85)">${fmtBRL(fat)}</span></td>
+                  <td><span style="font-family:var(--font-h);font-size:11px;font-weight:700;color:var(--text)">${fmtBRL(fat)}</span></td>
                   <td><span style="font-family:var(--font-h);font-size:11px;color:${getMarginColor(marginP)}">${marginP > 0 ? marginP.toFixed(0) + '%' : '—'}</span></td>
-                  <td style="color:rgba(255,255,255,.5)">${nps > 0 ? nps + '★' : '—'}</td>
+                  <td style="color:var(--textsub)">${nps > 0 ? nps + '★' : '—'}</td>
                   <td>${right}</td>
                 </tr>`;
               }).join('') : `<tr><td colspan="8" class="table-empty">Nenhum projeto 2026 encontrado no Supabase.</td></tr>`}
@@ -19781,7 +19823,7 @@ async function renderHistYear(year, forceRefresh) {
         <div class="dash-year-title">${year}</div>
         <div class="dash-year-sub">${hs.n} projetos · ${hs.clientes} clientes${hs.semCusto ? ' · s/custo' : ''}${isLive ? ' · sincronizado agora' : ''}</div>
       </div>
-      ${growth !== null ? `<div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${growth >= 0 ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.35)'}">${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%</div>` : ''}
+      ${growth !== null ? `<div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${growth >= 0 ? 'var(--green)' : 'var(--red)'}">${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%</div>` : ''}
       ${liveBadge}
     </div>
     <div class="kpi-grid">
@@ -19898,7 +19940,7 @@ function renderClients() {
 
   el.innerHTML = list.map((c,i)=>{
     const status = c.lastYear>=curY?'Ativo':c.lastYear>=curY-1?'Recorrente':'Inativo';
-    const sColor = c.lastYear>=curY?'rgba(255,255,255,.75)':c.lastYear>=curY-1?'rgba(255,255,255,.45)':'rgba(255,255,255,.25)';
+    const sColor = c.lastYear>=curY?'var(--green)':c.lastYear>=curY-1?'var(--orange)':'var(--textsub)';
     const initials = c.name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
     const avgNps   = c.npsN>0?(c.npsSum/c.npsN).toFixed(1):'—';
     return `<div class="client-note">
@@ -20138,7 +20180,7 @@ function renderKanban() {
     const cards = filtered.filter(p => p.stage === st.key);
 
     const cardsHtml = cards.length === 0
-      ? `<div class="kb-empty"><i class="fas ${st.icon}" style="font-size:16px;opacity:.3;display:block;margin-bottom:4px"></i>Sem projetos</div>`
+      ? `<div class="kb-empty"><i class="fas ${st.icon}" style="font-size:16px;opacity:.7;display:block;margin-bottom:4px"></i>Sem projetos</div>`
       : cards.map(p => {
           const mesLabel   = MESES[(p.mes||1)-1] || '';
           const prioColor  = PRIO_COLOR[p.priority] || '#6b7280';
@@ -23313,8 +23355,8 @@ async function loadOrcamentos() {
     setK('orcKpiVal',   fmtBRL(valTot));
 
     if(!orcs.length) {
-      el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#bbb;font-family:var(--font-m);font-size:11px;border:1.5px dashed rgba(0,0,0,.1);border-radius:10px">
-        <i class="fas fa-file-alt" style="font-size:28px;margin-bottom:10px;display:block;opacity:.3"></i>
+      el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#888;font-family:var(--font-m);font-size:11px;border:1.5px dashed rgba(0,0,0,.12);border-radius:10px">
+        <i class="fas fa-file-alt" style="font-size:28px;margin-bottom:10px;display:block;opacity:.85"></i>
         Nenhum orçamento criado ainda.<br>Clique em "+ Novo Orçamento" para começar.
       </div>`;
       return;
@@ -24812,7 +24854,7 @@ function renderColaboradores() {
 
   if(!lista.length) {
     el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--textsub);font-family:var(--font-m);font-size:11px">
-      <i class="fas fa-users" style="font-size:32px;opacity:.2;display:block;margin-bottom:10px"></i>
+      <i class="fas fa-users" style="font-size:32px;opacity:.8;display:block;margin-bottom:10px"></i>
       Nenhum colaborador encontrado. Clique em "+ Colaborador" para adicionar.
     </div>`;
     return;
@@ -29885,7 +29927,7 @@ function renderSched() {
     const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     const addBtn = showAdd ? `<button onclick="openSchedEventModal('${ds}')" style="width:100%;margin-top:4px;padding:3px;font-size:8px;font-family:var(--font-m);color:var(--textsub);background:transparent;border:1px dashed var(--bd);border-radius:3px;cursor:pointer" onmouseover="this.style.borderColor='var(--bdm)'" onmouseout="this.style.borderColor='var(--bd)'">+</button>` : '';
     return `<div class="sched-day${isToday?' today':''}">
-      <div class="sched-day-header" style="${isToday?'color:rgba(255,255,255,.9);font-weight:600':''}">
+      <div class="sched-day-header" style="${isToday?'color:var(--text);font-weight:600':''}">
         ${DOW[d.getDay()]} <span style="font-family:var(--font-h);font-size:10px">${d.getDate()}</span>
       </div>
       ${dayEvents.map(ev=>`
@@ -31624,6 +31666,10 @@ let _ntMm = null;
 let _ntProjects = [];
 let _ntMenuEl = null;
 let _ntLoaded = false;
+let _ntSpellTimer = null;
+let _ntSpellTok = 0;
+let _ntSpellPop = null;
+let _ntAiLast = '';
 
 function _ntUid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -31676,6 +31722,7 @@ function _ntSanitize(html) {
   try {
     const doc = new DOMParser().parseFromString(`<div>${String(html || '')}</div>`, 'text/html');
     doc.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(el => el.remove());
+    doc.querySelectorAll('.nt-spell').forEach(sp => sp.replaceWith(doc.createTextNode(sp.textContent || '')));
     doc.querySelectorAll('*').forEach(el => {
       [...el.attributes].forEach(a => {
         const nm = a.name.toLowerCase();
@@ -31686,6 +31733,18 @@ function _ntSanitize(html) {
     });
     return doc.body.firstChild ? doc.body.firstChild.innerHTML : '';
   } catch (e) { return escHtml(html); }
+}
+function _ntStripSpellHtml(html) {
+  try {
+    const doc = new DOMParser().parseFromString(`<div>${String(html || '')}</div>`, 'text/html');
+    doc.querySelectorAll('.nt-spell').forEach(sp => sp.replaceWith(doc.createTextNode(sp.textContent || '')));
+    return doc.body.firstChild ? doc.body.firstChild.innerHTML : String(html || '');
+  } catch (e) { return String(html || ''); }
+}
+function _ntStripSpellEl(el) {
+  if (!el) return;
+  el.querySelectorAll('.nt-spell').forEach(sp => sp.replaceWith(document.createTextNode(sp.textContent || '')));
+  el.normalize();
 }
 function _ntHtmlToText(html) {
   const d = document.createElement('div');
@@ -31774,7 +31833,7 @@ async function _ntFetchAll() {
 }
 function _ntPayload(n) {
   return {
-    title: n.title, kind: n.kind, content: n.content, data: n.data, tags: n.tags, color: n.color,
+    title: n.title, kind: n.kind, content: _ntStripSpellHtml(n.content), data: n.data, tags: n.tags, color: n.color,
     pinned: n.pinned, archived: n.archived, deleted: n.deleted, visibility: n.visibility,
     due_at: n.due_at, project_id: n.project_id, created_by: n.created_by,
     author_name: n.author_name || currentUser?.name || '', updated_at: n.updated_at
@@ -31978,12 +32037,18 @@ function _ntOpenMenu(ev, html) {
   m.className = 'nt-menu';
   m.innerHTML = html;
   document.body.appendChild(m);
-  const r = ev?.currentTarget?.getBoundingClientRect?.() || { left: ev?.clientX || 100, bottom: ev?.clientY || 100, right: (ev?.clientX || 100) + 10 };
   const w = m.offsetWidth || 220;
-  let left = Math.min(r.right - w, window.innerWidth - w - 8);
-  if (left < 8) left = 8;
-  let top = r.bottom + 6;
-  if (top + m.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - m.offsetHeight - 6);
+  let left, top;
+  if (ev?.currentTarget?.getBoundingClientRect) {
+    const r = ev.currentTarget.getBoundingClientRect();
+    left = Math.min(r.right - w, window.innerWidth - w - 8);
+    if (left < 8) left = 8;
+    top = r.bottom + 6;
+    if (top + m.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - m.offsetHeight - 6);
+  } else {
+    left = Math.min(Math.max(8, ev?.clientX || 100), window.innerWidth - w - 8);
+    top = Math.min(Math.max(8, ev?.clientY || 100), window.innerHeight - (m.offsetHeight || 180) - 8);
+  }
   m.style.left = left + 'px';
   m.style.top = top + 'px';
   _ntMenuEl = m;
@@ -32081,7 +32146,8 @@ function notasRenderEditor() {
     <div class="nt-ed-top">
       <button type="button" class="nt-icon-btn" style="display:none" id="ntBackBtn" onclick="notasBackToList()" title="Voltar à lista"><i class="fas fa-arrow-left"></i></button>
       <span class="nt-kind" style="color:${k.color};border-color:${k.color}55"><i class="fas ${k.icon}"></i> ${k.label}</span>
-      <input id="ntTitle" class="nt-ed-title" value="${escAttr(n.title)}" placeholder="Título" oninput="notasOnField('title',this.value)" ${canEdit ? '' : 'readonly'}>
+      <input id="ntTitle" class="nt-ed-title" lang="pt-BR" spellcheck="true" value="${escAttr(n.title)}" placeholder="Título" oninput="notasOnField('title',this.value)" ${canEdit ? '' : 'readonly'}>
+      ${canEdit ? `<button type="button" class="nt-icon-btn" title="Assistente Claude — corrigir, insights e ideias" onclick="notasOpenAiMenu(event)"><i class="fas fa-wand-magic-sparkles"></i></button>` : ''}
       <button type="button" class="nt-icon-btn ${n.pinned ? 'on' : ''}" title="${n.pinned ? 'Desafixar' : 'Fixar no topo'}" onclick="notasToggle('pinned')"><i class="fas fa-thumbtack"></i></button>
       <button type="button" class="nt-icon-btn" title="${n.visibility === 'team' ? 'Visível para a equipe — clique para deixar só sua' : 'Só você vê — clique para compartilhar com a equipe'}" onclick="notasToggleVisibility()"><i class="fas ${n.visibility === 'team' ? 'fa-users' : 'fa-lock'}"></i></button>
       <button type="button" class="nt-icon-btn" title="Mais ações" onclick="notasOpenMoreMenu(event)"><i class="fas fa-ellipsis-h"></i></button>
@@ -32095,6 +32161,7 @@ function notasRenderEditor() {
     </div>
     ${n.deleted ? `<div class="nt-banner" style="margin:10px 14px 0"><i class="fas fa-trash"></i> Esta nota está na lixeira. <button type="button" class="btn btn-secondary btn-sm" onclick="notasRestore()">Restaurar</button></div>` : ''}
     ${body}
+    ${canEdit ? `<div id="ntAiDock" class="nt-ai-dock" hidden></div>` : ''}
     <div class="nt-ed-foot">
       <span id="ntSaveState"><i class="fas fa-check" style="color:#16a34a"></i> Salvo ${_ntFmtDT(n.updated_at)}</span>
       <span>·</span><span>por ${escHtml(author)}</span>
@@ -32258,13 +32325,16 @@ function _ntRichHtml(n, canEdit) {
       <button type="button" class="nt-tb" title="Link" onclick="ntInsertLink()"><i class="fas fa-link"></i></button>
       <button type="button" class="nt-tb" title="Linha divisória" onclick="ntCmd('insertHorizontalRule')">—</button>
       <button type="button" class="nt-tb" title="Limpar formatação" onclick="ntCmd('removeFormat')"><i class="fas fa-eraser"></i></button>
+      <span class="nt-tb-sep"></span>
+      <button type="button" class="nt-tb" title="Verificar ortografia em português" onclick="notasSpellCheckNow(true)"><i class="fas fa-spell-check"></i> Português</button>
+      <button type="button" class="nt-tb" title="Corrigir e gerar insights com Claude" onclick="notasOpenAiMenu(event)" style="color:#7c3aed"><i class="fas fa-wand-magic-sparkles"></i> Claude</button>
       ${rot ? `<span class="nt-tb-sep"></span>
       <button type="button" class="nt-tb" title="Nova cena" onclick="ntInsertScene()" style="color:#7c3aed"><i class="fas fa-video"></i> Cena</button>
       <button type="button" class="nt-tb" title="Fala de personagem" onclick="ntInsertFala()" style="color:#7c3aed"><i class="fas fa-comment"></i> Fala</button>
       <button type="button" class="nt-tb" title="Ação / descrição" onclick="ntInsertAcao()" style="color:#7c3aed"><i class="fas fa-running"></i> Ação</button>
       <button type="button" class="nt-tb" title="Nota de direção" onclick="ntInsertDir()" style="color:#7c3aed"><i class="fas fa-bullhorn"></i> Direção</button>` : ''}
     </div>` : '';
-  return `${tb}<div class="nt-body"><div id="ntRich" class="nt-rich" contenteditable="${canEdit ? 'true' : 'false'}" data-placeholder="${rot ? 'Escreva o roteiro…' : 'Escreva aqui… use a barra acima para formatar.'}" spellcheck="true"></div></div>`;
+  return `${tb}${canEdit ? `<div class="nt-spell-bar" id="ntSpellBar" hidden></div>` : ''}<div class="nt-body"><div id="ntRich" class="nt-rich" lang="pt-BR" spellcheck="true" contenteditable="${canEdit ? 'true' : 'false'}" data-placeholder="${rot ? 'Escreva o roteiro…' : 'Escreva aqui… use a barra acima para formatar.'}"></div></div>`;
 }
 function _ntRichBind(n, canEdit) {
   const el = document.getElementById('ntRich');
@@ -32272,11 +32342,15 @@ function _ntRichBind(n, canEdit) {
   el.innerHTML = _ntSanitize(n.content);
   el.addEventListener('input', () => {
     const cur = _ntCurrent(); if (!cur) return;
+    if (el.querySelector('.nt-spell')) _ntStripSpellEl(el);
     cur.content = el.innerHTML;
     _ntQueueSave(cur);
     _ntUpdateStats();
+    if (canEdit) notasSpellSchedule();
   });
   el.addEventListener('click', (e) => {
+    const sp = e.target.closest('.nt-spell');
+    if (sp) { e.preventDefault(); notasSpellShow(e, sp); return; }
     const box = e.target.closest('.nt-chk-box');
     if (!box) return;
     e.preventDefault();
@@ -32285,6 +32359,12 @@ function _ntRichBind(n, canEdit) {
     line.setAttribute('data-done', done ? '0' : '1');
     box.innerHTML = done ? '<i class="far fa-square"></i>' : '<i class="fas fa-check-square"></i>';
     el.dispatchEvent(new Event('input'));
+  });
+  el.addEventListener('contextmenu', (e) => {
+    const sp = e.target.closest('.nt-spell');
+    if (!sp) return;
+    e.preventDefault();
+    notasSpellShow(e, sp);
   });
   el.addEventListener('paste', (e) => {
     const html = e.clipboardData?.getData('text/html');
@@ -32297,6 +32377,7 @@ function _ntRichBind(n, canEdit) {
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Tab') { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); }
   });
+  if (canEdit) notasSpellSchedule();
 }
 function ntCmd(cmd, val) {
   const el = document.getElementById('ntRich'); if (!el) return;
@@ -32373,7 +32454,7 @@ function _ntChecklistHtml(n, canEdit) {
 function _ntCkItemHtml(it, i, total, canEdit) {
   return `<div class="nt-ck-item ${it.done ? 'done' : ''}" data-id="${escAttr(it.id)}">
     <input type="checkbox" ${it.done ? 'checked' : ''} onchange="ntCkToggle('${escAttr(it.id)}',this.checked)" ${canEdit ? '' : 'disabled'}>
-    <input type="text" value="${escAttr(it.text)}" oninput="ntCkText('${escAttr(it.id)}',this.value)" onkeydown="ntCkKey(event,'${escAttr(it.id)}')" ${canEdit ? '' : 'readonly'}>
+    <input type="text" lang="pt-BR" spellcheck="true" value="${escAttr(it.text)}" oninput="ntCkText('${escAttr(it.id)}',this.value)" onkeydown="ntCkKey(event,'${escAttr(it.id)}')" ${canEdit ? '' : 'readonly'}>
     ${canEdit ? `<button type="button" class="nt-icon-btn" title="Subir" onclick="ntCkMove('${escAttr(it.id)}',-1)" ${i === 0 ? 'disabled' : ''}><i class="fas fa-chevron-up"></i></button>
     <button type="button" class="nt-icon-btn" title="Descer" onclick="ntCkMove('${escAttr(it.id)}',1)" ${i === total - 1 ? 'disabled' : ''}><i class="fas fa-chevron-down"></i></button>
     <button type="button" class="nt-icon-btn" title="Remover" onclick="ntCkDel('${escAttr(it.id)}')"><i class="fas fa-times"></i></button>` : ''}
@@ -32463,12 +32544,12 @@ function _ntMindmapHtml(n, canEdit) {
     ${canEdit ? `
     <button type="button" class="nt-tb" onclick="ntMmAddChild()" title="Adicionar ramo (Tab)"><i class="fas fa-plus"></i> Ramo</button>
     <button type="button" class="nt-tb" onclick="ntMmAddSibling()" title="Adicionar irmão (Enter)"><i class="fas fa-level-down-alt"></i> Irmão</button>
-    <button type="button" class="nt-tb" onclick="ntMmEditSel()" title="Editar texto (F2 ou duplo clique)"><i class="fas fa-pen"></i> Editar</button>
     <button type="button" class="nt-tb" onclick="ntMmDeleteSel()" title="Excluir nó e filhos (Delete)"><i class="fas fa-trash"></i></button>
     <span class="nt-tb-sep"></span>
     <span style="display:inline-flex;gap:5px;align-items:center;padding:0 4px">${NOTAS_MM_COLORS.map(c => `<span class="nt-color-dot" style="background:${c}" title="Cor do nó" onclick="ntMmColorSel('${c}')"></span>`).join('')}</span>
     <span class="nt-tb-sep"></span>
-    <button type="button" class="nt-tb" onclick="ntMmAutoLayoutBtn()" title="Reorganizar automaticamente"><i class="fas fa-magic"></i> Organizar</button>` : ''}
+    <button type="button" class="nt-tb" onclick="ntMmAutoLayoutBtn()" title="Reorganizar automaticamente"><i class="fas fa-magic"></i> Organizar</button>
+    <button type="button" class="nt-tb" onclick="notasAiRun('mapa')" title="Claude sugere ramos a partir do nó selecionado" style="color:#7c3aed"><i class="fas fa-wand-magic-sparkles"></i> Expandir com IA</button>` : ''}
     <button type="button" class="nt-tb" onclick="ntMmFit()" title="Centralizar"><i class="fas fa-compress-arrows-alt"></i> Centralizar</button>
     <button type="button" class="nt-tb" onclick="ntMmZoom(1.2)" title="Aproximar"><i class="fas fa-search-plus"></i></button>
     <button type="button" class="nt-tb" onclick="ntMmZoom(1/1.2)" title="Afastar"><i class="fas fa-search-minus"></i></button>
@@ -32476,7 +32557,7 @@ function _ntMindmapHtml(n, canEdit) {
   <div class="nt-body" style="padding:12px 14px">
     <div class="nt-mm-wrap" id="ntMmWrap" tabindex="0">
       <svg id="ntMmSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div class="nt-mm-help">Clique para selecionar · duplo clique edita · arraste para mover · Tab = ramo · Enter = irmão · Delete = excluir · roda = zoom</div>
+      <div class="nt-mm-help">Clique no texto para editar · arraste para mover · botão direito no nó ou no fundo cria ramos · Tab = filho · Enter = irmão · Delete = excluir · roda = zoom</div>
     </div>
   </div>`;
 }
@@ -32506,6 +32587,8 @@ function _ntMmAutoLayout(mm) {
 function _ntMindmapInit(n, canEdit) {
   const wrap = document.getElementById('ntMmWrap'); const svg = document.getElementById('ntMmSvg');
   if (!wrap || !svg) return;
+  if (window._ntMmMove) { window.removeEventListener('mousemove', window._ntMmMove); window._ntMmMove = null; }
+  if (window._ntMmUp) { window.removeEventListener('mouseup', window._ntMmUp); window._ntMmUp = null; }
   if (!n.data.mindmap || !Array.isArray(n.data.mindmap.nodes) || !n.data.mindmap.nodes.length) {
     n.data.mindmap = { nodes: [{ id: _ntUid(), text: n.title || 'Ideia central', parent: null, x: 0, y: 0, color: '' }] };
   }
@@ -32515,11 +32598,12 @@ function _ntMindmapInit(n, canEdit) {
   _ntMmRender();
   wrap.onmousedown = (e) => {
     if (e.button !== 0) return;
+    if (e.target.closest('.nt-mm-edit')) return;
     const g = e.target.closest('.nt-mm-node');
     if (g) {
       _ntMm.sel = g.getAttribute('data-id');
       const node = mm.nodes.find(x => x.id === _ntMm.sel);
-      _ntMm.drag = canEdit && node ? { type: 'node', node, sx: e.clientX, sy: e.clientY, ox: node.x, oy: node.y, moved: false } : null;
+      _ntMm.drag = canEdit && node ? { type: 'node', node, sx: e.clientX, sy: e.clientY, ox: node.x, oy: node.y, moved: false } : { type: 'sel' };
       _ntMmRender();
     } else {
       _ntMm.drag = { type: 'pan', sx: e.clientX, sy: e.clientY, ox: _ntMm.pan.x, oy: _ntMm.pan.y };
@@ -32532,25 +32616,42 @@ function _ntMindmapInit(n, canEdit) {
     const st = _ntMm; if (!st || !st.drag) return;
     const d = st.drag;
     if (d.type === 'pan') { st.pan.x = d.ox + (e.clientX - d.sx); st.pan.y = d.oy + (e.clientY - d.sy); _ntMmRender(); }
-    else { d.node.x = d.ox + (e.clientX - d.sx) / st.zoom; d.node.y = d.oy + (e.clientY - d.sy) / st.zoom; d.moved = true; _ntMmRender(); }
+    else if (d.type === 'node') {
+      const dist = Math.hypot(e.clientX - d.sx, e.clientY - d.sy);
+      if (!d.moved && dist < 6) return;
+      d.moved = true;
+      d.node.x = d.ox + (e.clientX - d.sx) / st.zoom;
+      d.node.y = d.oy + (e.clientY - d.sy) / st.zoom;
+      _ntMmRender();
+    }
   };
-  const onUp = () => {
+  const onUp = (e) => {
     const st = _ntMm; if (!st) return;
-    if (st.drag?.type === 'node' && st.drag.moved) _ntQueueSave(st.note);
+    const d = st.drag;
+    if (d?.type === 'node' && d.moved) _ntQueueSave(st.note);
+    if (d?.type === 'node' && !d.moved && canEdit && !document.querySelector('.nt-mm-edit')) ntMmEditSel();
     st.drag = null;
     wrap.classList.remove('dragging');
   };
+  window._ntMmMove = onMove;
+  window._ntMmUp = onUp;
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', onUp);
+  wrap.oncontextmenu = (e) => {
+    if (!canEdit) return;
+    e.preventDefault();
+    const g = e.target.closest('.nt-mm-node');
+    if (g) {
+      _ntMm.sel = g.getAttribute('data-id');
+      _ntMmRender();
+      ntMmOpenNodeMenu(e);
+    } else {
+      ntMmCreateAt(e.clientX, e.clientY);
+    }
+  };
   wrap.ondblclick = (e) => {
     const g = e.target.closest('.nt-mm-node');
     if (g && canEdit) { _ntMm.sel = g.getAttribute('data-id'); ntMmEditSel(); }
-    else if (canEdit) {
-      const world = _ntMmToWorld(e.clientX, e.clientY);
-      const root = mm.nodes.find(x => !x.parent);
-      const nn = { id: _ntUid(), text: 'Novo', parent: root?.id || null, x: world.x, y: world.y, color: '' };
-      mm.nodes.push(nn); _ntMm.sel = nn.id; _ntMmRender(); _ntQueueSave(n); ntMmEditSel();
-    }
   };
   wrap.onwheel = (e) => {
     e.preventDefault();
@@ -32568,7 +32669,7 @@ function _ntMindmapInit(n, canEdit) {
     if (e.key === 'Tab') { e.preventDefault(); ntMmAddChild(); }
     else if (e.key === 'Enter') { e.preventDefault(); ntMmAddSibling(); }
     else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); ntMmDeleteSel(); }
-    else if (e.key === 'F2' || e.key === ' ') { e.preventDefault(); ntMmEditSel(); }
+    else if (e.key === 'F2') { e.preventDefault(); ntMmEditSel(); }
   };
 }
 function _ntMmToWorld(clientX, clientY) {
@@ -32632,6 +32733,26 @@ function ntMmColorSel(c) {
   s.color = c === '#ffffff' ? '' : c;
   _ntMmRender(); _ntQueueSave(st.note);
 }
+function ntMmCreateAt(clientX, clientY) {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const world = _ntMmToWorld(clientX, clientY);
+  const parent = _ntMmSelNode() || st.data.nodes.find(x => !x.parent);
+  const nn = { id: _ntUid(), text: 'Novo ramo', parent: parent?.id || null, x: world.x, y: world.y, color: '' };
+  if (!parent) nn.parent = null;
+  st.data.nodes.push(nn);
+  st.sel = nn.id;
+  _ntMmRender(); _ntQueueSave(st.note); ntMmEditSel();
+}
+function ntMmOpenNodeMenu(ev) {
+  const colors = NOTAS_MM_COLORS.map(c => `<button type="button" onclick="_ntCloseMenu();ntMmColorSel('${c}')"><i class="fas fa-circle" style="color:${c === '#ffffff' ? '#cbd5e1' : c}"></i>${c === '#ffffff' ? 'Sem cor' : 'Cor'}</button>`).join('');
+  _ntOpenMenu(ev, `
+    <button type="button" onclick="_ntCloseMenu();ntMmAddChild()"><i class="fas fa-plus"></i>Novo ramo (filho)<small>Ligado a este nó</small></button>
+    <button type="button" onclick="_ntCloseMenu();ntMmAddSibling()"><i class="fas fa-level-down-alt"></i>Novo irmão<small>Ao lado deste nó</small></button>
+    <button type="button" onclick="_ntCloseMenu();ntMmEditSel()"><i class="fas fa-pen"></i>Editar texto</button>
+    <button type="button" onclick="_ntCloseMenu();notasAiRun('mapa')"><i class="fas fa-wand-magic-sparkles"></i>Expandir com Claude</button>
+    <hr>${colors}<hr>
+    <button type="button" class="danger" onclick="_ntCloseMenu();ntMmDeleteSel()"><i class="fas fa-trash"></i>Excluir nó</button>`);
+}
 function ntMmEditSel() {
   const st = _ntMm; if (!st || !st.canEdit) return;
   const s = _ntMmSelNode(); if (!s) return;
@@ -32639,16 +32760,23 @@ function ntMmEditSel() {
   if (prev) { if (typeof prev._commit === 'function') prev._commit(true); else prev.remove(); }
   const inp = document.createElement('input');
   inp.className = 'nt-mm-edit';
+  inp.lang = 'pt-BR';
+  inp.spellcheck = true;
   inp.value = s.text || '';
+  const w = Math.max(160, _ntMmW(s.text) * st.zoom);
   const sx = st.pan.x + s.x * st.zoom, sy = st.pan.y + s.y * st.zoom;
-  inp.style.left = Math.max(4, sx - 80) + 'px';
+  inp.style.width = w + 'px';
+  inp.style.left = Math.max(4, sx - w / 2) + 'px';
   inp.style.top = Math.max(4, sy - 16) + 'px';
   st.wrap.appendChild(inp);
-  inp.focus(); inp.select();
+  inp.focus();
+  const placeholder = /^(Novo( ramo)?|Ideia central)$/i.test(s.text || '');
+  if (placeholder) inp.select();
+  else inp.setSelectionRange(inp.value.length, inp.value.length);
   let done = false;
   const commit = (save) => {
     if (done) return; done = true;
-    if (save) { s.text = String(inp.value || '').trim().slice(0, 120) || s.text; _ntQueueSave(st.note); }
+    if (save) { s.text = String(inp.value || '').trim().slice(0, 160) || s.text; _ntQueueSave(st.note); }
     inp.remove(); _ntMmRender(); st.wrap.focus();
   };
   inp._commit = commit;
@@ -32690,6 +32818,317 @@ function notasExportMmSvg() {
   const inner = st.svg.innerHTML.replace(/<g transform="[^"]*">/, `<g transform="translate(${-minX},${-minY})">`);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${maxX - minX}" height="${maxY - minY}" viewBox="0 0 ${maxX - minX} ${maxY - minY}"><style>text{font-family:Inter,Arial,sans-serif;font-size:13px;font-weight:600}</style><rect width="100%" height="100%" fill="#fff"/>${inner}</svg>`;
   _ntDownload((n.title || 'mapa-mental') + '.svg', svg, 'image/svg+xml');
+}
+
+/* ── ortografia PT-BR + Claude nas notas ── */
+function notasSpellSchedule() {
+  clearTimeout(_ntSpellTimer);
+  _ntSpellTimer = setTimeout(() => notasSpellCheckNow(false), 1400);
+}
+function _ntSpellBar(html) {
+  const bar = document.getElementById('ntSpellBar');
+  if (!bar) return;
+  if (!html) { bar.hidden = true; bar.innerHTML = ''; return; }
+  bar.hidden = false;
+  bar.innerHTML = html;
+}
+function _ntCloseSpellPop() {
+  if (_ntSpellPop) { _ntSpellPop.remove(); _ntSpellPop = null; }
+  document.removeEventListener('mousedown', _ntSpellPopOutside, true);
+}
+function _ntSpellPopOutside(e) { if (_ntSpellPop && !_ntSpellPop.contains(e.target) && !e.target.closest('.nt-spell')) _ntCloseSpellPop(); }
+function _ntCaretIn(el) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !el.contains(sel.anchorNode)) return null;
+  const r = sel.getRangeAt(0).cloneRange();
+  r.selectNodeContents(el);
+  r.setEnd(sel.anchorNode, sel.anchorOffset);
+  return r.toString().length;
+}
+function _ntSetCaret(el, off) {
+  if (off == null) return;
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+  let n, acc = 0;
+  while ((n = walker.nextNode())) {
+    const len = n.textContent.length;
+    if (acc + len >= off) {
+      const r = document.createRange();
+      r.setStart(n, Math.max(0, off - acc));
+      r.collapse(true);
+      const s = window.getSelection();
+      s.removeAllRanges(); s.addRange(r);
+      return;
+    }
+    acc += len;
+  }
+}
+function _ntMarkSpellMatches(el, matches) {
+  _ntStripSpellEl(el);
+  if (!matches.length) return;
+  matches.forEach((m, i) => { m._i = i; });
+  matches.slice().sort((a, b) => b.offset - a.offset).forEach(m => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    let n, acc = 0;
+    while ((n = walker.nextNode())) {
+      if (n.parentElement && n.parentElement.closest('.nt-spell,script,style')) { acc += n.textContent.length; continue; }
+      const len = n.textContent.length;
+      if (m.offset >= acc && (m.offset + m.length) <= acc + len) {
+        const local = m.offset - acc;
+        const range = document.createRange();
+        range.setStart(n, local);
+        range.setEnd(n, local + m.length);
+        const sp = document.createElement('span');
+        sp.className = 'nt-spell';
+        sp.dataset.i = String(m._i);
+        sp.dataset.word = m.word;
+        sp.dataset.msg = m.message || '';
+        sp.dataset.sugs = JSON.stringify(m.replacements || []);
+        try { range.surroundContents(sp); } catch (e) {}
+        break;
+      }
+      acc += len;
+    }
+  });
+}
+async function _ntLanguageTool(text) {
+  const body = new URLSearchParams({ language: 'pt-BR', text: text.slice(0, 18000), enabledOnly: 'false' });
+  const res = await fetch('https://api.languagetool.org/v2/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body
+  });
+  if (!res.ok) throw new Error('spell');
+  const data = await res.json();
+  return (data.matches || []).filter(m => m.length > 0 && (m.replacements || []).length).map(m => ({
+    offset: m.offset,
+    length: m.length,
+    word: text.slice(m.offset, m.offset + m.length),
+    message: m.message || 'Possível erro de português',
+    replacements: (m.replacements || []).map(r => r.value).filter(Boolean).slice(0, 6)
+  }));
+}
+async function notasSpellCheckNow(manual) {
+  const el = document.getElementById('ntRich');
+  if (!el) return;
+  const caret = _ntCaretIn(el);
+  _ntStripSpellEl(el);
+  const text = el.textContent || '';
+  if (text.trim().length < 3) { _ntSpellBar(''); return; }
+  const tok = ++_ntSpellTok;
+  if (manual) _ntSpellBar('<i class="fas fa-spinner fa-spin"></i> Verificando português…');
+  try {
+    const matches = await _ntLanguageTool(text);
+    if (tok !== _ntSpellTok || document.getElementById('ntRich') !== el) return;
+    _ntMarkSpellMatches(el, matches);
+    _ntSetCaret(el, caret);
+    if (!matches.length) {
+      _ntSpellBar(manual ? '<i class="fas fa-check" style="color:#16a34a"></i> Nenhum erro de português encontrado' : '');
+      if (manual) setTimeout(() => { if (document.getElementById('ntSpellBar')?.textContent.includes('Nenhum erro')) _ntSpellBar(''); }, 2800);
+      return;
+    }
+    _ntSpellBar(`<i class="fas fa-spell-check"></i> <b>${matches.length}</b> ${matches.length === 1 ? 'palavra para revisar' : 'palavras para revisar'} — clique na sublinhada para corrigir
+      <button type="button" class="btn btn-ghost btn-sm" style="margin-left:auto;height:22px;font-size:10px" onclick="notasSpellApplyAll()">Aplicar sugestões</button>
+      <button type="button" class="btn btn-ghost btn-sm" style="height:22px;font-size:10px" onclick="notasAiRun('corrigir')">Corrigir com Claude</button>`);
+  } catch (e) {
+    if (tok !== _ntSpellTok) return;
+    _ntSpellBar(`<i class="fas fa-info-circle"></i> Corretor online indisponível — o navegador ainda sublinha erros (idioma Português). <button type="button" class="btn btn-ghost btn-sm" style="height:22px;font-size:10px" onclick="notasAiRun('corrigir')">Usar Claude</button>`);
+  }
+}
+function notasSpellShow(ev, sp) {
+  _ntCloseSpellPop();
+  const sugs = (() => { try { return JSON.parse(sp.dataset.sugs || '[]'); } catch (e) { return []; } })();
+  const pop = document.createElement('div');
+  pop.className = 'nt-spell-pop';
+  pop.innerHTML = `<div class="nt-sp-word">${escHtml(sp.dataset.word || sp.textContent || '')}</div>
+    <div class="nt-sp-msg">${escHtml(sp.dataset.msg || 'Possível erro de ortografia')}</div>
+    <div class="nt-sp-sug">${sugs.length ? sugs.map(s => `<button type="button" onclick="notasSpellApplyEl(this,${JSON.stringify(String(s))})">${escHtml(s)}</button>`).join('') : '<span style="font-size:11px;color:#94a3b8">Sem sugestão automática</span>'}
+    <button type="button" onclick="_ntCloseSpellPop()">Ignorar</button></div>`;
+  document.body.appendChild(pop);
+  const x = Math.min(ev.clientX, window.innerWidth - 360);
+  const y = Math.min(ev.clientY + 8, window.innerHeight - 160);
+  pop.style.left = Math.max(8, x) + 'px';
+  pop.style.top = Math.max(8, y) + 'px';
+  pop._target = sp;
+  _ntSpellPop = pop;
+  setTimeout(() => document.addEventListener('mousedown', _ntSpellPopOutside, true), 0);
+}
+function notasSpellApplyEl(btn, replacement) {
+  const pop = _ntSpellPop;
+  const sp = pop && pop._target;
+  _ntCloseSpellPop();
+  if (!sp || !sp.isConnected) return;
+  sp.replaceWith(document.createTextNode(replacement));
+  const el = document.getElementById('ntRich');
+  if (el) { el.normalize(); el.dispatchEvent(new Event('input')); }
+}
+function notasSpellApplyAll() {
+  const el = document.getElementById('ntRich'); if (!el) return;
+  const marks = [...el.querySelectorAll('.nt-spell')].reverse();
+  marks.forEach(sp => {
+    let sugs = [];
+    try { sugs = JSON.parse(sp.dataset.sugs || '[]'); } catch (e) {}
+    sp.replaceWith(document.createTextNode(sugs[0] || sp.textContent || ''));
+  });
+  el.normalize();
+  el.dispatchEvent(new Event('input'));
+  toast('Sugestões aplicadas. Revise o texto.', 'ok');
+}
+
+function notasOpenAiMenu(ev) {
+  const n = _ntCurrent(); if (!n || !_ntCanEdit(n)) return;
+  let html = `
+    <button type="button" onclick="_ntCloseMenu();notasAiRun('corrigir')"><i class="fas fa-spell-check"></i>Corrigir português<small>Ortografia e gramática, sem mudar o sentido</small></button>
+    <button type="button" onclick="_ntCloseMenu();notasAiRun('clareza')"><i class="fas fa-pen-fancy"></i>Melhorar clareza<small>Reescreve de forma mais direta</small></button>
+    <button type="button" onclick="_ntCloseMenu();notasAiRun('insights')"><i class="fas fa-lightbulb"></i>Gerar insights<small>Lacunas, ângulos e próximos passos</small></button>
+    <button type="button" onclick="_ntCloseMenu();notasAiRun('expandir')"><i class="fas fa-expand"></i>Expandir ideia<small>Desenvolve o que você já escreveu</small></button>`;
+  if (n.kind === 'roteiro') html += `<button type="button" onclick="_ntCloseMenu();notasAiRun('roteiro')"><i class="fas fa-clapperboard"></i>Sugerir cenas e falas<small>Continua o roteiro no tom atual</small></button>`;
+  if (n.kind === 'checklist') html += `<button type="button" onclick="_ntCloseMenu();notasAiRun('checklist')"><i class="fas fa-tasks"></i>Sugerir próximos itens</button>`;
+  if (n.kind === 'mapa') html += `<button type="button" onclick="_ntCloseMenu();notasAiRun('mapa')"><i class="fas fa-project-diagram"></i>Expandir ramos do nó<small>Claude sugere nós a partir do selecionado</small></button>`;
+  if (n.kind !== 'checklist' && n.kind !== 'mapa') html += `<button type="button" onclick="_ntCloseMenu();notasAiRun('tarefas')"><i class="fas fa-check-square"></i>Extrair tarefas<small>Vira itens de ação a partir do texto</small></button>`;
+  _ntOpenMenu(ev, html);
+}
+function _ntAiDock(title, bodyHtml, actionsHtml) {
+  const dock = document.getElementById('ntAiDock');
+  if (!dock) return;
+  dock.hidden = false;
+  dock.innerHTML = `<div class="nt-ai-dock-hd"><i class="fas fa-wand-magic-sparkles"></i> ${escHtml(title)}
+    <button type="button" class="nt-icon-btn" style="margin-left:auto" title="Fechar" onclick="document.getElementById('ntAiDock').hidden=true"><i class="fas fa-times"></i></button></div>
+    <div class="nt-ai-dock-bd" id="ntAiDockBody">${bodyHtml}</div>
+    <div class="nt-ai-actions">${actionsHtml || ''}</div>`;
+}
+async function _ntAskClaude(userPrompt) {
+  const edgeUrl = String(typeof AI_EDGE_URL !== 'undefined' ? AI_EDGE_URL : '').trim();
+  if (!edgeUrl) throw new Error('Assistente não configurado (Supabase).');
+  const res = await fetch(edgeUrl, {
+    method: 'POST',
+    headers: _ageFnHeaders(),
+    body: JSON.stringify({
+      comando: 'Responda APENAS com JSON válido, sem markdown: {"acao":"consultar","resposta":"<conteúdo>"}. ' + userPrompt,
+      contexto: {
+        origem: 'notas',
+        usuario: currentUser?.name || currentUser?.username || '',
+        data_hoje: new Date().toLocaleDateString('pt-BR')
+      }
+    })
+  });
+  const data = await res.json().catch(() => ({}));
+  let text = String(data.resposta || data.confirmacao || '').trim();
+  if (!text && !res.ok) throw new Error(data.resposta || `Assistente indisponível (HTTP ${res.status}).`);
+  if (!text) throw new Error('A IA não retornou texto. Tente de novo.');
+  return text;
+}
+function _ntNoteContext(n) {
+  const kind = (NOTAS_KINDS[n.kind] || {}).label || n.kind;
+  let body = '';
+  if (n.kind === 'checklist') body = (n.data.items || []).map(i => `- [${i.done ? 'x' : ' '}] ${i.text}`).join('\n');
+  else if (n.kind === 'mapa') {
+    const nodes = (n.data.mindmap || {}).nodes || [];
+    const sel = _ntMmSelNode();
+    body = nodes.map(x => `${x.parent ? '  ' : ''}• ${x.text}${sel && sel.id === x.id ? '  ← NÓ SELECIONADO' : ''}`).join('\n');
+  } else body = _ntHtmlToText(n.content);
+  return { kind, title: n.title || 'Sem título', body: body.slice(0, 6000) };
+}
+function notasAiApplyReplace() {
+  const n = _ntCurrent(); const el = document.getElementById('ntRich');
+  if (!n || !el || !_ntAiLast) return;
+  const html = _ntAiLast.split(/\n{2,}/).map(p => `<p>${escHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+  el.innerHTML = _ntSanitize(html);
+  n.content = el.innerHTML;
+  _ntQueueSave(n);
+  _ntUpdateStats();
+  notasSpellSchedule();
+  toast('Texto da nota atualizado.', 'ok');
+}
+function notasAiInsertBelow() {
+  const n = _ntCurrent(); const el = document.getElementById('ntRich');
+  if (!n || !el || !_ntAiLast) return;
+  el.insertAdjacentHTML('beforeend', _ntSanitize(`<hr><h3>Insights Claude</h3><p>${escHtml(_ntAiLast).replace(/\n/g, '<br>')}</p>`));
+  n.content = _ntStripSpellHtml(el.innerHTML);
+  _ntQueueSave(n);
+  _ntUpdateStats();
+  toast('Insights inseridos na nota.', 'ok');
+}
+function notasAiAddChecklist(lines) {
+  const n = _ntCurrent(); if (!n) return;
+  const items = lines.map(t => String(t || '').replace(/^[-*•\d.\s]+/, '').trim()).filter(Boolean).slice(0, 30);
+  if (!items.length) return;
+  if (n.kind !== 'checklist') {
+    n.kind = 'checklist';
+    if (!Array.isArray(n.data.items)) n.data.items = [];
+  }
+  items.forEach(text => n.data.items.push({ id: _ntUid(), text, done: false }));
+  _ntQueueSave(n);
+  notasRenderEditor(); notasRenderSide(); notasRenderList();
+  toast(items.length + ' item(ns) adicionados.', 'ok');
+}
+function notasAiAddMapNodes(labels) {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const p = _ntMmSelNode() || st.data.nodes.find(x => !x.parent);
+  if (!p) return;
+  labels.map(t => String(t || '').trim()).filter(Boolean).slice(0, 12).forEach((text, i) => {
+    const dir = p.parent ? (p.x >= 0 ? 1 : -1) : (i % 2 === 0 ? 1 : -1);
+    st.data.nodes.push({ id: _ntUid(), text: text.slice(0, 80), parent: p.id, x: p.x + dir * 230, y: p.y + (i - labels.length / 2) * 48, color: '' });
+  });
+  _ntMmRender(); _ntQueueSave(st.note);
+  toast('Ramos adicionados ao mapa.', 'ok');
+}
+async function notasAiRun(mode) {
+  const n = _ntCurrent(); if (!n || !_ntCanEdit(n)) return;
+  const ctx = _ntNoteContext(n);
+  if (!ctx.body && mode !== 'mapa') { toast('Escreva alguma coisa antes de pedir à IA.', 'warn'); return; }
+  const titles = {
+    corrigir: 'Corrigir português',
+    clareza: 'Melhorar clareza',
+    insights: 'Insights',
+    expandir: 'Expandir ideia',
+    roteiro: 'Cenas e falas',
+    checklist: 'Próximos itens',
+    mapa: 'Ramos do mapa',
+    tarefas: 'Tarefas extraídas'
+  };
+  _ntAiDock(titles[mode] || 'Claude', '<i class="fas fa-spinner fa-spin"></i> Claude está lendo a nota…', '');
+  const base = `Tipo: ${ctx.kind}. Título: ${ctx.title}.\nTEXTO:\n${ctx.body || '(vazio)'}`;
+  const prompts = {
+    corrigir: `Corrija APENAS ortografia e gramática do português brasileiro. Não mude o sentido, o tom nem a estrutura. Devolva só o texto corrigido, sem comentários. ${base}`,
+    clareza: `Reescreva em português brasileiro mais claro e direto, sem inventar fatos. Preserve nomes próprios e números. Devolva só o texto reescrito. ${base}`,
+    insights: `Você é um parceiro criativo de produtora audiovisual. Em português brasileiro, dê 4 a 6 insights práticos (lacunas, ângulos, riscos, próximos passos). Máx. 180 palavras. Sem introdução. ${base}`,
+    expandir: `Desenvolva a ideia em português brasileiro, no mesmo tom, em 2 a 4 parágrafos úteis (não enrolados). Não invente dados de cliente. ${base}`,
+    roteiro: `Sugira 2 ou 3 próximas cenas (local, ação, 1 fala). Português brasileiro, formato compacto de roteiro. ${base}`,
+    checklist: `Sugira de 5 a 8 próximos itens de checklist, um por linha, sem numeração, curtos, acionáveis, em português. ${base}`,
+    mapa: `Sugira 6 a 8 ramos curtos (2 a 6 palavras) para expandir o NÓ SELECIONADO do mapa mental. Resposta SOMENTE um JSON array de strings, sem markdown. ${base}`,
+    tarefas: `Extraia 4 a 8 tarefas acionáveis do texto, uma por linha, sem numeração. Português brasileiro. ${base}`
+  };
+  try {
+    const text = await _ntAskClaude(prompts[mode] || prompts.insights);
+    _ntAiLast = text;
+    if (mode === 'mapa') {
+      let labels = [];
+      try { const j = JSON.parse(text.replace(/^```json|```$/g, '').trim()); if (Array.isArray(j)) labels = j; } catch (e) {
+        labels = text.split('\n').map(s => s.replace(/^[-*•\d.\s"\[]+|["\],]+$/g, '').trim()).filter(Boolean);
+      }
+      window._ntAiLines = labels;
+      _ntAiDock('Ramos sugeridos', escHtml(labels.join('\n') || text),
+        `<button type="button" class="btn btn-primary btn-sm" onclick="notasAiAddMapNodes(window._ntAiLines||[])">Adicionar ao mapa</button>
+         <button type="button" class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(_ntAiLast).then(()=>toast('Copiado','ok'))">Copiar</button>`);
+      return;
+    }
+    if (mode === 'checklist' || mode === 'tarefas') {
+      const lines = text.split('\n').map(s => s.replace(/^[-*•\d.)\s]+/, '').trim()).filter(Boolean);
+      window._ntAiLines = lines;
+      _ntAiDock(titles[mode], escHtml(lines.join('\n') || text),
+        `<button type="button" class="btn btn-primary btn-sm" onclick="notasAiAddChecklist(window._ntAiLines||[])">Adicionar à checklist</button>
+         <button type="button" class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(_ntAiLast).then(()=>toast('Copiado','ok'))">Copiar</button>`);
+      return;
+    }
+    const canReplace = (mode === 'corrigir' || mode === 'clareza' || mode === 'expandir' || mode === 'roteiro') && n.kind !== 'mapa' && n.kind !== 'checklist';
+    _ntAiDock(titles[mode], escHtml(text),
+      `${canReplace ? `<button type="button" class="btn btn-primary btn-sm" onclick="notasAiApplyReplace()">Substituir texto da nota</button>` : ''}
+       ${n.kind !== 'mapa' && n.kind !== 'checklist' ? `<button type="button" class="btn btn-secondary btn-sm" onclick="notasAiInsertBelow()">Inserir na nota</button>` : ''}
+       <button type="button" class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(_ntAiLast).then(()=>toast('Copiado','ok'))">Copiar</button>`);
+  } catch (e) {
+    _ntAiDock(titles[mode] || 'Claude', escHtml(e.message || 'Não foi possível falar com o assistente.'), '');
+    toast(e.message || 'Erro no assistente', 'err');
+  }
 }
 
 /* ── exportação / impressão / lembretes ── */
@@ -35211,8 +35650,8 @@ function renderKanbanBoard() {
       <!-- Cards -->
       <div style="padding:8px;display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto;max-height:65vh">
         ${cards.map(l => renderLeadCard(l, st)).join('')}
-        ${!cards.length ? `<div style="text-align:center;padding:20px 8px;color:#94a3b8;font-size:10px">
-          <i class="fas fa-inbox" style="font-size:20px;display:block;margin-bottom:6px;opacity:.4"></i>
+        ${!cards.length ? `<div style="text-align:center;padding:20px 8px;color:#64748b;font-size:10px">
+          <i class="fas fa-inbox" style="font-size:20px;display:block;margin-bottom:6px;opacity:.7"></i>
           Arraste leads aqui ou<br>clique + para adicionar
         </div>` : ''}
       </div>
