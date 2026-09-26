@@ -1416,6 +1416,105 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   #page-recrutamento .kpi-card .kpi-val{font-size:18px}
 }
 
+/* ── Notas ── */
+.nt-layout{display:grid;grid-template-columns:220px minmax(250px,310px) 1fr;gap:14px;align-items:start}
+@media(max-width:1100px){.nt-layout{grid-template-columns:minmax(240px,300px) 1fr}.nt-side{display:none}}
+@media(max-width:760px){
+  .nt-layout{grid-template-columns:1fr}
+  .nt-layout.nt-mobile-editor .nt-list-pane{display:none}
+  .nt-layout:not(.nt-mobile-editor) .nt-editor-pane{display:none}
+  #ntBackBtn{display:inline-flex!important}
+}
+.nt-side,.nt-list-pane,.nt-editor-pane{background:var(--bg2);border:1px solid var(--bd);border-radius:12px}
+.nt-side{padding:12px;position:sticky;top:0}
+.nt-side-title{font-family:var(--font-m);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#aaa;margin:12px 0 6px}
+.nt-side-title:first-child{margin-top:0}
+.nt-side-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;border-radius:8px;padding:7px 9px;font-family:var(--font-b);font-size:12px;color:var(--text);cursor:pointer}
+.nt-side-item:hover{background:rgba(0,0,0,.04)}
+.nt-side-item.active{background:#111;color:#fff}
+.nt-side-item i{width:14px;text-align:center;opacity:.6;font-size:11px}
+.nt-side-item .nt-cnt{margin-left:auto;font-family:var(--font-m);font-size:9px;opacity:.6}
+.nt-tag-chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-m);font-size:9px;padding:3px 8px;border-radius:999px;border:1px solid var(--bd);background:transparent;color:var(--text);cursor:pointer;margin:2px}
+.nt-tag-chip.active{background:#111;color:#fff;border-color:#111}
+.nt-list-pane{display:flex;flex-direction:column;max-height:calc(100vh - 175px);min-height:420px}
+.nt-list-head{padding:10px 10px 8px;border-bottom:1px solid var(--bd)}
+.nt-search{width:100%;height:32px;font-size:12px}
+.nt-list{overflow-y:auto;flex:1;padding:6px}
+.nt-note{border:1px solid var(--bd);border-left-width:4px;border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer;background:var(--bg2);transition:border-color .12s,box-shadow .12s;position:relative}
+.nt-note:hover{box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.nt-note.active{box-shadow:0 0 0 1.5px #111 inset}
+.nt-ct{font-family:var(--font-b);font-size:12.5px;font-weight:700;color:var(--text);line-height:1.3;display:flex;gap:6px;align-items:center}
+.nt-ct .fa-thumbtack{font-size:9px;color:#d97706}
+.nt-ct .fa-users{font-size:9px;color:#2563eb}
+.nt-cp{font-size:11px;color:#64748b;margin-top:3px;line-height:1.4;max-height:32px;overflow:hidden}
+.nt-cm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;font-family:var(--font-m);font-size:9px;color:#94a3b8}
+.nt-kind{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid var(--bd);color:#475569;white-space:nowrap}
+.nt-editor-pane{display:flex;flex-direction:column;min-height:calc(100vh - 175px)}
+.nt-ed-top{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.nt-ed-title{flex:1;min-width:160px;border:none!important;background:transparent!important;font-family:var(--font-title);font-size:20px;font-weight:800;color:var(--text);padding:4px 0!important;box-shadow:none!important}
+.nt-ed-title:focus{outline:none}
+.nt-icon-btn{background:none;border:1px solid transparent;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:#64748b;cursor:pointer;font-size:12px;flex-shrink:0}
+.nt-icon-btn:hover{background:rgba(0,0,0,.05);color:#111}
+.nt-icon-btn.on{color:#d97706}
+.nt-ed-meta{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bd);flex-wrap:wrap;font-family:var(--font-m);font-size:10px;color:#64748b}
+.nt-ed-meta select,.nt-ed-meta input{height:28px;font-size:11px;padding:2px 8px}
+.nt-color-dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.12);cursor:pointer;display:inline-block;vertical-align:middle}
+.nt-color-dot.on{border-color:#111}
+.nt-toolbar{display:flex;gap:2px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--bd);align-items:center}
+.nt-tb{background:none;border:1px solid transparent;border-radius:5px;min-width:28px;height:28px;padding:0 7px;font-family:var(--font-b);font-size:12px;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.nt-tb:hover{background:rgba(0,0,0,.05)}
+.nt-tb-sep{width:1px;height:18px;background:var(--bd);margin:0 4px}
+.nt-body{flex:1;padding:16px 22px;overflow-y:auto}
+.nt-rich{min-height:320px;outline:none;font-family:var(--font-b);font-size:14px;line-height:1.7;color:var(--text)}
+.nt-rich:empty:before{content:attr(data-placeholder);color:#aaa}
+.nt-rich h1{font-size:22px;margin:14px 0 6px}.nt-rich h2{font-size:18px;margin:12px 0 6px}.nt-rich h3{font-size:15px;margin:10px 0 4px}
+.nt-rich p{margin:0 0 8px}.nt-rich ul,.nt-rich ol{padding-left:22px;margin:0 0 8px}
+.nt-rich blockquote{border-left:3px solid #cbd5e1;margin:8px 0;padding:4px 12px;color:#475569;background:rgba(0,0,0,.02)}
+.nt-rich pre{background:#0f172a;color:#e2e8f0;padding:10px 12px;border-radius:8px;font-size:12px;overflow-x:auto;white-space:pre-wrap}
+.nt-rich hr{border:none;border-top:1px solid var(--bd);margin:14px 0}
+.nt-rich a{color:#2563eb}
+.nt-rich .nt-chk{display:flex;gap:8px;align-items:flex-start;margin:2px 0}
+.nt-rich .nt-chk-box{cursor:pointer;color:#64748b;margin-top:3px;user-select:none}
+.nt-rich .nt-chk[data-done="1"] .nt-chk-txt{text-decoration:line-through;color:#94a3b8}
+.nt-rich .nt-chk[data-done="1"] .nt-chk-box{color:#16a34a}
+.nt-rich .nt-scene{background:#f1f5f9;border-radius:6px;padding:6px 10px;font-family:var(--font-m);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin:14px 0 6px;color:#111}
+.nt-rich .nt-fala{margin:0 0 8px 28px}
+.nt-rich .nt-fala b{display:block;font-family:var(--font-m);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#64748b}
+.nt-rich .nt-acao{color:#334155;font-style:italic}
+.nt-rich .nt-dir{color:#7c3aed;font-size:12px}
+.nt-ed-foot{display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--bd);font-family:var(--font-m);font-size:10px;color:#94a3b8;flex-wrap:wrap}
+.nt-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#aaa;font-family:var(--font-m);font-size:11px;letter-spacing:.06em;text-align:center;padding:40px;gap:12px;min-height:360px}
+.nt-empty i{font-size:34px;opacity:.25}
+.nt-ck-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--bd)}
+.nt-ck-item input[type=checkbox]{width:16px;height:16px;accent-color:#16a34a;flex-shrink:0}
+.nt-ck-item input[type=text]{flex:1;border:none!important;background:transparent!important;font-size:13px;padding:4px 2px!important;box-shadow:none!important}
+.nt-ck-item.done input[type=text]{text-decoration:line-through;color:#94a3b8}
+.nt-ck-item .nt-icon-btn{opacity:0;width:26px;height:26px}
+.nt-ck-item:hover .nt-icon-btn{opacity:1}
+.nt-progress{height:6px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden;margin:6px 0 12px}
+.nt-progress i{display:block;height:100%;background:#16a34a;transition:width .2s}
+.nt-mm-wrap{position:relative;border:1px dashed var(--bd);border-radius:10px;background:radial-gradient(circle,rgba(0,0,0,.06) 1px,transparent 1px) 0 0/18px 18px;height:calc(100vh - 340px);min-height:380px;overflow:hidden;cursor:grab;outline:none}
+.nt-mm-wrap:focus{border-color:#111}
+.nt-mm-wrap.dragging{cursor:grabbing}
+.nt-mm-wrap svg{width:100%;height:100%;display:block}
+.nt-mm-node{cursor:pointer}
+.nt-mm-node rect{stroke-width:1.5}
+.nt-mm-node.sel rect{stroke:#111;stroke-width:2.5}
+.nt-mm-node text{font-family:var(--font-b);font-size:13px;font-weight:600;pointer-events:none;user-select:none}
+.nt-mm-edit{position:absolute;z-index:5;border:2px solid #111;border-radius:8px;padding:4px 8px;font-size:13px;font-family:var(--font-b);background:#fff;color:#111;outline:none;min-width:140px}
+.nt-mm-help{position:absolute;left:10px;bottom:8px;font-family:var(--font-m);font-size:9px;color:#94a3b8;pointer-events:none;line-height:1.5}
+.nt-banner{font-family:var(--font-m);font-size:10px;padding:8px 12px;border-radius:8px;margin-bottom:12px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;line-height:1.5}
+.nt-menu{position:fixed;z-index:10050;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;min-width:220px}
+.nt-menu button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:none;padding:8px 10px;border-radius:7px;font-family:var(--font-b);font-size:12px;color:var(--text);cursor:pointer}
+.nt-menu button:hover{background:rgba(0,0,0,.05)}
+.nt-menu button i{width:16px;text-align:center;opacity:.65}
+.nt-menu button.danger{color:#b91c1c}
+.nt-menu small{display:block;font-family:var(--font-m);font-size:9px;color:#94a3b8;font-weight:400}
+.nt-menu hr{border:none;border-top:1px solid var(--bd);margin:4px 0}
+.nt-due-badge{font-family:var(--font-m);font-size:9px;padding:2px 6px;border-radius:4px;background:#eff6ff;color:#1d4ed8;white-space:nowrap}
+.nt-due-badge.late{background:#fef2f2;color:#b91c1c}
+.nt-due-badge.soon{background:#fffbeb;color:#b45309}
+
 /* ── Suporte ── */
 .sup-layout{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:16px;align-items:start}
 @media(max-width:960px){.sup-layout{grid-template-columns:1fr}}
@@ -1714,7 +1813,7 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   transition: opacity 0.15s;
 }
 .cal-event-pill:hover { opacity: 0.85; }
-.cal-event-card {
+.cal-event-note {
   box-sizing: border-box;
   max-width: 100%;
 }
@@ -1801,13 +1900,13 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 
 /* ── CLIENTS ── */
 .client-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
-.client-card{
+.client-note{
   background:#ffffff;border:1px solid rgba(0,0,0,.08);
   border-radius:6px;padding:14px;
   transition:border-color .15s,box-shadow .15s;cursor:pointer;
 }
-.client-card:hover{border-color:rgba(0,0,0,.18);box-shadow:0 2px 12px rgba(0,0,0,.07)}
-.client-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.client-note:hover{border-color:rgba(0,0,0,.18);box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.client-note-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .client-avatar{
   width:34px;height:34px;border-radius:4px;
   background:#111111;
@@ -2270,6 +2369,7 @@ select.login-input{cursor:pointer}
   font-family: var(--font-h); font-size: 11px; letter-spacing: .1em; margin: 0 0 14px; color: #111; font-weight: 700; text-transform: uppercase;
 }
 .ref-card-dash{
+  display:none!important;
   font-family:'Inter',system-ui,sans-serif;background:linear-gradient(135deg,#1e293b,#0f172a);
   border:1px solid #334155;border-radius:12px;padding:16px 18px;margin-bottom:18px;color:#f1f5f9;
 }
@@ -3080,19 +3180,10 @@ body:has(#login-screen.visible){
       <div style="text-align:center;margin-bottom:16px">
         <button type="button" onclick="setLoginTab('login')" style="background:none;border:none;cursor:pointer;font-family:var(--font-m);font-size:10px;color:#64748b;text-decoration:underline">← Voltar ao login</button>
       </div>
-      <div id="regWizardProgressWrap">
-        <div class="reg-progress-label" id="regProgressLabel">Etapa 1 de 2 — Seus dados</div>
-        <div class="reg-progress" id="regProgressBar">
-          <div class="reg-progress-step" data-i="0"></div>
-          <div class="reg-progress-step" data-i="1"></div>
-        </div>
-      </div>
-
       <form id="registerForm" autocomplete="off" onsubmit="return false">
-        <!-- ETAPA 1 -->
         <div id="regStep1" class="reg-step-panel active">
           <h2 class="reg-step-title">Criar sua conta</h2>
-          <p class="reg-step-sub">Só o essencial. Dados da empresa você completa depois, dentro do app.</p>
+          <p class="reg-step-sub">Email, senha, CPF e celular. Depois você entra direto no app.</p>
 
           <div class="reg-field">
             <label class="reg-field-label"><i class="fas fa-envelope"></i> Email *</label>
@@ -3140,37 +3231,18 @@ body:has(#login-screen.visible){
             </label>
           </div>
 
-          <button type="button" class="btn btn-reg-green login-btn" id="regBtnNext1" onclick="regWizardNextFromStep1()"><span id="regBtnNext1Text">Próximo</span> <i class="fas fa-arrow-right"></i></button>
-        </div>
+          <div class="reg-field" style="margin-top:8px">
+            <label class="reg-field-label">Plano (R$ 0 na fase de desenvolvimento)</label>
+            <div id="regPlanPick" class="reg-plan-pick">
+              <label class="reg-plan-opt"><input type="radio" name="regPlan" value="solo"> <span><b>Solo</b> — quem opera sozinho</span></label>
+              <label class="reg-plan-opt"><input type="radio" name="regPlan" value="produtora" checked> <span><b>Produtora</b> — time pequeno</span></label>
+              <label class="reg-plan-opt"><input type="radio" name="regPlan" value="agencia"> <span><b>Agência</b> — operação completa</span></label>
+            </div>
+          </div>
 
-        <!-- ETAPA 2 — plano (R$ 0 na fase de desenvolvimento) -->
-        <div id="regStep2" class="reg-step-panel">
-          <h2 class="reg-step-title">Escolha o plano</h2>
-          <p class="reg-step-sub">Os planos existem para você já saber o tamanho da conta. <strong>Por enquanto está R$&nbsp;0</strong> — fase de desenvolvimento, sem cobrança.</p>
-          <div class="reg-trial-note" style="margin-bottom:14px">Sua conta nasce isolada: projetos, clientes e equipe ficam só na sua empresa. Depois, no app, você completa o cadastro do negócio.</div>
-          <div id="regPlanPick" class="reg-plan-pick">
-            <label class="reg-plan-opt"><input type="radio" name="regPlan" value="solo"> <span><b>Solo</b> — quem opera sozinho</span></label>
-            <label class="reg-plan-opt"><input type="radio" name="regPlan" value="produtora" checked> <span><b>Produtora</b> — time pequeno</span></label>
-            <label class="reg-plan-opt"><input type="radio" name="regPlan" value="agencia"> <span><b>Agência</b> — operação completa</span></label>
-          </div>
-          <div class="reg-inline-err" id="regErr-plan"></div>
-          <div class="reg-btn-row">
-            <button type="button" class="btn btn-secondary login-btn" id="regBtnBack2" onclick="regWizardGoStep(1)"><i class="fas fa-arrow-left"></i> Voltar</button>
-            <button type="button" class="btn btn-reg-green login-btn" id="regBtnSubmit" onclick="submitAdminRegister()"><i class="fas fa-rocket" id="regBtnIcon"></i> <span id="regBtnText">Criar minha conta</span></button>
-          </div>
+          <button type="button" class="btn btn-reg-green login-btn" id="regBtnSubmit" onclick="submitAdminRegister()"><i class="fas fa-rocket" id="regBtnIcon"></i> <span id="regBtnText">Criar minha conta</span></button>
         </div>
       </form>
-
-      <!-- ETAPA 3 — sucesso -->
-      <div id="regStep3" class="reg-step-panel">
-        <div class="reg-success-icon"><i class="fas fa-check"></i></div>
-        <h2 class="reg-step-title">Conta criada com sucesso! 🎉</h2>
-        <p class="reg-step-sub">Suas informações foram registradas com segurança.</p>
-        <div class="reg-summary" id="regSummaryBox"></div>
-        <div class="reg-trial-note"><strong>R$ 0</strong> na fase de desenvolvimento — <strong>sem cartão</strong>. Sua conta e os dados da sua empresa ficam só para você, sem vínculo com outras contas.</div>
-        <button type="button" class="btn btn-reg-green login-btn" id="regBtnEnterApp" onclick="enterAppFreeTrialNoCard()">Entrar no Age Ops <i class="fas fa-arrow-right"></i></button>
-        <button type="button" onclick="showPostSignupPlans()" style="display:block;width:100%;margin-top:12px;background:none;border:none;color:#64748b;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">Ver planos (opcional — cartão não é obrigatório)</button>
-      </div>
     </div>
 
     <div class="login-error" id="loginErr"></div>
@@ -3523,6 +3595,9 @@ body:has(#login-screen.visible){
       <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')">
         <i class="fas fa-wallet"></i><span>FINANCEIRO</span>
       </button>
+      <button type="button" class="nav-item" data-page="notas" data-perm-module="notas" onclick="navigate('notas')">
+        <i class="fas fa-sticky-note"></i><span>NOTAS</span>
+      </button>
       <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
         <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
       </button>
@@ -3544,6 +3619,9 @@ body:has(#login-screen.visible){
       </button>
       <button type="button" class="nav-item" data-page="myfinance" data-perm-module="myfinance" onclick="navigate('myfinance')" style="display:none">
         <i class="fas fa-wallet"></i><span>FINANCEIRO PESSOAL</span>
+      </button>
+      <button type="button" class="nav-item" data-page="notas" data-perm-module="notas" onclick="navigate('notas')">
+        <i class="fas fa-sticky-note"></i><span>NOTAS</span>
       </button>
       <button type="button" class="nav-item" data-page="profile" onclick="navigate('profile')">
         <i class="fas fa-user-circle"></i><span>MEU PERFIL</span>
@@ -3700,18 +3778,7 @@ body:has(#login-screen.visible){
            DASHBOARD PAGE
       ══════════════════════════════════ -->
       <div id="page-dashboard" class="page active">
-        <div id="dashboardReferralCard" class="ref-card-dash" style="display:none">
-          <h3>🎁 Ganhe 30 dias grátis!</h3>
-          <p style="font-size:12px;color:#94a3b8;margin:0 0 10px;line-height:1.5">Convide 5 amigos para o Age Ops e ganhe <strong>1 mês extra</strong> sem pagar nada.</p>
-          <div style="font-size:10px;color:#64748b;margin-bottom:6px">Seu link de indicação:</div>
-          <div class="ref-link" id="refLinkText">—</div>
-          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-            <button type="button" class="btn btn-primary btn-sm" onclick="copyReferralLink()"><i class="fas fa-copy"></i> Copiar link</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="shareRefWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
-          </div>
-          <div style="margin-top:12px;font-size:12px;color:#cbd5e1">Indicações: <strong id="refCountLabel">0</strong>/5</div>
-          <div class="ref-progress" id="refDots" aria-hidden="true"></div>
-        </div>
+        <div id="dashboardReferralCard" class="ref-card-dash" hidden style="display:none"></div>
         <div class="page-header">
           <div class="page-title"><i class="fas fa-chart-line"></i> DASHBOARD</div>
           <div class="page-actions" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -5215,6 +5282,43 @@ body:has(#login-screen.visible){
       <!-- ══════════════════════════════════
            SUPORTE — bugs, dúvidas, melhorias
       ══════════════════════════════════ -->
+      <!-- ══════════════════════════════════
+           NOTAS
+      ══════════════════════════════════ -->
+      <div id="page-notas" class="page">
+        <div class="page-header">
+          <div>
+            <div class="page-title"><i class="fas fa-sticky-note"></i> NOTAS</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Ideias, roteiros, compromissos, checklists e mapas mentais — organizados num lugar só</div>
+          </div>
+          <div class="page-actions">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="notasExportAll()" title="Exportar todas as notas (JSON)"><i class="fas fa-file-export"></i></button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadNotas()" title="Recarregar"><i class="fas fa-sync-alt"></i></button>
+            <button type="button" class="btn btn-primary btn-sm" id="ntNewBtn" onclick="notasOpenNewMenu(event)"><i class="fas fa-plus"></i> Nova</button>
+          </div>
+        </div>
+        <div id="ntBanner"></div>
+        <div class="nt-layout" id="ntLayout">
+          <aside class="nt-side" id="ntSide"></aside>
+          <section class="nt-list-pane" id="ntListPane">
+            <div class="nt-list-head">
+              <input id="ntSearch" class="nt-search" type="search" placeholder="Buscar em títulos, texto e tags…" oninput="notasRenderList()">
+              <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:var(--font-m);font-size:9px;color:#94a3b8">
+                <span id="ntListCount">—</span>
+                <select id="ntSort" class="cf-select" style="margin-left:auto;height:24px;font-size:10px;padding:0 6px" onchange="notasRenderList()">
+                  <option value="updated">Recentes</option>
+                  <option value="created">Criação</option>
+                  <option value="title">Título A–Z</option>
+                  <option value="due">Data do compromisso</option>
+                </select>
+              </div>
+            </div>
+            <div class="nt-list" id="ntList"><div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div></div>
+          </section>
+          <section class="nt-editor-pane" id="ntEditorPane"></section>
+        </div>
+      </div>
+
       <div id="page-suporte" class="page">
         <div class="page-header">
           <div>
@@ -7634,7 +7738,7 @@ function _colabShouldSeeCorpSidebar() {
 const READONLY_TOOLTIP = 'Você tem acesso somente leitura';
 
 const PERM_ALL_MODULES = [
-  'dashboard','projetos','pipeline','postagens','conteudos','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma','myday','mytasks','myfinance'
+  'dashboard','projetos','pipeline','postagens','conteudos','gestao','orcamentos','clientes','contratos','pagamentos','financeiro','equipe','fechamento','historico','nps','relatorios','cronograma','myday','mytasks','myfinance','notas'
 ];
 
 /** Cadastro via convite: módulos corporativos bloqueados até o admin liberar; myday liberado para área pessoal */
@@ -7692,13 +7796,14 @@ const PAGE_PERM_KEYS = {
   myday: ['myday'],
   mytasks: ['mytasks'],
   myfinance: ['myfinance'],
+  notas: ['notas'],
   'equipe-permissoes': []
 };
 
 /* Ferramentas da ÁREA PESSOAL do colaborador: sempre liberadas automaticamente,
    sem necessidade de marcar permissão. Meu Dia, Minhas Tarefas, Meu Calendário e
    Financeiro Pessoal andam juntos e interligados. */
-const PERSONAL_AUTO_MODULES = ['myday', 'mytasks', 'mycalendar', 'myfinance'];
+const PERSONAL_AUTO_MODULES = ['myday', 'mytasks', 'mycalendar', 'myfinance', 'notas'];
 
 function _permKeysForPage(page) {
   return PAGE_PERM_KEYS[page] || [];
@@ -9276,37 +9381,21 @@ function regSetFieldErr(idSuffix, msg) {
   }
 }
 
-function updateRegProgressVisual(step) {
-  const label = document.getElementById('regProgressLabel');
-  const bars = document.querySelectorAll('#regProgressBar .reg-progress-step');
-  const texts = [
-    'Etapa 1 de 2 — Seus dados',
-    'Etapa 2 de 2 — Plano'
-  ];
-  if(label) label.textContent = texts[Math.min(step - 1, 1)] || '';
-  bars.forEach((b, i) => {
-    b.classList.remove('done', 'active');
-    if(step >= 3) b.classList.add('done');
-    else {
-      if(i < step - 1) b.classList.add('done');
-      else if(i === step - 1) b.classList.add('active');
-    }
-  });
+function updateRegProgressVisual() {}
+
+function _regReadPlan() {
+  const picked = document.querySelector('#regPlanPick input[name="regPlan"]:checked');
+  const key = String(picked?.value || _regSelectedPlan || 'produtora').trim();
+  _regSelectedPlan = ['solo', 'produtora', 'agencia'].includes(key) ? key : 'produtora';
+  return _regSelectedPlan;
 }
 
-function regWizardGoStep(n) {
-  _regWizardStep = n;
+function regWizardGoStep() {
+  _regWizardStep = 1;
   const s1 = document.getElementById('regStep1');
-  const s2 = document.getElementById('regStep2');
-  const s3 = document.getElementById('regStep3');
-  const pw = document.getElementById('regWizardProgressWrap');
   const form = document.getElementById('registerForm');
-  if(s1) s1.classList.toggle('active', n === 1);
-  if(s2) s2.classList.toggle('active', n === 2);
-  if(s3) s3.classList.toggle('active', n === 3);
-  if(pw) pw.style.display = n >= 3 ? 'none' : '';
-  if(form) form.style.display = n >= 3 ? 'none' : '';
-  updateRegProgressVisual(Math.min(n, 3));
+  if(s1) s1.classList.add('active');
+  if(form) form.style.display = '';
 }
 
 async function regFetchViaCep(d8) {
@@ -9372,14 +9461,7 @@ function validateRegStep1() {
 }
 
 function validateRegStep2() {
-  regClearInlineErrors();
-  const picked = document.querySelector('#regPlanPick input[name="regPlan"]:checked');
-  const key = String(picked?.value || '').trim();
-  if(!['solo', 'produtora', 'agencia'].includes(key)) {
-    regSetFieldErr('plan', 'Escolha um plano para continuar.');
-    return false;
-  }
-  _regSelectedPlan = key;
+  _regReadPlan();
   return true;
 }
 
@@ -9390,8 +9472,7 @@ function _regDisplayNameFromEmail(email) {
 }
 
 function regWizardNextFromStep1() {
-  if(!validateRegStep1()) return;
-  regWizardGoStep(2);
+  submitAdminRegister();
 }
 
 function normalizeRegWebsite(s) {
@@ -9448,18 +9529,13 @@ async function submitAdminRegister() {
     }
   }
 
-  if(!validateRegStep2()) {
-    showGlobal('', false);
-    return;
-  }
-
   const email = document.getElementById('regEmail')?.value?.trim().toLowerCase() || '';
   const fullName = _regDisplayNameFromEmail(email);
   const cpfDigits = _regDigits(document.getElementById('regCpf')?.value || '');
   const birth = '';
   const phoneDigits = _regDigits(document.getElementById('regPhone')?.value || '');
   const p1 = document.getElementById('regPass')?.value || '';
-  const planKey = _regSelectedPlan || 'produtora';
+  const planKey = _regReadPlan();
 
   const fantasy = 'Minha empresa';
   const legalName = '';
@@ -9476,8 +9552,7 @@ async function submitAdminRegister() {
   const uf = '';
 
   if(!validateRegStep1()) {
-    regWizardGoStep(1);
-    showGlobal('Corrija os dados da primeira etapa.', false);
+    showGlobal('Corrija os dados do cadastro.', false);
     return;
   }
 
@@ -9489,7 +9564,6 @@ async function submitAdminRegister() {
   try {
     const exists = await fetchAgeUserByEmail(email);
     if(exists) {
-      regWizardGoStep(1);
       regSetFieldErr('email', 'Este email já está cadastrado.');
       document.getElementById('regErr-email')?.classList.add('show');
       showGlobal('Este email já está cadastrado.', false);
@@ -9622,24 +9696,8 @@ async function submitAdminRegister() {
     }
 
     _regPendingSessionRow = row;
-
-    const cpfFmt = cpfDigits.length === 11
-      ? cpfDigits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
-      : cpfDigits;
-    const planLabels = { solo: 'Solo', produtora: 'Produtora', agencia: 'Agência' };
-    const sum = document.getElementById('regSummaryBox');
-    if(sum) {
-      sum.innerHTML =
-        '<strong>Conta</strong><br>' +
-        escHtml(email) + '<br>CPF: ' + escHtml(cpfFmt) +
-        '<br>Cel: ' + escHtml(phoneDigits) +
-        '<br><br><strong>Plano</strong><br>' +
-        escHtml(planLabels[planKey] || planKey) + ' · R$ 0 na fase de desenvolvimento' +
-        '<br><br>Complete os dados da empresa depois, no perfil do app.';
-    }
-
-    regWizardGoStep(3);
     showGlobal('', false);
+    await enterAppFreeTrialNoCard(planKey);
   } catch(e) {
     console.error('[signup]', e);
     showGlobal(String(e?.message || e || 'Erro ao criar conta. Verifique o Supabase.'), false);
@@ -11530,28 +11588,50 @@ function selectPlanOffer(key) {
     openEnterpriseWhatsApp();
     return;
   }
-  _planCheckoutCtx = document.getElementById('plansOverlayGlobal')?.classList.contains('open') ? 'app' : 'signup';
-  const bill = _planCheckoutCtx === 'app' ? _planBillGlobal : _planBillSignup;
-  const m = bill === 'yearly';
-  const row = _planPrecoRow(key, m);
-  const planNames = { solo: 'Solo', produtora: 'Produtora', agencia: 'Agência' };
-  const ciclo = m ? 'Anual' : 'Mensal';
-  const sum = document.getElementById('pgPlanSummary');
-  if (sum) {
-    sum.innerHTML =
-      `<strong>Plano ${planNames[key]} (${ciclo})</strong><br><strong>R$ 0</strong> na fase de desenvolvimento · depois ${row.valorDisplay}/${m ? 'ano' : 'mês'}` +
-      `<div style="margin-top:10px;color:#666;line-height:1.5">Sem cobrança por enquanto. Cartão opcional.</div>`;
+  applyPlanWithoutCard(key);
+}
+
+async function applyPlanWithoutCard(planKey) {
+  const g = String(planKey || '').trim();
+  const full = g.match(/^(solo|produtora|agencia)_(mensal|anual)$/i);
+  const base = full
+    ? full[1].toLowerCase()
+    : (['solo', 'produtora', 'agencia'].includes(g) ? g : 'produtora');
+  const ctxApp = document.getElementById('plansOverlayGlobal')?.classList.contains('open');
+  const per = full
+    ? (full[2].toLowerCase() === 'anual' ? 'yearly' : 'monthly')
+    : ((ctxApp ? _planBillGlobal : _planBillSignup) || 'monthly');
+  _pendingPlanKey = base;
+  if (_regPendingSessionRow?.id) {
+    if (full) _planBillSignup = per;
+    await enterAppFreeTrialNoCard(base);
+    return;
+  }
+  if (!currentUser?.id) {
+    toast('Plano ' + base + ' · R$ 0 na fase de desenvolvimento.', 'ok');
+    return;
   }
   try {
-    const pk = String(typeof PAGARME_PK !== 'undefined' ? PAGARME_PK : '');
-    if (!pk || pk.includes('SUA_PUBLIC') || pk.includes('XXXX')) {
-      toast('Configure a Public Key (pk_live_…) do Pagar.me para continuar', 'warn');
+    await apiPatch('age_users', currentUser.id, {
+      plan: base,
+      plan_billing: per,
+      subscription_status: currentUser.subscription_status || 'trial'
+    });
+    currentUser.plan = base;
+    currentUser.plan_billing = per;
+    if (currentUser.company_id) {
+      await apiPatch('age_companies', currentUser.company_id, { plan: base }).catch(() => {});
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn(e);
+  }
+  try { closePlansOverlayGlobal(); } catch (e) {}
   try {
-    clearPgModalError();
+    document.getElementById('plansPostSignupLayer')?.classList.remove('open');
+    document.getElementById('plansPostSignupLayer')?.setAttribute('aria-hidden', 'true');
   } catch (e) {}
-  openModal('modalPagarmePlan');
+  toast('Plano ' + base + ' ativo · R$ 0 na fase de desenvolvimento.', 'ok');
+  try { updateTrialBanner(); } catch (e) {}
 }
 
 function showPostSignupPlans() {
@@ -11958,26 +12038,14 @@ function updateTrialBanner() {
   bar.style.display = 'flex';
   main.classList.add('has-trial-banner');
   bar.classList.remove('warn','danger');
-  const pl = _effectiveUserPlan();
-  const planSlug = ['solo', 'produtora', 'agencia'].includes(pl) ? pl : 'produtora';
-  const afterRow = _planPrecoRow(planSlug, false);
   const hasCard = !!(currentUser?.pagarme_subscription_id);
   const escolher = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Ver planos</button>`;
-  const addCard = `<button type="button" class="linkish" onclick="try{openPlansOverlayGlobal()}catch(e){openPlansFromGate()}">Cadastrar cartão (opcional)</button>`;
   if(days > 3) {
     bar.className = '';
-    if (!hasCard) {
-      bar.innerHTML = `Beta grátis · <strong>${days}</strong> dia(s) restantes · todas as ferramentas · sem cartão · ${addCard}`;
-    } else {
-      bar.innerHTML = `Beta · <strong>${days}</strong> dias até a primeira cobrança · ${escolher}`;
-    }
+    bar.innerHTML = `Beta grátis · <strong>${days}</strong> dia(s) restantes · R$ 0 · ${escolher}`;
   } else if(days > 0) {
     bar.classList.add('warn');
-    if (!hasCard) {
-      bar.innerHTML = `Beta · ${days} dia(s) restantes · todas as ferramentas liberadas · ${addCard}`;
-    } else {
-      bar.innerHTML = `Beta · ${days} dia(s) restantes · cobrança ${afterRow.valorDisplay} após ${ends.toLocaleDateString('pt-BR')} · ${escolher}`;
-    }
+    bar.innerHTML = `Beta · ${days} dia(s) restantes · R$ 0 · ${escolher}`;
   } else {
     bar.classList.add('danger');
     if (!hasCard) {
@@ -11990,30 +12058,9 @@ function updateTrialBanner() {
 
 async function ensureReferralTokenAndUi() {
   const card = document.getElementById('dashboardReferralCard');
-  if(!card || !currentUser?.id) return;
-  if(_userIsBootstrapAdmin() || _userIsBillingExempt()) {
+  if (card) {
     card.style.display = 'none';
-    return;
-  }
-  card.style.display = '';
-  let tok = currentUser.referral_token;
-  if(!tok) {
-    tok = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('ref_' + Math.random().toString(36).slice(2) + Date.now());
-    try {
-      await apiPatch('age_users', currentUser.id, { referral_token: tok });
-      currentUser.referral_token = tok;
-    } catch(e) { console.warn(e); }
-  }
-  const base = `${location.origin}${location.pathname}`;
-  const link = `${base}?ref=${encodeURIComponent(tok)}`;
-  const el = document.getElementById('refLinkText');
-  if(el) el.textContent = link;
-  const cnt = parseInt(currentUser.referral_count, 10) || 0;
-  const lb = document.getElementById('refCountLabel');
-  if(lb) lb.textContent = String(Math.min(cnt, 5));
-  const dots = document.getElementById('refDots');
-  if(dots) {
-    dots.innerHTML = [0,1,2,3,4].map(i => `<i class="fas fa-circle ${i < cnt ? 'on' : ''}"></i>`).join('');
+    card.hidden = true;
   }
 }
 
@@ -12091,6 +12138,7 @@ const PAGE_TITLES = {
   pagamentos:'PAGAMENTOS',
   colaboradores:'COLABORADORES', cronograma:'CRONOGRAMA', recrutamento:'RECRUTAMENTO',
   myday:'MEU DIA', mytasks:'TAREFAS', mycalendar:'MEU CALENDÁRIO', myfinance:'FINANCEIRO',
+  notas:'NOTAS',
   profile:'MEU PERFIL',
   suporte:'SUPORTE',
   'equipe-permissoes':'EQUIPE & PERMISSÕES',
@@ -12174,6 +12222,7 @@ function navigate(page) {
     loadMyCalendar();
   }
   if(page==='myfinance')    loadFinance();
+  if(page==='notas')        loadNotas();
   if(page==='profile')     loadProfile();
   if(page==='suporte')     loadSuporte();
   if(page==='equipe-permissoes') loadEquipePermissoesPage();
@@ -12245,7 +12294,7 @@ const TENANT_SCOPED_TABLES = new Set([
   /* Recrutamento: a view também entra, senão a aba lista candidato de todas as empresas.
      Exige o company_id criado por supabase/sql/multitenant_tabelas_faltantes.sql. */
   'v_age_candidates_admin','age_match_results','age_ai_analysis','age_recruit_links',
-  'age_gastos','age_orc_funcoes'
+  'age_gastos','age_orc_funcoes','age_notes'
 ]);
 
 function _tenantCidForScope() {
@@ -19852,8 +19901,8 @@ function renderClients() {
     const sColor = c.lastYear>=curY?'rgba(255,255,255,.75)':c.lastYear>=curY-1?'rgba(255,255,255,.45)':'rgba(255,255,255,.25)';
     const initials = c.name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
     const avgNps   = c.npsN>0?(c.npsSum/c.npsN).toFixed(1):'—';
-    return `<div class="client-card">
-      <div class="client-card-header">
+    return `<div class="client-note">
+      <div class="client-note-header">
         <div class="client-avatar">${initials}</div>
         <div>
           <div class="client-name">${escHtml(c.name)}</div>
@@ -26822,7 +26871,7 @@ function renderEventCardHtml(ev) {
       <div style="color:rgba(255,255,255,0.6);font-size:9px;margin-top:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${descShow}</div>` : '';
 
   return `
-    <div class="cal-event-card" style="background:${bg};border-left:3px solid rgba(255,255,255,0.3);border-radius:6px;padding:6px 8px;margin:2px 0;cursor:pointer;">
+    <div class="cal-event-note" style="background:${bg};border-left:3px solid rgba(255,255,255,0.3);border-radius:6px;padding:6px 8px;margin:2px 0;cursor:pointer;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:4px;">
         <span style="color:rgba(255,255,255,0.7);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">${tipoLbl}</span>
         ${horaRow}
@@ -31547,6 +31596,1203 @@ function suporteFocusForm() {
   const el = document.getElementById('supFormCard');
   if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('supTitle')?.focus();
+}
+
+/* ═══════════════════════════════════════════
+   NOTAS — ideias, roteiros, compromissos, checklists e mapas mentais
+   Tabela: age_notes (supabase/sql/age_notes.sql). Enquanto a tabela não
+   existir, as notas ficam no navegador (localStorage) para ninguém perder ideia.
+═══════════════════════════════════════════ */
+const NOTAS_TABLE = 'age_notes';
+const NOTAS_KINDS = {
+  nota:        { label: 'Nota',        icon: 'fa-sticky-note',     color: '#64748b', hint: 'Texto livre, listas e links' },
+  ideia:       { label: 'Ideia',       icon: 'fa-lightbulb',       color: '#d97706', hint: 'Guardar um insight antes que fuja' },
+  roteiro:     { label: 'Roteiro',     icon: 'fa-film',            color: '#7c3aed', hint: 'Cenas, falas, ação e duração estimada' },
+  compromisso: { label: 'Compromisso', icon: 'fa-calendar-check',  color: '#2563eb', hint: 'Data, hora, local e lembrete' },
+  checklist:   { label: 'Checklist',   icon: 'fa-tasks',           color: '#16a34a', hint: 'Itens para marcar, com progresso' },
+  mapa:        { label: 'Mapa mental', icon: 'fa-project-diagram', color: '#db2777', hint: 'Ramificar ideias visualmente' }
+};
+const NOTAS_COLORS = ['', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#ede9fe', '#ffedd5'];
+const NOTAS_MM_COLORS = ['#ffffff', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#ede9fe', '#ffedd5'];
+let _ntCache = [];
+let _ntMode = 'db';
+let _ntFilter = { view: 'all', kind: '', tag: '' };
+let _ntSelId = null;
+let _ntSaveTimer = null;
+let _ntPendingSave = new Set();
+let _ntMm = null;
+let _ntProjects = [];
+let _ntMenuEl = null;
+let _ntLoaded = false;
+
+function _ntUid() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'nt_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function _ntMe() { return String(currentUser?.username || '').trim().toLowerCase(); }
+function _ntLocalKey() {
+  return `ageops_notes_${String(currentUser?.company_id || 'nocid')}_${_ntMe() || 'anon'}`;
+}
+function _ntLocalRead() {
+  try { const a = JSON.parse(localStorage.getItem(_ntLocalKey()) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function _ntLocalWrite(arr) {
+  try { localStorage.setItem(_ntLocalKey(), JSON.stringify(arr || [])); } catch (e) { console.warn('[notas] localStorage', e); }
+}
+function _ntTableMissing(e) {
+  const m = String(e?.message || e || '');
+  return /\(404\)|PGRST205|does not exist|Could not find the table|relation .* does not exist/i.test(m);
+}
+function _ntBool(v) { return v === true || v === 'true' || v === 1 || v === '1'; }
+function _ntNorm(r) {
+  const n = { ...r };
+  n.id = String(n.id || _ntUid());
+  n.kind = NOTAS_KINDS[n.kind] ? n.kind : 'nota';
+  n.title = String(n.title || '');
+  n.content = String(n.content || '');
+  if (typeof n.data === 'string') { try { n.data = JSON.parse(n.data); } catch (e) { n.data = {}; } }
+  if (!n.data || typeof n.data !== 'object') n.data = {};
+  if (typeof n.tags === 'string') { try { n.tags = JSON.parse(n.tags); } catch (e) { n.tags = n.tags.split(',').map(s => s.trim()).filter(Boolean); } }
+  if (!Array.isArray(n.tags)) n.tags = [];
+  n.color = String(n.color || '');
+  n.pinned = _ntBool(n.pinned);
+  n.archived = _ntBool(n.archived);
+  n.deleted = _ntBool(n.deleted);
+  n.visibility = n.visibility === 'team' ? 'team' : 'private';
+  n.created_by = String(n.created_by || '').toLowerCase();
+  n.created_at = n.created_at || new Date().toISOString();
+  n.updated_at = n.updated_at || n.created_at;
+  n.due_at = n.due_at || null;
+  n.project_id = n.project_id || null;
+  return n;
+}
+function _ntCurrent() { return _ntCache.find(n => n.id === _ntSelId) || null; }
+function _ntCanEdit(n) {
+  if (!n) return false;
+  if (n.created_by && n.created_by !== _ntMe()) return _userIsAdminLike() || _userGestorUnrestricted();
+  return true;
+}
+function _ntSanitize(html) {
+  try {
+    const doc = new DOMParser().parseFromString(`<div>${String(html || '')}</div>`, 'text/html');
+    doc.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(el => el.remove());
+    doc.querySelectorAll('*').forEach(el => {
+      [...el.attributes].forEach(a => {
+        const nm = a.name.toLowerCase();
+        if (nm.startsWith('on')) el.removeAttribute(a.name);
+        else if ((nm === 'href' || nm === 'src') && /^\s*javascript:/i.test(a.value)) el.removeAttribute(a.name);
+        else if (nm === 'style' && /expression|javascript/i.test(a.value)) el.removeAttribute(a.name);
+      });
+    });
+    return doc.body.firstChild ? doc.body.firstChild.innerHTML : '';
+  } catch (e) { return escHtml(html); }
+}
+function _ntHtmlToText(html) {
+  const d = document.createElement('div');
+  d.innerHTML = _ntSanitize(html);
+  d.querySelectorAll('br,p,div,li,h1,h2,h3,blockquote,pre,hr').forEach(el => el.insertAdjacentText('afterend', '\n'));
+  return d.textContent.replace(/\n{3,}/g, '\n\n').trim();
+}
+function _ntPlain(n) {
+  if (n._plain != null) return n._plain;
+  const parts = [n.title, (n.tags || []).join(' ')];
+  if (n.kind === 'checklist') parts.push((n.data.items || []).map(i => i.text).join(' '));
+  else if (n.kind === 'mapa') parts.push(((n.data.mindmap || {}).nodes || []).map(x => x.text).join(' '));
+  else parts.push(_ntHtmlToText(n.content));
+  if (n.kind === 'compromisso') parts.push(n.data.local || '', n.data.participantes || '');
+  n._plain = parts.join(' ').toLowerCase();
+  return n._plain;
+}
+function _ntPreview(n) {
+  if (n.kind === 'checklist') {
+    const it = n.data.items || [];
+    const done = it.filter(i => i.done).length;
+    return it.length ? `${done}/${it.length} concluídos · ${it.slice(0, 3).map(i => i.text).join(', ')}` : 'Lista vazia';
+  }
+  if (n.kind === 'mapa') {
+    const nodes = (n.data.mindmap || {}).nodes || [];
+    return `${nodes.length} nó(s) · ${nodes.filter(x => x.parent).slice(0, 4).map(x => x.text).join(' · ')}`;
+  }
+  const t = _ntHtmlToText(n.content).replace(/\s+/g, ' ');
+  return t.slice(0, 140) || 'Sem conteúdo';
+}
+function _ntFmtDT(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+function _ntDueBadge(n) {
+  if (n.kind !== 'compromisso' || !n.due_at) return '';
+  const ms = new Date(n.due_at).getTime() - Date.now();
+  const cls = ms < 0 ? 'late' : (ms < 86400000 ? 'soon' : '');
+  return `<span class="nt-due-badge ${cls}"><i class="far fa-clock"></i> ${_ntFmtDT(n.due_at)}</span>`;
+}
+function _ntToLocalInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const p = x => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* ── armazenamento ── */
+async function _ntFetchAll() {
+  const cid = String(currentUser?.company_id || '');
+  const me = _ntMe();
+  const own = (r) => {
+    const rc = r.company_id == null ? '' : String(r.company_id);
+    if (rc) { if (rc !== cid) return false; }
+    else if (String(r.created_by || '').toLowerCase() !== me) return false;
+    return String(r.created_by || '').toLowerCase() === me || r.visibility === 'team';
+  };
+  if (_ntMode === 'local') return _ntLocalRead().map(_ntNorm).filter(own);
+  try {
+    const d = await apiGet(NOTAS_TABLE, '?limit=1000&order=updated_at.desc');
+    const rows = Array.isArray(d?.data) ? d.data : [];
+    _ntMode = 'db';
+    const fromDb = rows.map(_ntNorm).filter(own);
+    /* Notas feitas antes da tabela existir: sobem para o banco uma vez. */
+    const local = _ntLocalRead();
+    if (local.length) {
+      for (const l of local) {
+        try {
+          const created = await _ntInsert(_ntNorm({ ...l, id: undefined }));
+          if (created && own(created)) fromDb.push(created);
+        } catch (e) { console.warn('[notas] migração local→db', e); }
+      }
+      _ntLocalWrite([]);
+    }
+    return fromDb;
+  } catch (e) {
+    if (_ntTableMissing(e)) {
+      _ntMode = 'local';
+      return _ntLocalRead().map(_ntNorm).filter(own);
+    }
+    throw e;
+  }
+}
+function _ntPayload(n) {
+  return {
+    title: n.title, kind: n.kind, content: n.content, data: n.data, tags: n.tags, color: n.color,
+    pinned: n.pinned, archived: n.archived, deleted: n.deleted, visibility: n.visibility,
+    due_at: n.due_at, project_id: n.project_id, created_by: n.created_by,
+    author_name: n.author_name || currentUser?.name || '', updated_at: n.updated_at
+  };
+}
+async function _ntInsert(n) {
+  n.created_by = n.created_by || _ntMe();
+  n.author_name = currentUser?.name || _ntMe();
+  n.updated_at = new Date().toISOString();
+  if (_ntMode === 'local') {
+    const arr = _ntLocalRead();
+    const row = _ntNorm({ ...n, id: n.id || _ntUid(), company_id: currentUser?.company_id || null });
+    arr.unshift(row);
+    _ntLocalWrite(arr);
+    return row;
+  }
+  const payload = _ntPayload(n);
+  if (n.id && !String(n.id).startsWith('nt_')) payload.id = n.id;
+  const row = await _ageWriteResilient(NOTAS_TABLE, 'POST', null, payload);
+  return row ? _ntNorm(row) : null;
+}
+async function _ntUpdate(n) {
+  n.updated_at = new Date().toISOString();
+  n._plain = null;
+  if (_ntMode === 'local') {
+    const arr = _ntLocalRead();
+    const i = arr.findIndex(x => String(x.id) === String(n.id));
+    const clean = { ...n }; delete clean._plain;
+    if (i >= 0) arr[i] = clean; else arr.unshift(clean);
+    _ntLocalWrite(arr);
+    return n;
+  }
+  await _ageWriteResilient(NOTAS_TABLE, 'PATCH', n.id, _ntPayload(n));
+  return n;
+}
+async function _ntHardDelete(id) {
+  if (_ntMode === 'local') { _ntLocalWrite(_ntLocalRead().filter(x => String(x.id) !== String(id))); return; }
+  await apiDel(NOTAS_TABLE, id);
+}
+function _ntQueueSave(n) {
+  if (!n) return;
+  n._plain = null;
+  _ntPendingSave.add(n.id);
+  const st = document.getElementById('ntSaveState');
+  if (st) st.innerHTML = '<i class="fas fa-circle" style="font-size:6px;color:#d97706"></i> Salvando…';
+  clearTimeout(_ntSaveTimer);
+  _ntSaveTimer = setTimeout(_ntFlushSaves, 800);
+}
+async function _ntFlushSaves() {
+  const ids = [..._ntPendingSave];
+  _ntPendingSave.clear();
+  for (const id of ids) {
+    const n = _ntCache.find(x => x.id === id);
+    if (!n) continue;
+    try {
+      await _ntUpdate(n);
+      const st = document.getElementById('ntSaveState');
+      if (st && _ntSelId === id) st.innerHTML = `<i class="fas fa-check" style="color:#16a34a"></i> Salvo ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}${_ntMode === 'local' ? ' (neste navegador)' : ''}`;
+    } catch (e) {
+      console.error('[notas] salvar', e);
+      const st = document.getElementById('ntSaveState');
+      if (st) st.innerHTML = `<span style="color:#b91c1c"><i class="fas fa-exclamation-triangle"></i> Não salvou — <button type="button" class="linkish" style="color:#b91c1c;text-decoration:underline;background:none;border:none;cursor:pointer;font:inherit" onclick="_ntQueueSave(_ntCurrent())">tentar de novo</button></span>`;
+    }
+  }
+  notasRenderList();
+}
+
+/* ── carga da página ── */
+async function loadNotas() {
+  const list = document.getElementById('ntList');
+  if (list && !_ntLoaded) list.innerHTML = '<div class="table-empty"><i class="fas fa-spinner fa-spin"></i> Carregando…</div>';
+  try {
+    _ntCache = await _ntFetchAll();
+    _ntLoaded = true;
+  } catch (e) {
+    console.error('[loadNotas]', e);
+    if (list) list.innerHTML = '<div class="table-empty" style="color:#b91c1c">Erro ao carregar notas.</div>';
+    return;
+  }
+  try { _ntProjects = await fetchAgeProjectsScoped(500); } catch (e) { _ntProjects = []; }
+  const banner = document.getElementById('ntBanner');
+  if (banner) {
+    banner.innerHTML = _ntMode === 'local'
+      ? `<div class="nt-banner"><i class="fas fa-info-circle"></i> As notas estão sendo guardadas <strong>só neste navegador</strong>. Para sincronizar entre aparelhos e com a equipe, rode <code>supabase/sql/age_notes.sql</code> no SQL Editor do Supabase e recarregue.</div>`
+      : '';
+  }
+  if (_ntSelId && !_ntCache.some(n => n.id === _ntSelId)) _ntSelId = null;
+  notasRenderSide();
+  notasRenderList();
+  notasRenderEditor();
+  _ntCheckReminders().catch(() => {});
+}
+
+function _ntVisibleForFilter(n) {
+  const v = _ntFilter.view;
+  if (v === 'trash') return n.deleted;
+  if (n.deleted) return false;
+  if (v === 'archived') return n.archived;
+  if (n.archived) return false;
+  if (v === 'pinned' && !n.pinned) return false;
+  if (v === 'mine' && n.created_by !== _ntMe()) return false;
+  if (v === 'team' && n.visibility !== 'team') return false;
+  if (v === 'upcoming') {
+    if (n.kind !== 'compromisso' || !n.due_at) return false;
+    if (new Date(n.due_at).getTime() < Date.now() - 3600000) return false;
+  }
+  if (_ntFilter.kind && n.kind !== _ntFilter.kind) return false;
+  if (_ntFilter.tag && !(n.tags || []).map(t => t.toLowerCase()).includes(_ntFilter.tag.toLowerCase())) return false;
+  return true;
+}
+
+function notasRenderSide() {
+  const side = document.getElementById('ntSide');
+  if (!side) return;
+  const live = _ntCache.filter(n => !n.deleted && !n.archived);
+  const cnt = (fn) => live.filter(fn).length;
+  const views = [
+    { id: 'all', label: 'Todas', icon: 'fa-layer-group', n: live.length },
+    { id: 'pinned', label: 'Fixadas', icon: 'fa-thumbtack', n: cnt(x => x.pinned) },
+    { id: 'upcoming', label: 'Próximos compromissos', icon: 'fa-calendar-day', n: cnt(x => x.kind === 'compromisso' && x.due_at && new Date(x.due_at).getTime() >= Date.now() - 3600000) },
+    { id: 'mine', label: 'Minhas', icon: 'fa-user', n: cnt(x => x.created_by === _ntMe()) },
+    { id: 'team', label: 'Equipe', icon: 'fa-users', n: cnt(x => x.visibility === 'team') },
+    { id: 'archived', label: 'Arquivadas', icon: 'fa-archive', n: _ntCache.filter(x => !x.deleted && x.archived).length },
+    { id: 'trash', label: 'Lixeira', icon: 'fa-trash', n: _ntCache.filter(x => x.deleted).length }
+  ];
+  const tags = {};
+  live.forEach(n => (n.tags || []).forEach(t => { const k = t.toLowerCase(); tags[k] = (tags[k] || 0) + 1; }));
+  const tagList = Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 30);
+  side.innerHTML = `
+    <div class="nt-side-title">Visões</div>
+    ${views.map(v => `<button type="button" class="nt-side-item ${_ntFilter.view === v.id ? 'active' : ''}" onclick="notasSetView('${v.id}')"><i class="fas ${v.icon}"></i>${v.label}<span class="nt-cnt">${v.n}</span></button>`).join('')}
+    <div class="nt-side-title">Tipos</div>
+    <button type="button" class="nt-side-item ${!_ntFilter.kind ? 'active' : ''}" onclick="notasSetKind('')"><i class="fas fa-asterisk"></i>Todos</button>
+    ${Object.entries(NOTAS_KINDS).map(([k, v]) => `<button type="button" class="nt-side-item ${_ntFilter.kind === k ? 'active' : ''}" onclick="notasSetKind('${k}')"><i class="fas ${v.icon}" style="color:${v.color}"></i>${v.label}<span class="nt-cnt">${cnt(x => x.kind === k)}</span></button>`).join('')}
+    ${tagList.length ? `<div class="nt-side-title">Tags</div><div>${tagList.map(([t, c]) => `<button type="button" class="nt-tag-chip ${_ntFilter.tag === t ? 'active' : ''}" onclick="notasSetTag('${escAttr(t)}')">#${escHtml(t)} <span style="opacity:.6">${c}</span></button>`).join('')}</div>` : ''}
+  `;
+}
+function notasSetView(v) { _ntFilter.view = v; notasRenderSide(); notasRenderList(); }
+function notasSetKind(k) { _ntFilter.kind = k; notasRenderSide(); notasRenderList(); }
+function notasSetTag(t) { _ntFilter.tag = _ntFilter.tag === t ? '' : t; notasRenderSide(); notasRenderList(); }
+
+function notasRenderList() {
+  const list = document.getElementById('ntList');
+  if (!list) return;
+  const q = String(document.getElementById('ntSearch')?.value || '').trim().toLowerCase();
+  const sort = document.getElementById('ntSort')?.value || 'updated';
+  let rows = _ntCache.filter(_ntVisibleForFilter);
+  if (q) rows = rows.filter(n => _ntPlain(n).includes(q));
+  rows.sort((a, b) => {
+    if (a.pinned !== b.pinned && _ntFilter.view !== 'trash') return a.pinned ? -1 : 1;
+    if (sort === 'title') return a.title.localeCompare(b.title, 'pt-BR');
+    if (sort === 'created') return new Date(b.created_at) - new Date(a.created_at);
+    if (sort === 'due') {
+      const da = a.due_at ? new Date(a.due_at).getTime() : Infinity;
+      const db = b.due_at ? new Date(b.due_at).getTime() : Infinity;
+      return da - db;
+    }
+    return new Date(b.updated_at) - new Date(a.updated_at);
+  });
+  const cnt = document.getElementById('ntListCount');
+  if (cnt) cnt.textContent = `${rows.length} nota(s)`;
+  if (!rows.length) {
+    list.innerHTML = `<div class="table-empty">${q ? 'Nada encontrado para essa busca.' : (_ntFilter.view === 'trash' ? 'Lixeira vazia.' : 'Nenhuma nota aqui ainda.<br>Clique em <b>Nova</b> para começar.')}</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(n => {
+    const k = NOTAS_KINDS[n.kind] || NOTAS_KINDS.nota;
+    return `<div class="nt-note ${n.id === _ntSelId ? 'active' : ''}" style="border-left-color:${k.color};${n.color ? `background:${n.color};` : ''}" onclick="notasSelect('${escAttr(n.id)}')">
+      <div class="nt-ct">${n.pinned ? '<i class="fas fa-thumbtack"></i>' : ''}${n.visibility === 'team' ? '<i class="fas fa-users" title="Visível para a equipe"></i>' : ''}<span>${escHtml(n.title || 'Sem título')}</span></div>
+      <div class="nt-cp">${escHtml(_ntPreview(n))}</div>
+      <div class="nt-cm">
+        <span class="nt-kind" style="color:${k.color};border-color:${k.color}55"><i class="fas ${k.icon}"></i> ${k.label}</span>
+        ${_ntDueBadge(n)}
+        ${(n.tags || []).slice(0, 3).map(t => `<span>#${escHtml(t)}</span>`).join('')}
+        <span style="margin-left:auto">${_ntFmtDT(n.updated_at)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function notasSelect(id) {
+  if (_ntPendingSave.size) { clearTimeout(_ntSaveTimer); _ntFlushSaves(); }
+  _ntSelId = id;
+  document.getElementById('ntLayout')?.classList.add('nt-mobile-editor');
+  notasRenderList();
+  notasRenderEditor();
+}
+function notasBackToList() {
+  document.getElementById('ntLayout')?.classList.remove('nt-mobile-editor');
+}
+
+/* ── criação ── */
+function _ntCloseMenu() {
+  if (_ntMenuEl) { _ntMenuEl.remove(); _ntMenuEl = null; }
+  document.removeEventListener('mousedown', _ntMenuOutside, true);
+}
+function _ntMenuOutside(e) { if (_ntMenuEl && !_ntMenuEl.contains(e.target)) _ntCloseMenu(); }
+function _ntOpenMenu(ev, html) {
+  _ntCloseMenu();
+  const m = document.createElement('div');
+  m.className = 'nt-menu';
+  m.innerHTML = html;
+  document.body.appendChild(m);
+  const r = ev?.currentTarget?.getBoundingClientRect?.() || { left: ev?.clientX || 100, bottom: ev?.clientY || 100, right: (ev?.clientX || 100) + 10 };
+  const w = m.offsetWidth || 220;
+  let left = Math.min(r.right - w, window.innerWidth - w - 8);
+  if (left < 8) left = 8;
+  let top = r.bottom + 6;
+  if (top + m.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - m.offsetHeight - 6);
+  m.style.left = left + 'px';
+  m.style.top = top + 'px';
+  _ntMenuEl = m;
+  setTimeout(() => document.addEventListener('mousedown', _ntMenuOutside, true), 0);
+}
+function notasOpenNewMenu(ev) {
+  _ntOpenMenu(ev, Object.entries(NOTAS_KINDS).map(([k, v]) =>
+    `<button type="button" onclick="_ntCloseMenu();notasCreate('${k}')"><i class="fas ${v.icon}" style="color:${v.color}"></i><span>${v.label}<small>${v.hint}</small></span></button>`
+  ).join(''));
+}
+function _ntRoteiroTemplate(title) {
+  return `<h2>${escHtml(title || 'Roteiro')}</h2>
+<p><b>Objetivo:</b> o que esse vídeo precisa fazer o público sentir ou fazer.</p>
+<p><b>Duração alvo:</b> 60s · <b>Formato:</b> vertical 9:16</p>
+<hr>
+<div class="nt-scene">Cena 1 — Local · Hora</div>
+<p class="nt-acao">Ação: o que aparece na tela, movimento de câmera, enquadramento.</p>
+<div class="nt-fala"><b>Personagem</b>Fala que abre o vídeo — gancho nos primeiros 3 segundos.</div>
+<p class="nt-dir"><i>Direção: ritmo, trilha, referência visual.</i></p>
+<div class="nt-scene">Cena 2 — Local · Hora</div>
+<p class="nt-acao">Ação: …</p>
+<div class="nt-fala"><b>Personagem</b>…</div>
+<hr>
+<p><b>CTA / fechamento:</b> …</p>`;
+}
+async function notasCreate(kind) {
+  kind = NOTAS_KINDS[kind] ? kind : 'nota';
+  const titles = { nota: 'Nova nota', ideia: 'Nova ideia', roteiro: 'Novo roteiro', compromisso: 'Novo compromisso', checklist: 'Nova checklist', mapa: 'Novo mapa mental' };
+  const n = _ntNorm({
+    id: undefined, kind, title: titles[kind], content: '', data: {}, tags: [], color: '',
+    pinned: false, archived: false, deleted: false, visibility: 'private',
+    created_by: _ntMe(), created_at: new Date().toISOString()
+  });
+  if (kind === 'roteiro') n.content = _ntRoteiroTemplate('');
+  if (kind === 'checklist') n.data.items = [];
+  if (kind === 'compromisso') {
+    const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0);
+    n.due_at = d.toISOString();
+    n.data.lembrete = 60;
+  }
+  if (kind === 'mapa') {
+    const rootId = _ntUid();
+    n.data.mindmap = { nodes: [{ id: rootId, text: 'Ideia central', parent: null, x: 0, y: 0, color: '' }] };
+  }
+  try {
+    const created = await _ntInsert(n);
+    if (!created) throw new Error('Sem retorno ao criar.');
+    _ntCache.unshift(created);
+    _ntFilter.view = (_ntFilter.view === 'trash' || _ntFilter.view === 'archived') ? 'all' : _ntFilter.view;
+    if (_ntFilter.kind && _ntFilter.kind !== kind) _ntFilter.kind = '';
+    notasRenderSide();
+    notasSelect(created.id);
+    setTimeout(() => { const t = document.getElementById('ntTitle'); if (t) { t.focus(); t.select(); } }, 30);
+  } catch (e) {
+    console.error('[notasCreate]', e);
+    toast('Não foi possível criar a nota: ' + String(e?.message || e), 'err');
+  }
+}
+
+/* ── editor ── */
+function notasRenderEditor() {
+  const pane = document.getElementById('ntEditorPane');
+  if (!pane) return;
+  _ntMm = null;
+  const n = _ntCurrent();
+  if (!n) {
+    pane.innerHTML = `<div class="nt-empty"><i class="fas fa-sticky-note"></i><div>Selecione uma nota ao lado<br>ou crie uma nova</div><button type="button" class="btn btn-primary btn-sm" onclick="notasOpenNewMenu(event)"><i class="fas fa-plus"></i> Nova nota</button></div>`;
+    return;
+  }
+  const k = NOTAS_KINDS[n.kind] || NOTAS_KINDS.nota;
+  const canEdit = _ntCanEdit(n) && !n.deleted;
+  const kindOpts = Object.entries(NOTAS_KINDS).map(([kk, v]) => `<option value="${kk}" ${kk === n.kind ? 'selected' : ''}>${v.label}</option>`).join('');
+  const colors = NOTAS_COLORS.map(c => `<span class="nt-color-dot ${n.color === c ? 'on' : ''}" style="background:${c || '#fff'}" title="${c ? 'Cor' : 'Sem cor'}" onclick="notasOnField('color','${c}');notasRenderEditor();notasRenderList()"></span>`).join('');
+  const projOpts = ['<option value="">Sem projeto</option>'].concat(
+    (_ntProjects || []).map(p => `<option value="${escAttr(p.id)}" ${String(n.project_id || '') === String(p.id) ? 'selected' : ''}>${escHtml(_ageProjDbTitle(p) || 'Projeto')}${_ageProjDbClient(p) ? ' · ' + escHtml(_ageProjDbClient(p)) : ''}</option>`)
+  ).join('');
+  const compFields = n.kind === 'compromisso' ? `
+    <span style="flex-basis:100%;height:0"></span>
+    <label><i class="far fa-clock"></i> Quando</label>
+    <input type="datetime-local" id="ntDue" value="${_ntToLocalInput(n.due_at)}" onchange="notasOnDue(this.value)">
+    <label><i class="fas fa-map-marker-alt"></i></label>
+    <input type="text" id="ntLocal" placeholder="Local / link da call" value="${escAttr(n.data.local || '')}" oninput="notasOnData('local',this.value)" style="min-width:160px">
+    <label><i class="fas fa-user-friends"></i></label>
+    <input type="text" id="ntPart" placeholder="Participantes" value="${escAttr(n.data.participantes || '')}" oninput="notasOnData('participantes',this.value)" style="min-width:140px">
+    <label><i class="fas fa-bell"></i> Lembrar</label>
+    <select class="cf-select" onchange="notasOnData('lembrete',parseInt(this.value,10)||0)">
+      ${[[0, 'Sem lembrete'], [15, '15 min antes'], [60, '1 h antes'], [180, '3 h antes'], [1440, '1 dia antes']].map(([v, l]) => `<option value="${v}" ${(n.data.lembrete ?? 60) === v ? 'selected' : ''}>${l}</option>`).join('')}
+    </select>` : '';
+  let body = '';
+  if (n.kind === 'checklist') body = _ntChecklistHtml(n, canEdit);
+  else if (n.kind === 'mapa') body = _ntMindmapHtml(n, canEdit);
+  else body = _ntRichHtml(n, canEdit);
+  const author = n.author_name || displayNameForUsername(n.created_by) || n.created_by || '—';
+  pane.innerHTML = `
+    <div class="nt-ed-top">
+      <button type="button" class="nt-icon-btn" style="display:none" id="ntBackBtn" onclick="notasBackToList()" title="Voltar à lista"><i class="fas fa-arrow-left"></i></button>
+      <span class="nt-kind" style="color:${k.color};border-color:${k.color}55"><i class="fas ${k.icon}"></i> ${k.label}</span>
+      <input id="ntTitle" class="nt-ed-title" value="${escAttr(n.title)}" placeholder="Título" oninput="notasOnField('title',this.value)" ${canEdit ? '' : 'readonly'}>
+      <button type="button" class="nt-icon-btn ${n.pinned ? 'on' : ''}" title="${n.pinned ? 'Desafixar' : 'Fixar no topo'}" onclick="notasToggle('pinned')"><i class="fas fa-thumbtack"></i></button>
+      <button type="button" class="nt-icon-btn" title="${n.visibility === 'team' ? 'Visível para a equipe — clique para deixar só sua' : 'Só você vê — clique para compartilhar com a equipe'}" onclick="notasToggleVisibility()"><i class="fas ${n.visibility === 'team' ? 'fa-users' : 'fa-lock'}"></i></button>
+      <button type="button" class="nt-icon-btn" title="Mais ações" onclick="notasOpenMoreMenu(event)"><i class="fas fa-ellipsis-h"></i></button>
+    </div>
+    <div class="nt-ed-meta">
+      <select id="ntKind" class="cf-select" onchange="notasChangeKind(this.value)" ${canEdit ? '' : 'disabled'}>${kindOpts}</select>
+      <span style="display:inline-flex;gap:5px;align-items:center">${colors}</span>
+      <input id="ntTags" placeholder="tags separadas por vírgula" value="${escAttr((n.tags || []).join(', '))}" onchange="notasOnTags(this.value)" style="min-width:170px;flex:1" ${canEdit ? '' : 'readonly'}>
+      <select id="ntProject" class="cf-select" onchange="notasOnField('project_id',this.value||null)" ${canEdit ? '' : 'disabled'} style="max-width:220px">${projOpts}</select>
+      ${compFields}
+    </div>
+    ${n.deleted ? `<div class="nt-banner" style="margin:10px 14px 0"><i class="fas fa-trash"></i> Esta nota está na lixeira. <button type="button" class="btn btn-secondary btn-sm" onclick="notasRestore()">Restaurar</button></div>` : ''}
+    ${body}
+    <div class="nt-ed-foot">
+      <span id="ntSaveState"><i class="fas fa-check" style="color:#16a34a"></i> Salvo ${_ntFmtDT(n.updated_at)}</span>
+      <span>·</span><span>por ${escHtml(author)}</span>
+      <span>·</span><span>criado ${_ntFmtDT(n.created_at)}</span>
+      <span style="margin-left:auto" id="ntStats"></span>
+    </div>`;
+  if (n.kind === 'checklist') _ntChecklistBind(n);
+  else if (n.kind === 'mapa') _ntMindmapInit(n, canEdit);
+  else _ntRichBind(n, canEdit);
+  pane.onkeydown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 's') {
+      e.preventDefault();
+      clearTimeout(_ntSaveTimer);
+      _ntPendingSave.add(n.id);
+      _ntFlushSaves();
+    }
+  };
+  _ntUpdateStats();
+}
+function notasOnField(field, value) {
+  const n = _ntCurrent(); if (!n || !_ntCanEdit(n)) return;
+  n[field] = value;
+  if (field === 'title') {
+    const card = document.querySelector(`.nt-note.active .nt-ct span`);
+    if (card) card.textContent = value || 'Sem título';
+  }
+  _ntQueueSave(n);
+}
+function notasOnData(key, value) {
+  const n = _ntCurrent(); if (!n || !_ntCanEdit(n)) return;
+  n.data = { ...(n.data || {}), [key]: value };
+  if (key === 'lembrete') delete n.data.notified_at;
+  _ntQueueSave(n);
+}
+function notasOnDue(v) {
+  const n = _ntCurrent(); if (!n) return;
+  const d = v ? new Date(v) : null;
+  n.due_at = d && !isNaN(d.getTime()) ? d.toISOString() : null;
+  if (n.data) delete n.data.notified_at;
+  _ntQueueSave(n);
+}
+function notasOnTags(v) {
+  const n = _ntCurrent(); if (!n) return;
+  n.tags = [...new Set(String(v || '').split(',').map(s => s.trim().replace(/^#/, '')).filter(Boolean))].slice(0, 20);
+  _ntQueueSave(n);
+  notasRenderSide();
+}
+function notasToggle(field) {
+  const n = _ntCurrent(); if (!n) return;
+  n[field] = !n[field];
+  _ntQueueSave(n);
+  notasRenderEditor();
+  notasRenderSide();
+}
+function notasToggleVisibility() {
+  const n = _ntCurrent(); if (!n || !_ntCanEdit(n)) return;
+  n.visibility = n.visibility === 'team' ? 'private' : 'team';
+  _ntQueueSave(n);
+  notasRenderEditor();
+  notasRenderSide();
+  toast(n.visibility === 'team' ? 'Nota visível para a equipe da sua empresa.' : 'Nota só sua.', 'ok');
+}
+function notasChangeKind(k) {
+  const n = _ntCurrent(); if (!n || !NOTAS_KINDS[k]) return;
+  if (k === 'checklist' && !(n.data.items || []).length) {
+    const lines = _ntHtmlToText(n.content).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 60);
+    n.data.items = lines.map(t => ({ id: _ntUid(), text: t.replace(/^[-*•]\s*/, ''), done: false }));
+  }
+  if (k === 'mapa' && !(n.data.mindmap && n.data.mindmap.nodes && n.data.mindmap.nodes.length)) {
+    const rootId = _ntUid();
+    const nodes = [{ id: rootId, text: n.title || 'Ideia central', parent: null, x: 0, y: 0, color: '' }];
+    _ntHtmlToText(n.content).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 12).forEach(t => {
+      nodes.push({ id: _ntUid(), text: t.replace(/^[-*•]\s*/, '').slice(0, 60), parent: rootId, x: 0, y: 0, color: '' });
+    });
+    n.data.mindmap = { nodes };
+    _ntMmAutoLayout(n.data.mindmap);
+  }
+  if (k === 'roteiro' && !_ntHtmlToText(n.content)) n.content = _ntRoteiroTemplate(n.title);
+  if (k === 'compromisso' && !n.due_at) { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); n.due_at = d.toISOString(); }
+  n.kind = k;
+  _ntQueueSave(n);
+  notasRenderEditor();
+  notasRenderSide();
+}
+function notasOpenMoreMenu(ev) {
+  const n = _ntCurrent(); if (!n) return;
+  const canEdit = _ntCanEdit(n);
+  let html = '';
+  if (!n.deleted) {
+    html += `<button type="button" onclick="_ntCloseMenu();notasDuplicate()"><i class="fas fa-copy"></i>Duplicar</button>`;
+    html += `<button type="button" onclick="_ntCloseMenu();notasExportMd()"><i class="fab fa-markdown"></i>Exportar Markdown</button>`;
+    if (n.kind === 'mapa') html += `<button type="button" onclick="_ntCloseMenu();notasExportMmSvg()"><i class="fas fa-image"></i>Exportar mapa (SVG)</button>`;
+    html += `<button type="button" onclick="_ntCloseMenu();notasPrint()"><i class="fas fa-print"></i>Imprimir / PDF</button>`;
+    if (canEdit) {
+      html += `<hr>`;
+      html += `<button type="button" onclick="_ntCloseMenu();notasToggle('archived')"><i class="fas fa-archive"></i>${n.archived ? 'Desarquivar' : 'Arquivar'}</button>`;
+      html += `<button type="button" class="danger" onclick="_ntCloseMenu();notasTrash()"><i class="fas fa-trash"></i>Mover para a lixeira</button>`;
+    }
+  } else {
+    html += `<button type="button" onclick="_ntCloseMenu();notasRestore()"><i class="fas fa-undo"></i>Restaurar</button>`;
+    if (canEdit) html += `<button type="button" class="danger" onclick="_ntCloseMenu();notasDeleteForever()"><i class="fas fa-times-circle"></i>Excluir definitivamente</button>`;
+  }
+  _ntOpenMenu(ev, html);
+}
+async function notasDuplicate() {
+  const n = _ntCurrent(); if (!n) return;
+  const copy = _ntNorm({ ...n, id: undefined, title: (n.title || 'Nota') + ' (cópia)', pinned: false, created_by: _ntMe(), created_at: new Date().toISOString() });
+  copy.data = JSON.parse(JSON.stringify(n.data || {}));
+  try {
+    const created = await _ntInsert(copy);
+    if (created) { _ntCache.unshift(created); notasSelect(created.id); toast('Nota duplicada.', 'ok'); }
+  } catch (e) { toast('Não foi possível duplicar.', 'err'); }
+}
+function notasTrash() {
+  const n = _ntCurrent(); if (!n) return;
+  n.deleted = true;
+  _ntQueueSave(n);
+  _ntSelId = null;
+  notasRenderSide(); notasRenderList(); notasRenderEditor();
+  toast('Nota movida para a lixeira.', 'ok');
+}
+function notasRestore() {
+  const n = _ntCurrent(); if (!n) return;
+  n.deleted = false;
+  _ntQueueSave(n);
+  _ntFilter.view = 'all';
+  notasRenderSide(); notasRenderList(); notasRenderEditor();
+}
+function notasDeleteForever() {
+  const n = _ntCurrent(); if (!n) return;
+  confirm2(`Excluir "${n.title || 'Sem título'}" para sempre? Não dá para desfazer.`, async () => {
+    try {
+      await _ntHardDelete(n.id);
+      _ntCache = _ntCache.filter(x => x.id !== n.id);
+      _ntSelId = null;
+      notasRenderSide(); notasRenderList(); notasRenderEditor();
+      toast('Nota excluída.', 'ok');
+    } catch (e) { toast('Não foi possível excluir.', 'err'); }
+  });
+}
+
+/* ── texto rico (nota, ideia, roteiro, compromisso) ── */
+function _ntRichHtml(n, canEdit) {
+  const rot = n.kind === 'roteiro';
+  const tb = canEdit ? `
+    <div class="nt-toolbar" id="ntToolbar">
+      <button type="button" class="nt-tb" title="Negrito (Ctrl+B)" onclick="ntCmd('bold')"><b>B</b></button>
+      <button type="button" class="nt-tb" title="Itálico (Ctrl+I)" onclick="ntCmd('italic')"><i>I</i></button>
+      <button type="button" class="nt-tb" title="Sublinhado" onclick="ntCmd('underline')"><u>U</u></button>
+      <button type="button" class="nt-tb" title="Riscado" onclick="ntCmd('strikeThrough')"><s>S</s></button>
+      <span class="nt-tb-sep"></span>
+      <button type="button" class="nt-tb" title="Título" onclick="ntCmd('formatBlock','H2')">H1</button>
+      <button type="button" class="nt-tb" title="Subtítulo" onclick="ntCmd('formatBlock','H3')">H2</button>
+      <button type="button" class="nt-tb" title="Parágrafo" onclick="ntCmd('formatBlock','P')">¶</button>
+      <span class="nt-tb-sep"></span>
+      <button type="button" class="nt-tb" title="Lista" onclick="ntCmd('insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
+      <button type="button" class="nt-tb" title="Lista numerada" onclick="ntCmd('insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+      <button type="button" class="nt-tb" title="Item de checklist" onclick="ntInsertCheck()"><i class="far fa-check-square"></i></button>
+      <button type="button" class="nt-tb" title="Citação" onclick="ntCmd('formatBlock','BLOCKQUOTE')"><i class="fas fa-quote-right"></i></button>
+      <button type="button" class="nt-tb" title="Bloco de código" onclick="ntCmd('formatBlock','PRE')"><i class="fas fa-code"></i></button>
+      <button type="button" class="nt-tb" title="Link" onclick="ntInsertLink()"><i class="fas fa-link"></i></button>
+      <button type="button" class="nt-tb" title="Linha divisória" onclick="ntCmd('insertHorizontalRule')">—</button>
+      <button type="button" class="nt-tb" title="Limpar formatação" onclick="ntCmd('removeFormat')"><i class="fas fa-eraser"></i></button>
+      ${rot ? `<span class="nt-tb-sep"></span>
+      <button type="button" class="nt-tb" title="Nova cena" onclick="ntInsertScene()" style="color:#7c3aed"><i class="fas fa-video"></i> Cena</button>
+      <button type="button" class="nt-tb" title="Fala de personagem" onclick="ntInsertFala()" style="color:#7c3aed"><i class="fas fa-comment"></i> Fala</button>
+      <button type="button" class="nt-tb" title="Ação / descrição" onclick="ntInsertAcao()" style="color:#7c3aed"><i class="fas fa-running"></i> Ação</button>
+      <button type="button" class="nt-tb" title="Nota de direção" onclick="ntInsertDir()" style="color:#7c3aed"><i class="fas fa-bullhorn"></i> Direção</button>` : ''}
+    </div>` : '';
+  return `${tb}<div class="nt-body"><div id="ntRich" class="nt-rich" contenteditable="${canEdit ? 'true' : 'false'}" data-placeholder="${rot ? 'Escreva o roteiro…' : 'Escreva aqui… use a barra acima para formatar.'}" spellcheck="true"></div></div>`;
+}
+function _ntRichBind(n, canEdit) {
+  const el = document.getElementById('ntRich');
+  if (!el) return;
+  el.innerHTML = _ntSanitize(n.content);
+  el.addEventListener('input', () => {
+    const cur = _ntCurrent(); if (!cur) return;
+    cur.content = el.innerHTML;
+    _ntQueueSave(cur);
+    _ntUpdateStats();
+  });
+  el.addEventListener('click', (e) => {
+    const box = e.target.closest('.nt-chk-box');
+    if (!box) return;
+    e.preventDefault();
+    const line = box.closest('.nt-chk');
+    const done = line.getAttribute('data-done') === '1';
+    line.setAttribute('data-done', done ? '0' : '1');
+    box.innerHTML = done ? '<i class="far fa-square"></i>' : '<i class="fas fa-check-square"></i>';
+    el.dispatchEvent(new Event('input'));
+  });
+  el.addEventListener('paste', (e) => {
+    const html = e.clipboardData?.getData('text/html');
+    const txt = e.clipboardData?.getData('text/plain');
+    if (!html && !txt) return;
+    e.preventDefault();
+    if (html) document.execCommand('insertHTML', false, _ntSanitize(html));
+    else document.execCommand('insertText', false, txt);
+  });
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); }
+  });
+}
+function ntCmd(cmd, val) {
+  const el = document.getElementById('ntRich'); if (!el) return;
+  el.focus();
+  document.execCommand(cmd, false, val || null);
+  el.dispatchEvent(new Event('input'));
+}
+function ntInsertHtml(html) {
+  const el = document.getElementById('ntRich'); if (!el) return;
+  el.focus();
+  document.execCommand('insertHTML', false, html);
+  el.dispatchEvent(new Event('input'));
+}
+function ntInsertCheck() { ntInsertHtml(`<div class="nt-chk" data-done="0"><span class="nt-chk-box" contenteditable="false"><i class="far fa-square"></i></span><span class="nt-chk-txt">Item</span></div><p><br></p>`); }
+function ntInsertLink() {
+  const url = prompt('Endereço do link (https://…)');
+  if (!url) return;
+  const sel = window.getSelection();
+  const txt = sel && String(sel.toString()).trim();
+  const safe = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+  if (txt) ntCmd('createLink', safe);
+  else ntInsertHtml(`<a href="${escAttr(safe)}" target="_blank" rel="noopener">${escHtml(safe)}</a>&nbsp;`);
+}
+function ntInsertScene() {
+  const el = document.getElementById('ntRich');
+  const count = el ? el.querySelectorAll('.nt-scene').length + 1 : 1;
+  ntInsertHtml(`<div class="nt-scene">Cena ${count} — Local · Hora</div><p class="nt-acao">Ação: …</p>`);
+}
+function ntInsertFala() { ntInsertHtml(`<div class="nt-fala"><b>Personagem</b>Fala…</div>`); }
+function ntInsertAcao() { ntInsertHtml(`<p class="nt-acao">Ação: …</p>`); }
+function ntInsertDir() { ntInsertHtml(`<p class="nt-dir"><i>Direção: …</i></p>`); }
+function _ntUpdateStats() {
+  const n = _ntCurrent(); const st = document.getElementById('ntStats');
+  if (!n || !st) return;
+  if (n.kind === 'checklist') {
+    const it = n.data.items || []; const done = it.filter(i => i.done).length;
+    st.textContent = `${done}/${it.length} concluídos`;
+    return;
+  }
+  if (n.kind === 'mapa') {
+    const nodes = (n.data.mindmap || {}).nodes || [];
+    st.textContent = `${nodes.length} nó(s) · ${Math.max(0, nodes.length - 1)} ramo(s)`;
+    return;
+  }
+  const el = document.getElementById('ntRich');
+  const txt = el ? el.innerText : _ntHtmlToText(n.content);
+  const words = (txt.match(/[\p{L}\p{N}'’-]+/gu) || []).length;
+  let extra = '';
+  if (n.kind === 'roteiro') {
+    const scenes = el ? el.querySelectorAll('.nt-scene').length : 0;
+    const falas = el ? [...el.querySelectorAll('.nt-fala')].map(f => f.textContent).join(' ') : '';
+    const fw = (falas.match(/[\p{L}\p{N}'’-]+/gu) || []).length;
+    const secs = Math.round((fw || words) / 2.4);
+    const mm = Math.floor(secs / 60), ss = String(secs % 60).padStart(2, '0');
+    extra = ` · ${scenes} cena(s) · fala ≈ ${mm}:${ss} min`;
+  }
+  st.textContent = `${words} palavra(s) · ${txt.length} caractere(s)${extra}`;
+}
+
+/* ── checklist ── */
+function _ntChecklistHtml(n, canEdit) {
+  const items = n.data.items || [];
+  const done = items.filter(i => i.done).length;
+  const pct = items.length ? Math.round(done * 100 / items.length) : 0;
+  return `<div class="nt-body">
+    <div style="display:flex;align-items:center;gap:10px;font-family:var(--font-m);font-size:10px;color:#64748b"><span>${done}/${items.length} concluídos · ${pct}%</span>
+      ${canEdit ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="ntCkClearDone()"><i class="fas fa-broom"></i> Limpar concluídos</button>` : ''}
+    </div>
+    <div class="nt-progress"><i style="width:${pct}%"></i></div>
+    <div id="ntCkList">${items.map((it, i) => _ntCkItemHtml(it, i, items.length, canEdit)).join('') || '<div class="table-empty" style="padding:18px">Nenhum item. Digite abaixo e pressione Enter.</div>'}</div>
+    ${canEdit ? `<div style="display:flex;gap:8px;margin-top:10px"><input id="ntCkNew" type="text" placeholder="Novo item… (Enter adiciona)" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();ntCkAdd()}"><button type="button" class="btn btn-primary btn-sm" onclick="ntCkAdd()"><i class="fas fa-plus"></i></button></div>` : ''}
+  </div>`;
+}
+function _ntCkItemHtml(it, i, total, canEdit) {
+  return `<div class="nt-ck-item ${it.done ? 'done' : ''}" data-id="${escAttr(it.id)}">
+    <input type="checkbox" ${it.done ? 'checked' : ''} onchange="ntCkToggle('${escAttr(it.id)}',this.checked)" ${canEdit ? '' : 'disabled'}>
+    <input type="text" value="${escAttr(it.text)}" oninput="ntCkText('${escAttr(it.id)}',this.value)" onkeydown="ntCkKey(event,'${escAttr(it.id)}')" ${canEdit ? '' : 'readonly'}>
+    ${canEdit ? `<button type="button" class="nt-icon-btn" title="Subir" onclick="ntCkMove('${escAttr(it.id)}',-1)" ${i === 0 ? 'disabled' : ''}><i class="fas fa-chevron-up"></i></button>
+    <button type="button" class="nt-icon-btn" title="Descer" onclick="ntCkMove('${escAttr(it.id)}',1)" ${i === total - 1 ? 'disabled' : ''}><i class="fas fa-chevron-down"></i></button>
+    <button type="button" class="nt-icon-btn" title="Remover" onclick="ntCkDel('${escAttr(it.id)}')"><i class="fas fa-times"></i></button>` : ''}
+  </div>`;
+}
+function _ntChecklistBind() {}
+function _ntCkItems() { const n = _ntCurrent(); if (!n) return null; if (!Array.isArray(n.data.items)) n.data.items = []; return n.data.items; }
+function _ntCkRefresh(focusId) {
+  notasRenderEditor();
+  if (focusId) {
+    const inp = document.querySelector(`.nt-ck-item[data-id="${focusId}"] input[type=text]`);
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  } else {
+    document.getElementById('ntCkNew')?.focus();
+  }
+}
+function ntCkAdd() {
+  const items = _ntCkItems(); if (!items) return;
+  const inp = document.getElementById('ntCkNew');
+  const text = String(inp?.value || '').trim();
+  if (!text) return;
+  items.push({ id: _ntUid(), text, done: false });
+  _ntQueueSave(_ntCurrent());
+  _ntCkRefresh();
+}
+function ntCkToggle(id, checked) {
+  const items = _ntCkItems(); if (!items) return;
+  const it = items.find(x => x.id === id); if (!it) return;
+  it.done = !!checked;
+  _ntQueueSave(_ntCurrent());
+  const row = document.querySelector(`.nt-ck-item[data-id="${id}"]`);
+  if (row) row.classList.toggle('done', it.done);
+  const done = items.filter(x => x.done).length;
+  const pct = items.length ? Math.round(done * 100 / items.length) : 0;
+  const bar = document.querySelector('.nt-progress i'); if (bar) bar.style.width = pct + '%';
+  const lab = document.querySelector('.nt-body > div:first-child > span'); if (lab) lab.textContent = `${done}/${items.length} concluídos · ${pct}%`;
+  _ntUpdateStats();
+}
+function ntCkText(id, v) {
+  const items = _ntCkItems(); if (!items) return;
+  const it = items.find(x => x.id === id); if (!it) return;
+  it.text = v;
+  _ntQueueSave(_ntCurrent());
+}
+function ntCkKey(e, id) {
+  const items = _ntCkItems(); if (!items) return;
+  const i = items.findIndex(x => x.id === id);
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const nid = _ntUid();
+    items.splice(i + 1, 0, { id: nid, text: '', done: false });
+    _ntQueueSave(_ntCurrent());
+    _ntCkRefresh(nid);
+  } else if (e.key === 'Backspace' && !e.target.value && items.length > 1) {
+    e.preventDefault();
+    items.splice(i, 1);
+    _ntQueueSave(_ntCurrent());
+    _ntCkRefresh(items[Math.max(0, i - 1)]?.id);
+  }
+}
+function ntCkMove(id, dir) {
+  const items = _ntCkItems(); if (!items) return;
+  const i = items.findIndex(x => x.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= items.length) return;
+  [items[i], items[j]] = [items[j], items[i]];
+  _ntQueueSave(_ntCurrent());
+  _ntCkRefresh(id);
+}
+function ntCkDel(id) {
+  const items = _ntCkItems(); if (!items) return;
+  const i = items.findIndex(x => x.id === id);
+  if (i >= 0) items.splice(i, 1);
+  _ntQueueSave(_ntCurrent());
+  _ntCkRefresh();
+}
+function ntCkClearDone() {
+  const n = _ntCurrent(); if (!n) return;
+  n.data.items = (n.data.items || []).filter(x => !x.done);
+  _ntQueueSave(n);
+  _ntCkRefresh();
+}
+
+/* ── mapa mental ── */
+function _ntMindmapHtml(n, canEdit) {
+  return `<div class="nt-toolbar">
+    ${canEdit ? `
+    <button type="button" class="nt-tb" onclick="ntMmAddChild()" title="Adicionar ramo (Tab)"><i class="fas fa-plus"></i> Ramo</button>
+    <button type="button" class="nt-tb" onclick="ntMmAddSibling()" title="Adicionar irmão (Enter)"><i class="fas fa-level-down-alt"></i> Irmão</button>
+    <button type="button" class="nt-tb" onclick="ntMmEditSel()" title="Editar texto (F2 ou duplo clique)"><i class="fas fa-pen"></i> Editar</button>
+    <button type="button" class="nt-tb" onclick="ntMmDeleteSel()" title="Excluir nó e filhos (Delete)"><i class="fas fa-trash"></i></button>
+    <span class="nt-tb-sep"></span>
+    <span style="display:inline-flex;gap:5px;align-items:center;padding:0 4px">${NOTAS_MM_COLORS.map(c => `<span class="nt-color-dot" style="background:${c}" title="Cor do nó" onclick="ntMmColorSel('${c}')"></span>`).join('')}</span>
+    <span class="nt-tb-sep"></span>
+    <button type="button" class="nt-tb" onclick="ntMmAutoLayoutBtn()" title="Reorganizar automaticamente"><i class="fas fa-magic"></i> Organizar</button>` : ''}
+    <button type="button" class="nt-tb" onclick="ntMmFit()" title="Centralizar"><i class="fas fa-compress-arrows-alt"></i> Centralizar</button>
+    <button type="button" class="nt-tb" onclick="ntMmZoom(1.2)" title="Aproximar"><i class="fas fa-search-plus"></i></button>
+    <button type="button" class="nt-tb" onclick="ntMmZoom(1/1.2)" title="Afastar"><i class="fas fa-search-minus"></i></button>
+  </div>
+  <div class="nt-body" style="padding:12px 14px">
+    <div class="nt-mm-wrap" id="ntMmWrap" tabindex="0">
+      <svg id="ntMmSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="nt-mm-help">Clique para selecionar · duplo clique edita · arraste para mover · Tab = ramo · Enter = irmão · Delete = excluir · roda = zoom</div>
+    </div>
+  </div>`;
+}
+function _ntMmW(text) { return Math.max(72, Math.min(340, String(text || '').length * 7.6 + 28)); }
+function _ntMmAutoLayout(mm) {
+  const nodes = mm.nodes || [];
+  const byParent = {};
+  nodes.forEach(x => { const p = x.parent || '__root'; (byParent[p] = byParent[p] || []).push(x); });
+  const root = nodes.find(x => !x.parent);
+  if (!root) return;
+  root.x = 0; root.y = 0;
+  const H = 48, W = 230;
+  const leafCount = (x) => { const c = byParent[x.id] || []; return c.length ? c.reduce((s, k) => s + leafCount(k), 0) : 1; };
+  const sub = (x, dir, depth, yStart) => {
+    const c = byParent[x.id] || [];
+    let y = yStart;
+    c.forEach(k => { const lc = leafCount(k); k.x = dir * W * depth; k.y = y + ((lc - 1) * H) / 2; sub(k, dir, depth + 1, y); y += lc * H; });
+  };
+  const kids = byParent[root.id] || [];
+  const right = kids.filter((_, i) => i % 2 === 0), left = kids.filter((_, i) => i % 2 === 1);
+  [[right, 1], [left, -1]].forEach(([list, dir]) => {
+    const total = list.reduce((s, k) => s + leafCount(k), 0);
+    let y = -((total - 1) * H) / 2;
+    list.forEach(k => { const lc = leafCount(k); k.x = dir * W; k.y = y + ((lc - 1) * H) / 2; sub(k, dir, 2, y); y += lc * H; });
+  });
+}
+function _ntMindmapInit(n, canEdit) {
+  const wrap = document.getElementById('ntMmWrap'); const svg = document.getElementById('ntMmSvg');
+  if (!wrap || !svg) return;
+  if (!n.data.mindmap || !Array.isArray(n.data.mindmap.nodes) || !n.data.mindmap.nodes.length) {
+    n.data.mindmap = { nodes: [{ id: _ntUid(), text: n.title || 'Ideia central', parent: null, x: 0, y: 0, color: '' }] };
+  }
+  const mm = n.data.mindmap;
+  if (mm.nodes.every(x => !x.x && !x.y) && mm.nodes.length > 1) _ntMmAutoLayout(mm);
+  _ntMm = { note: n, data: mm, svg, wrap, canEdit, sel: mm.nodes[0].id, zoom: 1, pan: { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 }, drag: null };
+  _ntMmRender();
+  wrap.onmousedown = (e) => {
+    if (e.button !== 0) return;
+    const g = e.target.closest('.nt-mm-node');
+    if (g) {
+      _ntMm.sel = g.getAttribute('data-id');
+      const node = mm.nodes.find(x => x.id === _ntMm.sel);
+      _ntMm.drag = canEdit && node ? { type: 'node', node, sx: e.clientX, sy: e.clientY, ox: node.x, oy: node.y, moved: false } : null;
+      _ntMmRender();
+    } else {
+      _ntMm.drag = { type: 'pan', sx: e.clientX, sy: e.clientY, ox: _ntMm.pan.x, oy: _ntMm.pan.y };
+      wrap.classList.add('dragging');
+    }
+    wrap.focus();
+    e.preventDefault();
+  };
+  const onMove = (e) => {
+    const st = _ntMm; if (!st || !st.drag) return;
+    const d = st.drag;
+    if (d.type === 'pan') { st.pan.x = d.ox + (e.clientX - d.sx); st.pan.y = d.oy + (e.clientY - d.sy); _ntMmRender(); }
+    else { d.node.x = d.ox + (e.clientX - d.sx) / st.zoom; d.node.y = d.oy + (e.clientY - d.sy) / st.zoom; d.moved = true; _ntMmRender(); }
+  };
+  const onUp = () => {
+    const st = _ntMm; if (!st) return;
+    if (st.drag?.type === 'node' && st.drag.moved) _ntQueueSave(st.note);
+    st.drag = null;
+    wrap.classList.remove('dragging');
+  };
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  wrap.ondblclick = (e) => {
+    const g = e.target.closest('.nt-mm-node');
+    if (g && canEdit) { _ntMm.sel = g.getAttribute('data-id'); ntMmEditSel(); }
+    else if (canEdit) {
+      const world = _ntMmToWorld(e.clientX, e.clientY);
+      const root = mm.nodes.find(x => !x.parent);
+      const nn = { id: _ntUid(), text: 'Novo', parent: root?.id || null, x: world.x, y: world.y, color: '' };
+      mm.nodes.push(nn); _ntMm.sel = nn.id; _ntMmRender(); _ntQueueSave(n); ntMmEditSel();
+    }
+  };
+  wrap.onwheel = (e) => {
+    e.preventDefault();
+    const st = _ntMm; if (!st) return;
+    const f = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    const r = wrap.getBoundingClientRect();
+    const cx = e.clientX - r.left, cy = e.clientY - r.top;
+    st.pan.x = cx - (cx - st.pan.x) * f; st.pan.y = cy - (cy - st.pan.y) * f;
+    st.zoom = Math.max(0.25, Math.min(3, st.zoom * f));
+    _ntMmRender();
+  };
+  wrap.onkeydown = (e) => {
+    if (!canEdit) return;
+    if (document.querySelector('.nt-mm-edit')) return;
+    if (e.key === 'Tab') { e.preventDefault(); ntMmAddChild(); }
+    else if (e.key === 'Enter') { e.preventDefault(); ntMmAddSibling(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); ntMmDeleteSel(); }
+    else if (e.key === 'F2' || e.key === ' ') { e.preventDefault(); ntMmEditSel(); }
+  };
+}
+function _ntMmToWorld(clientX, clientY) {
+  const st = _ntMm; const r = st.wrap.getBoundingClientRect();
+  return { x: (clientX - r.left - st.pan.x) / st.zoom, y: (clientY - r.top - st.pan.y) / st.zoom };
+}
+function _ntMmRender() {
+  const st = _ntMm; if (!st) return;
+  const mm = st.data;
+  const byId = {}; mm.nodes.forEach(x => byId[x.id] = x);
+  let edges = '', nodes = '';
+  mm.nodes.forEach(x => {
+    const w = _ntMmW(x.text), h = 34;
+    const isRoot = !x.parent;
+    if (x.parent && byId[x.parent]) {
+      const p = byId[x.parent]; const pw = _ntMmW(p.text);
+      const dir = x.x >= p.x ? 1 : -1;
+      const x1 = p.x + dir * pw / 2, y1 = p.y, x2 = x.x - dir * w / 2, y2 = x.y, mx = (x1 + x2) / 2;
+      edges += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#94a3b8" stroke-width="2" opacity=".75"/>`;
+    }
+    const fill = isRoot ? '#111' : (x.color || '#fff');
+    const txt = isRoot ? '#fff' : '#111';
+    nodes += `<g class="nt-mm-node${st.sel === x.id ? ' sel' : ''}" data-id="${escAttr(x.id)}" transform="translate(${x.x - w / 2},${x.y - h / 2})"><rect width="${w}" height="${h}" rx="${isRoot ? 17 : 9}" fill="${fill}" stroke="${isRoot ? '#111' : '#cbd5e1'}"/><text x="${w / 2}" y="${h / 2 + 4.5}" text-anchor="middle" fill="${txt}">${escHtml(x.text || '')}</text></g>`;
+  });
+  st.svg.innerHTML = `<g transform="translate(${st.pan.x},${st.pan.y}) scale(${st.zoom})">${edges}${nodes}</g>`;
+  _ntUpdateStats();
+}
+function _ntMmSelNode() { const st = _ntMm; if (!st) return null; return st.data.nodes.find(x => x.id === st.sel) || null; }
+function ntMmAddChild() {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const p = _ntMmSelNode() || st.data.nodes.find(x => !x.parent); if (!p) return;
+  const sibs = st.data.nodes.filter(x => x.parent === p.id);
+  const dir = p.parent ? (p.x >= (st.data.nodes.find(x => x.id === p.parent)?.x || 0) ? 1 : -1) : (sibs.length % 2 === 0 ? 1 : -1);
+  const nn = { id: _ntUid(), text: 'Novo ramo', parent: p.id, x: p.x + dir * 230, y: p.y + sibs.length * 48 - (sibs.length * 24), color: '' };
+  st.data.nodes.push(nn);
+  st.sel = nn.id;
+  _ntMmRender(); _ntQueueSave(st.note); ntMmEditSel();
+}
+function ntMmAddSibling() {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const s = _ntMmSelNode(); if (!s) return;
+  if (!s.parent) { ntMmAddChild(); return; }
+  const nn = { id: _ntUid(), text: 'Novo', parent: s.parent, x: s.x, y: s.y + 48, color: s.color || '' };
+  st.data.nodes.push(nn);
+  st.sel = nn.id;
+  _ntMmRender(); _ntQueueSave(st.note); ntMmEditSel();
+}
+function ntMmDeleteSel() {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const s = _ntMmSelNode(); if (!s || !s.parent) { toast('O nó central não pode ser excluído — edite o texto dele.', 'warn'); return; }
+  const rm = new Set([s.id]);
+  let grew = true;
+  while (grew) { grew = false; st.data.nodes.forEach(x => { if (x.parent && rm.has(x.parent) && !rm.has(x.id)) { rm.add(x.id); grew = true; } }); }
+  st.data.nodes = st.data.nodes.filter(x => !rm.has(x.id));
+  st.sel = s.parent;
+  _ntMmRender(); _ntQueueSave(st.note);
+}
+function ntMmColorSel(c) {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const s = _ntMmSelNode(); if (!s) return;
+  s.color = c === '#ffffff' ? '' : c;
+  _ntMmRender(); _ntQueueSave(st.note);
+}
+function ntMmEditSel() {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const s = _ntMmSelNode(); if (!s) return;
+  const prev = document.querySelector('.nt-mm-edit');
+  if (prev) { if (typeof prev._commit === 'function') prev._commit(true); else prev.remove(); }
+  const inp = document.createElement('input');
+  inp.className = 'nt-mm-edit';
+  inp.value = s.text || '';
+  const sx = st.pan.x + s.x * st.zoom, sy = st.pan.y + s.y * st.zoom;
+  inp.style.left = Math.max(4, sx - 80) + 'px';
+  inp.style.top = Math.max(4, sy - 16) + 'px';
+  st.wrap.appendChild(inp);
+  inp.focus(); inp.select();
+  let done = false;
+  const commit = (save) => {
+    if (done) return; done = true;
+    if (save) { s.text = String(inp.value || '').trim().slice(0, 120) || s.text; _ntQueueSave(st.note); }
+    inp.remove(); _ntMmRender(); st.wrap.focus();
+  };
+  inp._commit = commit;
+  inp.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(true); if (e.shiftKey) ntMmAddSibling(); }
+    else if (e.key === 'Escape') { commit(false); }
+    else if (e.key === 'Tab') { e.preventDefault(); commit(true); ntMmAddChild(); }
+    e.stopPropagation();
+  };
+  inp.onblur = () => commit(true);
+  inp.onmousedown = (e) => e.stopPropagation();
+}
+function ntMmAutoLayoutBtn() {
+  const st = _ntMm; if (!st) return;
+  _ntMmAutoLayout(st.data); _ntMmRender(); _ntQueueSave(st.note); ntMmFit();
+}
+function ntMmFit() {
+  const st = _ntMm; if (!st) return;
+  const xs = st.data.nodes.map(n => n.x), ys = st.data.nodes.map(n => n.y);
+  const minX = Math.min(...xs) - 170, maxX = Math.max(...xs) + 170, minY = Math.min(...ys) - 60, maxY = Math.max(...ys) + 60;
+  const W = st.wrap.clientWidth, H = st.wrap.clientHeight;
+  const z = Math.max(0.25, Math.min(1.5, Math.min(W / (maxX - minX), H / (maxY - minY))));
+  st.zoom = z;
+  st.pan.x = W / 2 - ((minX + maxX) / 2) * z;
+  st.pan.y = H / 2 - ((minY + maxY) / 2) * z;
+  _ntMmRender();
+}
+function ntMmZoom(f) {
+  const st = _ntMm; if (!st) return;
+  const cx = st.wrap.clientWidth / 2, cy = st.wrap.clientHeight / 2;
+  st.pan.x = cx - (cx - st.pan.x) * f; st.pan.y = cy - (cy - st.pan.y) * f;
+  st.zoom = Math.max(0.25, Math.min(3, st.zoom * f));
+  _ntMmRender();
+}
+function notasExportMmSvg() {
+  const st = _ntMm; const n = _ntCurrent(); if (!st || !n) return;
+  const xs = st.data.nodes.map(x => x.x), ys = st.data.nodes.map(x => x.y);
+  const minX = Math.min(...xs) - 190, maxX = Math.max(...xs) + 190, minY = Math.min(...ys) - 60, maxY = Math.max(...ys) + 60;
+  const inner = st.svg.innerHTML.replace(/<g transform="[^"]*">/, `<g transform="translate(${-minX},${-minY})">`);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${maxX - minX}" height="${maxY - minY}" viewBox="0 0 ${maxX - minX} ${maxY - minY}"><style>text{font-family:Inter,Arial,sans-serif;font-size:13px;font-weight:600}</style><rect width="100%" height="100%" fill="#fff"/>${inner}</svg>`;
+  _ntDownload((n.title || 'mapa-mental') + '.svg', svg, 'image/svg+xml');
+}
+
+/* ── exportação / impressão / lembretes ── */
+function _ntDownload(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime || 'text/plain;charset=utf-8' }));
+  a.download = name.replace(/[\\/:*?"<>|]+/g, '_');
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+}
+function _ntToMarkdown(n) {
+  const k = NOTAS_KINDS[n.kind] || NOTAS_KINDS.nota;
+  let out = `# ${n.title || 'Sem título'}\n\n_${k.label}_`;
+  if (n.tags?.length) out += ` · ${n.tags.map(t => '#' + t).join(' ')}`;
+  out += `\n\n`;
+  if (n.kind === 'compromisso') out += `**Quando:** ${_ntFmtDT(n.due_at)}\n${n.data.local ? `**Local:** ${n.data.local}\n` : ''}${n.data.participantes ? `**Participantes:** ${n.data.participantes}\n` : ''}\n`;
+  if (n.kind === 'checklist') return out + (n.data.items || []).map(i => `- [${i.done ? 'x' : ' '}] ${i.text}`).join('\n') + '\n';
+  if (n.kind === 'mapa') {
+    const nodes = (n.data.mindmap || {}).nodes || [];
+    const walk = (pid, depth) => nodes.filter(x => (x.parent || null) === pid).map(x => `${'  '.repeat(depth)}- ${x.text}\n${walk(x.id, depth + 1)}`).join('');
+    return out + walk(null, 0);
+  }
+  const d = document.createElement('div'); d.innerHTML = _ntSanitize(n.content);
+  const conv = (el) => {
+    let s = '';
+    el.childNodes.forEach(c => {
+      if (c.nodeType === 3) { s += c.textContent; return; }
+      const t = c.tagName;
+      const inner = conv(c);
+      if (t === 'H1' || t === 'H2') s += `\n## ${inner.trim()}\n`;
+      else if (t === 'H3') s += `\n### ${inner.trim()}\n`;
+      else if (t === 'B' || t === 'STRONG') s += `**${inner}**`;
+      else if (t === 'I' || t === 'EM') s += `_${inner}_`;
+      else if (t === 'S' || t === 'STRIKE') s += `~~${inner}~~`;
+      else if (t === 'A') s += `[${inner}](${c.getAttribute('href') || ''})`;
+      else if (t === 'LI') s += `- ${inner.trim()}\n`;
+      else if (t === 'UL' || t === 'OL') s += `\n${inner}\n`;
+      else if (t === 'BLOCKQUOTE') s += `\n> ${inner.trim().replace(/\n/g, '\n> ')}\n`;
+      else if (t === 'PRE') s += `\n\`\`\`\n${c.textContent}\n\`\`\`\n`;
+      else if (t === 'HR') s += `\n---\n`;
+      else if (t === 'BR') s += `\n`;
+      else if (c.classList?.contains('nt-scene')) s += `\n### ${inner.trim().toUpperCase()}\n`;
+      else if (c.classList?.contains('nt-chk')) s += `- [${c.getAttribute('data-done') === '1' ? 'x' : ' '}] ${c.querySelector('.nt-chk-txt')?.textContent || ''}\n`;
+      else if (c.classList?.contains('nt-fala')) { const who = c.querySelector('b')?.textContent || ''; s += `\n**${who.toUpperCase()}:** ${inner.replace(who, '').trim()}\n`; }
+      else if (t === 'P' || t === 'DIV') s += `${inner}\n`;
+      else s += inner;
+    });
+    return s;
+  };
+  return out + conv(d).replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+function notasExportMd() {
+  const n = _ntCurrent(); if (!n) return;
+  _ntDownload((n.title || 'nota') + '.md', _ntToMarkdown(n), 'text/markdown;charset=utf-8');
+}
+function notasExportAll() {
+  const rows = _ntCache.filter(x => !x.deleted).map(x => { const c = { ...x }; delete c._plain; return c; });
+  if (!rows.length) { toast('Nenhuma nota para exportar.', 'warn'); return; }
+  _ntDownload(`notas_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(rows, null, 2), 'application/json');
+  toast(`${rows.length} nota(s) exportada(s).`, 'ok');
+}
+function notasPrint() {
+  const n = _ntCurrent(); if (!n) return;
+  let body = '';
+  if (n.kind === 'checklist') body = `<ul style="list-style:none;padding:0">${(n.data.items || []).map(i => `<li>${i.done ? '☑' : '☐'} ${escHtml(i.text)}</li>`).join('')}</ul>`;
+  else if (n.kind === 'mapa') body = `<pre style="font-family:inherit">${escHtml(_ntToMarkdown(n).split('\n').slice(3).join('\n'))}</pre>`;
+  else body = _ntSanitize(n.content);
+  const k = NOTAS_KINDS[n.kind] || NOTAS_KINDS.nota;
+  const w = window.open('', '_blank');
+  if (!w) { toast('Permita pop-ups para imprimir.', 'warn'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escHtml(n.title || 'Nota')}</title>
+  <style>body{font-family:Inter,Arial,sans-serif;max-width:760px;margin:40px auto;padding:0 24px;color:#111;line-height:1.65}h1{font-size:26px;margin:0 0 4px}.meta{font-size:11px;color:#666;letter-spacing:.06em;text-transform:uppercase;margin-bottom:24px}.nt-scene{background:#f1f5f9;padding:6px 10px;font-weight:700;text-transform:uppercase;font-size:12px;margin:16px 0 6px;border-radius:6px}.nt-fala{margin:0 0 8px 28px}.nt-fala b{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#666}.nt-acao{font-style:italic;color:#333}.nt-dir{color:#7c3aed;font-size:12px}blockquote{border-left:3px solid #ccc;margin:8px 0;padding:4px 12px;color:#444}pre{background:#f5f5f5;padding:10px;border-radius:6px}.nt-chk-box{display:none}.nt-chk:before{content:'☐ '}.nt-chk[data-done="1"]:before{content:'☑ '}</style></head>
+  <body><h1>${escHtml(n.title || 'Sem título')}</h1><div class="meta">${k.label}${n.tags?.length ? ' · ' + n.tags.map(t => '#' + escHtml(t)).join(' ') : ''}${n.kind === 'compromisso' ? ' · ' + _ntFmtDT(n.due_at) : ''}</div>${body}</body></html>`);
+  w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 300);
+}
+async function _ntCheckReminders() {
+  if (!currentUser?.username) return;
+  const now = Date.now();
+  for (const n of _ntCache) {
+    if (n.kind !== 'compromisso' || n.deleted || n.archived || !n.due_at) continue;
+    if (n.created_by !== _ntMe()) continue;
+    const lembrete = parseInt(n.data.lembrete ?? 60, 10);
+    if (!lembrete) continue;
+    const due = new Date(n.due_at).getTime();
+    if (isNaN(due) || due < now - 3600000) continue;
+    if (n.data.notified_at) continue;
+    if (due - now > lembrete * 60000) continue;
+    n.data = { ...n.data, notified_at: new Date().toISOString() };
+    try {
+      await createNotification({
+        username: _ntMe(),
+        company_id: currentUser.company_id,
+        type: 'prazo_proximo',
+        title: 'Compromisso: ' + (n.title || 'sem título'),
+        message: `${_ntFmtDT(n.due_at)}${n.data.local ? ' · ' + n.data.local : ''}`,
+        link: 'notas',
+        dedupe_key: `nota_comp_${n.id}`
+      });
+      try { toast(`Lembrete: ${n.title || 'compromisso'} às ${_ntFmtDT(n.due_at)}`, 'warn'); } catch (e) {}
+    } catch (e) { console.warn('[notas] lembrete', e); }
+    _ntUpdate(n).catch(() => {});
+  }
 }
 
 async function loadSuporte() {
