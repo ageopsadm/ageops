@@ -294,9 +294,20 @@ select option{background:#fff;color:#111}
   font-family:var(--font-m);font-size:7px;color:rgba(255,255,255,.4);
   letter-spacing:.22em;margin-top:2px;text-transform:uppercase;
 }
-#collapseBtn{margin-left:auto;padding:4px 6px;border-radius:3px;color:rgba(255,255,255,.35);transition:color .15s}
+.logo-co{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;padding:0 4px}
+.logo-co-name{
+  font-family:var(--font-title);font-size:11px;font-weight:700;
+  letter-spacing:-.02em;color:rgba(255,255,255,.82);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+  line-height:1.2;background:none;border:none;padding:0;margin:0;text-align:right;
+}
+.logo-co-name.can-edit{cursor:text}
+.logo-co-name.can-edit:hover{opacity:.75}
+.logo-co-name.can-edit:empty{min-width:3.5ch;min-height:1em;border-bottom:1px dashed rgba(255,255,255,.25)}
+.logo-co-name.is-edit{outline:none;border-bottom:1px solid rgba(255,255,255,.55);min-width:4ch;cursor:text}
+#collapseBtn{margin-left:0;padding:4px 6px;border-radius:3px;color:rgba(255,255,255,.35);transition:color .15s;flex-shrink:0}
 #collapseBtn:hover{color:#fff}
-#sidebar.collapsed .logo-text,.sidebar.collapsed .logo-sub{display:none}
+#sidebar.collapsed .logo-text,.sidebar.collapsed .logo-sub,#sidebar.collapsed .logo-co{display:none}
 nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
 .nav-item{
   display:flex;align-items:center;gap:11px;
@@ -384,6 +395,8 @@ html[data-theme="light"] header#topbar{
   background:#ffffff !important;color:#111 !important;border-bottom:1px solid #eee !important;
 }
 html[data-theme="light"] .logo-text{color:#111 !important}
+html[data-theme="light"] .logo-co-name{color:#333 !important}
+html[data-theme="light"] .logo-co-name.is-edit{border-bottom-color:#111}
 html[data-theme="light"] .logo-sub,
 html[data-theme="light"] .nav-group-label{color:#888 !important}
 html[data-theme="light"] #sidebar-logo{border-bottom-color:#eee !important}
@@ -491,6 +504,31 @@ html[data-theme="dark"] #topbarUser{color:rgba(255,255,255,.6)}
 }
 .page-title i{font-size:13px;opacity:.35}
 .page-actions{display:flex;gap:7px;flex-wrap:wrap}
+.dash-welcome{
+  display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 10px;
+}
+.dash-welcome-hi{
+  font-family:var(--font-title);
+  font-size:15px;font-weight:600;letter-spacing:.01em;color:var(--textsub);
+}
+.dash-welcome-sep{font-family:var(--font-title);font-size:16px;font-weight:500;color:#cbd5e1}
+.dash-welcome-name{
+  font-family:var(--font-title);font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--text);line-height:1.15;
+}
+.prof-co-brand{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--bd)}
+.login-welcome{
+  position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;
+  background:rgba(248,248,248,.72);opacity:0;pointer-events:none;
+  transition:opacity .7s ease;
+}
+.login-welcome.show{opacity:1}
+.login-welcome-card{text-align:center;padding:8px 20px}
+.login-welcome-hi{
+  font-family:var(--font-title);font-size:16px;font-weight:600;color:#64748b;margin-bottom:6px;
+}
+.login-welcome-name{
+  font-family:var(--font-title);font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.035em;color:#111;line-height:1.1;
+}
 
 /* ── BUTTONS ── */
 .btn{
@@ -3518,6 +3556,12 @@ body:has(#login-screen.visible){
 <!-- ══════════════════════════════════════════
      APP SHELL
 ══════════════════════════════════════════ -->
+<div id="loginWelcomeToast" class="login-welcome" hidden aria-live="polite">
+  <div class="login-welcome-card">
+    <div class="login-welcome-hi">Bem-vindo</div>
+    <div class="login-welcome-name" id="loginWelcomeName"></div>
+  </div>
+</div>
 <div id="shell" style="display:none">
 
   <!-- SIDEBAR -->
@@ -3526,6 +3570,9 @@ body:has(#login-screen.visible){
       <div>
         <div class="logo-text">AGE OPS</div>
         <div class="logo-sub">v4.0 SISTEMA</div>
+      </div>
+      <div class="logo-co" id="sidebarCoWrap" title="Nome da empresa">
+        <span class="logo-co-name" id="sidebarCoName" tabindex="0" onclick="startEditCompanyWelcome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();startEditCompanyWelcome()}"></span>
       </div>
       <button id="collapseBtn" onclick="toggleSidebar()" title="Recolher"><i class="fas fa-bars"></i></button>
     </div>
@@ -5222,10 +5269,15 @@ body:has(#login-screen.visible){
 
         <div id="profCompanyAdminPanel" style="display:none;max-width:920px;margin-bottom:20px;padding:18px 20px;border:1px solid var(--bd);border-radius:10px;background:var(--bg2)">
           <div style="font-family:var(--font-h);font-size:13px;font-weight:800;margin-bottom:14px;color:var(--text)"><i class="fas fa-building" style="opacity:.85"></i> MINHA EMPRESA</div>
+          <div class="dash-welcome prof-co-brand" id="profCoBrand">
+            <span class="dash-welcome-hi">Bem-vindo</span>
+            <span class="dash-welcome-sep">—</span>
+            <span class="dash-welcome-name" id="profCoBrandName">sua empresa</span>
+          </div>
           <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px 16px">
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label">Nome da empresa</label>
-              <input id="profCoName" type="text" placeholder="Nome fantasia ou razão social" style="width:100%">
+              <input id="profCoName" type="text" placeholder="Nome fantasia ou razão social" style="width:100%" oninput="syncCompanyBrandFromProfileInput()">
             </div>
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label">Segmento</label>
@@ -5261,7 +5313,8 @@ body:has(#login-screen.visible){
         </div>
 
         <p id="profCompanyColabStrip" style="display:none;max-width:920px;font-family:var(--font-m);font-size:11px;color:var(--textsub);margin:0 0 16px;padding:12px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--bg2)">
-          <i class="fas fa-building" style="opacity:.5"></i> Empresa: <strong id="profCompanyColabName">—</strong>
+          <i class="fas fa-building" style="opacity:.5"></i> Empresa:
+          <strong id="profCompanyColabName" style="font-family:var(--font-title);font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.02em">—</strong>
         </p>
 
         <div style="display:grid;grid-template-columns:160px 1fr;gap:24px;max-width:920px;align-items:start" class="responsive-2col">
@@ -8456,6 +8509,109 @@ async function loadEquipePermissoesPage() {
   }).join('');
 }
 
+let _welcomeOnNextLogin = false;
+function _companyDisplayName() {
+  return String(currentUser?.company_name || '').trim() || 'sua empresa';
+}
+function syncCompanyBrandUi() {
+  const name = _companyDisplayName();
+  const can = (typeof _userIsAdminLike === 'function' && _userIsAdminLike() && !!currentUser?.company_id);
+  const side = document.getElementById('sidebarCoName');
+  if (side && side.getAttribute('contenteditable') !== 'true') {
+    side.textContent = name === 'sua empresa' ? '' : name;
+    side.classList.toggle('can-edit', can);
+    side.setAttribute('title', can ? 'Clique para editar o nome da empresa (também no Perfil)' : (name === 'sua empresa' ? '' : name));
+    side.setAttribute('role', can ? 'button' : 'text');
+  }
+  const wrap = document.getElementById('sidebarCoWrap');
+  if (wrap) wrap.style.display = (name === 'sua empresa' && !can) ? 'none' : '';
+  const brand = document.getElementById('profCoBrandName');
+  if (brand) brand.textContent = name;
+  const colab = document.getElementById('profCompanyColabName');
+  if (colab) colab.textContent = name === 'sua empresa' ? '—' : name;
+}
+function syncCompanyBrandFromProfileInput() {
+  const v = String(document.getElementById('profCoName')?.value || '').trim();
+  const name = v || _companyDisplayName();
+  const side = document.getElementById('sidebarCoName');
+  if (side && side.getAttribute('contenteditable') !== 'true') side.textContent = name === 'sua empresa' ? '' : name;
+  const brand = document.getElementById('profCoBrandName');
+  if (brand) brand.textContent = name;
+}
+function showLoginWelcome() {
+  const el = document.getElementById('loginWelcomeToast');
+  const nm = document.getElementById('loginWelcomeName');
+  if (!el || !nm) return;
+  const co = String(currentUser?.company_name || '').trim();
+  const person = String(currentUser?.name || '').trim().split(/\s+/)[0];
+  nm.textContent = co || person || 'de volta';
+  el.hidden = false;
+  el.classList.remove('show');
+  requestAnimationFrame(() => { el.classList.add('show'); });
+  clearTimeout(window._loginWelcomeT);
+  clearTimeout(window._loginWelcomeHide);
+  window._loginWelcomeT = setTimeout(() => {
+    el.classList.remove('show');
+    window._loginWelcomeHide = setTimeout(() => { el.hidden = true; }, 750);
+  }, 2400);
+}
+async function persistCompanyDisplayName(raw) {
+  const nm = String(raw || '').replace(/\s+/g, ' ').trim();
+  if (!nm || !currentUser?.company_id || !(typeof _userIsAdminLike === 'function' && _userIsAdminLike())) return false;
+  try {
+    await apiPatch('age_companies', currentUser.company_id, { name: nm });
+  } catch (e) {
+    console.warn('[empresa] nome', e);
+    toast('Não foi possível salvar o nome da empresa.', 'err');
+    return false;
+  }
+  currentUser.company_name = nm;
+  if (currentUser.id) {
+    try { await apiPatch('age_users', currentUser.id, { company_name: nm }); } catch (e) {}
+  }
+  const inp = document.getElementById('profCoName');
+  if (inp && document.activeElement !== inp) inp.value = nm;
+  syncCompanyBrandUi();
+  return true;
+}
+function startEditCompanyWelcome() {
+  const can = (typeof _userIsAdminLike === 'function' && _userIsAdminLike() && !!currentUser?.company_id);
+  if (!can) { if (typeof navigate === 'function') navigate('profile'); return; }
+  const el = document.getElementById('sidebarCoName');
+  if (!el || el.getAttribute('contenteditable') === 'true') return;
+  el.setAttribute('contenteditable', 'true');
+  el.classList.add('is-edit');
+  el.focus();
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } catch (e) {}
+  let done = false;
+  const finish = async (save) => {
+    if (done) return;
+    done = true;
+    el.removeAttribute('contenteditable');
+    el.classList.remove('is-edit');
+    el.onkeydown = null;
+    el.onblur = null;
+    const v = String(el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (save && v && v !== 'sua empresa') {
+      const ok = await persistCompanyDisplayName(v);
+      if (ok) toast('Nome da empresa atualizado.', 'ok');
+    } else {
+      syncCompanyBrandUi();
+    }
+  };
+  el.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  };
+  el.onblur = () => finish(true);
+}
+
 function _updateUserBadgeAvatar() {
   const av = document.getElementById('userAvatar');
   if(!av) return;
@@ -8471,6 +8627,7 @@ function _updateUserBadgeAvatar() {
     av.style.color = '#ffffff';
     av.textContent = (currentUser?.name || '?')[0].toUpperCase();
   }
+  try { syncCompanyBrandUi(); } catch (e) {}
 }
 
 async function mergeCurrentUserFromSupabase() {
@@ -9157,6 +9314,10 @@ async function applyLoginSessionFromRow(row) {
     await refreshLiveProjectsKpiCache().catch(() => {});
   }
   navigate(_postLoginLandingPage());
+  if (_welcomeOnNextLogin) {
+    _welcomeOnNextLogin = false;
+    setTimeout(() => { try { showLoginWelcome(); } catch (e) {} }, 350);
+  }
   try { _dashInitPeriodSelectors(); } catch (_) {}
   try { _initDashboardLiveSync(); } catch (_) {}
   startClock();
@@ -10556,6 +10717,7 @@ async function handleLogin() {
       }
     }
 
+    _welcomeOnNextLogin = true;
     const res = await applyLoginSessionFromRow(sessionRow);
     if(!res.ok) showLoginError(res.msg || 'Acesso negado.');
     else try { sessionStorage.removeItem('age_skip_autologin_gustavo'); } catch(_) {}
@@ -11734,6 +11896,7 @@ async function enterAppFreeTrialNoCard(planKey) {
   document.getElementById('plansPostSignupLayer')?.classList.remove('open');
   _regPendingSessionRow = null;
   const row = await fetchAgeUserRow(uname);
+  _welcomeOnNextLogin = true;
   await applyLoginSessionFromRow(row);
   navigate('dashboard');
   toast(`${BETA_TRIAL_DAYS} dias grátis na beta — todas as ferramentas liberadas.`, 'ok');
@@ -14493,7 +14656,7 @@ async function loadDashToolsPanorama(dbProjects, fechByProjectId) {
 async function loadDashboard() {
   _dashSetKpisLoading(true);
   try {
-    try { updateTrialBanner(); ensureReferralTokenAndUi(); } catch(e) {}
+    try { updateTrialBanner(); ensureReferralTokenAndUi(); syncCompanyBrandUi(); } catch(e) {}
     /* Fonte única: mesmos projetos da aba Projetos (escopo da empresa) */
     const [dbProjects, dbFechs] = await Promise.all([
       fetchAgeProjectsScoped(1000).catch(()=>[]),
@@ -33526,6 +33689,7 @@ async function loadProfile() {
       if(segEl) segEl.value = 'Outro';
     }
   }
+  try { syncCompanyBrandUi(); } catch(e) {}
 
   const big = document.getElementById('profAvatarBig');
   const avUrl = src.avatar_url || currentUser.avatar_url;
@@ -33661,6 +33825,8 @@ async function saveProfile() {
   const np = document.getElementById('profNewPass')?.value || '';
   const cp = document.getElementById('profCurrentPass')?.value || '';
   const payload = { name, email, job_title: job };
+  const coNameEarly = document.getElementById('profCoName')?.value?.trim();
+  if (_userIsAdminLike() && coNameEarly) payload.company_name = coNameEarly;
   if(np.length && np.length < 8) {
     toast('Nova senha deve ter ao menos 8 caracteres.', 'warn');
     return;
