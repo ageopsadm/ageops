@@ -516,19 +516,41 @@ html[data-theme="dark"] #topbarUser{color:rgba(255,255,255,.6)}
   font-family:var(--font-title);font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--text);line-height:1.15;
 }
 .prof-co-brand{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--bd)}
-.login-welcome{
+.login-splash{
   position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;
-  background:rgba(248,248,248,.72);opacity:0;pointer-events:none;
-  transition:opacity .7s ease;
+  background:var(--bg);opacity:0;pointer-events:none;
+  transition:opacity .55s ease;
 }
-.login-welcome.show{opacity:1}
-.login-welcome-card{text-align:center;padding:8px 20px}
+.login-splash[hidden]{display:none!important}
+.login-splash.show{opacity:1;pointer-events:all}
+.login-splash-stage{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 20px;text-align:center;opacity:0;transform:translateY(10px);
+  transition:opacity .45s ease,transform .45s ease;pointer-events:none;
+}
+.login-splash.is-loading .login-splash-load,
+.login-splash.is-welcome .login-splash-hi{opacity:1;transform:none}
+.login-splash-mark{
+  font-family:var(--font-logo);font-size:clamp(28px,8vw,46px);font-weight:800;
+  letter-spacing:.18em;color:var(--text);text-transform:uppercase;line-height:1.1;
+}
+.login-splash-bar{
+  width:min(168px,46vw);height:2px;margin-top:22px;border-radius:1px;overflow:hidden;
+  background:rgba(17,17,17,.12);
+}
+.login-splash-bar span{
+  display:block;height:100%;width:0;background:var(--text);
+  animation:loginSplashBar 1.4s ease forwards;
+}
+@keyframes loginSplashBar{to{width:100%}}
 .login-welcome-hi{
-  font-family:var(--font-title);font-size:16px;font-weight:600;color:#64748b;margin-bottom:6px;
+  font-family:var(--font-title);font-size:15px;font-weight:600;color:var(--textsub);margin-bottom:8px;letter-spacing:.04em;
 }
 .login-welcome-name{
-  font-family:var(--font-title);font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.035em;color:#111;line-height:1.1;
+  font-family:var(--font-title);font-size:clamp(26px,6vw,42px);font-weight:800;letter-spacing:-.035em;color:var(--text);line-height:1.15;
+  max-width:92vw;word-break:break-word;
 }
+html[data-theme="dark"] .login-splash-bar{background:rgba(255,255,255,.14)}
 
 /* ── BUTTONS ── */
 .btn{
@@ -2045,6 +2067,8 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   [style*="grid-template-columns:repeat(4"]{grid-template-columns:repeat(2,1fr)!important}
   [style*="grid-template-columns:300px 1fr"]{grid-template-columns:1fr!important}
   [style*="grid-template-columns:160px 1fr"]{grid-template-columns:1fr!important}
+  .login-splash-mark{letter-spacing:.12em}
+  .login-splash{padding:0}
 }
 @media(max-width:480px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
@@ -3583,8 +3607,12 @@ body:has(#login-screen.visible){
 <!-- ══════════════════════════════════════════
      APP SHELL
 ══════════════════════════════════════════ -->
-<div id="loginWelcomeToast" class="login-welcome" hidden aria-live="polite">
-  <div class="login-welcome-card">
+<div id="loginWelcomeToast" class="login-splash" hidden aria-live="polite">
+  <div class="login-splash-stage login-splash-load" id="loginSplashLoad">
+    <div class="login-splash-mark">AGE OPS</div>
+    <div class="login-splash-bar" aria-hidden="true"><span></span></div>
+  </div>
+  <div class="login-splash-stage login-splash-hi" id="loginSplashHi">
     <div class="login-welcome-hi">Bem-vindo</div>
     <div class="login-welcome-name" id="loginWelcomeName"></div>
   </div>
@@ -8537,8 +8565,45 @@ async function loadEquipePermissoesPage() {
 }
 
 let _welcomeOnNextLogin = false;
+let _loginSplashT0 = 0;
 function _companyDisplayName() {
   return String(currentUser?.company_name || '').trim() || 'sua empresa';
+}
+function _welcomeDisplayName() {
+  const co = String(currentUser?.company_name || '').trim();
+  if (co && co.toLowerCase() !== 'sua empresa') return co;
+  const person = String(currentUser?.name || currentUser?.full_name || '').trim();
+  if (person) return person;
+  return String(currentUser?.username || '').trim() || 'de volta';
+}
+function hideLoginSplash() {
+  const el = document.getElementById('loginWelcomeToast');
+  clearTimeout(window._loginWelcomeT);
+  clearTimeout(window._loginWelcomeHide);
+  if (!el) return;
+  el.classList.remove('show', 'is-loading', 'is-welcome');
+  el.hidden = true;
+}
+function beginLoginSplash() {
+  const el = document.getElementById('loginWelcomeToast');
+  if (!el) return;
+  const already = el.classList.contains('show') && el.classList.contains('is-loading') && !el.hidden;
+  if (!already) {
+    _loginSplashT0 = Date.now();
+    const bar = el.querySelector('.login-splash-bar span');
+    if (bar) {
+      bar.style.animation = 'none';
+      void bar.offsetWidth;
+      bar.style.animation = '';
+    }
+  }
+  clearTimeout(window._loginWelcomeT);
+  clearTimeout(window._loginWelcomeHide);
+  const nm = document.getElementById('loginWelcomeName');
+  if (nm) nm.textContent = '';
+  el.hidden = false;
+  el.classList.remove('is-welcome');
+  el.classList.add('show', 'is-loading');
 }
 function syncCompanyBrandUi() {
   const name = _companyDisplayName();
@@ -8569,18 +8634,20 @@ function showLoginWelcome() {
   const el = document.getElementById('loginWelcomeToast');
   const nm = document.getElementById('loginWelcomeName');
   if (!el || !nm) return;
-  const co = String(currentUser?.company_name || '').trim();
-  const person = String(currentUser?.name || '').trim().split(/\s+/)[0];
-  nm.textContent = co || person || 'de volta';
+  nm.textContent = _welcomeDisplayName();
   el.hidden = false;
-  el.classList.remove('show');
-  requestAnimationFrame(() => { el.classList.add('show'); });
+  el.classList.add('show');
+  el.classList.remove('is-loading');
+  el.classList.add('is-welcome');
   clearTimeout(window._loginWelcomeT);
   clearTimeout(window._loginWelcomeHide);
-  window._loginWelcomeT = setTimeout(() => {
+  window._loginWelcomeHide = setTimeout(() => {
     el.classList.remove('show');
-    window._loginWelcomeHide = setTimeout(() => { el.hidden = true; }, 750);
-  }, 2400);
+    window._loginWelcomeT = setTimeout(() => {
+      el.classList.remove('is-welcome', 'is-loading');
+      el.hidden = true;
+    }, 560);
+  }, 2200);
 }
 async function persistCompanyDisplayName(raw) {
   const nm = String(raw || '').replace(/\s+/g, ' ').trim();
@@ -9272,6 +9339,7 @@ async function applyLoginSessionFromRow(row) {
     try { _myColabIdCache = undefined; } catch(e) {}
     return { ok: false, msg: 'Dados de usuário inválidos.' };
   }
+  if (_welcomeOnNextLogin) beginLoginSplash();
   const u = String(row.username).toLowerCase();
   if(row.active === false || row.active === 'false') {
     currentUser = null;
@@ -9343,7 +9411,10 @@ async function applyLoginSessionFromRow(row) {
   navigate(_postLoginLandingPage());
   if (_welcomeOnNextLogin) {
     _welcomeOnNextLogin = false;
-    setTimeout(() => { try { showLoginWelcome(); } catch (e) {} }, 350);
+    beginLoginSplash();
+    const wait = Math.max(420, 1500 - (Date.now() - (_loginSplashT0 || Date.now())));
+    clearTimeout(window._loginWelcomeT);
+    window._loginWelcomeT = setTimeout(() => { try { showLoginWelcome(); } catch (e) {} }, wait);
   }
   try { _dashInitPeriodSelectors(); } catch (_) {}
   try { _initDashboardLiveSync(); } catch (_) {}
@@ -9727,6 +9798,8 @@ async function regWizardFinishEnter() {
     try { toast('Sessão expirada. Faça login.', 'warn'); } catch(e) {}
     return;
   }
+  _welcomeOnNextLogin = true;
+  beginLoginSplash();
   await applyLoginSessionFromRow(_regPendingSessionRow);
   _regPendingSessionRow = null;
 }
@@ -10553,9 +10626,10 @@ async function submitInviteAccept() {
 
     cancelInviteFlow();
     const row = await fetchAgeUserRow(username);
+    _welcomeOnNextLogin = true;
+    beginLoginSplash();
     await applyLoginSessionFromRow(row || payload);
     navigate('myday');
-    toast('Bem-vindo!');
   } catch(e) {
     console.error('[inviteAccept]', e);
     show(String(e?.message || 'Erro ao criar conta.'));
@@ -10663,6 +10737,7 @@ function showLoginLoading(on) {
 }
 
 function mostrarTelaLogin() {
+  try { hideLoginSplash(); } catch(e) {}
   const lp = document.getElementById('loginPage');
   const sh = document.getElementById('shell');
   if(sh) { sh.classList.remove('visible'); sh.style.display = 'none'; }
@@ -10745,11 +10820,16 @@ async function handleLogin() {
     }
 
     _welcomeOnNextLogin = true;
+    beginLoginSplash();
     const res = await applyLoginSessionFromRow(sessionRow);
-    if(!res.ok) showLoginError(res.msg || 'Acesso negado.');
+    if(!res.ok) {
+      hideLoginSplash();
+      showLoginError(res.msg || 'Acesso negado.');
+    }
     else try { sessionStorage.removeItem('age_skip_autologin_gustavo'); } catch(_) {}
   } catch(err) {
     console.error('[login]', err);
+    hideLoginSplash();
     showLoginError(err?.message || 'Erro ao fazer login.');
   } finally {
     showLoginLoading(false);
@@ -10801,6 +10881,7 @@ async function doLogout() {
   currentUser = null;
   _pendingInviteRow = null;
   _pendingInviteToken = null;
+  try { hideLoginSplash(); } catch(e) {}
   const lp = document.getElementById('loginPage');
   const sh = document.getElementById('shell');
   if(sh) { sh.classList.remove('visible'); sh.style.display = 'none'; }
@@ -11924,6 +12005,7 @@ async function enterAppFreeTrialNoCard(planKey) {
   _regPendingSessionRow = null;
   const row = await fetchAgeUserRow(uname);
   _welcomeOnNextLogin = true;
+  beginLoginSplash();
   await applyLoginSessionFromRow(row);
   navigate('dashboard');
   toast(`${BETA_TRIAL_DAYS} dias grátis na beta — todas as ferramentas liberadas.`, 'ok');
@@ -12215,6 +12297,8 @@ async function confirmPagarmeTrial() {
       document.getElementById('plansPostSignupLayer')?.classList.remove('open');
       _regPendingSessionRow = null;
       const row = await fetchAgeUserRow(pendingUser);
+      _welcomeOnNextLogin = true;
+      beginLoginSplash();
       await applyLoginSessionFromRow(row);
       navigate('dashboard');
       toast(demo ? 'Modo demo: trial simulado (sem Pagar.me).' : `Cartão cadastrado. ${BETA_TRIAL_DAYS} dias grátis na beta antes da cobrança.`, 'ok');
