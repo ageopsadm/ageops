@@ -1566,7 +1566,23 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .nt-ck-item:hover .nt-icon-btn{opacity:1}
 .nt-progress{height:6px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden;margin:6px 0 12px}
 .nt-progress i{display:block;height:100%;background:#16a34a;transition:width .2s}
-.nt-mm-wrap{position:relative;border:1px dashed var(--bd);border-radius:10px;background:radial-gradient(circle,rgba(0,0,0,.06) 1px,transparent 1px) 0 0/18px 18px;height:calc(100vh - 340px);min-height:380px;overflow:hidden;cursor:grab;outline:none}
+.nt-mm-stage{display:flex;flex-direction:column;flex:1;min-height:0}
+.nt-mm-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;padding:12px 14px}
+.nt-mm-fs-title{display:none;font-family:var(--font-h);font-size:13px;font-weight:800;margin-left:auto;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.nt-mm-fs-btn{margin-left:auto}
+.nt-mm-wrap{position:relative;border:1px dashed var(--bd);border-radius:10px;background:radial-gradient(circle,rgba(0,0,0,.06) 1px,transparent 1px) 0 0/18px 18px;height:calc(100vh - 340px);min-height:380px;overflow:hidden;cursor:grab;outline:none;flex:1}
+.nt-mm-stage.nt-mm-fs{
+  position:fixed;inset:0;z-index:9800;
+  background:var(--bg2);
+  display:flex;flex-direction:column;
+  border-radius:0;
+}
+.nt-mm-stage.nt-mm-fs .nt-toolbar{flex-shrink:0;padding:8px 12px;background:var(--bg2)}
+.nt-mm-stage.nt-mm-fs .nt-mm-body{padding:0;flex:1;min-height:0}
+.nt-mm-stage.nt-mm-fs .nt-mm-wrap{height:100%;min-height:0;flex:1;border:none;border-radius:0}
+body.nt-mm-fs-on{overflow:hidden}
+body.nt-mm-fs-on .nt-mm-fs-title{display:inline-block}
+body.nt-mm-fs-on .nt-mm-fs-btn{margin-left:6px}
 .nt-mm-wrap:focus{border-color:#111}
 .nt-mm-wrap.dragging{cursor:grabbing}
 .nt-mm-wrap.tool-draw{cursor:crosshair}
@@ -2077,6 +2093,9 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   #page-conteudos-sociais .cs-flow{gap:6px}
   #page-conteudos-sociais .cs-flow-chip{font-size:11px;padding:6px 10px}
   #page-conteudos-sociais .cs-card-flow-btns{flex-direction:column}
+  .nt-mm-stage.nt-mm-fs .nt-toolbar{padding:6px 8px;gap:3px}
+  .nt-mm-stage.nt-mm-fs .nt-tb{min-height:28px}
+  .nt-mm-fs-title{max-width:30%;font-size:12px}
 }
 @media(max-width:480px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
@@ -12513,6 +12532,7 @@ function navigate(page) {
       }
     }
   }
+  if (page !== 'notas' && typeof ntMmExitFs === 'function') ntMmExitFs();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById(`page-${page}`);
@@ -32198,6 +32218,7 @@ let _ntSelId = null;
 let _ntSaveTimer = null;
 let _ntPendingSave = new Set();
 let _ntMm = null;
+let _ntMmFs = false;
 let _ntProjects = [];
 let _ntMenuEl = null;
 let _ntLoaded = false;
@@ -32561,6 +32582,7 @@ function notasSelect(id) {
   notasRenderEditor();
 }
 function notasBackToList() {
+  if (typeof ntMmExitFs === 'function') ntMmExitFs();
   document.getElementById('ntLayout')?.classList.remove('nt-mobile-editor');
 }
 
@@ -32653,6 +32675,7 @@ function notasRenderEditor() {
   if (!pane) return;
   _ntMm = null;
   const n = _ntCurrent();
+  if (!n || n.kind !== 'mapa') ntMmExitFs();
   if (!n) {
     pane.innerHTML = `<div class="nt-empty"><i class="fas fa-sticky-note"></i><div>Selecione uma nota ao lado<br>ou crie uma nova</div><button type="button" class="btn btn-primary btn-sm" onclick="notasOpenNewMenu(event)"><i class="fas fa-plus"></i> Nova nota</button></div>`;
     return;
@@ -32726,6 +32749,8 @@ function notasOnField(field, value) {
   if (field === 'title') {
     const card = document.querySelector(`.nt-note.active .nt-ct span`);
     if (card) card.textContent = value || 'Sem título';
+    const fsTitle = document.getElementById('ntMmFsTitle');
+    if (fsTitle) fsTitle.textContent = value || 'Mapa mental';
   }
   _ntQueueSave(n);
 }
@@ -33082,7 +33107,8 @@ function ntCkClearDone() {
 
 /* ── mapa mental ── */
 function _ntMindmapHtml(n, canEdit) {
-  return `<div class="nt-toolbar">
+  return `<div class="nt-mm-stage" id="ntMmStage">
+    <div class="nt-toolbar">
     ${canEdit ? `
     <button type="button" class="nt-tb is-on" data-mm-tool="select" onclick="ntMmSetTool('select')" title="Mover e religar (V)"><i class="fas fa-mouse-pointer"></i> Mover</button>
     <button type="button" class="nt-tb" data-mm-tool="draw" onclick="ntMmSetTool('draw')" title="Desenhar à mão (D)"><i class="fas fa-pen"></i> Desenhar</button>
@@ -33100,13 +33126,54 @@ function _ntMindmapHtml(n, canEdit) {
     <button type="button" class="nt-tb" onclick="ntMmFit()" title="Centralizar"><i class="fas fa-compress-arrows-alt"></i> Centralizar</button>
     <button type="button" class="nt-tb" onclick="ntMmZoom(1.2)" title="Aproximar"><i class="fas fa-search-plus"></i></button>
     <button type="button" class="nt-tb" onclick="ntMmZoom(1/1.2)" title="Afastar"><i class="fas fa-search-minus"></i></button>
+    <span class="nt-mm-fs-title" id="ntMmFsTitle">${escHtml(n.title || 'Mapa mental')}</span>
+    <button type="button" class="nt-tb nt-mm-fs-btn" id="ntMmFsBtn" onclick="ntMmToggleFs()" title="Expandir para tela cheia"><i class="fas fa-expand"></i> Tela cheia</button>
   </div>
-  <div class="nt-body" style="padding:12px 14px">
+    <div class="nt-body nt-mm-body">
     <div class="nt-mm-wrap" id="ntMmWrap" tabindex="0">
       <svg id="ntMmSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div class="nt-mm-help" id="ntMmHelp">Mover: arraste nós e linhas · Desenhar: risque o quadro · Texto: clique para soltar uma anotação · Espaço = panorâmica · Delete apaga a seleção</div>
+      <div class="nt-mm-help" id="ntMmHelp">Mover: arraste nós e linhas · Desenhar: risque o quadro · Texto: clique para soltar uma anotação · Tela cheia no botão à direita · Esc sai</div>
     </div>
+  </div>
   </div>`;
+}
+function _ntMmFsEsc(e) {
+  if (e.key !== 'Escape' || !_ntMmFs) return;
+  if (document.querySelector('.nt-mm-edit')) return;
+  if (document.getElementById('modalConfirm')?.style.display === 'flex') return;
+  if (document.getElementById('ai-command-overlay')?.style.display === 'flex') return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (_ntMm && _ntMm.tool !== 'select') ntMmSetTool('select');
+  else ntMmExitFs();
+}
+function ntMmApplyFs(on, skipFit) {
+  _ntMmFs = !!on;
+  const stage = document.getElementById('ntMmStage');
+  document.body.classList.toggle('nt-mm-fs-on', _ntMmFs);
+  if (stage) stage.classList.toggle('nt-mm-fs', _ntMmFs);
+  const btn = document.getElementById('ntMmFsBtn');
+  if (btn) {
+    btn.innerHTML = _ntMmFs ? '<i class="fas fa-compress"></i> Sair' : '<i class="fas fa-expand"></i> Tela cheia';
+    btn.title = _ntMmFs ? 'Sair da tela cheia (Esc)' : 'Expandir para tela cheia';
+    btn.classList.toggle('is-on', _ntMmFs);
+  }
+  const title = document.getElementById('ntMmFsTitle');
+  if (title) {
+    const n = _ntCurrent && _ntCurrent();
+    title.textContent = (n && n.title) || 'Mapa mental';
+  }
+  document.removeEventListener('keydown', _ntMmFsEsc, true);
+  if (_ntMmFs) document.addEventListener('keydown', _ntMmFsEsc, true);
+  if (!skipFit) requestAnimationFrame(() => { ntMmFit(); if (_ntMm && _ntMm.wrap) _ntMm.wrap.focus(); });
+  else if (_ntMm && _ntMm.wrap) _ntMm.wrap.focus();
+}
+function ntMmToggleFs() {
+  ntMmApplyFs(!_ntMmFs);
+}
+function ntMmExitFs() {
+  if (!_ntMmFs && !document.body.classList.contains('nt-mm-fs-on') && !document.querySelector('.nt-mm-stage.nt-mm-fs')) return;
+  ntMmApplyFs(false);
 }
 function _ntMmEnsureBoard(mm) {
   if (!mm || typeof mm !== 'object') return { nodes: [], labels: [], strokes: [] };
@@ -33127,7 +33194,7 @@ function ntMmSetTool(tool) {
       ? 'Desenhe no quadro · solte para gravar o traço · clique num traço e Delete para apagar · Espaço arrasta o mapa'
       : st.tool === 'text'
         ? 'Clique no vazio para soltar um texto · arraste para mover · clique de novo para editar'
-        : 'Arraste nós e linhas · clique na linha para religar · Desenhar e Texto na barra de cima';
+        : 'Arraste nós e linhas · clique na linha para religar · Tela cheia ocupa a janela · Esc sai';
   }
   st.wrap.focus();
 }
@@ -33173,6 +33240,16 @@ function _ntMindmapInit(n, canEdit) {
   const mm = _ntMmEnsureBoard(n.data.mindmap);
   if (mm.nodes.every(x => !x.x && !x.y) && mm.nodes.length > 1) _ntMmAutoLayout(mm);
   _ntMm = { note: n, data: mm, svg, wrap, canEdit, sel: mm.nodes[0].id, selEdge: null, selLabel: null, selStroke: null, tool: 'select', ink: '#111111', space: false, zoom: 1, pan: { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 }, drag: null };
+  if (_ntMmFs) {
+    ntMmApplyFs(true, true);
+    requestAnimationFrame(() => {
+      if (_ntMm) {
+        _ntMm.pan.x = wrap.clientWidth / 2;
+        _ntMm.pan.y = wrap.clientHeight / 2;
+        ntMmFit();
+      }
+    });
+  }
   _ntMmRender();
   ntMmSetTool('select');
   wrap.onmousedown = (e) => {
@@ -33331,13 +33408,19 @@ function _ntMindmapInit(n, canEdit) {
     if (e.code === 'Space' && !document.querySelector('.nt-mm-edit')) {
       _ntMm.space = true; wrap.classList.add('space-pan'); e.preventDefault(); return;
     }
+    if (e.key === 'Escape' && !document.querySelector('.nt-mm-edit')) {
+      e.preventDefault();
+      if (_ntMm.tool !== 'select') ntMmSetTool('select');
+      else if (_ntMmFs) ntMmExitFs();
+      return;
+    }
     if (!canEdit) return;
     if (document.querySelector('.nt-mm-edit')) return;
     if (e.key === 'Tab') { e.preventDefault(); ntMmAddChild(); }
     else if (e.key === 'Enter') { e.preventDefault(); ntMmAddSibling(); }
     else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); ntMmDeleteSel(); }
     else if (e.key === 'F2') { e.preventDefault(); _ntMm.selLabel ? ntMmEditLabel() : ntMmEditSel(); }
-    else if (e.key === 'v' || e.key === 'V' || e.key === 'Escape') { e.preventDefault(); ntMmSetTool('select'); }
+    else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); ntMmSetTool('select'); }
     else if ((e.key === 'd' || e.key === 'D') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ntMmSetTool('draw'); }
     else if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ntMmSetTool('text'); }
   };
