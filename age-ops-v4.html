@@ -1638,6 +1638,38 @@ body.nt-mm-fs-on .nt-mm-fs-btn{margin-left:6px}
 .nt-due-badge.late{background:#fef2f2;color:#b91c1c}
 .nt-due-badge.soon{background:#fffbeb;color:#b45309}
 
+/* ── Pipeline comercial ── */
+.pipe-filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.pipe-fbtn{border:1px solid var(--bd);background:transparent;color:var(--text);border-radius:999px;height:28px;padding:0 11px;font-family:var(--font-m);font-size:10px;font-weight:700;letter-spacing:.04em;cursor:pointer}
+.pipe-fbtn:hover{background:rgba(0,0,0,.04)}
+.pipe-fbtn.active{background:#111;color:#fff;border-color:#111}
+.pipe-funnel{display:flex;gap:4px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px}
+.pipe-funnel-step{flex:1 1 90px;min-width:88px;border:1px solid var(--bd);background:var(--bg2);border-radius:10px;padding:8px 8px 7px;text-align:left;cursor:pointer}
+.pipe-funnel-step:hover{border-color:#111}
+.pipe-funnel-step.is-on{box-shadow:0 0 0 1.5px #111 inset}
+.pipe-funnel-step .pf-lbl{font-family:var(--font-m);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}
+.pipe-funnel-step .pf-n{font-family:var(--font-h);font-size:18px;font-weight:800;line-height:1.1;margin-top:3px}
+.pipe-funnel-step .pf-sub{font-size:9px;color:#64748b;margin-top:2px}
+.pipe-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+.pipe-board{display:flex;gap:10px;overflow-x:auto;align-items:stretch;min-height:420px;padding-bottom:8px}
+.pipe-board .kanban-col{flex:0 0 230px;min-width:220px;max-width:260px}
+.pipe-board .kanban-col.is-outcome{flex-basis:210px}
+.pipe-hint{margin-top:10px;padding:10px 12px;border-radius:8px;background:#ecfeff;border:1px solid #a5f3fc;color:#155e75;font-size:11px;line-height:1.5}
+.pipe-card-actions{display:flex;gap:4px;margin-top:8px}
+.pipe-card-actions button{flex:1;height:26px;border:1px solid var(--bd);background:#f8fafc;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;color:#334155;font-family:var(--font-b)}
+.pipe-card-actions button:hover{background:#111;color:#fff;border-color:#111}
+.pipe-card-actions button.won{color:#15803d}
+.pipe-card-actions button.lost{color:#b91c1c}
+.pipe-card-actions button.won:hover{background:#16a34a;border-color:#16a34a;color:#fff}
+.pipe-card-actions button.lost:hover{background:#dc2626;border-color:#dc2626;color:#fff}
+@media(max-width:900px){
+  .pipe-kpis{grid-template-columns:repeat(3,1fr)}
+  .pipe-board .kanban-col{flex:0 0 min(78vw,260px)}
+}
+@media(max-width:600px){
+  .pipe-kpis{grid-template-columns:repeat(2,1fr)}
+}
+
 /* ── Suporte ── */
 .sup-layout{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:16px;align-items:start}
 @media(max-width:960px){.sup-layout{grid-template-columns:1fr}}
@@ -5333,25 +5365,30 @@ body:has(#login-screen.visible){
       ══════════════════════════════════ -->
       <div id="page-pipeline" class="page">
         <div class="page-header">
-          <div class="page-title"><i class="fas fa-filter"></i> PIPELINE COMERCIAL</div>
+          <div>
+            <div class="page-title"><i class="fas fa-filter"></i> PIPELINE COMERCIAL</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Novo → Qualificação → Qualificado → Reunião → Proposta → Negociação → Ganho ou Perdido</div>
+          </div>
           <div class="page-actions">
-            <button class="btn btn-ghost btn-sm" onclick="pipelineFilter('all')" id="pfAll" style="font-size:9px">TODOS</button>
-            <button class="btn btn-ghost btn-sm" onclick="pipelineFilter('followup')" id="pfFU" style="font-size:9px">⚠️ FOLLOW-UP</button>
-            <button class="btn btn-ghost btn-sm" onclick="pipelineFilter('quente')" id="pfQ" style="font-size:9px">🔥 QUENTES</button>
-            <button class="btn btn-primary btn-sm" onclick="openLeadModal()"><i class="fas fa-plus"></i> Novo Lead</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="openLeadModal(null,'novo')"><i class="fas fa-plus"></i> Novo lead</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openQualifiedLead()"><i class="fas fa-user-check"></i> Lead qualificado</button>
           </div>
         </div>
 
-        <!-- KPIs do Pipeline -->
-        <div id="pipelineKpis" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px"></div>
+        <div class="pipe-filters" id="pipelineFilters">
+          <button type="button" class="pipe-fbtn active" data-pf="abertos" onclick="pipelineFilter('abertos')">Em aberto</button>
+          <button type="button" class="pipe-fbtn" data-pf="qualificados" onclick="pipelineFilter('qualificados')">Qualificados</button>
+          <button type="button" class="pipe-fbtn" data-pf="followup" onclick="pipelineFilter('followup')">Follow-up</button>
+          <button type="button" class="pipe-fbtn" data-pf="quente" onclick="pipelineFilter('quente')">Quentes</button>
+          <button type="button" class="pipe-fbtn" data-pf="ganhos" onclick="pipelineFilter('ganhos')">Ganhos</button>
+          <button type="button" class="pipe-fbtn" data-pf="perdidos" onclick="pipelineFilter('perdidos')">Perdidos</button>
+          <button type="button" class="pipe-fbtn" data-pf="all" onclick="pipelineFilter('all')">Todos</button>
+        </div>
 
-        <!-- Alerta de Follow-ups -->
+        <div id="pipelineFunnel" class="pipe-funnel"></div>
+        <div id="pipelineKpis" class="pipe-kpis"></div>
         <div id="pipelineAlerts" style="margin-bottom:12px"></div>
-
-        <!-- Kanban Board -->
-        <div id="pipelineBoard" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start;min-height:400px"></div>
-
-        <!-- Painel de Previsibilidade -->
+        <div id="pipelineBoard" class="pipe-board"></div>
         <div id="pipelineForecast" style="margin-top:14px"></div>
       </div>
 
@@ -6079,14 +6116,8 @@ body:has(#login-screen.visible){
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">ESTÁGIO ATUAL</label>
-          <select id="lStage" style="width:100%">
-            <option value="lead">📥 Lead Novo</option>
-            <option value="proposta">📤 Proposta Enviada</option>
-            <option value="negociacao">🤝 Em Negociação</option>
-            <option value="fechado">✅ Fechado</option>
-            <option value="perdido">❌ Perdido</option>
-          </select>
+          <label class="form-label">ESTÁGIO NO FUNIL</label>
+          <select id="lStage" style="width:100%" onchange="leadStageHint()"></select>
         </div>
         <div class="form-group">
           <label class="form-label">TAGS (separadas por vírgula)</label>
@@ -6094,13 +6125,16 @@ body:has(#login-screen.visible){
         </div>
       </div>
 
-      <!-- Motivo de perda (aparece só se perdido) -->
-      <div id="lPerdidoGrp" style="display:none;margin-top:4px">
-        <label class="form-label">MOTIVO DA PERDA</label>
+      <div id="lQualiHint" class="pipe-hint" hidden>
+        <b>Lead qualificado</b> — já passou no filtro comercial: tem demanda clara, orçamento ou faixa e alguém que decide. Se ainda estiver só no primeiro contato, deixe em Qualificação.
+      </div>
+      <div id="lPerdidoGrp" style="display:none;margin-top:10px">
+        <label class="form-label">MOTIVO DA PERDA *</label>
         <select id="lPerdido" style="width:100%;margin-top:4px">
-          <option value="">— Selecione —</option>
+          <option value="">— Selecione o motivo —</option>
           <option>Preço alto</option><option>Sem orçamento</option><option>Escolheu concorrente</option>
-          <option>Projeto cancelado</option><option>Sem resposta</option><option>Timing errado</option><option>Outro</option>
+          <option>Não era o perfil</option><option>Projeto cancelado</option><option>Sem resposta</option>
+          <option>Timing errado</option><option>Outro</option>
         </select>
       </div>
     </div>
@@ -6144,15 +6178,19 @@ body:has(#login-screen.visible){
           <i class="fas fa-robot" style="margin-right:5px"></i>REGRAS DE FOLLOW-UP AUTOMÁTICO
         </div>
         <div style="font-size:10px;color:#374151;line-height:1.7">
-          • <b>Proposta enviada</b> → alerta em <b>3 dias</b> sem resposta<br>
-          • <b>Em negociação</b> → alerta em <b>5 dias</b> sem movimentação<br>
-          • <b>Lead novo</b> → alerta em <b>7 dias</b> sem contato<br>
-          • Ao mover para <b>Fechado</b> → solicita data de início do projeto
+          • <b>Novo</b> → primeiro contato em <b>2 dias</b><br>
+          • <b>Qualificação / Qualificado / Reunião</b> → 3 a 4 dias sem movimento<br>
+          • <b>Proposta</b> → alerta em <b>3 dias</b> sem resposta<br>
+          • <b>Negociação</b> → alerta em <b>5 dias</b><br>
+          • <b>Ganho</b> ou <b>Perdido</b> saem da fila de follow-up
         </div>
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid rgba(0,0,0,.07)">
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid rgba(0,0,0,.07)">
+      <button type="button" class="btn btn-ghost" id="leadLostBtn" style="display:none;margin-right:auto" onclick="pipeMarkLostFromModal()">
+        <i class="fas fa-times-circle"></i> Marcar perdido
+      </button>
       <button class="btn btn-ghost" onclick="closeModal('modalLead')">Cancelar</button>
       <button id="leadDelBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteLead()">
         <i class="fas fa-trash"></i> Excluir
@@ -6160,6 +6198,30 @@ body:has(#login-screen.visible){
       <button class="btn btn-primary" onclick="saveLead()">
         <i class="fas fa-save"></i> Salvar Lead
       </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalLeadPerdido">
+  <div class="modal-box" style="max-width:420px;width:94vw">
+    <div class="modal-title">
+      <span>Marcar como perdido</span>
+      <button type="button" onclick="closeModal('modalLeadPerdido')" style="color:var(--textsub);font-size:16px"><i class="fas fa-times"></i></button>
+    </div>
+    <p id="lpNome" style="font-size:13px;font-weight:700;margin:0 0 8px;color:var(--text)"></p>
+    <p style="font-size:11px;color:#64748b;margin:0 0 12px;line-height:1.5">O lead sai do funil aberto e entra em Perdidos. Dá para reabrir depois.</p>
+    <div class="form-group">
+      <label class="form-label">MOTIVO *</label>
+      <select id="lpMotivo" style="width:100%">
+        <option value="">— Por que não fechou? —</option>
+        <option>Preço alto</option><option>Sem orçamento</option><option>Escolheu concorrente</option>
+        <option>Não era o perfil</option><option>Projeto cancelado</option><option>Sem resposta</option>
+        <option>Timing errado</option><option>Outro</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modalLeadPerdido')">Cancelar</button>
+      <button type="button" class="btn btn-danger" onclick="confirmLeadLost()"><i class="fas fa-times-circle"></i> Confirmar perda</button>
     </div>
   </div>
 </div>
@@ -36398,25 +36460,47 @@ document.addEventListener('DOMContentLoaded', ()=>{
 /* ╔═══════════════════════════════════════════════════════════════╗
    ║           PIPELINE KANBAN — AGE OPS                       ║
    ║  Funcionalidades:                                             ║
-   ║  • Kanban com 4 colunas + coluna Perdidos                    ║
-   ║  • Drag-and-drop entre colunas                               ║
-   ║  • KPIs em tempo real: pipeline total, ponderado, win rate   ║
-   ║  • Alertas de follow-up automático (3/5/7 dias)              ║
-   ║  • Previsibilidade de receita mensal                         ║
-   ║  • Filtros por temperatura e status de follow-up             ║
+   ║  • Funil: Novo → Qualificação → Qualificado → Reunião        ║
+   ║           → Proposta → Negociação → Ganho / Perdido          ║
+   ║  • Lead qualificado em 1 clique + marcar perdido com motivo  ║
+   ║  • Drag-and-drop, avançar, ganhou/perdeu no card             ║
+   ║  • KPIs, follow-up e previsão por estágio                    ║
    ╚═══════════════════════════════════════════════════════════════╝ */
 
 let _leadsCache  = [];
 let _leadEditId  = null;
-let _pipeFilter  = 'all';
+let _pipeFilter  = 'abertos';
 let _dragLeadId  = null;
+let _lostLeadId  = null;
 
 const STAGES = [
-  { id:'lead',       label:'📥 Leads Novos',      cor:'#2563eb', subCor:'#dbeafe', borda:'#bfdbfe' },
-  { id:'proposta',   label:'📤 Proposta Enviada',  cor:'#d97706', subCor:'#fef9c3', borda:'#fde68a' },
-  { id:'negociacao', label:'🤝 Em Negociação',     cor:'#7c3aed', subCor:'#ede9fe', borda:'#c4b5fd' },
-  { id:'fechado',    label:'✅ Fechado',            cor:'#16a34a', subCor:'#dcfce7', borda:'#bbf7d0' },
+  { id:'novo',          label:'Novo',          short:'Novo',          hint:'Acabou de entrar',              cor:'#64748b', subCor:'#f8fafc', borda:'#e2e8f0' },
+  { id:'qualificacao',  label:'Qualificação',  short:'Qualif.',       hint:'Primeiro contato e filtro',     cor:'#2563eb', subCor:'#eff6ff', borda:'#bfdbfe' },
+  { id:'qualificado',   label:'Qualificado',   short:'Qualificado',   hint:'Passou no filtro comercial',    cor:'#0891b2', subCor:'#ecfeff', borda:'#a5f3fc' },
+  { id:'reuniao',       label:'Reunião',       short:'Reunião',       hint:'Diagnóstico ou apresentação',   cor:'#7c3aed', subCor:'#f5f3ff', borda:'#ddd6fe' },
+  { id:'proposta',      label:'Proposta',      short:'Proposta',      hint:'Proposta enviada',              cor:'#d97706', subCor:'#fffbeb', borda:'#fde68a' },
+  { id:'negociacao',    label:'Negociação',    short:'Negociação',    hint:'Alinhando fechamento',          cor:'#ea580c', subCor:'#fff7ed', borda:'#fed7aa' },
+  { id:'fechado',       label:'Ganho',         short:'Ganho',         hint:'Fechou',      outcome:'won',    cor:'#16a34a', subCor:'#f0fdf4', borda:'#bbf7d0' },
+  { id:'perdido',       label:'Perdido',       short:'Perdido',       hint:'Não avançou', outcome:'lost',   cor:'#dc2626', subCor:'#fef2f2', borda:'#fecaca' },
 ];
+const STAGE_ALIASES = { lead:'novo', ganho:'fechado', won:'fechado', lost:'perdido', sql:'qualificado', mql:'qualificacao' };
+const STAGE_PROB = { novo:10, qualificacao:20, qualificado:40, reuniao:50, proposta:60, negociacao:75, fechado:100, perdido:0 };
+const STAGE_FOLLOWUP = { novo:2, qualificacao:3, qualificado:4, reuniao:3, proposta:3, negociacao:5 };
+const LOST_REASONS = ['Preço alto','Sem orçamento','Escolheu concorrente','Não era o perfil','Projeto cancelado','Sem resposta','Timing errado','Outro'];
+
+function normalizeLeadStage(st) {
+  const raw = String(st || 'novo').toLowerCase().trim();
+  return STAGE_ALIASES[raw] || raw || 'novo';
+}
+function leadStage(l) { return normalizeLeadStage(l && l.stage); }
+function stageMeta(id) { return STAGES.find(s => s.id === normalizeLeadStage(id)) || STAGES[0]; }
+function isOpenStage(id) { return !stageMeta(id).outcome; }
+function nextOpenStage(id) {
+  const open = STAGES.filter(s => !s.outcome);
+  const i = open.findIndex(s => s.id === normalizeLeadStage(id));
+  if (i < 0) return open[0];
+  return open[i + 1] || STAGES.find(s => s.id === 'fechado');
+}
 
 const TEMP_STYLE = {
   quente: { icone:'🔥', cor:'#dc2626', bg:'#fef2f2', label:'Quente' },
@@ -36454,9 +36538,10 @@ function getFollowupStatus(lead) {
     if(diasAte === 0) return { nivel:'hoje', label:'Follow-up HOJE', cor:'#dc2626' };
     if(diasAte <= 2)  return { nivel:'urgente', label:`Follow-up em ${diasAte}d`, cor:'#d97706' };
   }
-  // Regras automáticas por stage
-  const limites = { proposta:3, negociacao:5, lead:7 };
-  const limite  = limites[lead.stage];
+  const st = leadStage(lead);
+  if (!isOpenStage(st)) return null;
+  const limites = STAGE_FOLLOWUP;
+  const limite  = limites[st];
   if(!limite) return null;
   const refDate = lead.data_proposta || lead.updated_at || lead.created_at || lead.data_entrada;
   const dias    = diasDesde(refDate);
@@ -36474,7 +36559,7 @@ function getFollowupStatus(lead) {
 async function loadPipeline() {
   try {
     const json = await apiGet('age_leads', '?limit=300&sort=created_at');
-    _leadsCache = (json?.data || []).filter(l => _sbIsRowVisible(l));
+    _leadsCache = (json?.data || []).filter(l => _sbIsRowVisible(l)).map(l => ({ ...l, stage: leadStage(l) }));
     renderPipeline();
   } catch(e) {
     console.error('loadPipeline:', e);
@@ -36485,14 +36570,10 @@ async function loadPipeline() {
 
 /* ── Filtro ── */
 function pipelineFilter(f) {
-  _pipeFilter = f;
-  ['pfAll','pfFU','pfQ'].forEach(id => {
-    const b = document.getElementById(id);
-    if(b) b.classList.remove('active');
+  _pipeFilter = f || 'abertos';
+  document.querySelectorAll('#pipelineFilters .pipe-fbtn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-pf') === _pipeFilter);
   });
-  const map = { all:'pfAll', followup:'pfFU', quente:'pfQ' };
-  const btn = document.getElementById(map[f]);
-  if(btn) btn.classList.add('active');
   renderPipeline();
 }
 
@@ -36503,44 +36584,83 @@ function applyFilter(leads) {
       return fu && (fu.nivel === 'atrasado' || fu.nivel === 'hoje' || fu.nivel === 'urgente' || fu.nivel === 'auto');
     });
   }
-  if(_pipeFilter === 'quente') return leads.filter(l => l.temperatura === 'quente');
+  if(_pipeFilter === 'quente') return leads.filter(l => l.temperatura === 'quente' && isOpenStage(leadStage(l)));
+  if(_pipeFilter === 'qualificados') {
+    return leads.filter(l => ['qualificado','reuniao','proposta','negociacao'].includes(leadStage(l)));
+  }
+  if(_pipeFilter === 'ganhos') return leads.filter(l => leadStage(l) === 'fechado');
+  if(_pipeFilter === 'perdidos') return leads.filter(l => leadStage(l) === 'perdido');
+  if(_pipeFilter === 'abertos') return leads.filter(l => isOpenStage(leadStage(l)));
+  if(String(_pipeFilter).startsWith('stage:')) {
+    const id = normalizeLeadStage(_pipeFilter.slice(6));
+    return leads.filter(l => leadStage(l) === id);
+  }
   return leads;
+}
+
+function visibleStages() {
+  if (String(_pipeFilter).startsWith('stage:')) {
+    const id = normalizeLeadStage(_pipeFilter.slice(6));
+    return STAGES.filter(s => s.id === id);
+  }
+  if (_pipeFilter === 'perdidos') return STAGES.filter(s => s.id === 'perdido');
+  if (_pipeFilter === 'ganhos') return STAGES.filter(s => s.id === 'fechado');
+  if (_pipeFilter === 'abertos' || _pipeFilter === 'followup' || _pipeFilter === 'quente' || _pipeFilter === 'qualificados') {
+    return STAGES.filter(s => !s.outcome);
+  }
+  return STAGES;
 }
 
 /* ── Render principal ── */
 function renderPipeline() {
+  renderPipelineFunnel();
   renderPipelineKpis();
   renderPipelineAlerts();
   renderKanbanBoard();
   renderPipelineForecast();
 }
 
+function renderPipelineFunnel() {
+  const el = document.getElementById('pipelineFunnel');
+  if (!el) return;
+  el.innerHTML = STAGES.map(st => {
+    const n = _leadsCache.filter(l => leadStage(l) === st.id).length;
+    const fat = _leadsCache.filter(l => leadStage(l) === st.id).reduce((s,l)=>s+(l.valor_estimado||0),0);
+    const on = _pipeFilter === ('stage:' + st.id)
+      || (_pipeFilter === 'ganhos' && st.id === 'fechado')
+      || (_pipeFilter === 'perdidos' && st.id === 'perdido');
+    return `<button type="button" class="pipe-funnel-step${on ? ' is-on' : ''}" onclick="pipelineFilter(_pipeFilter==='stage:${st.id}'?'abertos':'stage:${st.id}')" style="border-top:3px solid ${st.cor}">
+      <div class="pf-lbl">${escHtml(st.short)}</div>
+      <div class="pf-n" style="color:${st.cor}">${n}</div>
+      <div class="pf-sub">${n ? fmtBRL(fat) : st.hint}</div>
+    </button>`;
+  }).join('');
+}
+
 /* ── KPIs ── */
 function renderPipelineKpis() {
   const el = document.getElementById('pipelineKpis');
   if(!el) return;
-  const ativos = _leadsCache.filter(l => l.stage !== 'perdido');
-  const fat    = ativos.reduce((s,l) => s + (l.valor_estimado||0), 0);
-  const ponderado = ativos.reduce((s,l) => s + (l.valor_estimado||0) * ((l.probabilidade||50)/100), 0);
-  const fechados  = _leadsCache.filter(l => l.stage === 'fechado');
-  const perdidos  = _leadsCache.filter(l => l.stage === 'perdido');
+  const abertos = _leadsCache.filter(l => isOpenStage(leadStage(l)));
+  const fat    = abertos.reduce((s,l) => s + (l.valor_estimado||0), 0);
+  const ponderado = abertos.reduce((s,l) => s + (l.valor_estimado||0) * ((l.probabilidade||STAGE_PROB[leadStage(l)]||50)/100), 0);
+  const fechados  = _leadsCache.filter(l => leadStage(l) === 'fechado');
+  const perdidos  = _leadsCache.filter(l => leadStage(l) === 'perdido');
+  const quali     = _leadsCache.filter(l => ['qualificado','reuniao','proposta','negociacao'].includes(leadStage(l)));
   const winRate   = (fechados.length + perdidos.length) > 0
     ? Math.round(fechados.length / (fechados.length + perdidos.length) * 100) : 0;
   const fuAlerts  = _leadsCache.filter(l => {
     const fu = getFollowupStatus(l);
     return fu && (fu.nivel === 'atrasado' || fu.nivel === 'hoje' || fu.nivel === 'auto');
   });
-  const ticketMed = fechados.length > 0
-    ? fechados.reduce((s,l)=>s+(l.valor_estimado||0),0) / fechados.length : 0;
-  const leadsAtivos = ativos.filter(l => l.stage !== 'fechado');
 
   const kpis = [
-    { label:'PIPELINE TOTAL',    val:fmtBRL(fat),              sub: leadsAtivos.length+' leads ativos', cor:'#2563eb' },
-    { label:'RECEITA PONDERADA', val:fmtBRL(ponderado),        sub:'por probabilidade',                  cor:'#7c3aed' },
-    { label:'FOLLOW-UPS ATRAS.', val:fuAlerts.length,          sub:'requer ação imediata', cor:fuAlerts.length>0?'#dc2626':'#16a34a' },
-    { label:'WIN RATE',          val:winRate+'%',               sub:fechados.length+' fechados',          cor:winRate>=50?'#16a34a':winRate>=30?'#d97706':'#dc2626' },
-    { label:'TICKET MÉDIO',      val:ticketMed>0?fmtBRL(ticketMed):'—', sub:'projetos fechados', cor:'#0891b2' },
-    { label:'META FUNIL ATIVO',  val:leadsAtivos.length+'/10', sub:leadsAtivos.length>=10?'✅ Meta atingida':'⚠️ Abaixo da meta', cor:leadsAtivos.length>=10?'#16a34a':'#d97706' },
+    { label:'EM ABERTO',         val:abertos.length,           sub: fmtBRL(fat),                         cor:'#2563eb' },
+    { label:'QUALIFICADOS',      val:quali.length,             sub:'prontos para avançar',               cor:'#0891b2' },
+    { label:'RECEITA PONDERADA', val:fmtBRL(ponderado),        sub:'pelo estágio e probabilidade',       cor:'#7c3aed' },
+    { label:'FOLLOW-UPS',        val:fuAlerts.length,          sub:fuAlerts.length?'requerem ação':'em dia', cor:fuAlerts.length>0?'#dc2626':'#16a34a' },
+    { label:'WIN RATE',          val:winRate+'%',               sub:fechados.length+' ganhos · '+perdidos.length+' perdidos', cor:winRate>=50?'#16a34a':winRate>=30?'#d97706':'#dc2626' },
+    { label:'PERDIDOS',          val:perdidos.length,          sub:fmtBRL(perdidos.reduce((s,l)=>s+(l.valor_estimado||0),0)), cor:'#dc2626' },
   ];
   el.innerHTML = kpis.map(k => `
     <div class="kpi-card" style="border-top:3px solid ${k.cor};padding:10px 12px">
@@ -36600,62 +36720,44 @@ function renderKanbanBoard() {
   const el = document.getElementById('pipelineBoard');
   if(!el) return;
   const filtered = applyFilter(_leadsCache);
-  el.innerHTML = STAGES.map(st => {
-    const cards = filtered.filter(l => l.stage === st.id)
+  const cols = visibleStages();
+  el.innerHTML = cols.map(st => {
+    const cards = filtered.filter(l => leadStage(l) === st.id)
       .sort((a,b) => (b.valor_estimado||0) - (a.valor_estimado||0));
     const colFat = cards.reduce((s,l)=>s+(l.valor_estimado||0),0);
+    const empty = st.id === 'perdido'
+      ? 'Arraste aqui ou use Perdeu no card'
+      : st.id === 'qualificado'
+        ? 'Use Lead qualificado ou avance do filtro'
+        : 'Arraste para cá ou clique +';
     return `
-    <div class="kanban-col"
+    <div class="kanban-col${st.outcome ? ' is-outcome' : ''}"
       data-stage="${st.id}"
       ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')"
       ondragleave="event.currentTarget.classList.remove('drag-over')"
       ondrop="onDropStage(event,'${st.id}')"
       style="background:${st.subCor};border:2px solid ${st.borda};border-radius:12px;
              min-height:200px;display:flex;flex-direction:column">
-      <!-- Header da coluna -->
-      <div style="padding:10px 12px;border-bottom:2px solid ${st.borda};display:flex;justify-content:space-between;align-items:center">
+      <div style="padding:10px 12px;border-bottom:2px solid ${st.borda};display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
-          <div style="font-size:11px;font-weight:800;color:${st.cor};font-family:var(--font-m)">${st.label}</div>
-          <div style="font-size:9px;color:#64748b;margin-top:1px">${cards.length} lead${cards.length!==1?'s':''} · ${fmtBRL(colFat)}</div>
+          <div style="font-size:11px;font-weight:800;color:${st.cor};font-family:var(--font-m)">${escHtml(st.label)}</div>
+          <div style="font-size:9px;color:#64748b;margin-top:2px;line-height:1.35">${escHtml(st.hint)}</div>
+          <div style="font-size:9px;color:#64748b;margin-top:3px">${cards.length} · ${fmtBRL(colFat)}</div>
         </div>
-        <button onclick="openLeadModal(null,'${st.id}')"
+        ${st.id === 'perdido' ? '' : `<button type="button" onclick="event.stopPropagation();${st.id==='qualificado'?'openQualifiedLead()':`openLeadModal(null,'${st.id}')`}"
           style="width:26px;height:26px;border-radius:50%;background:${st.cor};color:#fff;border:none;
-                 cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;
-                 transition:opacity .2s" title="Adicionar lead nesta coluna">+</button>
+                 cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0"
+          title="${st.id==='qualificado'?'Adicionar lead qualificado':'Adicionar nesta etapa'}">+</button>`}
       </div>
-      <!-- Cards -->
       <div style="padding:8px;display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto;max-height:65vh">
         ${cards.map(l => renderLeadCard(l, st)).join('')}
-        ${!cards.length ? `<div style="text-align:center;padding:20px 8px;color:#64748b;font-size:10px">
-          <i class="fas fa-inbox" style="font-size:20px;display:block;margin-bottom:6px;opacity:.7"></i>
-          Arraste leads aqui ou<br>clique + para adicionar
+        ${!cards.length ? `<div style="text-align:center;padding:20px 8px;color:#64748b;font-size:10px;line-height:1.5">
+          <i class="fas fa-inbox" style="font-size:18px;display:block;margin-bottom:6px;opacity:.7"></i>
+          ${empty}
         </div>` : ''}
       </div>
     </div>`;
-  }).join('') +
-  /* Coluna de Perdidos (colapsada) */
-  `<div style="grid-column:1/-1;margin-top:6px">
-    <details>
-      <summary style="cursor:pointer;font-size:10px;font-family:var(--font-m);font-weight:700;
-                      color:#94a3b8;letter-spacing:.1em;padding:6px 0;list-style:none;display:flex;
-                      align-items:center;gap:6px">
-        <i class="fas fa-chevron-right" style="font-size:9px;transition:transform .2s"></i>
-        ❌ PERDIDOS (${_leadsCache.filter(l=>l.stage==='perdido').length})
-        · ${fmtBRL(_leadsCache.filter(l=>l.stage==='perdido').reduce((s,l)=>s+(l.valor_estimado||0),0))} em oportunidades perdidas
-      </summary>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:10px;
-                  background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
-        ${_leadsCache.filter(l=>l.stage==='perdido').slice(0,20).map(l => `
-          <div onclick="openLeadModal('${l.id}')"
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;
-                   cursor:pointer;min-width:160px;flex:1;opacity:.7;transition:opacity .2s"
-            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">
-            <div style="font-size:10px;font-weight:700;color:#64748b">${escHtml(l.nome||'—')}</div>
-            <div style="font-size:9px;color:#94a3b8">${fmtBRL(l.valor_estimado||0)} · ${l.perdido_motivo||'sem motivo'}</div>
-          </div>`).join('') || '<span style="font-size:10px;color:#94a3b8">Nenhum lead perdido ainda 🎉</span>'}
-      </div>
-    </details>
-  </div>`;
+  }).join('');
 }
 
 /* ── Card individual do lead ── */
@@ -36718,12 +36820,20 @@ function renderLeadCard(l, st) {
       <span style="font-size:9px;font-weight:700;color:${fu.cor}">${fu.label}</span>
     </div>` : ''}
 
-    <!-- Footer com tempo no funil -->
     <div style="display:flex;justify-content:space-between;align-items:center;padding-top:5px;border-top:1px solid rgba(0,0,0,.05)">
       <span style="font-size:8.5px;color:#94a3b8">
         ${diasCriac !== null ? `${diasCriac}d no funil` : 'data desconhecida'}
       </span>
-      ${l.data_fechamento ? `<span style="font-size:8.5px;color:#64748b">fecha ${fmtDate(l.data_fechamento)}</span>` : ''}
+      ${st.id === 'perdido' && l.perdido_motivo ? `<span style="font-size:8.5px;color:#b91c1c">${escHtml(l.perdido_motivo)}</span>` : ''}
+      ${l.data_fechamento && st.id !== 'perdido' ? `<span style="font-size:8.5px;color:#64748b">fecha ${fmtDate(l.data_fechamento)}</span>` : ''}
+    </div>
+    <div class="pipe-card-actions" onclick="event.stopPropagation()">
+      ${st.id === 'perdido' ? `<button type="button" onclick="pipeReopenLead('${l.id}')">Reabrir</button>` : ''}
+      ${st.id === 'fechado' ? `<button type="button" onclick="pipeReopenLead('${l.id}')">Reabrir</button><button type="button" class="lost" onclick="pipeMarkLost('${l.id}')">Perdeu</button>` : ''}
+      ${isOpenStage(st.id) ? `
+        <button type="button" onclick="pipeAdvanceLead('${l.id}')">Avançar</button>
+        <button type="button" class="won" onclick="pipeMarkWon('${l.id}')">Ganhou</button>
+        <button type="button" class="lost" onclick="pipeMarkLost('${l.id}')">Perdeu</button>` : ''}
     </div>
   </div>`;
 }
@@ -36738,37 +36848,87 @@ function onDragStart(e, id) {
 async function onDropStage(e, newStage) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  if(!_dragLeadId) return;
-  const lead = _leadsCache.find(l => String(l.id) === String(_dragLeadId));
-  if(!lead || lead.stage === newStage) { _dragLeadId = null; return; }
-
-  // Atualizar localmente primeiro (UI reativa)
-  lead.stage = newStage;
-  // Auto-preencher data de proposta ao mover para proposta
-  if(newStage === 'proposta' && !lead.data_proposta) {
-    lead.data_proposta = todayISO();
-    lead.data_followup = addDaysISO(3);
-  }
-  // Auto-sugerir follow-up por stage
-  if(newStage === 'negociacao' && !lead.data_followup) {
-    lead.data_followup = addDaysISO(5);
-  }
-  renderPipeline();
-
-  // Persistir na API
-  try {
-    const payload = { stage: newStage };
-    if(newStage === 'proposta' && !lead.data_proposta) {
-      payload.data_proposta = todayISO();
-      payload.data_followup = addDaysISO(3);
-    }
-    await apiPatch('age_leads', _dragLeadId, payload);
-    toast(`Lead movido para "${STAGES.find(s=>s.id===newStage)?.label||newStage}"`);
-  } catch(err) {
-    console.error('onDropStage:', err);
-    toast('Erro ao mover lead','err');
-  }
+  const id = _dragLeadId;
   _dragLeadId = null;
+  if(!id) return;
+  if (normalizeLeadStage(newStage) === 'perdido') {
+    pipeMarkLost(id);
+    return;
+  }
+  await applyLeadStage(id, newStage);
+}
+
+function stagePatch(lead, newStage, extra) {
+  const st = normalizeLeadStage(newStage);
+  const payload = Object.assign({ stage: st }, extra || {});
+  if (st === 'proposta' && !lead.data_proposta && !payload.data_proposta) {
+    payload.data_proposta = todayISO();
+    if (!payload.data_followup) payload.data_followup = addDaysISO(STAGE_FOLLOWUP.proposta);
+  }
+  if (isOpenStage(st) && !lead.data_followup && !payload.data_followup && STAGE_FOLLOWUP[st]) {
+    payload.data_followup = addDaysISO(STAGE_FOLLOWUP[st]);
+  }
+  if (st === 'fechado') payload.probabilidade = 100;
+  if (st === 'perdido') payload.probabilidade = 0;
+  return payload;
+}
+
+async function applyLeadStage(id, newStage, extra) {
+  const lead = _leadsCache.find(l => String(l.id) === String(id));
+  if (!lead) return;
+  const st = normalizeLeadStage(newStage);
+  if (leadStage(lead) === st && !extra) return;
+  const payload = stagePatch(lead, st, extra);
+  Object.assign(lead, payload);
+  renderPipeline();
+  try {
+    await apiPatch('age_leads', id, payload);
+    toast(st === 'fechado' ? 'Lead marcado como ganho.' : st === 'perdido' ? 'Lead marcado como perdido.' : `Movido para ${stageMeta(st).label}.`);
+  } catch (err) {
+    console.error('applyLeadStage:', err);
+    toast('Não foi possível atualizar o lead.', 'err');
+    await loadPipeline();
+  }
+}
+
+function pipeAdvanceLead(id) {
+  const lead = _leadsCache.find(l => String(l.id) === String(id));
+  if (!lead) return;
+  const nxt = nextOpenStage(leadStage(lead));
+  applyLeadStage(id, nxt.id);
+}
+function pipeMarkWon(id) { applyLeadStage(id, 'fechado'); }
+function openQualifiedLead() {
+  openLeadModal(null, 'qualificado');
+}
+function pipeReopenLead(id) { applyLeadStage(id, 'qualificacao'); }
+
+function pipeMarkLost(id) {
+  const lead = _leadsCache.find(l => String(l.id) === String(id));
+  if (!lead) return;
+  _lostLeadId = id;
+  const nome = document.getElementById('lpNome');
+  if (nome) nome.textContent = (lead.nome || 'Lead') + (lead.empresa ? ' · ' + lead.empresa : '');
+  const sel = document.getElementById('lpMotivo');
+  if (sel) sel.value = lead.perdido_motivo || '';
+  if (typeof openModal === 'function') openModal('modalLeadPerdido');
+  else document.getElementById('modalLeadPerdido')?.classList.add('open');
+}
+function pipeMarkLostFromModal() {
+  if (_leadEditId) pipeMarkLost(_leadEditId);
+}
+async function confirmLeadLost() {
+  const motivo = (document.getElementById('lpMotivo')?.value || '').trim();
+  if (!motivo) { toast('Escolha o motivo da perda.', 'err'); return; }
+  const id = _lostLeadId;
+  if (!id) return;
+  const lead = _leadsCache.find(l => String(l.id) === String(id));
+  const stamp = `[${new Date().toLocaleDateString('pt-BR')}] Perdido: ${motivo}`;
+  const notas = lead && lead.notas ? (String(lead.notas).trim() + '\n' + stamp) : stamp;
+  closeModal('modalLeadPerdido');
+  if (_leadEditId && String(_leadEditId) === String(id)) closeModal('modalLead');
+  await applyLeadStage(id, 'perdido', { perdido_motivo: motivo, notas });
+  _lostLeadId = null;
 }
 
 /* ── Painel de Previsibilidade ── */
@@ -36776,10 +36936,10 @@ function renderPipelineForecast() {
   const el = document.getElementById('pipelineForecast');
   if(!el) return;
 
-  const ativos = _leadsCache.filter(l => l.stage !== 'perdido');
-  const ponderado = ativos.reduce((s,l) => s + (l.valor_estimado||0) * ((l.probabilidade||50)/100), 0);
+  const ativos = _leadsCache.filter(l => leadStage(l) !== 'perdido');
+  const ponderado = ativos.reduce((s,l) => s + (l.valor_estimado||0) * ((l.probabilidade||STAGE_PROB[leadStage(l)]||50)/100), 0);
   const fechadosMes = _leadsCache.filter(l => {
-    if(l.stage !== 'fechado') return false;
+    if(leadStage(l) !== 'fechado') return false;
     const d = l.updated_at || l.created_at;
     if(!d) return false;
     const dt = new Date(d);
@@ -36793,23 +36953,20 @@ function renderPipelineForecast() {
 
   // Leads por estágio
   const byStage = {};
-  STAGES.forEach(s => { byStage[s.id] = _leadsCache.filter(l=>l.stage===s.id); });
+  STAGES.forEach(s => { byStage[s.id] = _leadsCache.filter(l=>leadStage(l)===s.id); });
 
-  // Conversão esperada por estágio (probabilidades médias do setor)
   const expectedConv = {
-    lead:       0.10, // 10% de leads novos fecham
-    proposta:   0.30, // 30% de propostas fecham
-    negociacao: 0.65, // 65% de negociações fecham
-    fechado:    1.00,
+    novo: 0.08, qualificacao: 0.14, qualificado: 0.28, reuniao: 0.40,
+    proposta: 0.35, negociacao: 0.65, fechado: 1, perdido: 0
   };
   const revenueEsperado = STAGES.reduce((sum, st) => {
     const leads = byStage[st.id] || [];
-    return sum + leads.reduce((s,l) => s + (l.valor_estimado||0) * expectedConv[st.id], 0);
+    return sum + leads.reduce((s,l) => s + (l.valor_estimado||0) * (expectedConv[st.id] || 0), 0);
   }, 0);
 
   // Distribuição por origem
   const origemMap = {};
-  _leadsCache.filter(l=>l.stage!=='perdido').forEach(l => {
+  _leadsCache.filter(l=>leadStage(l)!=='perdido').forEach(l => {
     const o = l.origem || 'Não informado';
     if(!origemMap[o]) origemMap[o] = { n:0, fat:0 };
     origemMap[o].n++;
@@ -36847,10 +37004,10 @@ function renderPipelineForecast() {
     <!-- Funil por estágio -->
     <div class="panel">
       <div class="panel-title"><i class="fas fa-filter" style="color:#2563eb"></i> FUNIL — CONVERSÃO POR ESTÁGIO</div>
-      ${STAGES.map(st => {
+      ${STAGES.filter(s => s.id !== 'perdido').map(st => {
         const leads = byStage[st.id] || [];
         const fat   = leads.reduce((s,l)=>s+(l.valor_estimado||0),0);
-        const conv  = Math.round(expectedConv[st.id] * 100);
+        const conv  = Math.round((expectedConv[st.id] || 0) * 100);
         const maxFat = Math.max(...STAGES.map(s2 => (byStage[s2.id]||[]).reduce((a,l)=>a+(l.valor_estimado||0),0)), 1);
         const barW  = Math.round(fat / maxFat * 100);
         const quentes = leads.filter(l=>l.temperatura==='quente').length;
@@ -36885,7 +37042,7 @@ function renderPipelineForecast() {
     <div class="panel">
       <div class="panel-title"><i class="fas fa-seedling" style="color:#059669"></i> ORIGEM DOS LEADS — Onde vêm clientes</div>
       ${origens.length ? origens.map(([orig, d], i) => {
-        const total  = _leadsCache.filter(l=>l.stage!=='perdido').length || 1;
+        const total  = _leadsCache.filter(l=>leadStage(l)!=='perdido').length || 1;
         const pct    = Math.round(d.n / total * 100);
         const cols   = ['#2563eb','#7c3aed','#16a34a','#d97706','#dc2626'];
         const c      = cols[i] || '#64748b';
@@ -36906,7 +37063,7 @@ function renderPipelineForecast() {
         <div style="display:flex;flex-direction:column;gap:5px">
           <div style="font-size:9.5px;color:#374151;display:flex;gap:6px;align-items:flex-start">
             <span style="color:#16a34a;flex-shrink:0">→</span>
-            <span>Meta: 10 leads ativos sempre no funil · atualmente: <b style="color:${_leadsCache.filter(l=>l.stage!=='perdido'&&l.stage!=='fechado').length>=10?'#16a34a':'#dc2626'}">${_leadsCache.filter(l=>l.stage!=='perdido'&&l.stage!=='fechado').length}</b></span>
+            <span>Qualificados no funil: <b style="color:${_leadsCache.filter(l=>['qualificado','reuniao','proposta','negociacao'].includes(leadStage(l))).length?'#16a34a':'#dc2626'}">${_leadsCache.filter(l=>['qualificado','reuniao','proposta','negociacao'].includes(leadStage(l))).length}</b> · use Lead qualificado para entrar direto no comercial</span>
           </div>
           <div style="font-size:9.5px;color:#374151;display:flex;gap:6px;align-items:flex-start">
             <span style="color:#16a34a;flex-shrink:0">→</span>
@@ -36923,13 +37080,33 @@ function renderPipelineForecast() {
   </div>`;
 }
 
+function fillLeadStageSelect(value) {
+  const sel = document.getElementById('lStage');
+  if (!sel) return;
+  const cur = normalizeLeadStage(value);
+  sel.innerHTML = STAGES.map(s => `<option value="${s.id}">${s.label} — ${s.hint}</option>`).join('');
+  sel.value = STAGES.some(s => s.id === cur) ? cur : 'novo';
+}
+function leadStageHint() {
+  const st = normalizeLeadStage(document.getElementById('lStage')?.value);
+  const hint = document.getElementById('lQualiHint');
+  const perdidoGrp = document.getElementById('lPerdidoGrp');
+  const lostBtn = document.getElementById('leadLostBtn');
+  if (hint) hint.hidden = st !== 'qualificado';
+  if (perdidoGrp) perdidoGrp.style.display = st === 'perdido' ? 'block' : 'none';
+  if (lostBtn) lostBtn.style.display = (_leadEditId && st !== 'perdido') ? 'inline-flex' : 'none';
+}
+
 /* ══ MODAL LEAD — Abrir ══ */
-function openLeadModal(id = null, defaultStage = 'lead') {
+function openLeadModal(id = null, defaultStage = 'novo') {
   _leadEditId = id || null;
   const modal = document.getElementById('modalLead');
   const delBtn = document.getElementById('leadDelBtn');
-  document.getElementById('leadModalTitle').textContent = id ? 'EDITAR LEAD' : 'NOVO LEAD';
+  const startStage = normalizeLeadStage(defaultStage);
+  const isQuali = !id && startStage === 'qualificado';
+  document.getElementById('leadModalTitle').textContent = id ? 'EDITAR LEAD' : (isQuali ? 'LEAD QUALIFICADO' : 'NOVO LEAD');
   if(delBtn) delBtn.style.display = id ? 'inline-flex' : 'none';
+  fillLeadStageSelect(startStage);
 
   // Reset tabs
   leadTab('info');
@@ -36947,7 +37124,7 @@ function openLeadModal(id = null, defaultStage = 'lead') {
     document.getElementById('lProb').value          = l.probabilidade || 50;
     document.getElementById('lOrigem').value        = l.origem || '';
     document.getElementById('lResponsavel').value   = l.responsavel || 'Gustavo';
-    document.getElementById('lStage').value         = l.stage || 'lead';
+    fillLeadStageSelect(leadStage(l));
     document.getElementById('lTags').value          = l.tags || '';
     document.getElementById('lNotas').value         = l.notas || '';
     document.getElementById('lPerdido').value       = l.perdido_motivo || '';
@@ -36967,18 +37144,19 @@ function openLeadModal(id = null, defaultStage = 'lead') {
     document.getElementById('lSegmento').value       = '';
     document.getElementById('lPacote').value         = '';
     document.getElementById('lValor').value          = '';
-    document.getElementById('lProb').value           = '50';
+    document.getElementById('lProb').value           = String(STAGE_PROB[startStage] ?? 20);
     document.getElementById('lOrigem').value         = '';
     document.getElementById('lResponsavel').value    = currentUser?.name === 'gustavowng' ? 'Gustavo' : 'Gustavo';
-    document.getElementById('lStage').value          = defaultStage;
-    document.getElementById('lTags').value           = '';
+    fillLeadStageSelect(startStage);
+    document.getElementById('lTags').value           = isQuali ? 'qualificado' : '';
     document.getElementById('lNotas').value          = '';
     document.getElementById('lPerdido').value        = '';
     document.getElementById('lDataEntrada').value    = todayISO();
-    document.getElementById('lDataProposta').value   = '';
-    document.getElementById('lDataFollowup').value   = defaultStage === 'proposta' ? addDaysISO(3) : '';
+    document.getElementById('lDataProposta').value   = startStage === 'proposta' ? todayISO() : '';
+    document.getElementById('lDataFollowup').value   = STAGE_FOLLOWUP[startStage] ? addDaysISO(STAGE_FOLLOWUP[startStage]) : '';
     document.getElementById('lDataFechamento').value = '';
-    document.querySelectorAll('input[name="lTemp"]').forEach(r => { r.checked = r.value === 'frio'; });
+    const tempStart = isQuali || startStage === 'negociacao' ? 'quente' : (startStage === 'proposta' || startStage === 'reuniao' ? 'morno' : 'frio');
+    document.querySelectorAll('input[name="lTemp"]').forEach(r => { r.checked = r.value === tempStart; });
   }
 
   // Barra de probabilidade live
@@ -36994,14 +37172,7 @@ function openLeadModal(id = null, defaultStage = 'lead') {
   probInput.addEventListener('input', updateProbBar);
   updateProbBar();
 
-  // Mostrar/ocultar campo de motivo de perda
-  const stageSelect = document.getElementById('lStage');
-  const perdidoGrp  = document.getElementById('lPerdidoGrp');
-  const updatePerdido = () => {
-    if(perdidoGrp) perdidoGrp.style.display = stageSelect.value === 'perdido' ? 'block' : 'none';
-  };
-  stageSelect.addEventListener('change', updatePerdido);
-  updatePerdido();
+  leadStageHint();
 
   modal.classList.add('open');
 }
@@ -37035,7 +37206,7 @@ async function saveLead() {
     probabilidade:     parseInt(document.getElementById('lProb').value) || 50,
     origem:            document.getElementById('lOrigem').value,
     responsavel:       document.getElementById('lResponsavel').value,
-    stage:             document.getElementById('lStage').value,
+    stage:             normalizeLeadStage(document.getElementById('lStage').value),
     tags:              document.getElementById('lTags').value.trim(),
     notas:             document.getElementById('lNotas').value.trim(),
     perdido_motivo:    document.getElementById('lPerdido').value,
@@ -37047,9 +37218,15 @@ async function saveLead() {
   };
 
   // Auto-preencher follow-up ao enviar proposta
+  if(payload.stage === 'perdido' && !payload.perdido_motivo) {
+    toast('Escolha o motivo da perda.','err'); return;
+  }
   if(payload.stage === 'proposta' && !payload.data_proposta) payload.data_proposta = todayISO();
-  if(payload.stage === 'proposta' && !payload.data_followup) payload.data_followup = addDaysISO(3);
-  if(payload.stage === 'negociacao' && !payload.data_followup) payload.data_followup = addDaysISO(5);
+  if(isOpenStage(payload.stage) && !payload.data_followup && STAGE_FOLLOWUP[payload.stage]) {
+    payload.data_followup = addDaysISO(STAGE_FOLLOWUP[payload.stage]);
+  }
+  if(payload.stage === 'fechado') payload.probabilidade = 100;
+  if(payload.stage === 'perdido') payload.probabilidade = 0;
 
   try {
     if(_leadEditId) {
@@ -37085,20 +37262,11 @@ async function deleteLead() {
 (function injectKanbanCSS() {
   const style = document.createElement('style');
   style.textContent = `
-    #pipelineBoard { overflow-x: auto; }
+    #pipelineBoard.pipe-board { display:flex; overflow-x:auto; }
     .kanban-col.drag-over {
       box-shadow: 0 0 0 3px #2563eb !important;
       transform: scale(1.01);
     }
-    @media (max-width: 900px) {
-      #pipelineBoard { grid-template-columns: repeat(2,1fr) !important; }
-    }
-    @media (max-width: 600px) {
-      #pipelineBoard { grid-template-columns: 1fr !important; }
-      #pipelineKpis  { grid-template-columns: repeat(2,1fr) !important; }
-    }
-    details summary::-webkit-details-marker { display:none; }
-    details[open] summary i.fa-chevron-right { transform: rotate(90deg); }
   `;
   document.head.appendChild(style);
 })();
