@@ -294,20 +294,9 @@ select option{background:#fff;color:#111}
   font-family:var(--font-m);font-size:7px;color:rgba(255,255,255,.4);
   letter-spacing:.22em;margin-top:2px;text-transform:uppercase;
 }
-.logo-co{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;padding:0 4px}
-.logo-co-name{
-  font-family:var(--font-title);font-size:11px;font-weight:700;
-  letter-spacing:-.02em;color:rgba(255,255,255,.82);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
-  line-height:1.2;background:none;border:none;padding:0;margin:0;text-align:right;
-}
-.logo-co-name.can-edit{cursor:text}
-.logo-co-name.can-edit:hover{opacity:.75}
-.logo-co-name.can-edit:empty{min-width:3.5ch;min-height:1em;border-bottom:1px dashed rgba(255,255,255,.25)}
-.logo-co-name.is-edit{outline:none;border-bottom:1px solid rgba(255,255,255,.55);min-width:4ch;cursor:text}
-#collapseBtn{margin-left:0;padding:4px 6px;border-radius:3px;color:rgba(255,255,255,.35);transition:color .15s;flex-shrink:0}
+#collapseBtn{margin-left:auto;padding:4px 6px;border-radius:3px;color:rgba(255,255,255,.35);transition:color .15s;flex-shrink:0}
 #collapseBtn:hover{color:#fff}
-#sidebar.collapsed .logo-text,.sidebar.collapsed .logo-sub,#sidebar.collapsed .logo-co{display:none}
+#sidebar.collapsed .logo-text,.sidebar.collapsed .logo-sub{display:none}
 nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0}
 .nav-item{
   display:flex;align-items:center;gap:11px;
@@ -395,8 +384,6 @@ html[data-theme="light"] header#topbar{
   background:#ffffff !important;color:#111 !important;border-bottom:1px solid #eee !important;
 }
 html[data-theme="light"] .logo-text{color:#111 !important}
-html[data-theme="light"] .logo-co-name{color:#333 !important}
-html[data-theme="light"] .logo-co-name.is-edit{border-bottom-color:#111}
 html[data-theme="light"] .logo-sub,
 html[data-theme="light"] .nav-group-label{color:#888 !important}
 html[data-theme="light"] #sidebar-logo{border-bottom-color:#eee !important}
@@ -1582,11 +1569,29 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
 .nt-mm-wrap{position:relative;border:1px dashed var(--bd);border-radius:10px;background:radial-gradient(circle,rgba(0,0,0,.06) 1px,transparent 1px) 0 0/18px 18px;height:calc(100vh - 340px);min-height:380px;overflow:hidden;cursor:grab;outline:none}
 .nt-mm-wrap:focus{border-color:#111}
 .nt-mm-wrap.dragging{cursor:grabbing}
+.nt-mm-wrap.tool-draw{cursor:crosshair}
+.nt-mm-wrap.tool-text{cursor:text}
+.nt-mm-wrap.space-pan{cursor:grab}
+.nt-tb.is-on{background:#111;color:#fff;border-color:#111}
 .nt-mm-wrap svg{width:100%;height:100%;display:block}
 .nt-mm-node{cursor:pointer}
 .nt-mm-node rect{stroke-width:1.5}
 .nt-mm-node.sel rect{stroke:#111;stroke-width:2.5}
+.nt-mm-node.drop-ok rect{stroke:#2563eb;stroke-width:2.5}
 .nt-mm-node text{font-family:var(--font-b);font-size:13px;font-weight:600;pointer-events:none;user-select:none}
+.nt-mm-edge{cursor:pointer}
+.nt-mm-edge-hit{pointer-events:stroke;stroke:transparent;fill:none}
+.nt-mm-edge-line{pointer-events:none}
+.nt-mm-edge.sel .nt-mm-edge-line{stroke:#111;stroke-width:2.8;opacity:1}
+.nt-mm-port{cursor:grab;pointer-events:all}
+.nt-mm-ghost{fill:none;stroke:#111;stroke-width:2;stroke-dasharray:7 5;opacity:.85;pointer-events:none}
+.nt-mm-stroke{cursor:pointer}
+.nt-mm-stroke-hit{pointer-events:stroke;stroke:transparent;fill:none}
+.nt-mm-stroke-line,.nt-mm-live{pointer-events:none;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nt-mm-stroke.sel .nt-mm-stroke-line{stroke-width:3.4}
+.nt-mm-label{cursor:pointer}
+.nt-mm-label text{font-family:var(--font-b);font-size:14px;font-weight:600;pointer-events:none;user-select:none}
+.nt-mm-label.sel rect{stroke:#111;stroke-width:1.5;fill:#fff}
 .nt-mm-edit{position:absolute;z-index:5;border:2px solid #111;border-radius:8px;padding:4px 8px;font-size:13px;font-family:var(--font-b);background:#fff;color:#111;outline:none;min-width:140px}
 .nt-mm-help{position:absolute;left:10px;bottom:8px;font-family:var(--font-m);font-size:9px;color:#94a3b8;pointer-events:none;line-height:1.5}
 .nt-banner{font-family:var(--font-m);font-size:10px;padding:8px 12px;border-radius:8px;margin-bottom:12px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;line-height:1.5}
@@ -2069,6 +2074,9 @@ select.ie-input{cursor:pointer;-webkit-appearance:none;appearance:none;}
   [style*="grid-template-columns:160px 1fr"]{grid-template-columns:1fr!important}
   .login-splash-mark{letter-spacing:.12em}
   .login-splash{padding:0}
+  #page-conteudos-sociais .cs-flow{gap:6px}
+  #page-conteudos-sociais .cs-flow-chip{font-size:11px;padding:6px 10px}
+  #page-conteudos-sociais .cs-card-flow-btns{flex-direction:column}
 }
 @media(max-width:480px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
@@ -3054,8 +3062,44 @@ body:has(#login-screen.visible){
   font-family:inherit;
 }
 #page-conteudos-sociais .cs-select:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
-#page-conteudos-sociais .cs-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+#page-conteudos-sociais .cs-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
 @media(max-width:900px){#page-conteudos-sociais .cs-metrics{grid-template-columns:repeat(2,1fr);}}
+#page-conteudos-sociais .cs-flow{
+  display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;
+}
+#page-conteudos-sociais .cs-flow-chip{
+  border:1px solid var(--cs-bd);background:var(--cs-bg2);color:var(--cs-text);
+  border-radius:20px;padding:7px 12px;font-size:12px;font-weight:500;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;font-family:inherit;
+}
+#page-conteudos-sociais .cs-flow-chip:hover{border-color:#cbd5e1;background:#f8fafc}
+#page-conteudos-sociais .cs-flow-chip.is-on{border-color:#93c5fd;background:#eff6ff;color:#1d4ed8}
+#page-conteudos-sociais .cs-flow-chip .n{font-weight:700}
+#page-conteudos-sociais .cs-flow-chip.is-hot{border-color:#fecaca;background:#fef2f2;color:#b91c1c}
+#page-conteudos-sociais .cs-ai-panel{
+  background:var(--cs-bg2);border:1px solid var(--cs-bd);border-radius:14px;padding:14px 16px;margin-bottom:16px;
+}
+#page-conteudos-sociais .cs-ai-hd{
+  display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--cs-text);margin-bottom:8px;
+}
+#page-conteudos-sociais .cs-ai-hd button{margin-left:auto}
+#page-conteudos-sociais .cs-ai-bd{font-size:13px;line-height:1.55;color:#334155;white-space:pre-wrap}
+#page-conteudos-sociais .cs-ai-local{margin:0 0 10px;padding:0;list-style:none}
+#page-conteudos-sociais .cs-ai-local li{padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:12px;color:#475569}
+#page-conteudos-sociais .cs-ai-local li:last-child{border-bottom:none}
+#page-conteudos-sociais .cs-card-caption{
+  margin-top:8px;font-size:11px;color:#64748b;line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+#page-conteudos-sociais .cs-card-flow-btns{display:flex;gap:6px;margin-top:10px}
+#page-conteudos-sociais .cs-btn-mini{
+  flex:1;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;
+  font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;
+}
+#page-conteudos-sociais .cs-btn-mini:hover{background:#f8fafc}
+#page-conteudos-sociais .cs-btn-mini--ok{background:#14532d;border-color:#14532d;color:#fff}
+#page-conteudos-sociais .cs-btn-mini--ok:hover{background:#166534}
+#page-conteudos-sociais .cs-card.is-flow-hit{outline:2px solid #93c5fd;outline-offset:1px}
 #page-conteudos-sociais .cs-metric{
   background:var(--cs-bg2);border:1px solid var(--cs-bd);border-radius:14px;padding:16px 18px;
   border-left:4px solid var(--cs-metric-accent,#cbd5e1);
@@ -3160,10 +3204,10 @@ body:has(#login-screen.visible){
   background:#fff;color:#111;border:1px solid #e2e8f0;box-shadow:0 20px 50px rgba(15,23,42,.12);max-width:480px;border-radius:16px;
 }
 #modalCsMarcarPostado input,#modalCsMarcarPostado input[type="datetime-local"],
-#modalCsNovoConteudo input,#modalCsNovoConteudo select,#modalCsEditar input,#modalCsEditar select,#modalCsEditar textarea{
+#modalCsNovoConteudo input,#modalCsNovoConteudo select,#modalCsNovoConteudo textarea,#modalCsEditar input,#modalCsEditar select,#modalCsEditar textarea{
   height:38px;border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:13px;font-weight:400;width:100%;box-sizing:border-box;font-family:inherit;
 }
-#modalCsEditar textarea{height:auto;min-height:72px;padding:10px 12px;resize:vertical;}
+#modalCsEditar textarea,#modalCsNovoConteudo textarea{height:auto;min-height:72px;padding:10px 12px;resize:vertical;}
 #modalCsMarcarPostado input:focus-visible,#modalCsNovoConteudo input:focus-visible,#modalCsNovoConteudo select:focus-visible,
 #modalCsEditar input:focus-visible,#modalCsEditar select:focus-visible,#modalCsEditar textarea:focus-visible{
   outline:2px solid #2563eb;outline-offset:2px;border-color:#93c5fd;
@@ -3625,9 +3669,6 @@ body:has(#login-screen.visible){
       <div>
         <div class="logo-text">AGE OPS</div>
         <div class="logo-sub">v4.0 SISTEMA</div>
-      </div>
-      <div class="logo-co" id="sidebarCoWrap" title="Nome da empresa">
-        <span class="logo-co-name" id="sidebarCoName" tabindex="0" onclick="startEditCompanyWelcome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();startEditCompanyWelcome()}"></span>
       </div>
       <button id="collapseBtn" onclick="toggleSidebar()" title="Recolher"><i class="fas fa-bars"></i></button>
     </div>
@@ -5061,11 +5102,24 @@ body:has(#login-screen.visible){
                 <span class="cs-week-nav-label">Semana</span>
                 <button type="button" class="cs-btn" onclick="csWeekShift(1)" title="Próxima semana" aria-label="Próxima semana"><i class="ti ti-chevron-right"></i></button>
               </div>
+              <button type="button" class="cs-btn" onclick="csGoThisWeek()" title="Ir para a semana de hoje">Hoje</button>
               <button type="button" class="cs-btn" id="csToggleWeekBtn" onclick="csToggleWeekFilter()" title="Alternar filtro por semana">Todas as semanas</button>
+              <button type="button" class="cs-btn" id="csAiFlowBtn" onclick="csToggleAiPanel()" title="Ver gargalos e pedir à IA o próximo passo"><i class="ti ti-sparkles"></i> Otimizar fluxo</button>
               <button type="button" class="cs-btn cs-btn--primary perm-guard-edit" onclick="csOpenNovoModal()"><i class="ti ti-plus"></i> Novo conteúdo</button>
             </div>
           </div>
           <div class="cs-metrics" id="csMetricsRow"></div>
+          <div class="cs-flow" id="csFlowStrip" aria-label="Fila do fluxo editorial"></div>
+          <div class="cs-ai-panel" id="csAiPanel" hidden>
+            <div class="cs-ai-hd">
+              <i class="ti ti-sparkles" aria-hidden="true"></i>
+              <span>Fluxo da semana</span>
+              <button type="button" class="cs-btn" onclick="csAiOtimizarFluxo()">Pedir à IA</button>
+              <button type="button" class="cs-btn" onclick="csToggleAiPanel(false)" title="Fechar" aria-label="Fechar">×</button>
+            </div>
+            <ul class="cs-ai-local" id="csAiLocal"></ul>
+            <div class="cs-ai-bd" id="csAiBody"></div>
+          </div>
           <div class="cs-board" id="csBoard"></div>
         </div>
       </div>
@@ -6680,7 +6734,12 @@ body:has(#login-screen.visible){
     </select>
     <label for="csEditarAprovText" style="margin-top:12px">Texto do status (opcional)</label>
     <input type="text" id="csEditarAprovText" placeholder="Ex.: Aguarda cliente · 2d" autocomplete="off">
-    <label for="csEditarNotas" style="margin-top:12px">Observações</label>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px">
+      <label for="csEditarCaption" style="margin:0">Legenda da publicação</label>
+      <button type="button" class="btn btn-ghost perm-guard-edit" onclick="csAiSugerirLegenda('editar')" style="border-radius:8px;padding:6px 10px;font-size:11px">Sugerir com IA</button>
+    </div>
+    <textarea id="csEditarCaption" rows="4" placeholder="Texto que vai no post…"></textarea>
+    <label for="csEditarNotas" style="margin-top:12px">Observações internas</label>
     <textarea id="csEditarNotas" rows="3" placeholder="Notas internas…"></textarea>
     <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn btn-primary perm-guard-edit" onclick="csConfirmEditar()" style="border-radius:8px;padding:10px 18px">Salvar</button>
@@ -6754,6 +6813,11 @@ body:has(#login-screen.visible){
     </div>
     <label for="csNovoScheduled" style="margin-top:12px">Data e hora previstas</label>
     <input type="datetime-local" id="csNovoScheduled">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px">
+      <label for="csNovoCaption" style="margin:0">Legenda da publicação</label>
+      <button type="button" class="btn btn-ghost perm-guard-edit" onclick="csAiSugerirLegenda('novo')" style="border-radius:8px;padding:6px 10px;font-size:11px">Sugerir com IA</button>
+    </div>
+    <textarea id="csNovoCaption" rows="4" placeholder="Texto que vai no post…"></textarea>
     <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
       <button type="button" class="btn btn-primary perm-guard-edit" onclick="csConfirmNovoConteudo()" style="border-radius:8px;padding:10px 18px">Adicionar</button>
       <button type="button" class="btn btn-ghost" onclick="closeModal('modalCsNovoConteudo')" style="border-radius:8px;padding:10px 18px">Cancelar</button>
@@ -8607,16 +8671,6 @@ function beginLoginSplash() {
 }
 function syncCompanyBrandUi() {
   const name = _companyDisplayName();
-  const can = (typeof _userIsAdminLike === 'function' && _userIsAdminLike() && !!currentUser?.company_id);
-  const side = document.getElementById('sidebarCoName');
-  if (side && side.getAttribute('contenteditable') !== 'true') {
-    side.textContent = name === 'sua empresa' ? '' : name;
-    side.classList.toggle('can-edit', can);
-    side.setAttribute('title', can ? 'Clique para editar o nome da empresa (também no Perfil)' : (name === 'sua empresa' ? '' : name));
-    side.setAttribute('role', can ? 'button' : 'text');
-  }
-  const wrap = document.getElementById('sidebarCoWrap');
-  if (wrap) wrap.style.display = (name === 'sua empresa' && !can) ? 'none' : '';
   const brand = document.getElementById('profCoBrandName');
   if (brand) brand.textContent = name;
   const colab = document.getElementById('profCompanyColabName');
@@ -8625,8 +8679,6 @@ function syncCompanyBrandUi() {
 function syncCompanyBrandFromProfileInput() {
   const v = String(document.getElementById('profCoName')?.value || '').trim();
   const name = v || _companyDisplayName();
-  const side = document.getElementById('sidebarCoName');
-  if (side && side.getAttribute('contenteditable') !== 'true') side.textContent = name === 'sua empresa' ? '' : name;
   const brand = document.getElementById('profCoBrandName');
   if (brand) brand.textContent = name;
 }
@@ -8667,43 +8719,6 @@ async function persistCompanyDisplayName(raw) {
   if (inp && document.activeElement !== inp) inp.value = nm;
   syncCompanyBrandUi();
   return true;
-}
-function startEditCompanyWelcome() {
-  const can = (typeof _userIsAdminLike === 'function' && _userIsAdminLike() && !!currentUser?.company_id);
-  if (!can) { if (typeof navigate === 'function') navigate('profile'); return; }
-  const el = document.getElementById('sidebarCoName');
-  if (!el || el.getAttribute('contenteditable') === 'true') return;
-  el.setAttribute('contenteditable', 'true');
-  el.classList.add('is-edit');
-  el.focus();
-  try {
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  } catch (e) {}
-  let done = false;
-  const finish = async (save) => {
-    if (done) return;
-    done = true;
-    el.removeAttribute('contenteditable');
-    el.classList.remove('is-edit');
-    el.onkeydown = null;
-    el.onblur = null;
-    const v = String(el.textContent || '').replace(/\s+/g, ' ').trim();
-    if (save && v && v !== 'sua empresa') {
-      const ok = await persistCompanyDisplayName(v);
-      if (ok) toast('Nome da empresa atualizado.', 'ok');
-    } else {
-      syncCompanyBrandUi();
-    }
-  };
-  el.onkeydown = (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
-    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
-  };
-  el.onblur = () => finish(true);
 }
 
 function _updateUserBadgeAvatar() {
@@ -28280,6 +28295,7 @@ function _csRowForKanban(apiRow, payload, ms) {
     client_name: apiRow?.client_name ?? payload?.client_name,
     project_name: apiRow?.project_name ?? payload?.project_name,
     asset_url: apiRow?.asset_url ?? payload?.asset_url,
+    caption: apiRow?.caption ?? payload?.caption,
     assigned_to: apiRow?.assigned_to ?? payload?.assigned_to,
     instagram_account: apiRow?.instagram_account ?? payload?.instagram_account,
     deleted: false,
@@ -28417,6 +28433,7 @@ function _csDbRowToItem(r) {
     views: r.metrics_views != null && String(r.metrics_views).trim() !== '' ? String(r.metrics_views) : '—',
     likes: r.metrics_likes != null && String(r.metrics_likes).trim() !== '' ? String(r.metrics_likes) : '—',
     assetUrl: r.asset_url ? String(r.asset_url) : '',
+    caption: r.caption ? String(r.caption) : '',
     notes: r.notes ? String(r.notes) : '',
     instagramAccount: r.instagram_account ? _csNormalizeIgAccount(r.instagram_account) : '',
   };
@@ -28790,11 +28807,18 @@ function csCardHtml(it, canEdit) {
   let btn = '';
   if(it.coluna === 'pronto') {
     btn = `<button type="button" class="cs-btn-post" draggable="false" data-cs-action="post" data-cs-id="${escAttr(String(it.id ?? ''))}"><i class="ti ti-check" aria-hidden="true"></i> Marcar postado</button>`;
+  } else if(it.coluna === 'aprovacao' && canEdit) {
+    btn = `<div class="cs-card-flow-btns">
+      <button type="button" class="cs-btn-mini cs-btn-mini--ok" draggable="false" data-cs-action="approve" data-cs-id="${escAttr(String(it.id ?? ''))}">Aprovar</button>
+      <button type="button" class="cs-btn-mini" draggable="false" data-cs-action="return" data-cs-id="${escAttr(String(it.id ?? ''))}">Devolver</button>
+    </div>`;
   }
 
   const whenLine = it.scheduledAt != null
     ? `<div class="cs-card-when"><i class="ti ti-clock" aria-hidden="true"></i>${escHtml(csFormatShortWhen(it.scheduledAt))}</div>`
     : '';
+  const cap = String(it.caption || '').trim();
+  const capLine = cap ? `<div class="cs-card-caption">${escHtml(cap)}</div>` : '';
 
   return `<div class="${cls}"${dragAttrs} data-cs-id="${escAttr(it.id)}" role="group"${tip}>
     ${top}
@@ -28802,6 +28826,7 @@ function csCardHtml(it, canEdit) {
     <div class="cs-card-meta">${_csCardMetaLine(it)}</div>
     ${_csCardInstagramHtml(it)}
     ${whenLine}
+    ${capLine}
     ${_csCardLinkHtml(it.assetUrl, 'Material gravado')}
     ${csStatusRowHtml(it.statusLine)}
     ${btn}
@@ -28837,6 +28862,8 @@ function csBoardClick(e) {
   if(action === 'edit' && id) csOpenEditar(id);
   else if(action === 'delete' && id) csExcluirConteudo(id);
   else if(action === 'post' && id) csOpenMarcarPostado(id);
+  else if(action === 'approve' && id) csApproveItem(id);
+  else if(action === 'return' && id) csReturnItem(id);
 }
 
 function csCardDragStartInline(e) {
@@ -28965,6 +28992,8 @@ function csRenderKanban() {
   }).join('');
 
   csBoardWireEvents();
+  csRenderFlow();
+  _csApplyFlowHits();
   setTimeout(() => {
     const pg = document.getElementById('page-conteudos-sociais');
     if(pg?.classList.contains('active')) applyActivePageEditGuards('conteudos-sociais');
@@ -28973,6 +29002,229 @@ function csRenderKanban() {
 
 function csApplyFilters() {
   csRenderKanban();
+}
+
+function csGoThisWeek() {
+  _csShowAllWeeks = false;
+  _csWeekStart = _csStartOfWeekMonday(new Date());
+  csRenderKanban();
+}
+
+function _csYmd(ms) {
+  if(ms == null || isNaN(ms)) return '';
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+function _csFlowBuckets() {
+  const today = _csYmd(Date.now());
+  const rows = csFilteredItems();
+  const buckets = {
+    atrasado: [], hoje: [], aprovacao: [], pronto: [], semMaterial: [], semLegenda: []
+  };
+  rows.forEach(it => {
+    if(it.coluna === 'postado') return;
+    const day = _csYmd(it.scheduledAt);
+    if(day && day < today) buckets.atrasado.push(it);
+    if(day === today) buckets.hoje.push(it);
+    if(it.coluna === 'aprovacao') buckets.aprovacao.push(it);
+    if(it.coluna === 'pronto') buckets.pronto.push(it);
+    if(!(it.assetUrl || '').trim()) buckets.semMaterial.push(it);
+    if(!(it.caption || '').trim()) buckets.semLegenda.push(it);
+  });
+  return buckets;
+}
+
+let _csFlowFocus = '';
+function csRenderFlow() {
+  const el = document.getElementById('csFlowStrip');
+  if(!el) return;
+  const b = _csFlowBuckets();
+  const chips = [
+    { key: 'atrasado', label: 'Atrasado', n: b.atrasado.length, hot: true },
+    { key: 'hoje', label: 'Hoje', n: b.hoje.length },
+    { key: 'aprovacao', label: 'Em aprovação', n: b.aprovacao.length },
+    { key: 'pronto', label: 'Pronto p/ postar', n: b.pronto.length },
+    { key: 'semMaterial', label: 'Sem material', n: b.semMaterial.length },
+    { key: 'semLegenda', label: 'Sem legenda', n: b.semLegenda.length },
+  ];
+  el.innerHTML = chips.map(c =>
+    `<button type="button" class="cs-flow-chip${c.n && c.hot ? ' is-hot' : ''}${_csFlowFocus === c.key ? ' is-on' : ''}" onclick="csFocusFlow('${c.key}')">${escHtml(c.label)} <span class="n">${c.n}</span></button>`
+  ).join('');
+  csRenderLocalInsights();
+}
+
+function _csApplyFlowHits() {
+  const b = _csFlowBuckets();
+  const ids = new Set((_csFlowFocus ? (b[_csFlowFocus] || []) : []).map(it => String(it.id)));
+  document.querySelectorAll('#csBoard .cs-card').forEach(card => {
+    card.classList.toggle('is-flow-hit', !!_csFlowFocus && ids.has(String(card.getAttribute('data-cs-id') || '')));
+  });
+}
+
+function csFocusFlow(key) {
+  _csFlowFocus = _csFlowFocus === key ? '' : key;
+  csRenderFlow();
+  _csApplyFlowHits();
+  if(_csFlowFocus) {
+    const first = document.querySelector('#csBoard .cs-card.is-flow-hit');
+    if(first) first.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function csRenderLocalInsights() {
+  const ul = document.getElementById('csAiLocal');
+  if(!ul) return;
+  const b = _csFlowBuckets();
+  const rows = csFilteredItems();
+  const open = rows.filter(it => it.coluna !== 'postado');
+  const byNet = {};
+  open.forEach(it => { const k = it.rede || 'outro'; byNet[k] = (byNet[k] || 0) + 1; });
+  const mix = Object.entries(byNet).sort((a, c) => c[1] - a[1]).map(([k, n]) => `${csRedeLabel(k)} ${n}`).join(' · ') || 'nenhuma peça aberta';
+  const tips = [];
+  if(b.atrasado.length) tips.push(`${b.atrasado.length} peça(s) com data vencida — poste, reagende ou tire do quadro.`);
+  if(b.aprovacao.length) tips.push(`${b.aprovacao.length} em aprovação: use Aprovar / Devolver no card, sem abrir o modal.`);
+  if(b.pronto.length) tips.push(`${b.pronto.length} pronta(s) para marcar postado (cole o link da publicação).`);
+  if(b.semLegenda.length) tips.push(`${b.semLegenda.length} sem legenda — abra a peça e use “Sugerir com IA”.`);
+  if(b.semMaterial.length) tips.push(`${b.semMaterial.length} sem link de material gravado.`);
+  if(!open.length) tips.push('Semana limpa: nada em produção, aprovação ou pronto.');
+  else tips.push(`Mix aberto: ${mix}.`);
+  ul.innerHTML = tips.map(t => `<li>${escHtml(t)}</li>`).join('');
+}
+
+function csToggleAiPanel(force) {
+  const panel = document.getElementById('csAiPanel');
+  if(!panel) return;
+  const show = force == null ? panel.hidden : !!force;
+  panel.hidden = !show;
+  if(show) csRenderLocalInsights();
+}
+
+async function csApproveItem(id) {
+  const it = _csFindKanbanItem(id);
+  if(!it) return;
+  const prev = it.coluna;
+  it.coluna = 'pronto';
+  it.statusLine = { kind: 'review', text: 'Aprovado' };
+  csRenderKanban();
+  try {
+    await _csApiPatchSocial(id, {
+      editorial_stage: 'pronto',
+      status: 'agendado',
+      approval_status_kind: 'review',
+      approval_status_text: 'Aprovado',
+    });
+    try { toast('Peça aprovada — foi para Pronto.', 'ok'); } catch(_) {}
+  } catch(err) {
+    it.coluna = prev;
+    csRenderKanban();
+    try { toast(String(err?.message || 'Erro ao aprovar'), 'err'); } catch(_) {}
+  }
+}
+
+async function csReturnItem(id) {
+  const it = _csFindKanbanItem(id);
+  if(!it) return;
+  const prev = it.coluna;
+  it.coluna = 'producao';
+  it.statusLine = { kind: 'wait', text: 'Devolvido para produção' };
+  csRenderKanban();
+  try {
+    await _csApiPatchSocial(id, {
+      editorial_stage: 'producao',
+      status: 'planejado',
+      approval_status_kind: 'wait',
+      approval_status_text: 'Devolvido para produção',
+    });
+    try { toast('Peça devolvida para Em produção.', 'ok'); } catch(_) {}
+  } catch(err) {
+    it.coluna = prev;
+    csRenderKanban();
+    try { toast(String(err?.message || 'Erro ao devolver'), 'err'); } catch(_) {}
+  }
+}
+
+async function _csAskClaude(userPrompt) {
+  const edgeUrl = String(typeof AI_EDGE_URL !== 'undefined' ? AI_EDGE_URL : '').trim();
+  if(!edgeUrl) throw new Error('Assistente não configurado (Supabase).');
+  const res = await fetch(edgeUrl, {
+    method: 'POST',
+    headers: _ageFnHeaders(),
+    body: JSON.stringify({
+      comando: 'Responda APENAS com JSON válido, sem markdown: {"acao":"consultar","resposta":"<conteúdo>"}. ' + userPrompt,
+      contexto: {
+        origem: 'conteudos_sociais',
+        usuario: currentUser?.name || currentUser?.username || '',
+        empresa: currentUser?.company_name || '',
+        data_hoje: new Date().toLocaleDateString('pt-BR')
+      }
+    })
+  });
+  const data = await res.json().catch(() => ({}));
+  let text = String(data.resposta || data.confirmacao || '').trim();
+  if(!text && !res.ok) throw new Error(data.resposta || `Assistente indisponível (HTTP ${res.status}).`);
+  if(!text) throw new Error('A IA não retornou texto. Tente de novo.');
+  return text;
+}
+
+async function csAiSugerirLegenda(which) {
+  const prefix = which === 'novo' ? 'csNovo' : 'csEditar';
+  const ta = document.getElementById(prefix + 'Caption');
+  if(!ta) return;
+  const titulo = (document.getElementById(prefix + 'Titulo')?.value || '').trim();
+  const cliente = (document.getElementById(prefix + 'Cliente')?.value || '').trim();
+  const rede = document.getElementById(prefix + 'Rede')?.value || 'instagram';
+  const formato = document.getElementById(prefix + 'Formato')?.value || 'reels';
+  const notes = (document.getElementById(prefix + 'Notas')?.value || '').trim();
+  const prev = ta.value.trim();
+  if(!titulo) {
+    try { toast('Preencha o título da peça antes de pedir a legenda.', 'warn'); } catch(_) {}
+    return;
+  }
+  ta.disabled = true;
+  try {
+    toast('IA escrevendo a legenda…');
+    const text = await _csAskClaude(
+      'Escreva UMA legenda pronta para publicar em ' + rede + ' (' + formato + '), em português do Brasil. ' +
+      '1 a 3 frases + 3 a 6 hashtags no final. Sem aspas, sem explicação. ' +
+      'Peça: ' + titulo + '. Cliente: ' + (cliente || 'não informado') + '. ' +
+      (notes ? 'Notas: ' + notes.slice(0, 400) + '. ' : '') +
+      (prev ? 'Pode partir deste rascunho: ' + prev.slice(0, 400) : '')
+    );
+    ta.value = text.replace(/^["']|["']$/g, '').trim();
+    try { toast('Legenda sugerida. Revise antes de publicar.', 'ok'); } catch(_) {}
+  } catch(err) {
+    try { toast(String(err?.message || 'IA indisponível'), 'err'); } catch(_) {}
+  } finally {
+    ta.disabled = false;
+  }
+}
+
+async function csAiOtimizarFluxo() {
+  csToggleAiPanel(true);
+  const body = document.getElementById('csAiBody');
+  if(body) body.textContent = 'Analisando a semana…';
+  const rows = csFilteredItems().slice(0, 40).map(it => ({
+    titulo: it.titulo,
+    coluna: it.coluna,
+    rede: it.rede,
+    formato: it.formato,
+    data: _csYmd(it.scheduledAt) || null,
+    cliente: it.cliente,
+    material: !!(it.assetUrl || '').trim(),
+    legenda: !!(it.caption || '').trim()
+  }));
+  try {
+    const text = await _csAskClaude(
+      'Você é producer de conteúdo de uma produtora. Com o quadro editorial abaixo, ' +
+      'escreva em português (máx. 180 palavras): 1) gargalo do fluxo 2) o que aprovar ou postar primeiro ' +
+      '3) mix de redes 4) 3 ações concretas para hoje. Sem enrolação. DADOS: ' + JSON.stringify(rows)
+    );
+    if(body) body.textContent = text;
+  } catch(err) {
+    if(body) body.textContent = String(err?.message || 'IA indisponível. Os avisos acima já mostram o gargalo.');
+  }
 }
 
 function csWeekShift(deltaWeeks) {
@@ -29133,6 +29385,7 @@ async function csOpenEditar(id) {
     const kind = it.statusLine?.kind || '';
     set('csEditarAprovKind', kind === 'review' ? 'review' : (kind === 'wait' ? 'wait' : ''));
     set('csEditarAprovText', it.statusLine?.text || '');
+    set('csEditarCaption', it.caption || '');
     set('csEditarNotas', it.notes || '');
     const modal = document.getElementById('modalCsEditar');
     if(!modal) {
@@ -29199,6 +29452,7 @@ async function csConfirmEditar() {
   const dtVal = document.getElementById('csEditarScheduled')?.value || '';
   const aprovKind = document.getElementById('csEditarAprovKind')?.value || '';
   const aprovText = (document.getElementById('csEditarAprovText')?.value || '').trim();
+  const caption = (document.getElementById('csEditarCaption')?.value || '').trim();
   const notes = (document.getElementById('csEditarNotas')?.value || '').trim();
   if(!id) return;
   const prevItem = _csFindKanbanItem(id);
@@ -29230,6 +29484,7 @@ async function csConfirmEditar() {
     post_time: parts.post_time,
     approval_status_kind: aprovKind || null,
     approval_status_text: aprovText || null,
+    caption: caption || null,
     notes: notes || null,
     instagram_account: rede === 'instagram' ? (igAccount || null) : null,
   };
@@ -29244,6 +29499,7 @@ async function csConfirmEditar() {
       format: _csFormatToDb(formato),
       approval_status_kind: aprovKind,
       approval_status_text: aprovText,
+      caption,
       notes,
     }, ms);
     if(merged.id) _csMergeKanbanRow(merged);
@@ -29355,6 +29611,8 @@ async function csOpenNovoModal() {
   document.getElementById('csNovoRede').value = 'instagram';
   document.getElementById('csNovoInstagram').value = '';
   document.getElementById('csNovoScheduled').value = _csToDatetimeLocal(Date.now());
+  const capN = document.getElementById('csNovoCaption');
+  if(capN) capN.value = '';
   csOnCsRedeChange('novo');
   csRefreshInstagramAccountHints('novo', '');
   openModal('modalCsNovoConteudo');
@@ -29375,6 +29633,7 @@ async function csConfirmNovoConteudo() {
   const dtVal = document.getElementById('csNovoScheduled').value;
   const assetUrl = (document.getElementById('csNovoAssetUrl')?.value || '').trim();
   const igAccount = _csNormalizeIgAccount(document.getElementById('csNovoInstagram')?.value || '');
+  const caption = (document.getElementById('csNovoCaption')?.value || '').trim();
   if(!projectId || projectId === '__new_project__') {
     try { toast(projectId === '__new_project__' ? 'Salve o novo projeto antes de adicionar o conteúdo.' : 'Selecione o projeto ao qual o material pertence.', 'warn'); } catch(_) {}
     return;
@@ -29411,6 +29670,7 @@ async function csConfirmNovoConteudo() {
     status: 'planejado',
     editorial_stage: 'producao',
     deleted: false,
+    caption: caption || null,
     instagram_account: rede === 'instagram' ? (igAccount || null) : null,
   };
   try {
@@ -31930,6 +32190,7 @@ const NOTAS_KINDS = {
 };
 const NOTAS_COLORS = ['', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#ede9fe', '#ffedd5'];
 const NOTAS_MM_COLORS = ['#ffffff', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#ede9fe', '#ffedd5'];
+const NOTAS_MM_INK = ['#111111', '#2563eb', '#dc2626', '#16a34a', '#d97706'];
 let _ntCache = [];
 let _ntMode = 'db';
 let _ntFilter = { view: 'all', kind: '', tag: '' };
@@ -32030,7 +32291,11 @@ function _ntPlain(n) {
   if (n._plain != null) return n._plain;
   const parts = [n.title, (n.tags || []).join(' ')];
   if (n.kind === 'checklist') parts.push((n.data.items || []).map(i => i.text).join(' '));
-  else if (n.kind === 'mapa') parts.push(((n.data.mindmap || {}).nodes || []).map(x => x.text).join(' '));
+  else if (n.kind === 'mapa') {
+    const mm = n.data.mindmap || {};
+    parts.push((mm.nodes || []).map(x => x.text).join(' '));
+    parts.push((mm.labels || []).map(x => x.text).join(' '));
+  }
   else parts.push(_ntHtmlToText(n.content));
   if (n.kind === 'compromisso') parts.push(n.data.local || '', n.data.participantes || '');
   n._plain = parts.join(' ').toLowerCase();
@@ -32365,7 +32630,7 @@ async function notasCreate(kind) {
   }
   if (kind === 'mapa') {
     const rootId = _ntUid();
-    n.data.mindmap = { nodes: [{ id: rootId, text: 'Ideia central', parent: null, x: 0, y: 0, color: '' }] };
+    n.data.mindmap = { nodes: [{ id: rootId, text: 'Ideia central', parent: null, x: 0, y: 0, color: '' }], labels: [], strokes: [] };
   }
   try {
     const created = await _ntInsert(n);
@@ -32510,7 +32775,7 @@ function notasChangeKind(k) {
     _ntHtmlToText(n.content).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 12).forEach(t => {
       nodes.push({ id: _ntUid(), text: t.replace(/^[-*•]\s*/, '').slice(0, 60), parent: rootId, x: 0, y: 0, color: '' });
     });
-    n.data.mindmap = { nodes };
+    n.data.mindmap = { nodes, labels: [], strokes: [] };
     _ntMmAutoLayout(n.data.mindmap);
   }
   if (k === 'roteiro' && !_ntHtmlToText(n.content)) n.content = _ntRoteiroTemplate(n.title);
@@ -32692,8 +32957,11 @@ function _ntUpdateStats() {
     return;
   }
   if (n.kind === 'mapa') {
-    const nodes = (n.data.mindmap || {}).nodes || [];
-    st.textContent = `${nodes.length} nó(s) · ${Math.max(0, nodes.length - 1)} ramo(s)`;
+    const mm = n.data.mindmap || {};
+    const nodes = mm.nodes || [];
+    const labs = (mm.labels || []).length;
+    const ink = (mm.strokes || []).length;
+    st.textContent = `${nodes.length} nó(s) · ${labs} texto(s) · ${ink} traço(s)`;
     return;
   }
   const el = document.getElementById('ntRich');
@@ -32816,11 +33084,16 @@ function ntCkClearDone() {
 function _ntMindmapHtml(n, canEdit) {
   return `<div class="nt-toolbar">
     ${canEdit ? `
+    <button type="button" class="nt-tb is-on" data-mm-tool="select" onclick="ntMmSetTool('select')" title="Mover e religar (V)"><i class="fas fa-mouse-pointer"></i> Mover</button>
+    <button type="button" class="nt-tb" data-mm-tool="draw" onclick="ntMmSetTool('draw')" title="Desenhar à mão (D)"><i class="fas fa-pen"></i> Desenhar</button>
+    <button type="button" class="nt-tb" data-mm-tool="text" onclick="ntMmSetTool('text')" title="Inserir texto solto (T)"><i class="fas fa-font"></i> Texto</button>
+    <span class="nt-tb-sep"></span>
     <button type="button" class="nt-tb" onclick="ntMmAddChild()" title="Adicionar ramo (Tab)"><i class="fas fa-plus"></i> Ramo</button>
     <button type="button" class="nt-tb" onclick="ntMmAddSibling()" title="Adicionar irmão (Enter)"><i class="fas fa-level-down-alt"></i> Irmão</button>
-    <button type="button" class="nt-tb" onclick="ntMmDeleteSel()" title="Excluir nó e filhos (Delete)"><i class="fas fa-trash"></i></button>
+    <button type="button" class="nt-tb" onclick="ntMmDeleteSel()" title="Excluir seleção (Delete)"><i class="fas fa-trash"></i></button>
     <span class="nt-tb-sep"></span>
-    <span style="display:inline-flex;gap:5px;align-items:center;padding:0 4px">${NOTAS_MM_COLORS.map(c => `<span class="nt-color-dot" style="background:${c}" title="Cor do nó" onclick="ntMmColorSel('${c}')"></span>`).join('')}</span>
+    <span style="display:inline-flex;gap:5px;align-items:center;padding:0 4px" title="Cor do nó ou texto">${NOTAS_MM_COLORS.map(c => `<span class="nt-color-dot" style="background:${c}" onclick="ntMmColorSel('${c}')"></span>`).join('')}</span>
+    <span style="display:inline-flex;gap:5px;align-items:center;padding:0 4px" title="Cor do traço">${NOTAS_MM_INK.map(c => `<span class="nt-color-dot" style="background:${c}" onclick="ntMmSetInk('${c}')"></span>`).join('')}</span>
     <span class="nt-tb-sep"></span>
     <button type="button" class="nt-tb" onclick="ntMmAutoLayoutBtn()" title="Reorganizar automaticamente"><i class="fas fa-magic"></i> Organizar</button>
     <button type="button" class="nt-tb" onclick="notasAiRun('mapa')" title="Claude sugere ramos a partir do nó selecionado" style="color:#7c3aed"><i class="fas fa-wand-magic-sparkles"></i> Expandir com IA</button>` : ''}
@@ -32831,9 +33104,40 @@ function _ntMindmapHtml(n, canEdit) {
   <div class="nt-body" style="padding:12px 14px">
     <div class="nt-mm-wrap" id="ntMmWrap" tabindex="0">
       <svg id="ntMmSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div class="nt-mm-help">Clique no texto para editar · arraste para mover · botão direito no nó ou no fundo cria ramos · Tab = filho · Enter = irmão · Delete = excluir · roda = zoom</div>
+      <div class="nt-mm-help" id="ntMmHelp">Mover: arraste nós e linhas · Desenhar: risque o quadro · Texto: clique para soltar uma anotação · Espaço = panorâmica · Delete apaga a seleção</div>
     </div>
   </div>`;
+}
+function _ntMmEnsureBoard(mm) {
+  if (!mm || typeof mm !== 'object') return { nodes: [], labels: [], strokes: [] };
+  if (!Array.isArray(mm.nodes)) mm.nodes = [];
+  if (!Array.isArray(mm.labels)) mm.labels = [];
+  if (!Array.isArray(mm.strokes)) mm.strokes = [];
+  return mm;
+}
+function ntMmSetTool(tool) {
+  const st = _ntMm; if (!st) return;
+  st.tool = tool === 'draw' || tool === 'text' ? tool : 'select';
+  st.wrap.classList.toggle('tool-draw', st.tool === 'draw');
+  st.wrap.classList.toggle('tool-text', st.tool === 'text');
+  document.querySelectorAll('[data-mm-tool]').forEach(btn => btn.classList.toggle('is-on', btn.getAttribute('data-mm-tool') === st.tool));
+  const help = document.getElementById('ntMmHelp');
+  if (help) {
+    help.textContent = st.tool === 'draw'
+      ? 'Desenhe no quadro · solte para gravar o traço · clique num traço e Delete para apagar · Espaço arrasta o mapa'
+      : st.tool === 'text'
+        ? 'Clique no vazio para soltar um texto · arraste para mover · clique de novo para editar'
+        : 'Arraste nós e linhas · clique na linha para religar · Desenhar e Texto na barra de cima';
+  }
+  st.wrap.focus();
+}
+function ntMmSetInk(c) {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  st.ink = c || '#111111';
+  if (st.selStroke) {
+    const s = (st.data.strokes || []).find(x => x.id === st.selStroke);
+    if (s) { s.color = st.ink; _ntMmRender(); _ntQueueSave(st.note); }
+  }
 }
 function _ntMmW(text) { return Math.max(72, Math.min(340, String(text || '').length * 7.6 + 28)); }
 function _ntMmAutoLayout(mm) {
@@ -32864,24 +33168,61 @@ function _ntMindmapInit(n, canEdit) {
   if (window._ntMmMove) { window.removeEventListener('mousemove', window._ntMmMove); window._ntMmMove = null; }
   if (window._ntMmUp) { window.removeEventListener('mouseup', window._ntMmUp); window._ntMmUp = null; }
   if (!n.data.mindmap || !Array.isArray(n.data.mindmap.nodes) || !n.data.mindmap.nodes.length) {
-    n.data.mindmap = { nodes: [{ id: _ntUid(), text: n.title || 'Ideia central', parent: null, x: 0, y: 0, color: '' }] };
+    n.data.mindmap = { nodes: [{ id: _ntUid(), text: n.title || 'Ideia central', parent: null, x: 0, y: 0, color: '' }], labels: [], strokes: [] };
   }
-  const mm = n.data.mindmap;
+  const mm = _ntMmEnsureBoard(n.data.mindmap);
   if (mm.nodes.every(x => !x.x && !x.y) && mm.nodes.length > 1) _ntMmAutoLayout(mm);
-  _ntMm = { note: n, data: mm, svg, wrap, canEdit, sel: mm.nodes[0].id, zoom: 1, pan: { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 }, drag: null };
+  _ntMm = { note: n, data: mm, svg, wrap, canEdit, sel: mm.nodes[0].id, selEdge: null, selLabel: null, selStroke: null, tool: 'select', ink: '#111111', space: false, zoom: 1, pan: { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 }, drag: null };
   _ntMmRender();
+  ntMmSetTool('select');
   wrap.onmousedown = (e) => {
     if (e.button !== 0) return;
     if (e.target.closest('.nt-mm-edit')) return;
+    const st = _ntMm;
+    const tool = (st.space || e.altKey) ? 'select' : (st.tool || 'select');
+    const port = e.target.closest('.nt-mm-port');
+    const edge = e.target.closest('.nt-mm-edge');
     const g = e.target.closest('.nt-mm-node');
-    if (g) {
-      _ntMm.sel = g.getAttribute('data-id');
-      const node = mm.nodes.find(x => x.id === _ntMm.sel);
-      _ntMm.drag = canEdit && node ? { type: 'node', node, sx: e.clientX, sy: e.clientY, ox: node.x, oy: node.y, moved: false } : { type: 'sel' };
+    const lab = e.target.closest('.nt-mm-label');
+    const stroke = e.target.closest('.nt-mm-stroke');
+    const world = _ntMmToWorld(e.clientX, e.clientY);
+    if (canEdit && tool === 'draw' && !g && !port && !edge && !lab) {
+      st.sel = null; st.selEdge = null; st.selLabel = null; st.selStroke = null;
+      st.drag = { type: 'draw', points: [[world.x, world.y]], color: st.ink || '#111111' };
+      _ntMmRender();
+    } else if (canEdit && tool === 'text' && !g && !lab && !port) {
+      ntMmAddLabelAt(e.clientX, e.clientY);
+    } else if (lab) {
+      const id = lab.getAttribute('data-id');
+      st.selLabel = id; st.sel = null; st.selEdge = null; st.selStroke = null;
+      const item = (mm.labels || []).find(x => x.id === id);
+      st.drag = canEdit && item ? { type: 'label', label: item, sx: e.clientX, sy: e.clientY, ox: item.x, oy: item.y, moved: false } : null;
+      _ntMmRender();
+    } else if (stroke && tool === 'select') {
+      st.selStroke = stroke.getAttribute('data-id'); st.sel = null; st.selEdge = null; st.selLabel = null;
+      st.drag = null;
+      _ntMmRender();
+    } else if (port && canEdit) {
+      const mode = port.getAttribute('data-mode') || 'edge';
+      const childId = port.getAttribute('data-child') || port.getAttribute('data-id');
+      st.sel = childId; st.selEdge = mode === 'edge' ? childId : null; st.selLabel = null; st.selStroke = null;
+      st.drag = { type: 'link', mode, childId, sx: e.clientX, sy: e.clientY, world, hoverId: null, moved: false };
+      _ntMmRender();
+    } else if (edge && canEdit) {
+      const childId = edge.getAttribute('data-child');
+      st.sel = childId; st.selEdge = childId; st.selLabel = null; st.selStroke = null;
+      st.drag = { type: 'link', mode: 'edge', childId, sx: e.clientX, sy: e.clientY, world, hoverId: null, moved: false };
+      _ntMmRender();
+    } else if (g) {
+      st.sel = g.getAttribute('data-id'); st.selEdge = null; st.selLabel = null; st.selStroke = null;
+      const node = mm.nodes.find(x => x.id === st.sel);
+      st.drag = canEdit && node ? { type: 'node', node, sx: e.clientX, sy: e.clientY, ox: node.x, oy: node.y, moved: false } : { type: 'sel' };
       _ntMmRender();
     } else {
-      _ntMm.drag = { type: 'pan', sx: e.clientX, sy: e.clientY, ox: _ntMm.pan.x, oy: _ntMm.pan.y };
+      st.selEdge = null; st.selLabel = null; st.selStroke = null;
+      st.drag = { type: 'pan', sx: e.clientX, sy: e.clientY, ox: st.pan.x, oy: st.pan.y };
       wrap.classList.add('dragging');
+      _ntMmRender();
     }
     wrap.focus();
     e.preventDefault();
@@ -32897,15 +33238,46 @@ function _ntMindmapInit(n, canEdit) {
       d.node.x = d.ox + (e.clientX - d.sx) / st.zoom;
       d.node.y = d.oy + (e.clientY - d.sy) / st.zoom;
       _ntMmRender();
+    } else if (d.type === 'label') {
+      const dist = Math.hypot(e.clientX - d.sx, e.clientY - d.sy);
+      if (!d.moved && dist < 6) return;
+      d.moved = true;
+      d.label.x = d.ox + (e.clientX - d.sx) / st.zoom;
+      d.label.y = d.oy + (e.clientY - d.sy) / st.zoom;
+      _ntMmRender();
+    } else if (d.type === 'link') {
+      const dist = Math.hypot(e.clientX - d.sx, e.clientY - d.sy);
+      if (dist >= 6) d.moved = true;
+      d.world = _ntMmToWorld(e.clientX, e.clientY);
+      d.hoverId = _ntMmHitNode(e.clientX, e.clientY);
+      _ntMmRender();
+    } else if (d.type === 'draw') {
+      const w = _ntMmToWorld(e.clientX, e.clientY);
+      const last = d.points[d.points.length - 1];
+      if (!last || Math.hypot(w.x - last[0], w.y - last[1]) >= 1.6) d.points.push([w.x, w.y]);
+      const live = st.svg.querySelector('.nt-mm-live');
+      if (live) live.setAttribute('d', _ntMmStrokeD(d.points));
+      else _ntMmRender();
     }
   };
   const onUp = (e) => {
     const st = _ntMm; if (!st) return;
     const d = st.drag;
+    if (d?.type === 'link' && d.moved) {
+      _ntMmReparent(d.childId, _ntMmHitNode(e.clientX, e.clientY));
+    }
     if (d?.type === 'node' && d.moved) _ntQueueSave(st.note);
+    if (d?.type === 'label' && d.moved) _ntQueueSave(st.note);
     if (d?.type === 'node' && !d.moved && canEdit && !document.querySelector('.nt-mm-edit')) ntMmEditSel();
+    if (d?.type === 'label' && !d.moved && canEdit) ntMmEditLabel();
+    if (d?.type === 'draw' && d.points && d.points.length > 1) {
+      st.data.strokes.push({ id: _ntUid(), points: d.points, color: d.color || st.ink || '#111111', width: 2.4 });
+      st.selStroke = st.data.strokes[st.data.strokes.length - 1].id;
+      _ntQueueSave(st.note);
+    }
     st.drag = null;
     wrap.classList.remove('dragging');
+    _ntMmRender();
   };
   window._ntMmMove = onMove;
   window._ntMmUp = onUp;
@@ -32914,18 +33286,36 @@ function _ntMindmapInit(n, canEdit) {
   wrap.oncontextmenu = (e) => {
     if (!canEdit) return;
     e.preventDefault();
+    const edge = e.target.closest('.nt-mm-edge');
     const g = e.target.closest('.nt-mm-node');
-    if (g) {
-      _ntMm.sel = g.getAttribute('data-id');
+    const lab = e.target.closest('.nt-mm-label');
+    const stroke = e.target.closest('.nt-mm-stroke');
+    if (edge) {
+      const childId = edge.getAttribute('data-child');
+      _ntMm.sel = childId; _ntMm.selEdge = childId; _ntMm.selLabel = null; _ntMm.selStroke = null;
+      _ntMmRender();
+      ntMmOpenEdgeMenu(e);
+    } else if (g) {
+      _ntMm.sel = g.getAttribute('data-id'); _ntMm.selEdge = null; _ntMm.selLabel = null; _ntMm.selStroke = null;
       _ntMmRender();
       ntMmOpenNodeMenu(e);
+    } else if (lab) {
+      _ntMm.selLabel = lab.getAttribute('data-id'); _ntMm.sel = null; _ntMm.selStroke = null;
+      _ntMmRender();
+      ntMmOpenLabelMenu(e);
+    } else if (stroke) {
+      _ntMm.selStroke = stroke.getAttribute('data-id'); _ntMm.sel = null; _ntMm.selLabel = null;
+      _ntMmRender();
+      ntMmOpenStrokeMenu(e);
     } else {
-      ntMmCreateAt(e.clientX, e.clientY);
+      ntMmOpenBlankMenu(e);
     }
   };
   wrap.ondblclick = (e) => {
+    const lab = e.target.closest('.nt-mm-label');
     const g = e.target.closest('.nt-mm-node');
-    if (g && canEdit) { _ntMm.sel = g.getAttribute('data-id'); ntMmEditSel(); }
+    if (lab && canEdit) { _ntMm.selLabel = lab.getAttribute('data-id'); ntMmEditLabel(); }
+    else if (g && canEdit) { _ntMm.sel = g.getAttribute('data-id'); ntMmEditSel(); }
   };
   wrap.onwheel = (e) => {
     e.preventDefault();
@@ -32938,37 +33328,127 @@ function _ntMindmapInit(n, canEdit) {
     _ntMmRender();
   };
   wrap.onkeydown = (e) => {
+    if (e.code === 'Space' && !document.querySelector('.nt-mm-edit')) {
+      _ntMm.space = true; wrap.classList.add('space-pan'); e.preventDefault(); return;
+    }
     if (!canEdit) return;
     if (document.querySelector('.nt-mm-edit')) return;
     if (e.key === 'Tab') { e.preventDefault(); ntMmAddChild(); }
     else if (e.key === 'Enter') { e.preventDefault(); ntMmAddSibling(); }
     else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); ntMmDeleteSel(); }
-    else if (e.key === 'F2') { e.preventDefault(); ntMmEditSel(); }
+    else if (e.key === 'F2') { e.preventDefault(); _ntMm.selLabel ? ntMmEditLabel() : ntMmEditSel(); }
+    else if (e.key === 'v' || e.key === 'V' || e.key === 'Escape') { e.preventDefault(); ntMmSetTool('select'); }
+    else if ((e.key === 'd' || e.key === 'D') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ntMmSetTool('draw'); }
+    else if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ntMmSetTool('text'); }
+  };
+  wrap.onkeyup = (e) => {
+    if (e.code === 'Space' && _ntMm) { _ntMm.space = false; wrap.classList.remove('space-pan'); }
   };
 }
 function _ntMmToWorld(clientX, clientY) {
   const st = _ntMm; const r = st.wrap.getBoundingClientRect();
   return { x: (clientX - r.left - st.pan.x) / st.zoom, y: (clientY - r.top - st.pan.y) / st.zoom };
 }
+function _ntMmHitNode(clientX, clientY) {
+  const list = document.elementsFromPoint(clientX, clientY) || [];
+  for (const el of list) {
+    const g = el.closest && el.closest('.nt-mm-node');
+    if (g) return g.getAttribute('data-id');
+  }
+  return null;
+}
+function _ntMmIsDescendant(ancestorId, nodeId) {
+  const st = _ntMm; if (!st) return false;
+  const byId = {}; st.data.nodes.forEach(x => { byId[x.id] = x; });
+  let cur = byId[nodeId], guard = 0;
+  while (cur && cur.parent && guard++ < 80) {
+    if (cur.parent === ancestorId) return true;
+    cur = byId[cur.parent];
+  }
+  return false;
+}
+function _ntMmReparent(childId, newParentId) {
+  const st = _ntMm; if (!st || !st.canEdit || !childId || !newParentId) return false;
+  const child = st.data.nodes.find(x => x.id === childId);
+  const np = st.data.nodes.find(x => x.id === newParentId);
+  if (!child || !np) return false;
+  if (!child.parent) { try { toast('O nó central não muda de ligação.', 'warn'); } catch (_) {} return false; }
+  if (child.id === np.id) return false;
+  if (child.parent === np.id) return false;
+  if (_ntMmIsDescendant(child.id, np.id)) { try { toast('Essa ligação formaria um ciclo.', 'warn'); } catch (_) {} return false; }
+  child.parent = np.id;
+  st.sel = child.id;
+  st.selEdge = child.id;
+  _ntQueueSave(st.note);
+  try { toast('Ramo religado em “' + (np.text || 'nó') + '”.', 'ok'); } catch (_) {}
+  return true;
+}
+function _ntMmEdgeGeom(child, parent) {
+  const w = _ntMmW(child.text), pw = _ntMmW(parent.text);
+  const dir = child.x >= parent.x ? 1 : -1;
+  const x1 = parent.x + dir * pw / 2, y1 = parent.y;
+  const x2 = child.x - dir * w / 2, y2 = child.y;
+  const mx = (x1 + x2) / 2;
+  return { x1, y1, x2, y2, d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}` };
+}
+function _ntMmStrokeD(pts) {
+  if (!pts || !pts.length) return '';
+  return pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ',' + p[1]).join(' ');
+}
+function _ntMmLabelW(text) { return Math.max(48, Math.min(420, String(text || '').length * 7.4 + 18)); }
 function _ntMmRender() {
   const st = _ntMm; if (!st) return;
-  const mm = st.data;
+  const mm = _ntMmEnsureBoard(st.data);
   const byId = {}; mm.nodes.forEach(x => byId[x.id] = x);
-  let edges = '', nodes = '';
+  const hoverId = st.drag?.type === 'link' ? st.drag.hoverId : null;
+  let ink = '', edges = '', nodes = '', labels = '';
+  (mm.strokes || []).forEach(s => {
+    const d = _ntMmStrokeD(s.points);
+    if (!d) return;
+    const sel = st.selStroke === s.id;
+    const hit = 16 / Math.max(st.zoom, 0.4);
+    ink += `<g class="nt-mm-stroke${sel ? ' sel' : ''}" data-id="${escAttr(s.id)}"><path class="nt-mm-stroke-hit" d="${d}" stroke-width="${hit}"/><path class="nt-mm-stroke-line" d="${d}" stroke="${escAttr(s.color || '#111')}" stroke-width="${sel ? 3.2 : (s.width || 2.4)}"/></g>`;
+  });
+  if (st.drag?.type === 'draw' && st.drag.points) {
+    ink += `<path class="nt-mm-live" d="${_ntMmStrokeD(st.drag.points)}" stroke="${escAttr(st.drag.color || st.ink || '#111')}" stroke-width="2.4"/>`;
+  }
   mm.nodes.forEach(x => {
     const w = _ntMmW(x.text), h = 34;
     const isRoot = !x.parent;
     if (x.parent && byId[x.parent]) {
-      const p = byId[x.parent]; const pw = _ntMmW(p.text);
-      const dir = x.x >= p.x ? 1 : -1;
-      const x1 = p.x + dir * pw / 2, y1 = p.y, x2 = x.x - dir * w / 2, y2 = x.y, mx = (x1 + x2) / 2;
-      edges += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#94a3b8" stroke-width="2" opacity=".75"/>`;
+      const g = _ntMmEdgeGeom(x, byId[x.parent]);
+      const sel = st.selEdge === x.id;
+      const hit = 14 / Math.max(st.zoom, 0.4);
+      const pr = 6 / Math.max(st.zoom, 0.4);
+      edges += `<g class="nt-mm-edge${sel ? ' sel' : ''}" data-child="${escAttr(x.id)}" data-parent="${escAttr(x.parent)}">
+        <path class="nt-mm-edge-hit" d="${g.d}" stroke-width="${hit}"/>
+        <path class="nt-mm-edge-line" d="${g.d}" fill="none" stroke="${sel ? '#111' : '#94a3b8'}" stroke-width="${sel ? 2.8 : 2}" opacity="${sel ? 1 : .75}"/>
+        ${sel ? `<circle class="nt-mm-port" data-mode="edge" data-child="${escAttr(x.id)}" cx="${g.x1}" cy="${g.y1}" r="${pr}" fill="#111" stroke="#fff" stroke-width="1.5"/><circle class="nt-mm-port" data-mode="edge" data-child="${escAttr(x.id)}" cx="${g.x2}" cy="${g.y2}" r="${pr}" fill="#111" stroke="#fff" stroke-width="1.5"/>` : ''}
+      </g>`;
     }
     const fill = isRoot ? '#111' : (x.color || '#fff');
     const txt = isRoot ? '#fff' : '#111';
-    nodes += `<g class="nt-mm-node${st.sel === x.id ? ' sel' : ''}" data-id="${escAttr(x.id)}" transform="translate(${x.x - w / 2},${x.y - h / 2})"><rect width="${w}" height="${h}" rx="${isRoot ? 17 : 9}" fill="${fill}" stroke="${isRoot ? '#111' : '#cbd5e1'}"/><text x="${w / 2}" y="${h / 2 + 4.5}" text-anchor="middle" fill="${txt}">${escHtml(x.text || '')}</text></g>`;
+    const drop = hoverId === x.id ? ' drop-ok' : '';
+    const pr = 6 / Math.max(st.zoom, 0.4);
+    const port = (st.canEdit && st.sel === x.id)
+      ? `<circle class="nt-mm-port" data-mode="self" data-id="${escAttr(x.id)}" cx="${w}" cy="${h / 2}" r="${pr}" fill="#111" stroke="#fff" stroke-width="1.5"/>`
+      : '';
+    nodes += `<g class="nt-mm-node${st.sel === x.id ? ' sel' : ''}${drop}" data-id="${escAttr(x.id)}" transform="translate(${x.x - w / 2},${x.y - h / 2})"><rect width="${w}" height="${h}" rx="${isRoot ? 17 : 9}" fill="${fill}" stroke="${isRoot ? '#111' : '#cbd5e1'}"/><text x="${w / 2}" y="${h / 2 + 4.5}" text-anchor="middle" fill="${txt}">${escHtml(x.text || '')}</text>${port}</g>`;
   });
-  st.svg.innerHTML = `<g transform="translate(${st.pan.x},${st.pan.y}) scale(${st.zoom})">${edges}${nodes}</g>`;
+  if (st.drag?.type === 'link' && st.drag.moved && st.drag.world) {
+    const child = byId[st.drag.childId];
+    const hover = st.drag.hoverId && byId[st.drag.hoverId];
+    const a = child ? { x: child.x, y: child.y } : st.drag.world;
+    const b = hover ? { x: hover.x, y: hover.y } : st.drag.world;
+    const mx = (a.x + b.x) / 2;
+    edges += `<path class="nt-mm-ghost" d="M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}"/>`;
+  }
+  (mm.labels || []).forEach(lb => {
+    const w = _ntMmLabelW(lb.text);
+    const sel = st.selLabel === lb.id;
+    labels += `<g class="nt-mm-label${sel ? ' sel' : ''}" data-id="${escAttr(lb.id)}" transform="translate(${lb.x},${lb.y})"><rect x="${-w / 2}" y="-16" width="${w}" height="28" rx="6" fill="${sel ? '#fff' : 'transparent'}" stroke="${sel ? '#111' : 'none'}"/><text x="0" y="4" text-anchor="middle" fill="${escAttr(lb.color || '#111')}">${escHtml(lb.text || '')}</text></g>`;
+  });
+  st.svg.innerHTML = `<g transform="translate(${st.pan.x},${st.pan.y}) scale(${st.zoom})">${ink}${edges}${nodes}${labels}</g>`;
   _ntUpdateStats();
 }
 function _ntMmSelNode() { const st = _ntMm; if (!st) return null; return st.data.nodes.find(x => x.id === st.sel) || null; }
@@ -32993,6 +33473,14 @@ function ntMmAddSibling() {
 }
 function ntMmDeleteSel() {
   const st = _ntMm; if (!st || !st.canEdit) return;
+  if (st.selStroke) {
+    st.data.strokes = (st.data.strokes || []).filter(x => x.id !== st.selStroke);
+    st.selStroke = null; _ntMmRender(); _ntQueueSave(st.note); return;
+  }
+  if (st.selLabel) {
+    st.data.labels = (st.data.labels || []).filter(x => x.id !== st.selLabel);
+    st.selLabel = null; _ntMmRender(); _ntQueueSave(st.note); return;
+  }
   const s = _ntMmSelNode(); if (!s || !s.parent) { toast('O nó central não pode ser excluído — edite o texto dele.', 'warn'); return; }
   const rm = new Set([s.id]);
   let grew = true;
@@ -33003,8 +33491,14 @@ function ntMmDeleteSel() {
 }
 function ntMmColorSel(c) {
   const st = _ntMm; if (!st || !st.canEdit) return;
+  const val = c === '#ffffff' ? '' : c;
+  if (st.selLabel) {
+    const lb = (st.data.labels || []).find(x => x.id === st.selLabel);
+    if (lb) { lb.color = val || '#111'; _ntMmRender(); _ntQueueSave(st.note); }
+    return;
+  }
   const s = _ntMmSelNode(); if (!s) return;
-  s.color = c === '#ffffff' ? '' : c;
+  s.color = val;
   _ntMmRender(); _ntQueueSave(st.note);
 }
 function ntMmCreateAt(clientX, clientY) {
@@ -33026,6 +33520,83 @@ function ntMmOpenNodeMenu(ev) {
     <button type="button" onclick="_ntCloseMenu();notasAiRun('mapa')"><i class="fas fa-wand-magic-sparkles"></i>Expandir com Claude</button>
     <hr>${colors}<hr>
     <button type="button" class="danger" onclick="_ntCloseMenu();ntMmDeleteSel()"><i class="fas fa-trash"></i>Excluir nó</button>`);
+}
+function ntMmAddLabelAt(clientX, clientY) {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const world = _ntMmToWorld(clientX, clientY);
+  const lb = { id: _ntUid(), text: 'Texto', x: world.x, y: world.y, color: st.ink && st.ink !== '#111111' ? st.ink : '#111' };
+  st.data.labels.push(lb);
+  st.selLabel = lb.id; st.sel = null; st.selEdge = null; st.selStroke = null;
+  _ntMmRender(); _ntQueueSave(st.note); ntMmEditLabel();
+}
+function _ntMmSelLabel() {
+  const st = _ntMm; if (!st) return null;
+  return (st.data.labels || []).find(x => x.id === st.selLabel) || null;
+}
+function ntMmEditLabel() {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const s = _ntMmSelLabel(); if (!s) return;
+  const prev = document.querySelector('.nt-mm-edit');
+  if (prev) { if (typeof prev._commit === 'function') prev._commit(true); else prev.remove(); }
+  const inp = document.createElement('input');
+  inp.className = 'nt-mm-edit';
+  inp.lang = 'pt-BR'; inp.spellcheck = true;
+  inp.value = s.text || '';
+  const w = Math.max(140, _ntMmLabelW(s.text) * st.zoom);
+  const sx = st.pan.x + s.x * st.zoom, sy = st.pan.y + s.y * st.zoom;
+  inp.style.width = w + 'px';
+  inp.style.left = Math.max(4, sx - w / 2) + 'px';
+  inp.style.top = Math.max(4, sy - 16) + 'px';
+  st.wrap.appendChild(inp);
+  inp.focus(); inp.select();
+  let done = false;
+  const commit = (save) => {
+    if (done) return; done = true;
+    if (save) {
+      const t = String(inp.value || '').trim().slice(0, 220);
+      if (t) s.text = t;
+      else st.data.labels = st.data.labels.filter(x => x.id !== s.id);
+      _ntQueueSave(st.note);
+    }
+    inp.remove(); _ntMmRender(); st.wrap.focus();
+  };
+  inp._commit = commit;
+  inp.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+    else if (e.key === 'Escape') { commit(false); }
+    e.stopPropagation();
+  };
+  inp.onblur = () => commit(true);
+  inp.onmousedown = (e) => e.stopPropagation();
+}
+function ntMmOpenBlankMenu(ev) {
+  _ntOpenMenu(ev, `
+    <button type="button" onclick="_ntCloseMenu();ntMmCreateAt(${ev.clientX},${ev.clientY})"><i class="fas fa-plus"></i>Novo ramo aqui</button>
+    <button type="button" onclick="_ntCloseMenu();ntMmAddLabelAt(${ev.clientX},${ev.clientY})"><i class="fas fa-font"></i>Inserir texto</button>
+    <button type="button" onclick="_ntCloseMenu();ntMmSetTool('draw')"><i class="fas fa-pen"></i>Começar a desenhar</button>`);
+}
+function ntMmOpenLabelMenu(ev) {
+  _ntOpenMenu(ev, `
+    <button type="button" onclick="_ntCloseMenu();ntMmEditLabel()"><i class="fas fa-pen"></i>Editar texto</button>
+    <button type="button" class="danger" onclick="_ntCloseMenu();ntMmDeleteSel()"><i class="fas fa-trash"></i>Excluir texto</button>`);
+}
+function ntMmOpenStrokeMenu(ev) {
+  _ntOpenMenu(ev, `
+    <button type="button" class="danger" onclick="_ntCloseMenu();ntMmDeleteSel()"><i class="fas fa-trash"></i>Apagar traço</button>`);
+}
+function ntMmOpenEdgeMenu(ev) {
+  _ntOpenMenu(ev, `
+    <button type="button" onclick="_ntCloseMenu();toast('Arraste a ponta preta da linha até o nó de destino.','ok')"><i class="fas fa-project-diagram"></i>Religar ramo<small>Arraste a linha até outro nó</small></button>
+    <button type="button" onclick="_ntCloseMenu();ntMmAttachSelToRoot()"><i class="fas fa-dot-circle"></i>Ligar ao centro</button>
+    <button type="button" class="danger" onclick="_ntCloseMenu();ntMmDeleteSel()"><i class="fas fa-trash"></i>Excluir este ramo</button>`);
+}
+function ntMmAttachSelToRoot() {
+  const st = _ntMm; if (!st || !st.canEdit) return;
+  const root = st.data.nodes.find(x => !x.parent);
+  const s = _ntMmSelNode();
+  if (!root || !s) return;
+  _ntMmReparent(s.id, root.id);
+  _ntMmRender();
 }
 function ntMmEditSel() {
   const st = _ntMm; if (!st || !st.canEdit) return;
@@ -33067,10 +33638,18 @@ function ntMmAutoLayoutBtn() {
   const st = _ntMm; if (!st) return;
   _ntMmAutoLayout(st.data); _ntMmRender(); _ntQueueSave(st.note); ntMmFit();
 }
+function _ntMmBounds() {
+  const st = _ntMm; if (!st) return { minX: -200, maxX: 200, minY: -80, maxY: 80 };
+  const xs = st.data.nodes.map(n => n.x);
+  const ys = st.data.nodes.map(n => n.y);
+  (st.data.labels || []).forEach(lb => { xs.push(lb.x); ys.push(lb.y); });
+  (st.data.strokes || []).forEach(s => (s.points || []).forEach(p => { xs.push(p[0]); ys.push(p[1]); }));
+  if (!xs.length) return { minX: -200, maxX: 200, minY: -80, maxY: 80 };
+  return { minX: Math.min(...xs) - 170, maxX: Math.max(...xs) + 170, minY: Math.min(...ys) - 60, maxY: Math.max(...ys) + 60 };
+}
 function ntMmFit() {
   const st = _ntMm; if (!st) return;
-  const xs = st.data.nodes.map(n => n.x), ys = st.data.nodes.map(n => n.y);
-  const minX = Math.min(...xs) - 170, maxX = Math.max(...xs) + 170, minY = Math.min(...ys) - 60, maxY = Math.max(...ys) + 60;
+  const { minX, maxX, minY, maxY } = _ntMmBounds();
   const W = st.wrap.clientWidth, H = st.wrap.clientHeight;
   const z = Math.max(0.25, Math.min(1.5, Math.min(W / (maxX - minX), H / (maxY - minY))));
   st.zoom = z;
@@ -33087,8 +33666,7 @@ function ntMmZoom(f) {
 }
 function notasExportMmSvg() {
   const st = _ntMm; const n = _ntCurrent(); if (!st || !n) return;
-  const xs = st.data.nodes.map(x => x.x), ys = st.data.nodes.map(x => x.y);
-  const minX = Math.min(...xs) - 190, maxX = Math.max(...xs) + 190, minY = Math.min(...ys) - 60, maxY = Math.max(...ys) + 60;
+  const { minX, maxX, minY, maxY } = _ntMmBounds();
   const inner = st.svg.innerHTML.replace(/<g transform="[^"]*">/, `<g transform="translate(${-minX},${-minY})">`);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${maxX - minX}" height="${maxY - minY}" viewBox="0 0 ${maxX - minX} ${maxY - minY}"><style>text{font-family:Inter,Arial,sans-serif;font-size:13px;font-weight:600}</style><rect width="100%" height="100%" fill="#fff"/>${inner}</svg>`;
   _ntDownload((n.title || 'mapa-mental') + '.svg', svg, 'image/svg+xml');
@@ -33296,9 +33874,12 @@ function _ntNoteContext(n) {
   let body = '';
   if (n.kind === 'checklist') body = (n.data.items || []).map(i => `- [${i.done ? 'x' : ' '}] ${i.text}`).join('\n');
   else if (n.kind === 'mapa') {
-    const nodes = (n.data.mindmap || {}).nodes || [];
+    const mm = n.data.mindmap || {};
+    const nodes = mm.nodes || [];
     const sel = _ntMmSelNode();
     body = nodes.map(x => `${x.parent ? '  ' : ''}• ${x.text}${sel && sel.id === x.id ? '  ← NÓ SELECIONADO' : ''}`).join('\n');
+    const labs = (mm.labels || []).map(x => x.text).filter(Boolean);
+    if (labs.length) body += '\nTextos soltos: ' + labs.join(' · ');
   } else body = _ntHtmlToText(n.content);
   return { kind, title: n.title || 'Sem título', body: body.slice(0, 6000) };
 }
