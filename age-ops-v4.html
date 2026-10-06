@@ -1639,35 +1639,24 @@ body.nt-mm-fs-on .nt-mm-fs-btn{margin-left:6px}
 .nt-due-badge.soon{background:#fffbeb;color:#b45309}
 
 /* ── Pipeline comercial ── */
-.pipe-filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.pipe-summary{font-size:11px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4}
+.pipe-summary b{color:var(--text);font-family:var(--font-b)}
+.pipe-filters{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pipe-fbtn{border:1px solid var(--bd);background:transparent;color:var(--text);border-radius:999px;height:28px;padding:0 11px;font-family:var(--font-m);font-size:10px;font-weight:700;letter-spacing:.04em;cursor:pointer}
 .pipe-fbtn:hover{background:rgba(0,0,0,.04)}
 .pipe-fbtn.active{background:#111;color:#fff;border-color:#111}
-.pipe-funnel{display:flex;gap:4px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px}
-.pipe-funnel-step{flex:1 1 90px;min-width:88px;border:1px solid var(--bd);background:var(--bg2);border-radius:10px;padding:8px 8px 7px;text-align:left;cursor:pointer}
-.pipe-funnel-step:hover{border-color:#111}
-.pipe-funnel-step.is-on{box-shadow:0 0 0 1.5px #111 inset}
-.pipe-funnel-step .pf-lbl{font-family:var(--font-m);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}
-.pipe-funnel-step .pf-n{font-family:var(--font-h);font-size:18px;font-weight:800;line-height:1.1;margin-top:3px}
-.pipe-funnel-step .pf-sub{font-size:9px;color:#64748b;margin-top:2px}
-.pipe-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
-.pipe-board{display:flex;gap:10px;overflow-x:auto;align-items:stretch;min-height:420px;padding-bottom:8px}
-.pipe-board .kanban-col{flex:0 0 230px;min-width:220px;max-width:260px}
-.pipe-board .kanban-col.is-outcome{flex-basis:210px}
-.pipe-hint{margin-top:10px;padding:10px 12px;border-radius:8px;background:#ecfeff;border:1px solid #a5f3fc;color:#155e75;font-size:11px;line-height:1.5}
+.pipe-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:stretch;min-height:420px}
+.pipe-board.is-lost{grid-template-columns:1fr;max-width:420px}
+.pipe-board .kanban-col{min-width:0}
+.pipe-hint{margin-top:10px;padding:10px 12px;border-radius:8px;background:#f8fafc;border:1px solid var(--bd);color:#475569;font-size:11px;line-height:1.5}
 .pipe-card-actions{display:flex;gap:4px;margin-top:8px}
-.pipe-card-actions button{flex:1;height:26px;border:1px solid var(--bd);background:#f8fafc;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;color:#334155;font-family:var(--font-b)}
+.pipe-card-actions button{flex:1;height:26px;border:1px solid var(--bd);background:#fff;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;color:#334155;font-family:var(--font-b)}
 .pipe-card-actions button:hover{background:#111;color:#fff;border-color:#111}
-.pipe-card-actions button.won{color:#15803d}
 .pipe-card-actions button.lost{color:#b91c1c}
-.pipe-card-actions button.won:hover{background:#16a34a;border-color:#16a34a;color:#fff}
 .pipe-card-actions button.lost:hover{background:#dc2626;border-color:#dc2626;color:#fff}
 @media(max-width:900px){
-  .pipe-kpis{grid-template-columns:repeat(3,1fr)}
+  .pipe-board{display:flex;overflow-x:auto;padding-bottom:8px}
   .pipe-board .kanban-col{flex:0 0 min(78vw,260px)}
-}
-@media(max-width:600px){
-  .pipe-kpis{grid-template-columns:repeat(2,1fr)}
 }
 
 /* ── Suporte ── */
@@ -2100,6 +2089,7 @@ body.nt-mm-fs-on .nt-mm-fs-btn{margin-left:6px}
   .page-title{font-size:16px;flex-wrap:wrap}
   .page-actions{width:100%;justify-content:flex-start}
   .page-actions input,.page-actions select{min-width:0!important;max-width:100%;flex:1}
+  #page-clientes .page-actions .btn{flex:0 0 auto;white-space:nowrap}
   #fechLayout{grid-template-columns:1fr!important;height:auto!important}
   #fechLayout > div{max-height:none}
   #fechSearch{min-width:0!important;width:100%}
@@ -4485,7 +4475,7 @@ body:has(#login-screen.visible){
           <div class="page-title"><i class="fas fa-users"></i> BANCO DE CLIENTES</div>
           <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m)">
             <i class="fas fa-info-circle" style="color:var(--textsub)"></i>
-            &nbsp;2026: planilha &nbsp;|&nbsp; 2021–2025: banco histórico (deduplicado)
+            &nbsp;Cadastro único · 2021–2025: planilhas (R$ 659.678,08) &nbsp;|&nbsp; 2026: projetos ao vivo
           </div>
           <div class="page-actions">
             <select id="cliFilter" onchange="renderClients()" style="height:32px;font-size:11px">
@@ -4495,6 +4485,9 @@ body:has(#login-screen.visible){
               <option value="inativo">Inativo</option>
             </select>
             <input type="text" id="cliSearch" placeholder="🔍 Buscar cliente..." oninput="renderClients()" style="height:32px;font-size:11px;min-width:160px">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="exportClientsCSV()" title="Baixar todos os clientes da empresa em planilha">
+              <i class="fas fa-download"></i> Baixar planilha
+            </button>
           </div>
         </div>
         <div class="kpi-grid" style="margin-bottom:14px">
@@ -5366,30 +5359,21 @@ body:has(#login-screen.visible){
       <div id="page-pipeline" class="page">
         <div class="page-header">
           <div>
-            <div class="page-title"><i class="fas fa-filter"></i> PIPELINE COMERCIAL</div>
-            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px;line-height:1.4">Novo → Qualificação → Qualificado → Reunião → Proposta → Negociação → Ganho ou Perdido</div>
+            <div class="page-title"><i class="fas fa-filter"></i> PIPELINE</div>
+            <div id="pipelineSummary" class="pipe-summary"></div>
           </div>
           <div class="page-actions">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="openLeadModal(null,'novo')"><i class="fas fa-plus"></i> Novo lead</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="openQualifiedLead()"><i class="fas fa-user-check"></i> Lead qualificado</button>
+            <div class="pipe-filters" id="pipelineFilters">
+              <button type="button" class="pipe-fbtn active" data-pf="abertos" onclick="pipelineFilter('abertos')">Aberto</button>
+              <button type="button" class="pipe-fbtn" data-pf="followup" onclick="pipelineFilter('followup')">Follow-up</button>
+              <button type="button" class="pipe-fbtn" data-pf="perdidos" onclick="pipelineFilter('perdidos')">Perdidos</button>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="openLeadModal(null,'novo')"><i class="fas fa-plus"></i> Novo</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openQualifiedLead()"><i class="fas fa-user-check"></i> Qualificado</button>
           </div>
         </div>
-
-        <div class="pipe-filters" id="pipelineFilters">
-          <button type="button" class="pipe-fbtn active" data-pf="abertos" onclick="pipelineFilter('abertos')">Em aberto</button>
-          <button type="button" class="pipe-fbtn" data-pf="qualificados" onclick="pipelineFilter('qualificados')">Qualificados</button>
-          <button type="button" class="pipe-fbtn" data-pf="followup" onclick="pipelineFilter('followup')">Follow-up</button>
-          <button type="button" class="pipe-fbtn" data-pf="quente" onclick="pipelineFilter('quente')">Quentes</button>
-          <button type="button" class="pipe-fbtn" data-pf="ganhos" onclick="pipelineFilter('ganhos')">Ganhos</button>
-          <button type="button" class="pipe-fbtn" data-pf="perdidos" onclick="pipelineFilter('perdidos')">Perdidos</button>
-          <button type="button" class="pipe-fbtn" data-pf="all" onclick="pipelineFilter('all')">Todos</button>
-        </div>
-
-        <div id="pipelineFunnel" class="pipe-funnel"></div>
-        <div id="pipelineKpis" class="pipe-kpis"></div>
-        <div id="pipelineAlerts" style="margin-bottom:12px"></div>
+        <div id="pipelineAlerts"></div>
         <div id="pipelineBoard" class="pipe-board"></div>
-        <div id="pipelineForecast" style="margin-top:14px"></div>
       </div>
 
       <div id="page-myfinance" class="page">
@@ -6178,11 +6162,7 @@ body:has(#login-screen.visible){
           <i class="fas fa-robot" style="margin-right:5px"></i>REGRAS DE FOLLOW-UP AUTOMÁTICO
         </div>
         <div style="font-size:10px;color:#374151;line-height:1.7">
-          • <b>Novo</b> → primeiro contato em <b>2 dias</b><br>
-          • <b>Qualificação / Qualificado / Reunião</b> → 3 a 4 dias sem movimento<br>
-          • <b>Proposta</b> → alerta em <b>3 dias</b> sem resposta<br>
-          • <b>Negociação</b> → alerta em <b>5 dias</b><br>
-          • <b>Ganho</b> ou <b>Perdido</b> saem da fila de follow-up
+          • Novo e Qualificado → 3 dias · Proposta → 3 dias · Negociação → 5 dias
         </div>
       </div>
     </div>
@@ -7475,6 +7455,68 @@ const _OWNAGE_HIST_SUMMARY = {
   2026: _OWNAGE_PLAN_2026 /* referência direta — sempre sincronizado */
 };
 
+/* Cadastro 2021–2025 conferido nas planilhas data/2021.xlsx…2025.xlsx.
+   Soma = R$ 659.678,08 · 110 projetos · 57 clientes (João/Maybach = JAY P; vic+Victoria = Victoria Brito). */
+const _OWNAGE_CLIENTS_HIST = [
+  {name:"JAY P",fat:121470,n:16,nps:10,npsN:16,first:2022,last:2025,years:[2022,2023,2024,2025]},
+  {name:"LOU GARCIA",fat:104750,n:3,nps:10,npsN:3,first:2022,last:2023,years:[2022,2023]},
+  {name:"Giana Mello",fat:56100,n:5,nps:10,npsN:5,first:2023,last:2025,years:[2023,2024,2025]},
+  {name:"UNIVERSAL MUSIC",fat:38100,n:2,nps:10,npsN:2,first:2024,last:2024,years:[2024]},
+  {name:"Talita Perosa Nutri",fat:29690,n:4,nps:10,npsN:4,first:2025,last:2025,years:[2025]},
+  {name:"ROOFTIME",fat:28500,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"KVSH",fat:26510,n:2,nps:10,npsN:2,first:2022,last:2023,years:[2022,2023]},
+  {name:"LOUD",fat:20000,n:1,nps:4,npsN:1,first:2021,last:2021,years:[2021]},
+  {name:"CINQ",fat:18000,n:4,nps:10,npsN:4,first:2023,last:2024,years:[2023,2024]},
+  {name:"Alva",fat:17200,n:2,nps:9,npsN:2,first:2021,last:2022,years:[2021,2022]},
+  {name:"KG NETWORK",fat:16550,n:3,nps:9.3,npsN:3,first:2022,last:2022,years:[2022]},
+  {name:"Victoria Brito",fat:14300,n:5,nps:10,npsN:5,first:2024,last:2025,years:[2024,2025]},
+  {name:"Sony",fat:13115.08,n:2,nps:10,npsN:2,first:2021,last:2021,years:[2021]},
+  {name:"VERDE ROSA",fat:10380,n:1,nps:10,npsN:1,first:2025,last:2025,years:[2025]},
+  {name:"Digital Music",fat:10000,n:2,nps:9.5,npsN:2,first:2021,last:2022,years:[2021,2022]},
+  {name:"Flashbang",fat:9300,n:4,nps:10,npsN:4,first:2022,last:2023,years:[2022,2023]},
+  {name:"Thiago Sub",fat:9000,n:1,nps:10,npsN:1,first:2025,last:2025,years:[2025]},
+  {name:"KZN",fat:8740,n:2,nps:10,npsN:2,first:2024,last:2024,years:[2024]},
+  {name:"Tati Zaqui",fat:8700,n:4,nps:10,npsN:4,first:2023,last:2023,years:[2023]},
+  {name:"HEINEKEN",fat:7200,n:1,nps:10,npsN:1,first:2024,last:2024,years:[2024]},
+  {name:"BC RAFF",fat:6000,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Tony",fat:6000,n:2,nps:10,npsN:2,first:2025,last:2025,years:[2025]},
+  {name:"Feeling",fat:5650,n:1,nps:4,npsN:1,first:2021,last:2021,years:[2021]},
+  {name:"Konai",fat:5270,n:1,nps:10,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"Vinera",fat:4920,n:4,nps:10,npsN:4,first:2023,last:2025,years:[2023,2024,2025]},
+  {name:"Prime Talk",fat:4750,n:2,nps:8,npsN:2,first:2021,last:2021,years:[2021]},
+  {name:"Psych",fat:4500,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Barreto",fat:3800,n:1,nps:10,npsN:1,first:2024,last:2024,years:[2024]},
+  {name:"SEO LIMAO",fat:3800,n:1,nps:10,npsN:1,first:2025,last:2025,years:[2025]},
+  {name:"Altamira",fat:3500,n:2,nps:10,npsN:2,first:2023,last:2023,years:[2023]},
+  {name:"USBISQUI",fat:3490,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Reky",fat:3335,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Zant",fat:3050,n:2,nps:10,npsN:2,first:2022,last:2022,years:[2022]},
+  {name:"SadStation",fat:3000,n:1,nps:8,npsN:1,first:2021,last:2021,years:[2021]},
+  {name:"2Strange",fat:2700,n:1,nps:10,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"USINA",fat:2500,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Sayuri",fat:2500,n:1,nps:10,npsN:1,first:2025,last:2025,years:[2025]},
+  {name:"Dj Caique",fat:2400,n:1,nps:8,npsN:1,first:2021,last:2021,years:[2021]},
+  {name:"Chuck",fat:2063,n:1,nps:10,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"Ryan",fat:2000,n:1,nps:10,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"Crosa",fat:1881,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Garius",fat:1750,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Blau",fat:1510,n:2,nps:8.5,npsN:2,first:2022,last:2022,years:[2022]},
+  {name:"Theo Kant",fat:1500,n:1,nps:7,npsN:1,first:2021,last:2021,years:[2021]},
+  {name:"Bardeo2",fat:1335,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Dani",fat:1000,n:1,nps:9,npsN:1,first:2021,last:2021,years:[2021]},
+  {name:"Amarante",fat:1000,n:1,nps:10,npsN:1,first:2023,last:2023,years:[2023]},
+  {name:"Guilherme Kim",fat:1000,n:1,nps:10,npsN:1,first:2025,last:2025,years:[2025]},
+  {name:"MIKKA",fat:919,n:1,nps:10,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"PS",fat:900,n:1,nps:10,npsN:1,first:2024,last:2024,years:[2024]},
+  {name:"Kalimera",fat:700,n:1,nps:10,npsN:1,first:2025,last:2025,years:[2025]},
+  {name:"Bardeo",fat:650,n:1,nps:8,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"Zampini",fat:600,n:1,nps:10,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"Yan",fat:600,n:1,nps:10,npsN:1,first:2024,last:2024,years:[2024]},
+  {name:"Tree",fat:500,n:1,nps:10,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"Kurt Codein",fat:500,n:1,nps:9,npsN:1,first:2022,last:2022,years:[2022]},
+  {name:"Uxie",fat:500,n:1,nps:9,npsN:1,first:2022,last:2022,years:[2022]}
+];
+
 /* ═══════════════════════════════════════════════════════════
    PORTÃO DE TENANT DOS DADOS EMBUTIDOS
 
@@ -7496,6 +7538,7 @@ function _defineOwnageOnlyGlobal(name, ownageValue, emptyValue) {
 _defineOwnageOnlyGlobal('PROJ_2026_SHEET', () => _OWNAGE_PROJ_SHEET, () => []);
 _defineOwnageOnlyGlobal('PLAN_2026',       () => _OWNAGE_PLAN_2026,  () => _emptyKpiTotals());
 _defineOwnageOnlyGlobal('HIST_SUMMARY',    () => _OWNAGE_HIST_SUMMARY, () => ({}));
+_defineOwnageOnlyGlobal('OWNAGE_CLIENTS_HIST', () => _OWNAGE_CLIENTS_HIST, () => []);
 
 /* ═══════════════════════════════════════════
    LIMPEZA / SYNC LEGADO — planilha JS → Supabase
@@ -20215,35 +20258,92 @@ let _clientsCache = [];
 /* Avatar colors — monocromático escuro */
 const AV_COLORS = ['#1a1a1a','#1e1e1e','#1c1c1c','#181818','#161616','#141414'];
 
+/* Mesma pessoa, grafias diferentes nas planilhas OWNAGE */
+const _CLI_NAME_ALIASES = {
+  'jonas': 'Jonas Pastore',
+  'jonas pastore': 'Jonas Pastore',
+  'cobertec e solutec': 'Cobertec & Solutec',
+  'cobertec & solutec': 'Cobertec & Solutec',
+  'cobertec': 'Cobertec & Solutec',
+  'talita perosa': 'Talita Perosa Nutri',
+  'talita perosa nutri': 'Talita Perosa Nutri',
+  'yuri': 'Yuri Guillen',
+  'yuri guillen': 'Yuri Guillen',
+  'kim': 'Guilherme Kim',
+  'kim nefasto': 'Guilherme Kim',
+  'guilherme kim': 'Guilherme Kim',
+  'jay p': 'JAY P',
+  'jay': 'JAY P',
+  'joão': 'JAY P',
+  'joao': 'JAY P',
+  'lou garcia': 'LOU GARCIA',
+  'universal music': 'UNIVERSAL MUSIC',
+  'kg network': 'KG NETWORK',
+  'irmãs lira': 'Irmas Lira',
+  'irmas lira': 'Irmas Lira',
+  'vic': 'Victoria Brito',
+  'victoria': 'Victoria Brito',
+  'victoria brito': 'Victoria Brito',
+  'sub': 'Thiago Sub',
+  'thiago sub': 'Thiago Sub',
+  'giana': 'Giana Mello',
+  'giana mello': 'Giana Mello',
+  'cinq': 'CINQ',
+  'mc bill': 'MC Bill',
+  'bill': 'MC Bill',
+  'tony': 'Tony'
+};
+
+function _cliCanonicalName(raw) {
+  const name = String(raw || '').replace(/\s+/g, ' ').trim();
+  if (!name) return '';
+  const k = name.toLowerCase();
+  return _CLI_NAME_ALIASES[k] || name;
+}
+
+function _cliNameKey(raw) {
+  return _cliCanonicalName(raw).toLowerCase().replace(/&/g, 'e').replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+}
+
+function _ageProjLooksLikeCopy(p) {
+  return /\(\s*c[oó]pia(?:\s*(?:c[oó]pia)*)?\s*\)/i.test(String(p?.project_name || p?.projeto || ''));
+}
+
 async function loadClientes() {
   try {
     /* ══════════════════════════════════════════════════
        • 2026 → Supabase (projetos) se SUPABASE_IS_SOURCE_OF_TRUTH; senão PROJ_2026_SHEET
-       • 2021-2025 → age_hist_projects
+       • 2021-2025 OWNAGE → cadastro conferido nas planilhas (OWNAGE_CLIENTS_HIST)
+       • outras empresas → age_hist_projects
     ══════════════════════════════════════════════════ */
     const clientMap = {};
 
     function addClient(key, name, fat, nps, isNovo, year) {
-      if(!clientMap[key]) {
-        clientMap[key] = {
-          name, fat:0, n:0, npsSum:0, npsN:0,
+      const display = _cliCanonicalName(name);
+      const k = _cliNameKey(display) || key;
+      if(!k) return;
+      if(!clientMap[k]) {
+        clientMap[k] = {
+          name: display, fat:0, n:0, npsSum:0, npsN:0,
           firstYear:year, lastYear:year,
           years: new Set(), novo:false
         };
       }
-      clientMap[key].fat      += fat;
-      clientMap[key].n++;
-      if(nps>0){ clientMap[key].npsSum+=nps; clientMap[key].npsN++; }
-      if(isNovo) clientMap[key].novo = true;
-      clientMap[key].years.add(year);
-      clientMap[key].firstYear = Math.min(clientMap[key].firstYear, year);
-      clientMap[key].lastYear  = Math.max(clientMap[key].lastYear,  year);
+      clientMap[k].fat      += fat;
+      clientMap[k].n++;
+      if(nps>0){ clientMap[k].npsSum+=nps; clientMap[k].npsN++; }
+      if(isNovo) clientMap[k].novo = true;
+      clientMap[k].years.add(year);
+      clientMap[k].firstYear = Math.min(clientMap[k].firstYear, year);
+      clientMap[k].lastYear  = Math.max(clientMap[k].lastYear,  year);
+      if(display.length > String(clientMap[k].name||'').length) clientMap[k].name = display;
     }
 
     /* ── 2026: Supabase (operacional) ou planilha JS legada ── */
     if(SUPABASE_IS_SOURCE_OF_TRUTH) {
       const live = await fetchAgeProjectsScoped(2500).catch(()=>[]);
       live.forEach(p => {
+        if (_ageProjLooksLikeCopy(p)) return;
         const nm = _ageProjDbClient(p);
         const k = String(nm||'').trim().toLowerCase();
         if(!k) return;
@@ -20260,20 +20360,68 @@ async function loadClientes() {
       });
     }
 
-    /* ── 2021-2025: 100% do banco histórico (excluir 2026 definitivamente) ── */
-    const hist = await fetchAll('age_hist_projects', 500).catch(()=>[]);
-    /* Deduplificar por chave única ano+cliente+projeto para evitar registros duplicados no banco */
-    const seen = new Set();
-    hist.forEach(p => {
-      const y = parseInt(p.year)||0;
-      if(y >= 2026 || y < 2021) return; /* ignorar 2026 e anos inválidos */
-      const dupKey = y+'|'+(p.client_name||'').trim().toLowerCase()+'|'+(p.project_name||'').trim().toLowerCase();
-      if(seen.has(dupKey)) return; /* pular duplicados */
-      seen.add(dupKey);
-      const k = (p.client_name||'').trim().toLowerCase();
-      if(!k) return;
-      addClient(k, (p.client_name||'').trim(), parseFloat(p.value)||0, parseFloat(p.nps)||0, p.is_new_client===true||p.is_new_client==='true', y);
-    });
+    /* ── 2021-2025: planilha conferida (OWNAGE) ou banco histórico ── */
+    const sheetHist = (typeof OWNAGE_CLIENTS_HIST !== 'undefined' && Array.isArray(OWNAGE_CLIENTS_HIST))
+      ? OWNAGE_CLIENTS_HIST : [];
+    if (sheetHist.length) {
+      sheetHist.forEach(c => {
+        const display = _cliCanonicalName(c.name);
+        const k = _cliNameKey(display);
+        if (!k) return;
+        if (!clientMap[k]) {
+          clientMap[k] = {
+            name: display, fat: 0, n: 0, npsSum: 0, npsN: 0,
+            firstYear: c.first, lastYear: c.last,
+            years: new Set(), novo: false
+          };
+        }
+        clientMap[k].fat += Number(c.fat) || 0;
+        clientMap[k].n += Number(c.n) || 0;
+        const npsN = Number(c.npsN) || 0;
+        const nps = Number(c.nps) || 0;
+        if (npsN > 0 && nps > 0) {
+          clientMap[k].npsSum += nps * npsN;
+          clientMap[k].npsN += npsN;
+        }
+        (c.years || []).forEach(y => clientMap[k].years.add(y));
+        clientMap[k].firstYear = Math.min(clientMap[k].firstYear, c.first || clientMap[k].firstYear);
+        clientMap[k].lastYear = Math.max(clientMap[k].lastYear, c.last || clientMap[k].lastYear);
+        if (display.length > String(clientMap[k].name || '').length) clientMap[k].name = display;
+      });
+    } else {
+      const hist = await fetchAll('age_hist_projects', 500).catch(()=>[]);
+      const seen = new Set();
+      hist.forEach(p => {
+        const y = parseInt(p.year)||0;
+        if(y >= 2026 || y < 2021) return;
+        /* id único: vários projetos do mesmo cliente no ano têm o mesmo nome (ex.: JAY P 2024) */
+        const dupKey = p.id ? ('id:'+p.id) : [y, (p.client_name||'').trim().toLowerCase(), (p.project_name||'').trim().toLowerCase(), parseFloat(p.value)||0].join('|');
+        if(seen.has(dupKey)) return;
+        seen.add(dupKey);
+        const k = (p.client_name||'').trim().toLowerCase();
+        if(!k) return;
+        addClient(k, (p.client_name||'').trim(), parseFloat(p.value)||0, parseFloat(p.nps)||0, p.is_new_client===true||p.is_new_client==='true', y);
+      });
+    }
+
+    /* Cadastro persistido (age_clients_db): entra quem ainda não veio de projeto/histórico */
+    try {
+      const dbCli = await fetchAll('age_clients_db', 1000).catch(() => []);
+      (dbCli || []).forEach(r => {
+        const nm = _cliCanonicalName(r.client_name || r.name || r.cliente || r.client || '');
+        const k = _cliNameKey(nm);
+        if (!k || clientMap[k]) return;
+        const years = String(r.years_active || '').split(/[,\s]+/).map(n => parseInt(n, 10)).filter(n => n >= 2000);
+        const first = parseInt(r.first_year, 10) || years[0] || new Date().getFullYear();
+        const last = parseInt(r.last_year, 10) || years[years.length - 1] || first;
+        addClient(k, nm, parseFloat(r.total_value) || 0, parseFloat(r.avg_nps) || 0, false, last);
+        if (clientMap[k]) {
+          clientMap[k].n = Math.max(clientMap[k].n, parseInt(r.total_projects, 10) || clientMap[k].n);
+          clientMap[k].firstYear = Math.min(clientMap[k].firstYear, first);
+          years.forEach(y => clientMap[k].years.add(y));
+        }
+      });
+    } catch (_) {}
 
     _clientsCache = Object.values(clientMap)
       .map(c => ({...c, years:[...c.years].sort((a,b)=>a-b)}))
@@ -20330,6 +20478,49 @@ function renderClients() {
       </div>
     </div>`;
   }).join('');
+}
+
+async function exportClientsCSV() {
+  if (!Array.isArray(_clientsCache) || !_clientsCache.length) {
+    if (typeof loadClientes === 'function') await loadClientes();
+  }
+  const list = Array.isArray(_clientsCache) ? _clientsCache : [];
+  if (!list.length) {
+    toast('Nenhum cliente para exportar.', 'warn');
+    return;
+  }
+  const curY = new Date().getFullYear();
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const num = (v) => {
+    const x = Number(v);
+    if (!Number.isFinite(x)) return '0,00';
+    return x.toFixed(2).replace('.', ',');
+  };
+  const hdr = ['Cliente', 'Status', 'Primeiro ano', 'Último ano', 'Anos', 'Projetos', 'Faturamento', 'NPS médio'];
+  const lines = [hdr.map(esc).join(';')];
+  list.forEach(c => {
+    const status = c.lastYear >= curY ? 'Ativo' : (c.lastYear >= curY - 1 ? 'Recorrente' : 'Inativo');
+    const avgNps = c.npsN > 0 ? (c.npsSum / c.npsN).toFixed(1).replace('.', ',') : '';
+    const years = (Array.isArray(c.years) && c.years.length) ? c.years.join(', ') : String(c.firstYear || '');
+    lines.push([
+      esc(c.name),
+      esc(status),
+      c.firstYear || '',
+      c.lastYear || '',
+      esc(years),
+      c.n || 0,
+      num(c.fat),
+      avgNps === '' ? '' : avgNps
+    ].join(';'));
+  });
+  const co = String(currentUser?.company_name || 'empresa')
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 40) || 'empresa';
+  const day = new Date().toISOString().slice(0, 10);
+  _exportDownloadBlob(`clientes_${co}_${day}.csv`, '\uFEFF' + lines.join('\n'), 'text/csv;charset=utf-8');
+  toast('Planilha com ' + list.length + ' clientes baixada.');
 }
 
 /* ═══════════════════════════════════════════
@@ -36460,11 +36651,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 /* ╔═══════════════════════════════════════════════════════════════╗
    ║           PIPELINE KANBAN — AGE OPS                       ║
    ║  Funcionalidades:                                             ║
-   ║  • Funil: Novo → Qualificação → Qualificado → Reunião        ║
-   ║           → Proposta → Negociação → Ganho / Perdido          ║
-   ║  • Lead qualificado em 1 clique + marcar perdido com motivo  ║
-   ║  • Drag-and-drop, avançar, ganhou/perdeu no card             ║
-   ║  • KPIs, follow-up e previsão por estágio                    ║
+   ║  • Funil: Novo → Qualificado → Proposta → Negociação → Ganho ║
+   ║  • Perdido em 1 clique com motivo                            ║
    ╚═══════════════════════════════════════════════════════════════╝ */
 
 let _leadsCache  = [];
@@ -36474,19 +36662,20 @@ let _dragLeadId  = null;
 let _lostLeadId  = null;
 
 const STAGES = [
-  { id:'novo',          label:'Novo',          short:'Novo',          hint:'Acabou de entrar',              cor:'#64748b', subCor:'#f8fafc', borda:'#e2e8f0' },
-  { id:'qualificacao',  label:'Qualificação',  short:'Qualif.',       hint:'Primeiro contato e filtro',     cor:'#2563eb', subCor:'#eff6ff', borda:'#bfdbfe' },
-  { id:'qualificado',   label:'Qualificado',   short:'Qualificado',   hint:'Passou no filtro comercial',    cor:'#0891b2', subCor:'#ecfeff', borda:'#a5f3fc' },
-  { id:'reuniao',       label:'Reunião',       short:'Reunião',       hint:'Diagnóstico ou apresentação',   cor:'#7c3aed', subCor:'#f5f3ff', borda:'#ddd6fe' },
-  { id:'proposta',      label:'Proposta',      short:'Proposta',      hint:'Proposta enviada',              cor:'#d97706', subCor:'#fffbeb', borda:'#fde68a' },
-  { id:'negociacao',    label:'Negociação',    short:'Negociação',    hint:'Alinhando fechamento',          cor:'#ea580c', subCor:'#fff7ed', borda:'#fed7aa' },
-  { id:'fechado',       label:'Ganho',         short:'Ganho',         hint:'Fechou',      outcome:'won',    cor:'#16a34a', subCor:'#f0fdf4', borda:'#bbf7d0' },
-  { id:'perdido',       label:'Perdido',       short:'Perdido',       hint:'Não avançou', outcome:'lost',   cor:'#dc2626', subCor:'#fef2f2', borda:'#fecaca' },
+  { id:'novo',        label:'Novo',         cor:'#64748b', subCor:'#f8fafc', borda:'#e2e8f0' },
+  { id:'qualificado', label:'Qualificado',  cor:'#0891b2', subCor:'#f0fdfa', borda:'#99f6e4' },
+  { id:'proposta',    label:'Proposta',     cor:'#d97706', subCor:'#fffbeb', borda:'#fde68a' },
+  { id:'negociacao',  label:'Negociação',   cor:'#7c3aed', subCor:'#f5f3ff', borda:'#ddd6fe' },
+  { id:'fechado',     label:'Ganho',        outcome:'won',  cor:'#16a34a', subCor:'#f0fdf4', borda:'#bbf7d0' },
+  { id:'perdido',     label:'Perdido',      outcome:'lost', cor:'#dc2626', subCor:'#fef2f2', borda:'#fecaca' },
 ];
-const STAGE_ALIASES = { lead:'novo', ganho:'fechado', won:'fechado', lost:'perdido', sql:'qualificado', mql:'qualificacao' };
-const STAGE_PROB = { novo:10, qualificacao:20, qualificado:40, reuniao:50, proposta:60, negociacao:75, fechado:100, perdido:0 };
-const STAGE_FOLLOWUP = { novo:2, qualificacao:3, qualificado:4, reuniao:3, proposta:3, negociacao:5 };
-const LOST_REASONS = ['Preço alto','Sem orçamento','Escolheu concorrente','Não era o perfil','Projeto cancelado','Sem resposta','Timing errado','Outro'];
+const STAGE_ALIASES = {
+  lead:'novo', qualificacao:'novo', mql:'novo',
+  reuniao:'qualificado', sql:'qualificado',
+  ganho:'fechado', won:'fechado', lost:'perdido'
+};
+const STAGE_PROB = { novo:15, qualificado:40, proposta:60, negociacao:75, fechado:100, perdido:0 };
+const STAGE_FOLLOWUP = { novo:3, qualificado:3, proposta:3, negociacao:5 };
 
 function normalizeLeadStage(st) {
   const raw = String(st || 'novo').toLowerCase().trim();
@@ -36584,93 +36773,34 @@ function applyFilter(leads) {
       return fu && (fu.nivel === 'atrasado' || fu.nivel === 'hoje' || fu.nivel === 'urgente' || fu.nivel === 'auto');
     });
   }
-  if(_pipeFilter === 'quente') return leads.filter(l => l.temperatura === 'quente' && isOpenStage(leadStage(l)));
-  if(_pipeFilter === 'qualificados') {
-    return leads.filter(l => ['qualificado','reuniao','proposta','negociacao'].includes(leadStage(l)));
-  }
-  if(_pipeFilter === 'ganhos') return leads.filter(l => leadStage(l) === 'fechado');
   if(_pipeFilter === 'perdidos') return leads.filter(l => leadStage(l) === 'perdido');
-  if(_pipeFilter === 'abertos') return leads.filter(l => isOpenStage(leadStage(l)));
-  if(String(_pipeFilter).startsWith('stage:')) {
-    const id = normalizeLeadStage(_pipeFilter.slice(6));
-    return leads.filter(l => leadStage(l) === id);
-  }
-  return leads;
+  return leads.filter(l => isOpenStage(leadStage(l)));
 }
 
 function visibleStages() {
-  if (String(_pipeFilter).startsWith('stage:')) {
-    const id = normalizeLeadStage(_pipeFilter.slice(6));
-    return STAGES.filter(s => s.id === id);
-  }
   if (_pipeFilter === 'perdidos') return STAGES.filter(s => s.id === 'perdido');
-  if (_pipeFilter === 'ganhos') return STAGES.filter(s => s.id === 'fechado');
-  if (_pipeFilter === 'abertos' || _pipeFilter === 'followup' || _pipeFilter === 'quente' || _pipeFilter === 'qualificados') {
-    return STAGES.filter(s => !s.outcome);
-  }
-  return STAGES;
+  return STAGES.filter(s => !s.outcome);
 }
 
-/* ── Render principal ── */
 function renderPipeline() {
-  renderPipelineFunnel();
-  renderPipelineKpis();
+  renderPipelineSummary();
   renderPipelineAlerts();
   renderKanbanBoard();
-  renderPipelineForecast();
 }
 
-function renderPipelineFunnel() {
-  const el = document.getElementById('pipelineFunnel');
+function renderPipelineSummary() {
+  const el = document.getElementById('pipelineSummary');
   if (!el) return;
-  el.innerHTML = STAGES.map(st => {
-    const n = _leadsCache.filter(l => leadStage(l) === st.id).length;
-    const fat = _leadsCache.filter(l => leadStage(l) === st.id).reduce((s,l)=>s+(l.valor_estimado||0),0);
-    const on = _pipeFilter === ('stage:' + st.id)
-      || (_pipeFilter === 'ganhos' && st.id === 'fechado')
-      || (_pipeFilter === 'perdidos' && st.id === 'perdido');
-    return `<button type="button" class="pipe-funnel-step${on ? ' is-on' : ''}" onclick="pipelineFilter(_pipeFilter==='stage:${st.id}'?'abertos':'stage:${st.id}')" style="border-top:3px solid ${st.cor}">
-      <div class="pf-lbl">${escHtml(st.short)}</div>
-      <div class="pf-n" style="color:${st.cor}">${n}</div>
-      <div class="pf-sub">${n ? fmtBRL(fat) : st.hint}</div>
-    </button>`;
-  }).join('');
-}
-
-/* ── KPIs ── */
-function renderPipelineKpis() {
-  const el = document.getElementById('pipelineKpis');
-  if(!el) return;
   const abertos = _leadsCache.filter(l => isOpenStage(leadStage(l)));
-  const fat    = abertos.reduce((s,l) => s + (l.valor_estimado||0), 0);
-  const ponderado = abertos.reduce((s,l) => s + (l.valor_estimado||0) * ((l.probabilidade||STAGE_PROB[leadStage(l)]||50)/100), 0);
-  const fechados  = _leadsCache.filter(l => leadStage(l) === 'fechado');
-  const perdidos  = _leadsCache.filter(l => leadStage(l) === 'perdido');
-  const quali     = _leadsCache.filter(l => ['qualificado','reuniao','proposta','negociacao'].includes(leadStage(l)));
-  const winRate   = (fechados.length + perdidos.length) > 0
-    ? Math.round(fechados.length / (fechados.length + perdidos.length) * 100) : 0;
-  const fuAlerts  = _leadsCache.filter(l => {
-    const fu = getFollowupStatus(l);
-    return fu && (fu.nivel === 'atrasado' || fu.nivel === 'hoje' || fu.nivel === 'auto');
-  });
-
-  const kpis = [
-    { label:'EM ABERTO',         val:abertos.length,           sub: fmtBRL(fat),                         cor:'#2563eb' },
-    { label:'QUALIFICADOS',      val:quali.length,             sub:'prontos para avançar',               cor:'#0891b2' },
-    { label:'RECEITA PONDERADA', val:fmtBRL(ponderado),        sub:'pelo estágio e probabilidade',       cor:'#7c3aed' },
-    { label:'FOLLOW-UPS',        val:fuAlerts.length,          sub:fuAlerts.length?'requerem ação':'em dia', cor:fuAlerts.length>0?'#dc2626':'#16a34a' },
-    { label:'WIN RATE',          val:winRate+'%',               sub:fechados.length+' ganhos · '+perdidos.length+' perdidos', cor:winRate>=50?'#16a34a':winRate>=30?'#d97706':'#dc2626' },
-    { label:'PERDIDOS',          val:perdidos.length,          sub:fmtBRL(perdidos.reduce((s,l)=>s+(l.valor_estimado||0),0)), cor:'#dc2626' },
-  ];
-  el.innerHTML = kpis.map(k => `
-    <div class="kpi-card" style="border-top:3px solid ${k.cor};padding:10px 12px">
-      <div style="font-size:7px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.2px;font-family:var(--font-m);margin-bottom:4px">${k.label}</div>
-      <div style="font-size:17px;font-weight:900;color:${k.cor};font-family:var(--font-h);line-height:1">${k.val}</div>
-      <div style="font-size:9px;color:#64748b;margin-top:3px">${k.sub}</div>
-    </div>`).join('');
+  const fat = abertos.reduce((s,l) => s + (l.valor_estimado||0), 0);
+  const fu = _leadsCache.filter(l => {
+    const s = getFollowupStatus(l);
+    return s && (s.nivel === 'atrasado' || s.nivel === 'hoje' || s.nivel === 'auto');
+  }).length;
+  const perdidos = _leadsCache.filter(l => leadStage(l) === 'perdido').length;
+  el.innerHTML = `<b>${abertos.length}</b> abertos · ${fmtBRL(fat)}${fu ? ` · <b style="color:#dc2626">${fu} follow-up</b>` : ''}${perdidos ? ` · ${perdidos} perdidos` : ''}`;
 }
 
-/* ── Alertas de follow-up ── */
 function renderPipelineAlerts() {
   const el = document.getElementById('pipelineAlerts');
   if(!el) return;
@@ -36678,41 +36808,11 @@ function renderPipelineAlerts() {
     const fu = getFollowupStatus(l);
     return fu && (fu.nivel === 'atrasado' || fu.nivel === 'hoje' || fu.nivel === 'auto');
   }).sort((a,b) => (b.valor_estimado||0) - (a.valor_estimado||0));
-
-  if(!urgentes.length) {
-    el.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:10px;color:#16a34a;display:flex;align-items:center;gap:8px">
-      <i class="fas fa-check-circle"></i> Nenhum follow-up atrasado — pipeline em dia! 🎉
-    </div>`;
-    return;
-  }
-  el.innerHTML = `
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <i class="fas fa-bell" style="color:#dc2626;font-size:13px"></i>
-        <span style="font-size:10px;font-weight:800;color:#dc2626;font-family:var(--font-m);letter-spacing:.08em">
-          ${urgentes.length} FOLLOW-UP${urgentes.length>1?'S':''} URGENTE${urgentes.length>1?'S':''}
-        </span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${urgentes.slice(0,8).map(l => {
-          const fu = getFollowupStatus(l);
-          const temp = TEMP_STYLE[l.temperatura||'frio'];
-          return `<div onclick="openLeadModal('${l.id}')"
-            style="background:#fff;border:1px solid #fecaca;border-radius:6px;padding:7px 10px;cursor:pointer;
-                   display:flex;align-items:center;gap:7px;min-width:180px;flex:1;transition:box-shadow .2s"
-            onmouseover="this.style.boxShadow='0 2px 8px rgba(220,38,38,.2)'"
-            onmouseout="this.style.boxShadow=''">
-            <span style="font-size:12px">${temp.icone}</span>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:10px;font-weight:700;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.nome||'—')}</div>
-              <div style="font-size:9px;color:#dc2626;font-weight:600">${fu?.label||''}</div>
-              <div style="font-size:9px;color:#64748b">${l.pacote_interesse||'—'} · ${fmtBRL(l.valor_estimado||0)}</div>
-            </div>
-            <i class="fas fa-chevron-right" style="color:#fca5a5;font-size:10px;flex-shrink:0"></i>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+  if(!urgentes.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="pipe-hint" style="margin:0 0 12px;border-color:#fecaca;background:#fef2f2;color:#991b1b">
+    ${urgentes.length} follow-up atrasado${urgentes.length>1?'s':''}:
+    ${urgentes.slice(0,5).map(l => `<button type="button" class="btn btn-ghost btn-sm" style="height:24px;padding:0 8px;margin-left:4px" onclick="openLeadModal('${l.id}')">${escHtml(l.nome||'Lead')}</button>`).join('')}
+  </div>`;
 }
 
 /* ── Kanban Board ── */
@@ -36721,40 +36821,30 @@ function renderKanbanBoard() {
   if(!el) return;
   const filtered = applyFilter(_leadsCache);
   const cols = visibleStages();
+  el.classList.toggle('is-lost', _pipeFilter === 'perdidos');
   el.innerHTML = cols.map(st => {
     const cards = filtered.filter(l => leadStage(l) === st.id)
       .sort((a,b) => (b.valor_estimado||0) - (a.valor_estimado||0));
     const colFat = cards.reduce((s,l)=>s+(l.valor_estimado||0),0);
-    const empty = st.id === 'perdido'
-      ? 'Arraste aqui ou use Perdeu no card'
-      : st.id === 'qualificado'
-        ? 'Use Lead qualificado ou avance do filtro'
-        : 'Arraste para cá ou clique +';
     return `
-    <div class="kanban-col${st.outcome ? ' is-outcome' : ''}"
+    <div class="kanban-col"
       data-stage="${st.id}"
       ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')"
       ondragleave="event.currentTarget.classList.remove('drag-over')"
       ondrop="onDropStage(event,'${st.id}')"
-      style="background:${st.subCor};border:2px solid ${st.borda};border-radius:12px;
-             min-height:200px;display:flex;flex-direction:column">
-      <div style="padding:10px 12px;border-bottom:2px solid ${st.borda};display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      style="background:${st.subCor};border:1px solid ${st.borda};border-radius:12px;min-height:200px;display:flex;flex-direction:column">
+      <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px">
         <div>
-          <div style="font-size:11px;font-weight:800;color:${st.cor};font-family:var(--font-m)">${escHtml(st.label)}</div>
-          <div style="font-size:9px;color:#64748b;margin-top:2px;line-height:1.35">${escHtml(st.hint)}</div>
-          <div style="font-size:9px;color:#64748b;margin-top:3px">${cards.length} · ${fmtBRL(colFat)}</div>
+          <div style="font-size:12px;font-weight:800;color:${st.cor}">${escHtml(st.label)} <span style="font-weight:600;color:#94a3b8">${cards.length}</span></div>
+          ${colFat ? `<div style="font-size:10px;color:#64748b;margin-top:1px">${fmtBRL(colFat)}</div>` : ''}
         </div>
         ${st.id === 'perdido' ? '' : `<button type="button" onclick="event.stopPropagation();${st.id==='qualificado'?'openQualifiedLead()':`openLeadModal(null,'${st.id}')`}"
-          style="width:26px;height:26px;border-radius:50%;background:${st.cor};color:#fff;border:none;
-                 cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0"
-          title="${st.id==='qualificado'?'Adicionar lead qualificado':'Adicionar nesta etapa'}">+</button>`}
+          style="width:24px;height:24px;border-radius:6px;background:transparent;color:${st.cor};border:1px solid ${st.borda};
+                 cursor:pointer;font-size:16px;line-height:1" title="Adicionar">+</button>`}
       </div>
-      <div style="padding:8px;display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto;max-height:65vh">
+      <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto;max-height:65vh">
         ${cards.map(l => renderLeadCard(l, st)).join('')}
-        ${!cards.length ? `<div style="text-align:center;padding:20px 8px;color:#64748b;font-size:10px;line-height:1.5">
-          <i class="fas fa-inbox" style="font-size:18px;display:block;margin-bottom:6px;opacity:.7"></i>
-          ${empty}
-        </div>` : ''}
+        ${!cards.length ? `<div style="text-align:center;padding:28px 8px;color:#94a3b8;font-size:11px">Vazio</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -36762,78 +36852,29 @@ function renderKanbanBoard() {
 
 /* ── Card individual do lead ── */
 function renderLeadCard(l, st) {
-  const temp  = TEMP_STYLE[l.temperatura||'frio'];
-  const fu    = getFollowupStatus(l);
-  const diasCriac = diasDesde(l.created_at || l.data_entrada);
-  const prob  = l.probabilidade || 50;
-  const probCor = prob >= 70 ? '#16a34a' : prob >= 40 ? '#d97706' : '#dc2626';
-
+  const fu = getFollowupStatus(l);
+  const fuHot = fu && (fu.nivel === 'atrasado' || fu.nivel === 'hoje' || fu.nivel === 'auto');
   return `<div
     draggable="true"
     data-lead-id="${l.id}"
     ondragstart="onDragStart(event,'${l.id}')"
     ondragend="event.currentTarget.style.opacity='1'"
     onclick="openLeadModal('${l.id}')"
-    style="background:#fff;border-radius:8px;padding:10px 11px;cursor:pointer;
-           border:1px solid ${st.borda};border-left:4px solid ${temp.cor};
-           box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .2s;position:relative"
-    onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.12)';this.style.transform='translateY(-1px)'"
-    onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,.06)';this.style.transform=''">
-
-    <!-- Cabeçalho do card -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;gap:6px">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:11px;font-weight:800;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.nome||'—')}</div>
-        ${l.empresa ? `<div style="font-size:9px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.empresa)}</div>` : ''}
+    style="background:#fff;border-radius:8px;padding:10px 11px;cursor:pointer;border:1px solid ${st.borda}">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.nome||'—')}</div>
+        ${l.empresa ? `<div style="font-size:10px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.empresa)}</div>` : ''}
       </div>
-      <span style="font-size:14px;flex-shrink:0" title="${temp.label}">${temp.icone}</span>
+      <span style="font-size:12px;font-weight:800;color:${st.cor};white-space:nowrap">${l.valor_estimado > 0 ? fmtBRL(l.valor_estimado) : ''}</span>
     </div>
-
-    <!-- Pacote e valor -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <span style="font-size:9px;color:#64748b;background:#f1f5f9;border-radius:4px;padding:2px 6px;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.pacote_interesse||'Não definido')}</span>
-      <span style="font-size:12px;font-weight:800;color:${st.cor};font-family:var(--font-h)">${l.valor_estimado > 0 ? fmtBRL(l.valor_estimado) : '—'}</span>
-    </div>
-
-    <!-- Probabilidade -->
-    <div style="margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-        <span style="font-size:8.5px;color:#94a3b8">Probabilidade</span>
-        <span style="font-size:8.5px;font-weight:700;color:${probCor}">${prob}%</span>
-      </div>
-      <div style="background:rgba(0,0,0,.06);border-radius:3px;height:4px;overflow:hidden">
-        <div style="height:100%;width:${prob}%;background:${probCor};border-radius:3px;transition:width .3s"></div>
-      </div>
-    </div>
-
-    <!-- Tags de info -->
-    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px">
-      ${l.origem ? `<span style="font-size:8px;background:#f1f5f9;color:#64748b;border-radius:3px;padding:2px 5px">${escHtml(l.origem)}</span>` : ''}
-      ${l.segmento ? `<span style="font-size:8px;background:#f1f5f9;color:#64748b;border-radius:3px;padding:2px 5px">${escHtml(l.segmento)}</span>` : ''}
-      ${l.responsavel ? `<span style="font-size:8px;background:${st.subCor};color:${st.cor};border-radius:3px;padding:2px 5px;font-weight:600">${escHtml(l.responsavel)}</span>` : ''}
-    </div>
-
-    <!-- Follow-up alert -->
-    ${fu ? `<div style="background:${fu.nivel==='atrasado'||fu.nivel==='auto'?'#fef2f2':'#fffbeb'};
-                        border-radius:5px;padding:4px 7px;display:flex;align-items:center;gap:5px;margin-bottom:4px">
-      <i class="fas fa-bell" style="font-size:9px;color:${fu.cor}"></i>
-      <span style="font-size:9px;font-weight:700;color:${fu.cor}">${fu.label}</span>
-    </div>` : ''}
-
-    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:5px;border-top:1px solid rgba(0,0,0,.05)">
-      <span style="font-size:8.5px;color:#94a3b8">
-        ${diasCriac !== null ? `${diasCriac}d no funil` : 'data desconhecida'}
-      </span>
-      ${st.id === 'perdido' && l.perdido_motivo ? `<span style="font-size:8.5px;color:#b91c1c">${escHtml(l.perdido_motivo)}</span>` : ''}
-      ${l.data_fechamento && st.id !== 'perdido' ? `<span style="font-size:8.5px;color:#64748b">fecha ${fmtDate(l.data_fechamento)}</span>` : ''}
-    </div>
+    ${fuHot ? `<div style="margin-top:6px;font-size:10px;font-weight:700;color:#dc2626">${escHtml(fu.label)}</div>` : ''}
+    ${st.id === 'perdido' && l.perdido_motivo ? `<div style="margin-top:6px;font-size:10px;color:#b91c1c">${escHtml(l.perdido_motivo)}</div>` : ''}
     <div class="pipe-card-actions" onclick="event.stopPropagation()">
-      ${st.id === 'perdido' ? `<button type="button" onclick="pipeReopenLead('${l.id}')">Reabrir</button>` : ''}
-      ${st.id === 'fechado' ? `<button type="button" onclick="pipeReopenLead('${l.id}')">Reabrir</button><button type="button" class="lost" onclick="pipeMarkLost('${l.id}')">Perdeu</button>` : ''}
-      ${isOpenStage(st.id) ? `
-        <button type="button" onclick="pipeAdvanceLead('${l.id}')">Avançar</button>
-        <button type="button" class="won" onclick="pipeMarkWon('${l.id}')">Ganhou</button>
-        <button type="button" class="lost" onclick="pipeMarkLost('${l.id}')">Perdeu</button>` : ''}
+      ${st.id === 'perdido' || st.id === 'fechado'
+        ? `<button type="button" onclick="pipeReopenLead('${l.id}')">Reabrir</button>`
+        : `<button type="button" onclick="pipeAdvanceLead('${l.id}')">${st.id === 'negociacao' ? 'Ganhou' : 'Avançar'}</button>
+           <button type="button" class="lost" onclick="pipeMarkLost('${l.id}')">Perdeu</button>`}
     </div>
   </div>`;
 }
@@ -36901,7 +36942,7 @@ function pipeMarkWon(id) { applyLeadStage(id, 'fechado'); }
 function openQualifiedLead() {
   openLeadModal(null, 'qualificado');
 }
-function pipeReopenLead(id) { applyLeadStage(id, 'qualificacao'); }
+function pipeReopenLead(id) { applyLeadStage(id, 'qualificado'); }
 
 function pipeMarkLost(id) {
   const lead = _leadsCache.find(l => String(l.id) === String(id));
@@ -37262,10 +37303,9 @@ async function deleteLead() {
 (function injectKanbanCSS() {
   const style = document.createElement('style');
   style.textContent = `
-    #pipelineBoard.pipe-board { display:flex; overflow-x:auto; }
+    #pipelineBoard.pipe-board { overflow-x: auto; }
     .kanban-col.drag-over {
-      box-shadow: 0 0 0 3px #2563eb !important;
-      transform: scale(1.01);
+      box-shadow: 0 0 0 2px #111 !important;
     }
   `;
   document.head.appendChild(style);
