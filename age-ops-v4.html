@@ -4472,10 +4472,12 @@ body:has(#login-screen.visible){
       ══════════════════════════════════ -->
       <div id="page-clientes" class="page">
         <div class="page-header">
-          <div class="page-title"><i class="fas fa-users"></i> BANCO DE CLIENTES</div>
-          <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m)">
-            <i class="fas fa-info-circle" style="color:var(--textsub)"></i>
-            &nbsp;Cadastro único · 2021–2025: planilhas (R$ 659.678,08) &nbsp;|&nbsp; 2026: projetos ao vivo
+          <div>
+            <div class="page-title"><i class="fas fa-users"></i> BANCO DE CLIENTES</div>
+            <div style="font-size:10px;color:var(--textsub);font-family:var(--font-m);margin-top:4px">
+              <i class="fas fa-info-circle" style="color:var(--textsub)"></i>
+              &nbsp;Cadastro único · 2021–2025: planilhas &nbsp;|&nbsp; 2026: projetos ao vivo
+            </div>
           </div>
           <div class="page-actions">
             <select id="cliFilter" onchange="renderClients()" style="height:32px;font-size:11px">
@@ -4485,7 +4487,7 @@ body:has(#login-screen.visible){
               <option value="inativo">Inativo</option>
             </select>
             <input type="text" id="cliSearch" placeholder="🔍 Buscar cliente..." oninput="renderClients()" style="height:32px;font-size:11px;min-width:160px">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="exportClientsCSV()" title="Baixar todos os clientes da empresa em planilha">
+            <button type="button" class="btn btn-primary btn-sm" id="btnExportClientes" onclick="exportClientsCSV()" title="Baixar todos os clientes da empresa em planilha">
               <i class="fas fa-download"></i> Baixar planilha
             </button>
           </div>
